@@ -1,0 +1,53 @@
+#ifndef FICONNECTION_H
+#define FICONNECTION_H
+
+#include <string.h>
+
+#include <rdma/fi_domain.h>
+#include <rdma/fabric.h>
+#include <rdma/fi_cm.h>
+#include <rdma/fi_endpoint.h>
+
+#include <memory>
+
+#include "Ptr.h"
+#include "Handle.h"
+#include "Common.h"
+#include "Connection.h"
+#include "Mempool.h"
+
+class FIConnection : public Connection {
+  public:
+    FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, Mempool *rpool, Mempool *spool, bool is_server);
+    virtual ~FIConnection() override;
+    virtual void read(char *buffer, int buffer_size) override;
+    virtual void write(char *buffer, int buffer_size) override;
+
+    void connect();
+    void accept();
+    HandlePtr connected();
+    fid* get_fid();
+    HandlePtr get_cmhandle();
+    HandlePtr get_cqhandle();
+    Mempool* get_rpool();
+    Mempool* get_spool();
+
+  private:
+    Mempool *recv_pool;
+    Mempool *send_pool;
+    fi_info *info;
+    fid_domain *domain;
+    fid_ep *ep;
+    fid_cq *conCq;
+    fid_eq *conEq;
+
+    Chunk *recv_chunk;
+    Chunk *send_chunk;
+
+    HandlePtr cqHandle;
+    HandlePtr cmHandle;
+
+    bool server;
+};
+
+#endif
