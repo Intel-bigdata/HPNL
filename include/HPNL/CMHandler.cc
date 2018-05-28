@@ -23,10 +23,11 @@ int CMHandler::handle_event(EventType et, void *context) {
       (*conntectedCallback)(stack->get_connection(entry->fid), NULL);
     }
   } else if (et == CLOSE_EVENT) {
-    auto con = (FIConnection*)stack->get_connection(entry->fid);
+    auto con = reinterpret_cast<FIConnection*>(stack->get_connection(entry->fid));
     reactor->remove_handler(con->get_cqhandle());
     reactor->remove_handler(get_handle());
-    stack->reap(entry->fid); 
+    stack->reap(entry->fid);
+    con->active = false;
   } else {
   
   }

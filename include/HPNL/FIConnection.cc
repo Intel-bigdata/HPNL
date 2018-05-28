@@ -27,11 +27,12 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
   fi_cq_open(domain, &cq_attr, &conCq, &cqHandle);
   fi_ep_bind(ep, &conCq->fid, FI_TRANSMIT | FI_RECV);
   
-  recv_chunk = recv_pool->get(1)[0];
 
   fi_enable(ep);
-  fi_recv(ep, recv_chunk->buffer, BUFFER_SIZE, fi_mr_desc(recv_chunk->mr), 0, NULL);
-
+  std::vector<Chunk*> vec = std::move(recv_pool->get(CON_MEMPOOL_SIZE));
+  for (Chunk *ck : vec) {
+    fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(ck->mr), 0, ck);
+  }
   cmHandle.reset(new Handle(&conEq->fid, EQ_EVENT, conEq));
 }
 
@@ -45,13 +46,18 @@ FIConnection::~FIConnection() {
 }
 
 void FIConnection::write(char *buffer, int buffer_size) {
-  send_chunk = send_pool->pop(1)[0];
-  memcpy(buffer, send_chunk->buffer, buffer_size);
-  fi_send(ep, send_chunk->buffer, 4096, fi_mr_desc(send_chunk->mr), 0, NULL);
+  std::vector<Chunk*> vec = std::move(send_pool->pop(1));
+  Chunk *ck = vec[0];
+  memcpy(ck->buffer, buffer, buffer_size);
+  if (fi_send(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(ck->mr), 0, ck)) {
+    std::vector<Chunk*> send_vec;
+    send_vec.push_back(ck);
+    send_chunk_to_pool(std::move(send_vec)); 
+  }
 }
 
 void FIConnection::read(char *buffer, int buffer_size) {
-
+  // TODO: buffer filter
 }
 
 void FIConnection::connect() {
@@ -60,6 +66,10 @@ void FIConnection::connect() {
 
 void FIConnection::accept() {
   assert(!fi_accept(ep, NULL, 0));
+}
+
+void FIConnection::shutdown() {
+  fi_shutdown(ep, 0); 
 }
 
 HandlePtr FIConnection::connected() {
@@ -85,4 +95,12 @@ Mempool* FIConnection::get_rpool() {
 
 Mempool* FIConnection::get_spool() {
   return send_pool;
+}
+
+void FIConnection::send_chunk_to_pool(std::vector<Chunk*> vec) {
+  send_pool->push(std::move(vec));
+}
+
+void FIConnection::reactivate_chunk(Chunk *ck) {
+  fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(ck->mr), 0, ck);
 }

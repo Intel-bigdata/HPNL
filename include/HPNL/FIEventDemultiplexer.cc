@@ -1,8 +1,8 @@
 #include "FIEventDemultiplexer.h"
-#include <assert.h>
 
-FIEventDemultiplexer::FIEventDemultiplexer(fid_domain *domain) {
+FIEventDemultiplexer::FIEventDemultiplexer(fid_domain *domain, LogPtr logger_) {
   fi_poll_open(domain, &attr, &pollset);
+  logger = logger_;
 }
 
 FIEventDemultiplexer::~FIEventDemultiplexer() {
@@ -13,20 +13,25 @@ int FIEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
   void *cq_context[MAX_POLL_CNT];
   int ret = fi_poll(pollset, cq_context, MAX_POLL_CNT);
   for (int i = 0; i < ret; ++i) {
-    printf("get %d poll.\n", ret);
     assert(cq_context[i]);
     HandlePtr *handlePtr = (HandlePtr*)cq_context[i];
     HandlePtr handle = *handlePtr; 
     if (handle->get_event() == CQ_EVENT) {
-      printf("CQ_EVENT.\n");
+      logger->log("CQ_EVENT");
       fi_cq_msg_entry entry;
-      fi_cq_read((fid_cq*)handle->get_ctx(), &entry, 1);
+      if (fi_cq_read((fid_cq*)handle->get_ctx(), &entry, 1) == -FI_EAVAIL) {
+        fi_cq_err_entry err_entry;
+        fi_cq_readerr((fid_cq*)handle->get_ctx(), &err_entry, entry.flags); 
+        logger->log("CQ ERROR OPERATION");
+        eventMap[handle]->handle_event(ERROR_EVENT, &err_entry);  
+        continue;
+      }
       if (entry.flags & FI_SEND) {
-        printf("send event.\n");
+        logger->log("SEND OPERATION");
         eventMap[handle]->handle_event(SEND_EVENT, &entry); 
       } else if (entry.flags & FI_RECV) {
+        logger->log("RECV OPERATION");
         eventMap[handle]->handle_event(RECV_EVENT, &entry); 
-        printf("recv event.\n");
       } else if (entry.flags & FI_READ) {
         eventMap[handle]->handle_event(READ_EVENT, &entry); 
       } else if (entry.flags & FI_WRITE) {
@@ -35,19 +40,27 @@ int FIEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
       
       }
     } else {
-      printf("EQ_EVENT.\n");
+      logger->log("EQ EVENT");
       uint32_t event;
       fi_eq_cm_entry entry;
-      fi_eq_read((fid_eq*)handle->get_ctx(), &event, &entry, sizeof(entry), 0);
+      if (fi_eq_read((fid_eq*)handle->get_ctx(), &event, &entry, sizeof(entry), 0) < 0) {
+        logger->log("EQ ERROR OPERATION");
+        fi_eq_err_entry err_entry;
+        fi_eq_readerr((fid_eq*)handle->get_ctx(), &err_entry, event);
+        continue; 
+      }
       entry.fid = handle->get_fid();
       if (event == FI_CONNREQ) {
+        logger->log("FI FI_CONNREQ");
         eventMap[handle]->handle_event(ACCEPT_EVENT, &entry); 
       } else if (event == FI_CONNECTED)  {
+        logger->log("FI_CONNECTED");
         eventMap[handle]->handle_event(CONNECTED_EVENT, &entry); 
       } else if (event == FI_SHUTDOWN) {
+        logger->log("FI_SHUTDOWN");
         eventMap[handle]->handle_event(CLOSE_EVENT, &entry); 
       } else {
-      
+        logger->log("DO NOT KNOW OPERATION");
       }
     }
   }

@@ -59,6 +59,11 @@ int common_init(const char *addr, uint64_t flags, size_t size) {
 
   fi_domain(fabric, info, &domain, NULL);
 
+  fid_poll *pollset;
+  fi_poll_attr attr = {};
+
+  //assert(0 == fi_poll_open(domain, &attr, &pollset));
+
   struct fi_cq_attr cq_attr = {
     .size = 0,
     .flags = 0,
@@ -122,6 +127,8 @@ void client_connect() {
   fi_enable(ep);
 
   fi_recv(ep, recv_buff, buff_size, fi_mr_desc(recv_mr), 0, NULL);
+  fi_send(ep, send_buff, buff_size, fi_mr_desc(send_mr), 0, NULL);
+
 
   fi_connect(ep, info->dest_addr, NULL, 0);
   

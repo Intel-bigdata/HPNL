@@ -7,6 +7,8 @@
 #include <mutex>
 #include <condition_variable>
 
+#include <iostream>
+
 class ThreadWrapper {
   public:
     ThreadWrapper() : done(false) {}
@@ -15,7 +17,9 @@ class ThreadWrapper {
     }
     void join() {
       if (thread.joinable()) {
+        std::cout << "join" << std::endl;
         thread.join(); 
+        std::cout << "join finish" << std::endl;
       } else {
         std::unique_lock<std::mutex> l(join_mutex); 
         join_event.wait(l, [=] { return done; });
@@ -23,7 +27,6 @@ class ThreadWrapper {
     }
     void start(bool background_thread = false) {
       thread = std::thread(&ThreadWrapper::thread_body, this); 
-      t_handler = thread.native_handle();
       if (background_thread) {
         thread.detach(); 
       }
@@ -48,9 +51,6 @@ class ThreadWrapper {
         UnknownExceptionCaught(); 
       }
     }
-    void stop() {
-      pthread_cancel(t_handler);
-    }
   private:
     class ThreadAbortException : std::exception {};
 
@@ -61,7 +61,6 @@ class ThreadWrapper {
     virtual void UnknownExceptionCaught() {}
   private:
     std::thread thread;
-    pthread_t t_handler;
     std::mutex join_mutex;
     std::condition_variable join_event;
     bool done;

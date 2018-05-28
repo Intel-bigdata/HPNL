@@ -15,8 +15,8 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 #find_package(Boost 1.40 COMPONENTS system REQUIRED)
 
-add_executable(server server.cc Reactor.cc CQHandler.cc FIConnection.cc FIStack.cc CMHandler.cc FIEventDemultiplexer.cc FIStack.cc)
+add_executable(server server.cc Reactor.cc CQHandler.cc FIConnection.cc FIStack.cc CMHandler.cc FIEventDemultiplexer.cc FIStack.cc NanoLog.cc)
 target_link_libraries(server fabric)
 
-add_executable(client client.cc Reactor.cc CQHandler.cc FIConnection.cc FIStack.cc CMHandler.cc FIEventDemultiplexer.cc FIStack.cc)
+add_executable(client client.cc Reactor.cc CQHandler.cc FIConnection.cc FIStack.cc CMHandler.cc FIEventDemultiplexer.cc FIStack.cc NanoLog.cc)
 target_link_libraries(client fabric)

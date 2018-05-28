@@ -23,8 +23,8 @@ FIStack::FIStack(const char *addr, uint64_t flags) : seq_num(0) {
   assert(!fi_eq_open(fabric, &eq_attr, &peq, &pcmHandle));
 
   fi_domain(fabric, info, &domain, NULL);
-  recv_pool = new Mempool(domain, 1024);
-  send_pool = new Mempool(domain, 1024);
+  recv_pool = new Mempool(domain, MEMPOOL_SIZE);
+  send_pool = new Mempool(domain, MEMPOOL_SIZE);
   recv_pool->register_memory();
   send_pool->register_memory();
 }
@@ -61,8 +61,8 @@ void FIStack::listen() {
 }
 
 HandlePtr FIStack::connect() {
-  Mempool *rpool = new Mempool(recv_pool, 32);
-  Mempool *spool = new Mempool(send_pool, 32);
+  Mempool *rpool = new Mempool(recv_pool, CON_MEMPOOL_SIZE);
+  Mempool *spool = new Mempool(send_pool, CON_MEMPOOL_SIZE);
   FIConnection *con = new FIConnection(fabric, info, domain, rpool, spool, false);
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
   con->connect();
@@ -70,8 +70,8 @@ HandlePtr FIStack::connect() {
 }
 
 HandlePtr FIStack::accept(void *info_) {
-  Mempool *rpool = new Mempool(recv_pool, 32);
-  Mempool *spool = new Mempool(send_pool, 32);
+  Mempool *rpool = new Mempool(recv_pool, CON_MEMPOOL_SIZE);
+  Mempool *spool = new Mempool(send_pool, CON_MEMPOOL_SIZE);
   FIConnection *con = new FIConnection(fabric, (fi_info*)info_, domain, rpool, spool, true);
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
   con->accept();
@@ -80,7 +80,8 @@ HandlePtr FIStack::accept(void *info_) {
 
 HandlePtr FIStack::connected(void *con_id) {
   fid *id = (fid*)con_id;
-  return ((FIConnection*)get_connection(id))->connected();
+  FIConnection *con = reinterpret_cast<FIConnection*>(get_connection(id));
+  return con->connected();
 }
 
 void FIStack::shutdown() {
@@ -89,9 +90,9 @@ void FIStack::shutdown() {
 
 void FIStack::reap(void *con_id) {
   fid *id = (fid*)con_id;
-  FIConnection *con = (FIConnection*)get_connection(id);
-  recv_pool->take(con->get_rpool(), 32);
-  send_pool->take(con->get_spool(), 32);
+  FIConnection *con = reinterpret_cast<FIConnection*>(get_connection(id));
+  recv_pool->take(con->get_rpool(), CON_MEMPOOL_SIZE);
+  send_pool->take(con->get_spool(), CON_MEMPOOL_SIZE);
   delete con;
   auto iter = conMap.find(id);
   assert(iter != conMap.end());

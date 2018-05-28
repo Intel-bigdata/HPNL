@@ -8,7 +8,8 @@ enum EventType {
   WRITE_EVENT = 8,
   RECV_EVENT = 16,
   SEND_EVENT = 32,
-  CLOSE_EVENT = 64
+  CLOSE_EVENT = 64,
+  ERROR_EVENT = 128
 };
 
 #endif
