@@ -1,11 +1,11 @@
 #ifndef CMHANDLER_H
 #define CMHANDLER_H
 
-#include "EventHandler.h"
-#include "Stack.h"
-#include "Reactor.h"
-#include "CQHandler.h"
-#include "Callback.h"
+#include "core/Stack.h"
+#include "demultiplexer/Reactor.h"
+#include "util/EventHandler.h"
+#include "util/CQHandler.h"
+#include "util/Callback.h"
 
 class CMHandler : public EventHandler {
   public:

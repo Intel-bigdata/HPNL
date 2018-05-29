@@ -1,5 +1,7 @@
 #include "FIEventDemultiplexer.h"
 
+#include <iostream>
+
 FIEventDemultiplexer::FIEventDemultiplexer(fid_domain *domain, fid_wait *waitset_, LogPtr logger_) : waitset(waitset_) {
   fi_poll_open(domain, &attr, &pollset);
   logger = logger_;
@@ -25,26 +27,31 @@ int FIEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
     if (handle->get_event() == CQ_EVENT) {
       logger->log(DEBUG, "CQ_EVENT");
       fi_cq_msg_entry entry;
-      if (fi_cq_read((fid_cq*)handle->get_ctx(), &entry, 1) == -FI_EAVAIL) {
-        fi_cq_err_entry err_entry;
-        fi_cq_readerr((fid_cq*)handle->get_ctx(), &err_entry, entry.flags); 
-        logger->log(CRIT, "CQ ERROR OPERATION");
-        eventMap[handle]->handle_event(ERROR_EVENT, &err_entry);  
-        continue;
-      }
-      if (entry.flags & FI_SEND) {
-        logger->log(DEBUG, "SEND OPERATION");
-        eventMap[handle]->handle_event(SEND_EVENT, &entry); 
-      } else if (entry.flags & FI_RECV) {
-        logger->log(DEBUG, "RECV OPERATION");
-        eventMap[handle]->handle_event(RECV_EVENT, &entry); 
-      } else if (entry.flags & FI_READ) {
-        eventMap[handle]->handle_event(READ_EVENT, &entry); 
-      } else if (entry.flags & FI_WRITE) {
-        eventMap[handle]->handle_event(WRITE_EVENT, &entry); 
-      } else {
+      int res;
+      do {
+        res = fi_cq_read((fid_cq*)handle->get_ctx(), &entry, 1);
+        if (res == -FI_EAVAIL) {
+          fi_cq_err_entry err_entry;
+          fi_cq_readerr((fid_cq*)handle->get_ctx(), &err_entry, entry.flags); 
+          logger->log(CRIT, "CQ ERROR OPERATION");
+          eventMap[handle]->handle_event(ERROR_EVENT, &err_entry);  
+          break;
+        }
+        if (res == -FI_EAGAIN) break;
+        if (entry.flags & FI_SEND) {
+          logger->log(DEBUG, "SEND OPERATION");
+          eventMap[handle]->handle_event(SEND_EVENT, &entry); 
+        } else if (entry.flags & FI_RECV) {
+          logger->log(DEBUG, "RECV OPERATION");
+          eventMap[handle]->handle_event(RECV_EVENT, &entry); 
+        } else if (entry.flags & FI_READ) {
+          eventMap[handle]->handle_event(READ_EVENT, &entry); 
+        } else if (entry.flags & FI_WRITE) {
+          eventMap[handle]->handle_event(WRITE_EVENT, &entry); 
+        } else {
       
-      }
+        }
+      } while (true);
     } else {
       logger->log(DEBUG, "EQ EVENT");
       uint32_t event;

@@ -6,9 +6,9 @@
 
 #include <thread>
 
-#include "EventDemultiplexer.h"
-#include "Handle.h"
-#include "Ptr.h"
+#include "demultiplexer/EventDemultiplexer.h"
+#include "demultiplexer/Handle.h"
+#include "util/Ptr.h"
 
 #define MAX_POLL_CNT 8
 

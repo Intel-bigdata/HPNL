@@ -1,19 +1,18 @@
-#include <string.h>
+#include "core/Stack.h"
+#include "core/FIStack.h"
+#include "core/Connection.h"
+#include "demultiplexer/EventDemultiplexer.h"
+#include "demultiplexer/FIEventDemultiplexer.h"
+#include "demultiplexer/Reactor.h"
+#include "demultiplexer/EventHandler.h"
+#include "demultiplexer/CMHandler.h"
+#include "util/Ptr.h"
+#include "util/ThreadWrapper.h"
 
-#include "EventDemultiplexer.h"
-#include "FIEventDemultiplexer.h"
-#include "Stack.h"
-#include "FIStack.h"
-#include "Reactor.h"
-#include "Ptr.h"
-#include "EventHandler.h"
-#include "CMHandler.h"
-#include "Connection.h"
-#include "ThreadWrapper.h"
+#define SIZE 4096
 
 int count = 0;
 uint64_t start, end = 0;
-std::mutex mtx;
 
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
@@ -39,8 +38,9 @@ class ConnectedCallback : public Callback {
     virtual ~ConnectedCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       Connection *con = (Connection*)param_1; 
-      char buff[4096] = "hello server";
-      con->write(buff, 5);
+      char buff[SIZE];
+      memset(buff, '0', SIZE);
+      con->write(buff, SIZE);
     }
 };
 
@@ -48,8 +48,6 @@ class ReadCallback : public Callback {
   public:
     virtual ~ReadCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
-      //std::this_thread::sleep_for(std::chrono::seconds(2));
-      std::unique_lock<std::mutex> l(mtx);
       count++;
       Connection *con = (Connection*)param_1;
       if (count >= 1000000) {
@@ -61,9 +59,8 @@ class ReadCallback : public Callback {
       if (count == 1) {
         start = timestamp_now(); 
       }
-      l.unlock();
       char *msg = (char*)param_2;
-      con->write(msg, 5);
+      con->write(msg, SIZE);
     }
 };
 
@@ -73,15 +70,13 @@ int main(int argc, char *argv[]) {
   EventDemultiplexer *plexer = new FIEventDemultiplexer((fid_domain*)stack->get_domain(), (fid_wait*)stack->get_wait_set(), logger);
   Reactor *reactor = new Reactor(plexer);
 
-  for (int i = 0; i < 4; i++) {
-    HandlePtr handle = stack->connect();
-    EventHandlerPtr handler(new CMHandler(stack, reactor, handle));
-    ConnectedCallback *connectedCallback = new ConnectedCallback();
-    ReadCallback *readCallback = new ReadCallback();
-    handler->set_conntected_callback(connectedCallback);
-    handler->set_read_callback(readCallback);
-    reactor->register_handler(handler);
-  }
+  HandlePtr handle = stack->connect();
+  EventHandlerPtr handler(new CMHandler(stack, reactor, handle));
+  ConnectedCallback *connectedCallback = new ConnectedCallback();
+  ReadCallback *readCallback = new ReadCallback();
+  handler->set_connected_callback(connectedCallback);
+  handler->set_read_callback(readCallback);
+  reactor->register_handler(handler);
 
   ConnectThread *thd = new ConnectThread(reactor);
   thd->start();

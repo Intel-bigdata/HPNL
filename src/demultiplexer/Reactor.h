@@ -4,10 +4,10 @@
 #include <map>
 #include <list>
 
-#include "EventType.h"
-#include "EventHandler.h"
-#include "EventDemultiplexer.h"
-#include "Ptr.h"
+#include "demultiplexer/EventDemultiplexer.h"
+#include "demultiplexer/EventType.h"
+#include "demultiplexer/EventHandler.h"
+#include "util/Ptr.h"
 
 class Reactor {
   public:

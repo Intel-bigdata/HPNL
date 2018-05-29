@@ -19,10 +19,12 @@ int CQHandler::handle_event(EventType et, void *context) {
     reinterpret_cast<FIConnection*>(con)->send_chunk_to_pool(std::move(vec));
   } else if (et == ERROR_EVENT) {
     fi_cq_err_entry *entry = (fi_cq_err_entry*)context; 
-    Chunk *ck = (Chunk*)entry->op_context;
     FIConnection *fi_con = reinterpret_cast<FIConnection*>(con);
-    if (fi_con->active)
-      fi_con->reactivate_chunk(ck);
+    if (fi_con) {
+      Chunk *ck = (Chunk*)entry->op_context;
+      if (fi_con->active)
+        fi_con->reactivate_chunk(ck);
+    }
   }
   return 0;
 }

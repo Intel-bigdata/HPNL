@@ -10,11 +10,11 @@
 
 #include <memory>
 
-#include "Ptr.h"
-#include "Handle.h"
-#include "Common.h"
-#include "Connection.h"
-#include "Mempool.h"
+#include "core/Connection.h"
+#include "util/Ptr.h"
+#include "demultiplexer/Handle.h"
+#include "util/Common.h"
+#include "util/Mempool.h"
 
 class FIConnection : public Connection {
   public:
@@ -39,6 +39,7 @@ class FIConnection : public Connection {
   private:
     Mempool *recv_pool;
     Mempool *send_pool;
+
     fi_info *info;
     fid_domain *domain;
     fid_ep *ep;

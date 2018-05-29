@@ -1,15 +1,16 @@
-#include "EventDemultiplexer.h"
-#include "FIEventDemultiplexer.h"
-#include "Stack.h"
-#include "FIStack.h"
-#include "Reactor.h"
-#include "Ptr.h"
-#include "EventHandler.h"
-#include "CMHandler.h"
-#include "Connection.h"
-#include "ThreadWrapper.h"
+#include "core/Stack.h"
+#include "core/FIStack.h"
+#include "core/Connection.h"
+#include "demultiplexer/EventDemultiplexer.h"
+#include "demultiplexer/FIEventDemultiplexer.h"
+#include "demultiplexer/Reactor.h"
+#include "demultiplexer/EventHandler.h"
+#include "demultiplexer/CMHandler.h"
+#include "util/Ptr.h"
+#include "util/ThreadWrapper.h"
 
-#include <thread>
+#define SIZE 4096
+
 class AcceptThread : public ThreadWrapper {
   public:
     AcceptThread(Reactor *reactor_) : reactor(reactor_) {}
@@ -29,9 +30,8 @@ class ReadCallback : public Callback {
   public:
     virtual ~ReadCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
-      //std::this_thread::sleep_for(std::chrono::seconds(2));
       char *msg = (char*)param_2;
-      Connection *con = (Connection*)param_1; con->write(msg, 5);
+      Connection *con = (Connection*)param_1; con->write(msg, SIZE);
     }
 };
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   assert(handle->get_event() == EQ_EVENT);
   EventHandlerPtr handler(new CMHandler(stack, reactor, handle));
   ReadCallback *readCallback = new ReadCallback();
-  handler->set_conntected_callback(NULL);
+  handler->set_connected_callback(NULL);
   handler->set_read_callback(readCallback);
   reactor->register_handler(handler);
   stack->listen();

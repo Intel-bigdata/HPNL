@@ -1,11 +1,11 @@
 #ifndef CQHANDLER_H
 #define CQHANDLER_H
 
-#include "EventHandler.h"
-#include "Connection.h"
-#include "Stack.h"
-#include "FIStack.h"
-#include "Callback.h"
+#include "core/Connection.h"
+#include "core/Stack.h"
+#include "core/FIStack.h"
+#include "util/EventHandler.h"
+#include "util/Callback.h"
 
 class CQHandler : public EventHandler {
   public:

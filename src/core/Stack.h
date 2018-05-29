@@ -1,9 +1,9 @@
 #ifndef STACK_H
 #define STACK_H
 
-#include "Ptr.h"
-#include "Handle.h"
-#include "Connection.h"
+#include "core/Connection.h"
+#include "demultiplexer/Handle.h"
+#include "util/Ptr.h"
 
 class Stack {
   public:

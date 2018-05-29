@@ -99,6 +99,7 @@ void FIStack::reap(void *con_id) {
   recv_pool->take(con->get_rpool(), CON_MEMPOOL_SIZE);
   send_pool->take(con->get_spool(), CON_MEMPOOL_SIZE);
   delete con;
+  con = NULL;
   auto iter = conMap.find(id);
   assert(iter != conMap.end());
   conMap.erase(iter);

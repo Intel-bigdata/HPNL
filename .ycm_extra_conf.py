@@ -38,7 +38,7 @@ flags = [
     'c++',
     '-I/usr/local/include',
     '-I/usr/include',
-    '-I/root/dev/HPNL/include',
+    '-I/root/dev/HPNL/src',
     '-std=c++11',
 ]
 

@@ -8,10 +8,10 @@
 
 #include <map>
 
-#include "Stack.h"
-#include "FIConnection.h"
-#include "Handle.h"
-#include "Mempool.h"
+#include "core/Stack.h"
+#include "core/FIConnection.h"
+#include "demultiplexer/Handle.h"
+#include "util/Mempool.h"
 
 class FIStack : public Stack {
   public:

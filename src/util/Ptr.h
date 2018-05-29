@@ -3,9 +3,8 @@
 
 #include <memory>
 #include <assert.h>
-#include <iostream>
 
-#include "Log.h"
+#include "log/Log.h"
 
 class EventHandler;
 class Handle;
