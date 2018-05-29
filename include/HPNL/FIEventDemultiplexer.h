@@ -14,7 +14,7 @@
 
 class FIEventDemultiplexer : public EventDemultiplexer {
   public:
-    FIEventDemultiplexer(fid_domain *domain, LogPtr logger_);
+    FIEventDemultiplexer(fid_domain *domain, fid_wait *waitset, LogPtr log_);
     virtual ~FIEventDemultiplexer() override;
     virtual int wait_event(std::map<HandlePtr, EventHandlerPtr> &eventMap) override;
     virtual int register_event(HandlePtr handle) override;
@@ -22,7 +22,9 @@ class FIEventDemultiplexer : public EventDemultiplexer {
   private:
     fid_poll *pollset;
     fi_poll_attr attr = {};
+    fi_wait_attr wait_attr;
     LogPtr logger;
+    fid_wait *waitset;
 };
 
 #endif

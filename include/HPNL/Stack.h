@@ -16,6 +16,7 @@ class Stack {
     virtual void reap(void*) = 0;
     virtual Connection* get_connection(fid* id) = 0;
     virtual void* get_domain() { return NULL; }
+    virtual void* get_wait_set() { return NULL; }
 };
 
 #endif

@@ -1,7 +1,15 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include <ostream>
+
 #include "NanoLog.h"
+
+enum LOG_LEVEL {
+  INFO,
+  DEBUG,
+  CRIT
+};
 
 class Log {
   public:
@@ -11,19 +19,20 @@ class Log {
       nanolog::initialize(nanolog::GuaranteedLogger(), directory, name, 1);
       nanolog::set_log_level(level);
     }
-    void log(const std::string content) {
+    void log(LOG_LEVEL log_level, const std::string content) {
       if (started) {
-        if (level == nanolog::LogLevel::CRIT) {
+        if (log_level == CRIT) {
           LOG_CRIT << content; 
-        } else if (level == nanolog::LogLevel::INFO) {
+        } else if (log_level == INFO) {
           LOG_INFO << content; 
-        } else if (level == nanolog::LogLevel::WARN) {
-          LOG_WARN << content; 
+        } else if (log_level == DEBUG) {
+          LOG_DEBUG << content; 
         } else {
         
         }
       }
     }
+
   private:
     std::string directory;
     std::string name;

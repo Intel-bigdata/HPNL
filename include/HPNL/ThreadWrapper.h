@@ -12,14 +12,10 @@
 class ThreadWrapper {
   public:
     ThreadWrapper() : done(false) {}
-    virtual ~ThreadWrapper() {
-      printf("destroy thread.\n"); 
-    }
+    virtual ~ThreadWrapper() {}
     void join() {
       if (thread.joinable()) {
-        std::cout << "join" << std::endl;
         thread.join(); 
-        std::cout << "join finish" << std::endl;
       } else {
         std::unique_lock<std::mutex> l(join_mutex); 
         join_event.wait(l, [=] { return done; });

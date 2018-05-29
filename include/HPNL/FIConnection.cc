@@ -1,14 +1,14 @@
 #include "FIConnection.h"
 
-FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, Mempool *rpool, Mempool *spool, bool is_server) : info(info_), domain(domain_), recv_pool(rpool), send_pool(spool), server(is_server) {
+FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_wait *waitset_, Mempool *rpool, Mempool *spool, bool is_server) : info(info_), domain(domain_), waitset(waitset_), recv_pool(rpool), send_pool(spool), server(is_server) {
   fi_endpoint(domain, info, &ep, NULL);
 
   struct fi_eq_attr eq_attr = {
     .size = 0,
     .flags = 0,
-    .wait_obj = FI_WAIT_UNSPEC,
+    .wait_obj = FI_WAIT_SET,
     .signaling_vector = 0,
-    .wait_set = NULL
+    .wait_set = waitset
   };
 
   fi_eq_open(fabric_, &eq_attr, &conEq, &cmHandle);
@@ -18,10 +18,10 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
     .size = 0,
     .flags = 0,
     .format = FI_CQ_FORMAT_MSG,
-    .wait_obj = FI_WAIT_UNSPEC,
+    .wait_obj = FI_WAIT_SET,
     .signaling_vector = 0,
     .wait_cond = FI_CQ_COND_NONE,
-    .wait_set = NULL
+    .wait_set = waitset
   };
 
   fi_cq_open(domain, &cq_attr, &conCq, &cqHandle);
@@ -49,7 +49,7 @@ void FIConnection::write(char *buffer, int buffer_size) {
   std::vector<Chunk*> vec = std::move(send_pool->pop(1));
   Chunk *ck = vec[0];
   memcpy(ck->buffer, buffer, buffer_size);
-  if (fi_send(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(ck->mr), 0, ck)) {
+  if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc(ck->mr), 0, ck)) {
     std::vector<Chunk*> send_vec;
     send_vec.push_back(ck);
     send_chunk_to_pool(std::move(send_vec)); 

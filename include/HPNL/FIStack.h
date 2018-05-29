@@ -15,7 +15,7 @@
 
 class FIStack : public Stack {
   public:
-    FIStack(const char *addr, uint64_t flags);
+    FIStack(const char *addr, const char *port, uint64_t flags);
     virtual ~FIStack() override;
     virtual HandlePtr bind() override;
     virtual void listen() override;
@@ -28,6 +28,7 @@ class FIStack : public Stack {
     HandlePtr connected(void *con_id);
 
     virtual void* get_domain() override;
+    virtual void* get_wait_set() override;
   private:
     Mempool *recv_pool;
     Mempool *send_pool;
@@ -40,6 +41,8 @@ class FIStack : public Stack {
 
     std::map<fid*, FIConnection*> conMap;
     HandlePtr pcmHandle;
+
+    fid_wait *waitset;
 };
 
 #endif

@@ -13,6 +13,8 @@
 
 int count = 0;
 uint64_t start, end = 0;
+std::mutex mtx;
+
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
 }
@@ -47,6 +49,7 @@ class ReadCallback : public Callback {
     virtual ~ReadCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       //std::this_thread::sleep_for(std::chrono::seconds(2));
+      std::unique_lock<std::mutex> l(mtx);
       count++;
       Connection *con = (Connection*)param_1;
       if (count >= 1000000) {
@@ -58,24 +61,27 @@ class ReadCallback : public Callback {
       if (count == 1) {
         start = timestamp_now(); 
       }
+      l.unlock();
       char *msg = (char*)param_2;
       con->write(msg, 5);
     }
 };
 
-int main() {
-  LogPtr logger(new Log("tmp", "nanolog.client", nanolog::LogLevel::WARN));
-  Stack *stack = new FIStack("127.0.0.1", 0); 
-  EventDemultiplexer *plexer = new FIEventDemultiplexer((fid_domain*)stack->get_domain(), logger);
+int main(int argc, char *argv[]) {
+  LogPtr logger(new Log("tmp", "nanolog.client", nanolog::LogLevel::DEBUG));
+  Stack *stack = new FIStack("127.0.0.1", "12345", 0); 
+  EventDemultiplexer *plexer = new FIEventDemultiplexer((fid_domain*)stack->get_domain(), (fid_wait*)stack->get_wait_set(), logger);
   Reactor *reactor = new Reactor(plexer);
 
-  HandlePtr handle = stack->connect();
-  EventHandlerPtr handler(new CMHandler(stack, reactor, handle));
-  ConnectedCallback *connectedCallback = new ConnectedCallback();
-  ReadCallback *readCallback = new ReadCallback();
-  handler->set_conntected_callback(connectedCallback);
-  handler->set_read_callback(readCallback);
-  reactor->register_handler(handler);
+  for (int i = 0; i < 4; i++) {
+    HandlePtr handle = stack->connect();
+    EventHandlerPtr handler(new CMHandler(stack, reactor, handle));
+    ConnectedCallback *connectedCallback = new ConnectedCallback();
+    ReadCallback *readCallback = new ReadCallback();
+    handler->set_conntected_callback(connectedCallback);
+    handler->set_read_callback(readCallback);
+    reactor->register_handler(handler);
+  }
 
   ConnectThread *thd = new ConnectThread(reactor);
   thd->start();

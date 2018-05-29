@@ -1,6 +1,6 @@
 #include "FIStack.h"
 
-FIStack::FIStack(const char *addr, uint64_t flags) : seq_num(0) {
+FIStack::FIStack(const char *addr, const char *port, uint64_t flags) : seq_num(0) {
   hints = fi_allocinfo();
   hints->addr_format = FI_SOCKADDR_IN;
   hints->ep_attr->type = FI_EP_MSG;
@@ -8,18 +8,23 @@ FIStack::FIStack(const char *addr, uint64_t flags) : seq_num(0) {
   hints->caps = FI_MSG;
   hints->mode = FI_CONTEXT;
 
-  fi_getinfo(FI_VERSION(1, 5), addr, "12345", flags, hints, &info);
+  fi_getinfo(FI_VERSION(1, 5), addr, port, flags, hints, &info);
 
   fi_fabric(info->fabric_attr, &fabric, NULL);
+
+  fi_wait_attr wait_attr = {
+    .wait_obj = FI_WAIT_UNSPEC,
+    .flags = 0
+  };
+  fi_wait_open(fabric, &wait_attr, &waitset);
 
   struct fi_eq_attr eq_attr = {
     .size = 0,
     .flags = 0,
-    .wait_obj = FI_WAIT_UNSPEC,
+    .wait_obj = FI_WAIT_SET,
     .signaling_vector = 0,
-    .wait_set = NULL
+    .wait_set = waitset
   };
-
   assert(!fi_eq_open(fabric, &eq_attr, &peq, &pcmHandle));
 
   fi_domain(fabric, info, &domain, NULL);
@@ -63,7 +68,7 @@ void FIStack::listen() {
 HandlePtr FIStack::connect() {
   Mempool *rpool = new Mempool(recv_pool, CON_MEMPOOL_SIZE);
   Mempool *spool = new Mempool(send_pool, CON_MEMPOOL_SIZE);
-  FIConnection *con = new FIConnection(fabric, info, domain, rpool, spool, false);
+  FIConnection *con = new FIConnection(fabric, info, domain, waitset, rpool, spool, false);
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
   con->connect();
   return con->get_cmhandle();
@@ -72,7 +77,7 @@ HandlePtr FIStack::connect() {
 HandlePtr FIStack::accept(void *info_) {
   Mempool *rpool = new Mempool(recv_pool, CON_MEMPOOL_SIZE);
   Mempool *spool = new Mempool(send_pool, CON_MEMPOOL_SIZE);
-  FIConnection *con = new FIConnection(fabric, (fi_info*)info_, domain, rpool, spool, true);
+  FIConnection *con = new FIConnection(fabric, (fi_info*)info_, domain, waitset, rpool, spool, true);
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
   con->accept();
   return con->get_cmhandle();
@@ -108,4 +113,8 @@ Connection* FIStack::get_connection(fid* id) {
 
 void* FIStack::get_domain() {
   return domain;
+}
+
+void* FIStack::get_wait_set() {
+  return waitset;
 }

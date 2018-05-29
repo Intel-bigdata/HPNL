@@ -18,7 +18,7 @@
 
 class FIConnection : public Connection {
   public:
-    FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, Mempool *rpool, Mempool *spool, bool is_server);
+    FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_wait *waitset_, Mempool *rpool, Mempool *spool, bool is_server);
     virtual ~FIConnection() override;
     virtual void read(char *buffer, int buffer_size) override;
     virtual void write(char *buffer, int buffer_size) override;
@@ -47,6 +47,8 @@ class FIConnection : public Connection {
 
     HandlePtr cqHandle;
     HandlePtr cmHandle;
+
+    fid_wait *waitset;
 
     bool server;
 };

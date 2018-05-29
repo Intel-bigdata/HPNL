@@ -54,7 +54,7 @@ namespace
 	char buffer[32];
 	strftime(buffer, 32, "%Y-%m-%d %T.", gmtime);
 	char microseconds[7];
-	sprintf(microseconds, "%06llu", timestamp % 1000000);
+	sprintf(microseconds, "%06lu", timestamp % 1000000);
 	os << '[' << buffer << microseconds << ']';
     }
 
@@ -91,8 +91,8 @@ namespace nanolog
 	{
 	case LogLevel::INFO:
 	    return "INFO";
-	case LogLevel::WARN:
-	    return "WARN";
+	case LogLevel::DEBUG:
+	    return "DEBUG";
 	case LogLevel::CRIT:
 	    return "CRIT";
 	}

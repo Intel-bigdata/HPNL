@@ -35,10 +35,10 @@ class ReadCallback : public Callback {
     }
 };
 
-int main() {
-  LogPtr logger(new Log("tmp", "nanolog.server", nanolog::LogLevel::WARN));
-  Stack *stack = new FIStack("127.0.0.1", FI_SOURCE); 
-  EventDemultiplexer *plexer = new FIEventDemultiplexer((fid_domain*)stack->get_domain(), logger);
+int main(int argc, char *argv[]) {
+  LogPtr logger(new Log("tmp", "nanolog.server", nanolog::LogLevel::DEBUG));
+  Stack *stack = new FIStack("127.0.0.1", "12345", FI_SOURCE); 
+  EventDemultiplexer *plexer = new FIEventDemultiplexer((fid_domain*)stack->get_domain(), (fid_wait*)stack->get_wait_set(), logger);
   assert(stack->get_domain());
   Reactor *reactor = new Reactor(plexer);
   
