@@ -15,6 +15,7 @@ struct Chunk {
   uint32_t offset;
   fid_mr *mr;
   void* buffer;
+  void* con;
 };
 
 class Mempool {

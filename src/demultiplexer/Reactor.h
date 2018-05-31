@@ -7,21 +7,54 @@
 #include "demultiplexer/EventDemultiplexer.h"
 #include "demultiplexer/EventType.h"
 #include "demultiplexer/EventHandler.h"
+#include "util/Common.h"
 #include "util/Ptr.h"
+#include "util/ThreadWrapper.h"
+#include "demultiplexer/CQEventDemultiplexer.h"
 
 class Reactor {
   public:
-    Reactor(EventDemultiplexer* eventDemultiplexer_);
+    Reactor(EventDemultiplexer* eqDemultiplexer_, CQEventDemultiplexer** cqDemultiplexer_);
     ~Reactor();
-    void operator()();
+    void eq_service();
+    void cq_service(int num);
     int register_handler(EventHandlerPtr eh);
     int remove_handler(EventHandlerPtr eh);
     int remove_handler(HandlePtr handle);
     int handle_events(int timeout = 0);
   private:
     std::map<HandlePtr, EventHandlerPtr> eventMap;
-    EventDemultiplexer *eventDemultiplexer;
+    EventDemultiplexer *eqDemultiplexer;
+    CQEventDemultiplexer *cqDemultiplexer[WORKERS];
+};
 
+class EQThread : public ThreadWrapper {
+  public:
+    EQThread(Reactor *reactor_) : reactor(reactor_) {}
+    virtual ~EQThread() {}
+    virtual void entry() override {
+      while (true) {
+        reactor->eq_service();
+      } 
+    }
+    virtual void abort() override {}
+  private:
+    Reactor *reactor;
+};
+
+class CQThread : public ThreadWrapper {
+  public:
+    CQThread(Reactor *reactor_, int num) : reactor(reactor_), worker_num(num) {}
+    virtual ~CQThread() {}
+    virtual void entry() override {
+      while (true) {
+        reactor->cq_service(worker_num);
+      } 
+    } 
+    virtual void abort() override {}
+  private:
+    Reactor *reactor;
+    int worker_num;
 };
 
 #endif

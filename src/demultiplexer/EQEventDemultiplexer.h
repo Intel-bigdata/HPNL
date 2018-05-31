@@ -1,10 +1,8 @@
-#ifndef RDMAEVENTDEMULTIPLEXER_H
-#define RDMAEVENTDEMULTIPLEXER_H
+#ifndef EQEVENTDEMULTIPLEXER_H
+#define EQEVENTDEMULTIPLEXER_H
 
 #include <rdma/fabric.h>
 #include <rdma/fi_cm.h>
-
-#include <thread>
 
 #include "demultiplexer/EventDemultiplexer.h"
 #include "demultiplexer/Handle.h"
@@ -12,19 +10,15 @@
 
 #define MAX_POLL_CNT 8
 
-class FIEventDemultiplexer : public EventDemultiplexer {
+class EQEventDemultiplexer : public EventDemultiplexer {
   public:
-    FIEventDemultiplexer(fid_domain *domain, fid_wait *waitset, LogPtr log_);
-    virtual ~FIEventDemultiplexer() override;
+    EQEventDemultiplexer(LogPtr log_);
+    virtual ~EQEventDemultiplexer() override;
     virtual int wait_event(std::map<HandlePtr, EventHandlerPtr> &eventMap) override;
     virtual int register_event(HandlePtr handle) override;
     virtual int remove_event(HandlePtr handle) override;
   private:
-    fid_poll *pollset;
-    fi_poll_attr attr = {};
-    fi_wait_attr wait_attr;
     LogPtr logger;
-    fid_wait *waitset;
 };
 
 #endif

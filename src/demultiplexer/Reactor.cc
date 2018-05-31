@@ -1,13 +1,23 @@
 #include "Reactor.h"
 
-Reactor::Reactor(EventDemultiplexer *eventDemultiplexer_) : eventDemultiplexer(eventDemultiplexer_) {}
+#include <iostream>
+
+Reactor::Reactor(EventDemultiplexer *eqDemultiplexer_, CQEventDemultiplexer **cqDemultiplexer_) : eqDemultiplexer(eqDemultiplexer_) {
+  for (int i = 0; i < WORKERS; i++) {
+    cqDemultiplexer[i] = *(cqDemultiplexer_+i);
+  }
+}
 
 Reactor::~Reactor() {
   eventMap.erase(eventMap.begin(), eventMap.end()); 
 }
 
-void Reactor::operator()() {
-  eventDemultiplexer->wait_event(eventMap);
+void Reactor::eq_service() {
+  eqDemultiplexer->wait_event(eventMap);
+}
+
+void Reactor::cq_service(int num) {
+  cqDemultiplexer[num]->wait_event();
 }
 
 int Reactor::register_handler(EventHandlerPtr eh) {
@@ -15,7 +25,7 @@ int Reactor::register_handler(EventHandlerPtr eh) {
   if (eventMap.find(handle) == eventMap.end()) {
     eventMap.insert(std::make_pair(handle, eh)); 
   }
-  return eventDemultiplexer->register_event(handle);
+  return eqDemultiplexer->register_event(handle);
 }
 
 int Reactor::remove_handler(EventHandlerPtr eh) {
@@ -29,5 +39,6 @@ int Reactor::remove_handler(HandlePtr handle) {
     eventMap.erase(iter);
   else
     return -1;
-  return eventDemultiplexer->remove_event(handle);
+  return eqDemultiplexer->remove_event(handle);
 }
+

@@ -2,14 +2,14 @@
 #include "core/FIStack.h"
 #include "core/Connection.h"
 #include "demultiplexer/EventDemultiplexer.h"
-#include "demultiplexer/FIEventDemultiplexer.h"
+#include "demultiplexer/EQEventDemultiplexer.h"
 #include "demultiplexer/Reactor.h"
 #include "demultiplexer/EventHandler.h"
-#include "demultiplexer/CMHandler.h"
+#include "demultiplexer/EQHandler.h"
 #include "util/Ptr.h"
 #include "util/ThreadWrapper.h"
 
-#define SIZE 4096
+#define SIZE 3
 
 int count = 0;
 uint64_t start, end = 0;
@@ -17,21 +17,6 @@ uint64_t start, end = 0;
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
 }
-
-class ConnectThread : public ThreadWrapper {
-  public:
-    ConnectThread(Reactor *reactor_) : reactor(reactor_) {}
-    virtual ~ConnectThread() {}
-
-    virtual void entry() override {
-      while (true) {
-        (*reactor)();
-      }
-    }
-    virtual void abort() override {}
-  private:
-    Reactor *reactor;
-};
 
 class ConnectedCallback : public Callback {
   public:
@@ -66,22 +51,32 @@ class ReadCallback : public Callback {
 
 int main(int argc, char *argv[]) {
   LogPtr logger(new Log("tmp", "nanolog.client", nanolog::LogLevel::DEBUG));
-  Stack *stack = new FIStack("127.0.0.1", "12345", 0); 
-  EventDemultiplexer *plexer = new FIEventDemultiplexer((fid_domain*)stack->get_domain(), (fid_wait*)stack->get_wait_set(), logger);
-  Reactor *reactor = new Reactor(plexer);
+  FIStack *stack = new FIStack("172.168.2.106", "12345", 0); 
+  EventDemultiplexer *plexer = new EQEventDemultiplexer(logger);
+  fid_cq** cqs = stack->get_cqs();
+  CQEventDemultiplexer *epolls[WORKERS];
+  for (int i = 0; i < WORKERS; i++) {
+    epolls[i]= new CQEventDemultiplexer(stack->get_fabric(), cqs[i]);
+  }
+  Reactor *reactor = new Reactor(plexer, epolls);
 
   HandlePtr handle = stack->connect();
-  EventHandlerPtr handler(new CMHandler(stack, reactor, handle));
+  EventHandlerPtr handler(new EQHandler(stack, reactor, handle));
   ConnectedCallback *connectedCallback = new ConnectedCallback();
   ReadCallback *readCallback = new ReadCallback();
   handler->set_connected_callback(connectedCallback);
   handler->set_read_callback(readCallback);
   reactor->register_handler(handler);
 
-  ConnectThread *thd = new ConnectThread(reactor);
-  thd->start();
-  thd->set_affinity(2);
-  thd->join();
+  EQThread *eqThread = new EQThread(reactor);
+  eqThread->start(true);
+  CQThread *cqThread[WORKERS];
+  for (int i = 0; i < WORKERS; i++) {
+    cqThread[i] = new CQThread(reactor, i); 
+    cqThread[i]->start(true);
+  }
+
+  eqThread->join();
 
   delete stack;
   delete plexer;

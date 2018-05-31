@@ -23,12 +23,12 @@ class FIStack : public Stack {
     virtual HandlePtr accept(void*) override;
     virtual void shutdown() override;
     virtual void reap(void*) override;
-    virtual Connection* get_connection(fid* id) override;
+    FIConnection* get_connection(fid* id);
 
     HandlePtr connected(void *con_id);
 
-    virtual void* get_domain() override;
-    virtual void* get_wait_set() override;
+    fid_fabric* get_fabric();
+    fid_cq** get_cqs();
   private:
     Mempool *recv_pool;
     Mempool *send_pool;
@@ -40,7 +40,10 @@ class FIStack : public Stack {
     fid_pep *pep;
 
     std::map<fid*, FIConnection*> conMap;
-    HandlePtr pcmHandle;
+    HandlePtr peqHandle;
+
+    fid_cq *cqs[WORKERS];
+    Handle *cqHandle[WORKERS];
 
     fid_wait *waitset;
 };

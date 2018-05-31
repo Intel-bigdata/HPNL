@@ -13,7 +13,7 @@ set(UTIL ${PROJECT_SOURCE_DIR}/src/util)
 set(DEMULTIPLEXER ${PROJECT_SOURCE_DIR}/src/demultiplexer)
 set(CORE ${PROJECT_SOURCE_DIR}/src/core)
 
-set(DEMULTIPLEXER_FILE ${DEMULTIPLEXER}/Reactor.cc ${DEMULTIPLEXER}/FIEventDemultiplexer.cc ${DEMULTIPLEXER}/CQHandler.cc ${DEMULTIPLEXER}/CMHandler.cc)
+set(DEMULTIPLEXER_FILE ${DEMULTIPLEXER}/Reactor.cc ${DEMULTIPLEXER}/EQEventDemultiplexer.cc ${DEMULTIPLEXER}/EQHandler.cc ${DEMULTIPLEXER}/CQEventDemultiplexer.cc)
 set(LOG_FILE ${LOG}/NanoLog.cc)
 set(CORE_FILE ${CORE}/FIConnection.cc ${CORE}/FIStack.cc)
 

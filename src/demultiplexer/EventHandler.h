@@ -12,9 +12,10 @@ class EventHandler {
     virtual int handle_event(EventType et, void *context) = 0;
     virtual HandlePtr get_handle(void) const = 0;
 
-    virtual void set_connected_callback(Callback *callback) {}
-    virtual void set_shutdown_callback(Callback *callback) {}
-    virtual void set_read_callback(Callback *callback) {}
+    virtual void set_connected_callback(Callback *callback) = 0;
+    virtual void set_shutdown_callback(Callback *callback) = 0;
+    virtual void set_read_callback(Callback *callback) = 0;
+    virtual Callback* get_read_callback() = 0;
 };
 
 #endif

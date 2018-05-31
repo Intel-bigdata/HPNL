@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <assert.h>
+#include <iostream>
 
 #include "log/Log.h"
 

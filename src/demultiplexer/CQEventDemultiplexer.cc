@@ -1,0 +1,69 @@
+#include "CQEventDemultiplexer.h"
+#include <thread>
+
+CQEventDemultiplexer::CQEventDemultiplexer(fid_fabric *fabric_, fid_cq *cq_) : fabric(fabric_), cq(cq_) {
+  epfd = epoll_create1(0);
+  memset((void*)&event, 0, sizeof event);
+  int ret = fi_control(&cq->fid, FI_GETWAIT, (void*)&fd);
+  if (ret) {
+    std::cout << "fi_controll error." << std::endl; 
+  }
+  event.events = EPOLLIN;
+  event.data.ptr = &cq->fid;
+  ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
+  if (ret) {
+    std::cout << "epoll add error." << std::endl; 
+  }
+}
+
+int CQEventDemultiplexer::wait_event() {
+  struct fid *fids[1];
+  fids[0] = &cq->fid;
+  int ret = 0;
+  do {
+    if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
+      int epoll_ret = epoll_wait(epfd, &event, 1, -1);
+      if (event.data.ptr != (void*)&cq->fid) {
+        std::cout << "got error event" << std::endl; 
+      }
+      if (epoll_ret < 0) {
+        return epoll_ret; 
+      }
+    }
+    uint64_t start, end = 0;
+    start = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
+    end = start;
+    do {
+      fi_cq_msg_entry entry;
+      ret = fi_cq_read(cq, &entry, 1);
+      if (ret == -FI_EAVAIL) {
+        fi_cq_err_entry err_entry;
+        fi_cq_readerr(cq, &err_entry, entry.flags); 
+        std::cout << "error" << std::endl;
+        break;
+      } else if (ret == -FI_EAGAIN) {
+        continue;
+      } else {
+        Chunk *ck = (Chunk*)entry.op_context;
+        FIConnection *con = (FIConnection*)ck->con;
+        if (entry.flags & FI_RECV) {
+          con->read((char*)ck->buffer, entry.len);
+          reinterpret_cast<FIConnection*>(con)->reactivate_chunk(ck);
+          if (con->get_read_callback()) {
+            (*con->get_read_callback())(con, ck->buffer); 
+          }
+        } else if (entry.flags & FI_SEND) {
+          std::vector<Chunk*> vec;
+          vec.push_back(ck);
+          reinterpret_cast<FIConnection*>(con)->send_chunk_to_pool(std::move(vec));
+        } else if (entry.flags & FI_READ) {
+        } else if (entry.flags & FI_WRITE) {
+        } else {
+        }
+        start = end;
+      }
+      end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
+    } while (end-start <= 15);
+  } while (ret == -FI_EAGAIN);
+  return 0;
+}

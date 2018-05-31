@@ -18,18 +18,19 @@
 
 class FIConnection : public Connection {
   public:
-    FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_wait *waitset_, Mempool *rpool, Mempool *spool, bool is_server);
+    FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq *cq_, fid_wait *waitset_, Mempool *rpool, Mempool *spool, bool is_server);
     virtual ~FIConnection() override;
     virtual void read(char *buffer, int buffer_size) override;
     virtual void write(char *buffer, int buffer_size) override;
+    virtual void set_read_callback(Callback*) override;
+    virtual Callback* get_read_callback() override;
 
     void connect();
     void accept();
     void shutdown() override;
     HandlePtr connected();
     fid* get_fid();
-    HandlePtr get_cmhandle();
-    HandlePtr get_cqhandle();
+    HandlePtr get_eqhandle();
     Mempool* get_rpool();
     Mempool* get_spool();
     void send_chunk_to_pool(std::vector<Chunk*>);
@@ -47,11 +48,13 @@ class FIConnection : public Connection {
     fid_eq *conEq;
 
     HandlePtr cqHandle;
-    HandlePtr cmHandle;
+    HandlePtr eqHandle;
 
     fid_wait *waitset;
 
     bool server;
+
+    Callback* read_callback;
 };
 
 #endif
