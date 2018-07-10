@@ -1,59 +1,95 @@
-#include "core/Stack.h"
-#include "core/FIStack.h"
-#include "core/Connection.h"
-#include "demultiplexer/EventDemultiplexer.h"
-#include "demultiplexer/EQEventDemultiplexer.h"
-#include "demultiplexer/Reactor.h"
-#include "demultiplexer/EventHandler.h"
-#include "demultiplexer/EQHandler.h"
-#include "demultiplexer/CQEventDemultiplexer.h"
-#include "util/Ptr.h"
-#include "util/ThreadWrapper.h"
+#include "HPNL/Connection.h"
+#include "HPNL/Server.h"
+#include "HPNL/BufMgr.h"
+#include "HPNL/Callback.h"
+#include "HPNL/Common.h"
+#include "PingPongBufMgr.h"
 
 #define SIZE 3
 
-class ReadCallback : public Callback {
+class ShutdownCallback : public Callback {
   public:
-    virtual ~ReadCallback() {}
+    ShutdownCallback() {}
+    virtual ~ShutdownCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
-      char *msg = (char*)param_2;
-      Connection *con = (Connection*)param_1;
-      con->write(msg, SIZE);
+      std::cout << "shutdown..." << std::endl;
     }
 };
 
+class ReadCallback : public Callback {
+  public:
+    ReadCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    virtual ~ReadCallback() {}
+    virtual void operator()(void *param_1, void *param_2) override {
+      int mid = *(int*)param_1;
+      Chunk *ck = bufMgr->index(mid);
+      Connection *con = (Connection*)ck->con;
+      con->write((char*)ck->buffer, SIZE, SIZE);
+    }
+  private:
+    BufMgr *bufMgr;
+};
+
+class SendCallback : public Callback {
+  public:
+    SendCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    virtual ~SendCallback() {}
+    virtual void operator()(void *param_1, void *param_2) override {
+      int mid = *(int*)param_1;
+      Chunk *ck = bufMgr->index(mid);
+      bufMgr->add(mid, ck);
+    }
+  private:
+    BufMgr *bufMgr;
+};
+
 int main(int argc, char *argv[]) {
-  LogPtr logger(new Log("/tmp/", "nanolog.server", nanolog::LogLevel::DEBUG));
-  FIStack *stack = new FIStack("172.168.2.106", "12345", FI_SOURCE); 
-  HandlePtr eqHandle = stack->bind();
-  fid_cq** cqs = stack->get_cqs();
-  CQEventDemultiplexer *epolls[WORKERS];
-  for (int i = 0; i < WORKERS; i++) {
-    epolls[i]= new CQEventDemultiplexer(stack->get_fabric(), cqs[i]);
+  BufMgr *recvBufMgr = new PingPongBufMgr();
+  Chunk *ck;
+  for (int i = 0; i < CON_MEMPOOL_SIZE; i++) {
+    ck = new Chunk();
+    ck->mid = recvBufMgr->get_id();
+    ck->buffer = std::malloc(BUFFER_SIZE);
+    recvBufMgr->add(ck->mid, ck);
   }
-  EventDemultiplexer *eq_plexer = new EQEventDemultiplexer(logger);
-  Reactor *reactor = new Reactor(eq_plexer, epolls);
-  
-  stack->listen();
-  EventHandlerPtr handler(new EQHandler(stack, reactor, eqHandle));
-  ReadCallback *readCallback = new ReadCallback();
-  handler->set_connected_callback(NULL);
-  handler->set_read_callback(readCallback);
-  reactor->register_handler(handler);
-
-  EQThread *eqThread = new EQThread(reactor);
-  eqThread->start(true);
-  CQThread *cqThread[WORKERS];
-  for (int i = 0; i < WORKERS; i++) {
-    cqThread[i] = new CQThread(reactor, i); 
-    cqThread[i]->start(true);
+  BufMgr *sendBufMgr = new PingPongBufMgr();
+  for (int i = 0; i < CON_MEMPOOL_SIZE; i++) {
+    ck = new Chunk();
+    ck->mid = sendBufMgr->get_id();
+    ck->buffer = std::malloc(BUFFER_SIZE);
+    sendBufMgr->add(ck->mid, ck);
   }
 
-  eqThread->join();
+  LogPtr logger(new Log("/tmp/log/", "nanolog.server", nanolog::LogLevel::DEBUG));
+  logger->start();
+  Server *server = new Server("172.168.2.106", "123456", logger);
+  server->set_recv_buf_mgr(recvBufMgr);
+  server->set_send_buf_mgr(sendBufMgr);
 
-  delete stack;
-  delete reactor;
+  ReadCallback *readCallback = new ReadCallback(recvBufMgr);
+  SendCallback *sendCallback = new SendCallback(sendBufMgr);
+  ShutdownCallback *shutdownCallback = new ShutdownCallback();
+
+  server->set_read_callback(readCallback);
+  server->set_send_callback(sendCallback);
+  server->set_connected_callback(NULL);
+  server->set_shutdown_callback(shutdownCallback);
+
+  server->run();
+
+  server->wait();
+
+  delete sendCallback;
   delete readCallback;
+  delete server;
+  delete recvBufMgr;
+  delete sendBufMgr;
+
+  sendCallback = NULL;
+  readCallback = NULL;
+  server = NULL;
+  recvBufMgr = NULL;
+  sendBufMgr = NULL;
 
   return 0;
 }

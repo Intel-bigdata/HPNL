@@ -5,7 +5,12 @@
 int EQHandler::handle_event(EventType et, void *context) {
   fi_eq_cm_entry *entry = (fi_eq_cm_entry*)context;
   if (et == ACCEPT_EVENT) {
-    HandlePtr handle = stack->accept(entry->info);
+    assert(acceptRequestCallback);
+    BufMgr *recv_buf_mgr;
+    BufMgr *send_buf_mgr;
+    (*acceptRequestCallback)(&recv_buf_mgr, &send_buf_mgr);
+
+    HandlePtr handle = stack->accept(entry->info, recv_buf_mgr, send_buf_mgr);
     std::shared_ptr<EventHandler> eqHandler(new EQHandler(stack, reactor, handle));
     if (connectedCallback) {
       eqHandler->set_connected_callback(connectedCallback); 
@@ -13,20 +18,32 @@ int EQHandler::handle_event(EventType et, void *context) {
     if (readCallback) {
       eqHandler->set_read_callback(readCallback); 
     }
+    assert(sendCallback);
+    eqHandler->set_send_callback(sendCallback);
+    if (shutdownCallback) {
+      eqHandler->set_shutdown_callback(shutdownCallback); 
+    }
     reactor->register_handler(eqHandler);
   } else if (et == CONNECTED_EVENT) {
     auto con = stack->get_connection(entry->fid);
     if (readCallback) {
       con->set_read_callback(readCallback);
     }
+    if (shutdownCallback) {
+      con->set_shutdown_callback(shutdownCallback); 
+    }
+    assert(sendCallback);
+    con->set_send_callback(sendCallback);
     if (connectedCallback) {
-      (*connectedCallback)(stack->get_connection(entry->fid), NULL);
+      (*connectedCallback)(con, NULL);
     }
   } else if (et == CLOSE_EVENT) {
     auto con = stack->get_connection(entry->fid);
+    if (con->get_shutdown_callback()) {
+      (*(con->get_shutdown_callback()))(NULL, NULL);
+    }
     reactor->remove_handler(get_handle());
     stack->reap(entry->fid);
-    con->active = false;
   } else {
   
   }
@@ -37,6 +54,10 @@ HandlePtr EQHandler::get_handle() const {
   return eqHandle;
 }
 
+void EQHandler::set_accept_request_callback(Callback *callback) {
+  acceptRequestCallback = callback;
+}
+
 void EQHandler::set_connected_callback(Callback *callback) {
   connectedCallback = callback;
 }
@@ -45,6 +66,9 @@ void EQHandler::set_shutdown_callback(Callback *callback) {
   shutdownCallback = callback;
 }
 
+void EQHandler::set_send_callback(Callback *callback) {
+  sendCallback = callback;
+}
 
 void EQHandler::set_read_callback(Callback *callback) {
   readCallback = callback;
@@ -53,4 +77,3 @@ void EQHandler::set_read_callback(Callback *callback) {
 Callback* EQHandler::get_read_callback() {
   return readCallback;
 }
-

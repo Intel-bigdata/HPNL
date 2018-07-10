@@ -17,10 +17,10 @@ int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
   }
   for (auto var : wait_map) {
     HandlePtr handlePtr = var.first;
-    logger->log(DEBUG, "EQ EVENT");
+    //logger->log(DEBUG, "EQ EVENT");
     uint32_t event;
     fi_eq_cm_entry entry;
-    ret = fi_eq_read((fid_eq*)handlePtr->get_ctx(), &event, &entry, sizeof(entry), 0);
+    ret = fi_eq_read((fid_eq*)handlePtr->get_ctx(), &event, &entry, sizeof(entry), 2000);
     if (ret == -FI_EAGAIN) {
       continue; 
     } else if (ret < 0) {
@@ -31,7 +31,7 @@ int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
     } else {
       entry.fid = handlePtr->get_fid();
       if (event == FI_CONNREQ) {
-        logger->log(DEBUG, "FI FI_CONNREQ");
+        logger->log(DEBUG, "FI_CONNREQ");
         eventMap[handlePtr]->handle_event(ACCEPT_EVENT, &entry); 
       } else if (event == FI_CONNECTED)  {
         logger->log(DEBUG, "FI_CONNECTED");
@@ -48,6 +48,7 @@ int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
 }
 
 int EQEventDemultiplexer::register_event(HandlePtr handle) {
+  logger->log(DEBUG, "REGISTER");
   return 0;
 }
 

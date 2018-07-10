@@ -1,8 +1,8 @@
 #include "FIConnection.h"
 
-FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, Mempool *rpool, Mempool *spool, bool is_server) : info(info_), domain(domain_), conCq(cq_), waitset(waitset_), recv_pool(rpool), send_pool(spool), server(is_server), read_callback(NULL) {
+FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, bool is_server) : info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
   fi_endpoint(domain, info, &ep, NULL);
-
+  
   struct fi_eq_attr eq_attr = {
     .size = 0,
     .flags = 0,
@@ -17,15 +17,46 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
   fi_ep_bind(ep, &conCq->fid, FI_TRANSMIT | FI_RECV);
   
   fi_enable(ep);
-  std::vector<Chunk*> vec = std::move(recv_pool->get(CON_MEMPOOL_SIZE));
-  for (Chunk *ck : vec) {
+  recv_buf_mgr->rewind();
+  Chunk *ck = recv_buf_mgr->next();
+  while (ck != NULL) {
+    fid_mr *mr;
+    assert(!fi_mr_reg(domain, ck->buffer, BUFFER_SIZE, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
     ck->con = this;
-    fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(ck->mr), 0, ck);
+    ck->mr = mr;
+    assert(!fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(mr), 0, ck));
+    mr = NULL;
+    ck = recv_buf_mgr->next();
   }
+  send_buf_mgr->rewind();
+  ck = send_buf_mgr->next();
+  while (ck != NULL) {
+    fid_mr *mr;
+    assert(!fi_mr_reg(domain, ck->buffer, BUFFER_SIZE, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
+    ck->con = this;
+    ck->mr = mr;
+    mr = NULL;
+    ck = send_buf_mgr->next();
+  }
+
   eqHandle.reset(new Handle(&conEq->fid, EQ_EVENT, conEq));
 }
 
 FIConnection::~FIConnection() {
+  recv_buf_mgr->rewind();
+  Chunk *ck = recv_buf_mgr->next();
+  int size = 0;
+  while (ck != NULL) {
+    size++;
+    fi_close(&((fid_mr*)ck->mr)->fid);
+    ck = recv_buf_mgr->next();
+  }
+  send_buf_mgr->rewind();
+  ck = send_buf_mgr->next();
+  while (ck != NULL) {
+    fi_close(&((fid_mr*)ck->mr)->fid);
+    ck = send_buf_mgr->next();
+  }
   fi_close(&ep->fid);
   fi_close(&conEq->fid);
   if (server) {
@@ -33,15 +64,12 @@ FIConnection::~FIConnection() {
   }
 }
 
-void FIConnection::write(char *buffer, int buffer_size) {
-  std::vector<Chunk*> vec = std::move(send_pool->pop(1));
-  Chunk *ck = vec[0];
+void FIConnection::write(char *buffer, int buffer_size, int mid) {
+  // TODO: get send buffer
+  Chunk *ck = send_buf_mgr->get(0);
   memcpy(ck->buffer, buffer, buffer_size);
-  ck->con = this;
-  if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc(ck->mr), 0, ck)) {
-    std::vector<Chunk*> send_vec;
-    send_vec.push_back(ck);
-    send_chunk_to_pool(std::move(send_vec)); 
+  if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+    // TODO: error handler
   }
 }
 
@@ -65,35 +93,36 @@ void FIConnection::set_read_callback(Callback *callback) {
   read_callback = callback;
 }
 
+void FIConnection::set_send_callback(Callback *callback) {
+  send_callback = callback;
+}
+
+void FIConnection::set_shutdown_callback(Callback *callback) {
+  shutdown_callback = callback;
+}
+
 Callback* FIConnection::get_read_callback() {
   return read_callback;
 }
 
-HandlePtr FIConnection::connected() {
-  return NULL;
+Callback* FIConnection::get_send_callback() {
+  return send_callback;
+}
+
+Callback* FIConnection::get_shutdown_callback() {
+  return shutdown_callback;
 }
 
 fid* FIConnection::get_fid() {
   return &conEq->fid;
 }
 
+void FIConnection::activate_chunk(Chunk *ck) {
+  ck->con = this;
+  fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc((fid_mr*)ck->mr), 0, ck);
+}
+
 HandlePtr FIConnection::get_eqhandle() {
   return eqHandle;
 }
 
-Mempool* FIConnection::get_rpool() {
-  return recv_pool;
-}
-
-Mempool* FIConnection::get_spool() {
-  return send_pool;
-}
-
-void FIConnection::send_chunk_to_pool(std::vector<Chunk*> vec) {
-  send_pool->push(std::move(vec));
-}
-
-void FIConnection::reactivate_chunk(Chunk *ck) {
-  ck->con = this;
-  fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(ck->mr), 0, ck);
-}

@@ -8,30 +8,27 @@
 
 #include <map>
 
-#include "core/Stack.h"
+#include "HPNL/BufMgr.h"
 #include "core/FIConnection.h"
 #include "demultiplexer/Handle.h"
-#include "util/Mempool.h"
 
-class FIStack : public Stack {
+class FIStack {
   public:
-    FIStack(const char *addr, const char *port, uint64_t flags);
-    virtual ~FIStack() override;
-    virtual HandlePtr bind() override;
-    virtual void listen() override;
-    virtual HandlePtr connect() override;
-    virtual HandlePtr accept(void*) override;
-    virtual void shutdown() override;
-    virtual void reap(void*) override;
+    FIStack(const char*, const char*, uint64_t);
+    ~FIStack();
+    HandlePtr bind();
+    void listen();
+    HandlePtr connect(BufMgr*, BufMgr*);
+    HandlePtr accept(void*, BufMgr*, BufMgr*);
+    void shutdown();
+    void reap(void*);
     FIConnection* get_connection(fid* id);
-
-    HandlePtr connected(void *con_id);
-
     fid_fabric* get_fabric();
     fid_cq** get_cqs();
+
+    HandlePtr connected(void*);
+
   private:
-    Mempool *recv_pool;
-    Mempool *send_pool;
     uint64_t seq_num;
     fid_fabric *fabric;
     fid_domain *domain;

@@ -1,7 +1,8 @@
 #include "CQEventDemultiplexer.h"
-#include <thread>
 
-CQEventDemultiplexer::CQEventDemultiplexer(fid_fabric *fabric_, fid_cq *cq_) : fabric(fabric_), cq(cq_) {
+CQEventDemultiplexer::CQEventDemultiplexer(FIStack *stack, int num) {
+  fabric = stack->get_fabric();
+  cq = stack->get_cqs()[num];
   epfd = epoll_create1(0);
   memset((void*)&event, 0, sizeof event);
   int ret = fi_control(&cq->fid, FI_GETWAIT, (void*)&fd);
@@ -14,6 +15,10 @@ CQEventDemultiplexer::CQEventDemultiplexer(fid_fabric *fabric_, fid_cq *cq_) : f
   if (ret) {
     std::cout << "epoll add error." << std::endl; 
   }
+}
+
+CQEventDemultiplexer::~CQEventDemultiplexer() {
+  close(epfd);
 }
 
 int CQEventDemultiplexer::wait_event() {
@@ -42,20 +47,18 @@ int CQEventDemultiplexer::wait_event() {
         std::cout << "error" << std::endl;
         break;
       } else if (ret == -FI_EAGAIN) {
-        continue;
       } else {
         Chunk *ck = (Chunk*)entry.op_context;
         FIConnection *con = (FIConnection*)ck->con;
         if (entry.flags & FI_RECV) {
           con->read((char*)ck->buffer, entry.len);
-          reinterpret_cast<FIConnection*>(con)->reactivate_chunk(ck);
           if (con->get_read_callback()) {
-            (*con->get_read_callback())(con, ck->buffer); 
+            (*con->get_read_callback())(&ck->mid, NULL); 
+            con->activate_chunk(ck);
           }
         } else if (entry.flags & FI_SEND) {
-          std::vector<Chunk*> vec;
-          vec.push_back(ck);
-          reinterpret_cast<FIConnection*>(con)->send_chunk_to_pool(std::move(vec));
+          assert(con->get_send_callback());
+          (*con->get_send_callback())(&ck->mid, NULL); 
         } else if (entry.flags & FI_READ) {
         } else if (entry.flags & FI_WRITE) {
         } else {

@@ -12,15 +12,19 @@ set(LOG ${PROJECT_SOURCE_DIR}/src/log)
 set(UTIL ${PROJECT_SOURCE_DIR}/src/util)
 set(DEMULTIPLEXER ${PROJECT_SOURCE_DIR}/src/demultiplexer)
 set(CORE ${PROJECT_SOURCE_DIR}/src/core)
+set(SERVICE ${PROJECT_SOURCE_DIR}/src/service)
 
 set(DEMULTIPLEXER_FILE ${DEMULTIPLEXER}/Reactor.cc ${DEMULTIPLEXER}/EQEventDemultiplexer.cc ${DEMULTIPLEXER}/EQHandler.cc ${DEMULTIPLEXER}/CQEventDemultiplexer.cc)
 set(LOG_FILE ${LOG}/NanoLog.cc)
 set(CORE_FILE ${CORE}/FIConnection.cc ${CORE}/FIStack.cc)
+set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc)
+
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
-add_executable(server ${TEST}/server.cc ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE})
+add_executable(server ${TEST}/server.cc ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE} ${SERVICE_FILE})
 target_link_libraries(server fabric)
 
-add_executable(client ${TEST}/client.cc ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE})
+add_executable(client ${TEST}/client.cc ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE} ${SERVICE_FILE})
 target_link_libraries(client fabric)

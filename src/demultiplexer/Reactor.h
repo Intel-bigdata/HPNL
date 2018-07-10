@@ -4,10 +4,10 @@
 #include <map>
 #include <list>
 
+#include "HPNL/Common.h"
 #include "demultiplexer/EventDemultiplexer.h"
 #include "demultiplexer/EventType.h"
 #include "demultiplexer/EventHandler.h"
-#include "util/Common.h"
 #include "util/Ptr.h"
 #include "util/ThreadWrapper.h"
 #include "demultiplexer/CQEventDemultiplexer.h"
@@ -33,9 +33,7 @@ class EQThread : public ThreadWrapper {
     EQThread(Reactor *reactor_) : reactor(reactor_) {}
     virtual ~EQThread() {}
     virtual void entry() override {
-      while (true) {
-        reactor->eq_service();
-      } 
+      reactor->eq_service();
     }
     virtual void abort() override {}
   private:
@@ -47,9 +45,7 @@ class CQThread : public ThreadWrapper {
     CQThread(Reactor *reactor_, int num) : reactor(reactor_), worker_num(num) {}
     virtual ~CQThread() {}
     virtual void entry() override {
-      while (true) {
-        reactor->cq_service(worker_num);
-      } 
+      reactor->cq_service(worker_num);
     } 
     virtual void abort() override {}
   private:

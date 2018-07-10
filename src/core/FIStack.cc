@@ -35,11 +35,6 @@ FIStack::FIStack(const char *addr, const char *port, uint64_t flags) : seq_num(0
 
     fi_cq_open(domain, &cq_attr, &cqs[i], NULL);
   }
-
-  recv_pool = new Mempool(domain, MEMPOOL_SIZE);
-  send_pool = new Mempool(domain, MEMPOOL_SIZE);
-  recv_pool->register_memory();
-  send_pool->register_memory();
 }
 
 FIStack::~FIStack() {
@@ -47,7 +42,6 @@ FIStack::~FIStack() {
     delete iter.second; 
   }
   conMap.erase(conMap.begin(), conMap.end());
-  fi_close(&pep->fid);
   fi_close(&peq->fid);
   for (int i = 0; i < WORKERS; i++) {
     fi_close(&cqs[i]->fid); 
@@ -56,11 +50,6 @@ FIStack::~FIStack() {
   fi_close(&fabric->fid);
   fi_freeinfo(hints);
   fi_freeinfo(info);
-
-  recv_pool->release_memory();
-  send_pool->release_memory();
-  delete recv_pool;
-  delete send_pool;
 }
 
 HandlePtr FIStack::bind() {
@@ -74,20 +63,16 @@ void FIStack::listen() {
   fi_listen(pep);
 }
 
-HandlePtr FIStack::connect() {
-  Mempool *rpool = new Mempool(recv_pool, CON_MEMPOOL_SIZE);
-  Mempool *spool = new Mempool(send_pool, CON_MEMPOOL_SIZE);
-  FIConnection *con = new FIConnection(fabric, info, domain, cqs[seq_num%WORKERS], waitset, rpool, spool, false);
+HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+  FIConnection *con = new FIConnection(fabric, info, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, false);
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
   con->connect();
   return con->get_eqhandle();
 }
 
-HandlePtr FIStack::accept(void *info_) {
-  Mempool *rpool = new Mempool(recv_pool, CON_MEMPOOL_SIZE);
-  Mempool *spool = new Mempool(send_pool, CON_MEMPOOL_SIZE);
-  FIConnection *con = new FIConnection(fabric, (fi_info*)info_, domain, cqs[seq_num%WORKERS], waitset, rpool, spool, true);
+HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+  FIConnection *con = new FIConnection(fabric, (fi_info*)info_, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, true);
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
   con->accept();
@@ -99,14 +84,12 @@ HandlePtr FIStack::connected(void *con_id) {
 }
 
 void FIStack::shutdown() {
-
+  //TODO: shutdown
 }
 
 void FIStack::reap(void *con_id) {
   fid *id = (fid*)con_id;
   FIConnection *con = reinterpret_cast<FIConnection*>(get_connection(id));
-  recv_pool->take(con->get_rpool(), CON_MEMPOOL_SIZE);
-  send_pool->take(con->get_spool(), CON_MEMPOOL_SIZE);
   delete con;
   con = NULL;
   auto iter = conMap.find(id);
@@ -128,3 +111,4 @@ fid_fabric* FIStack::get_fabric() {
 fid_cq** FIStack::get_cqs() {
   return cqs;
 }
+

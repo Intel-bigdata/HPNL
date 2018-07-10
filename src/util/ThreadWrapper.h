@@ -6,6 +6,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 #include <iostream>
 
@@ -18,7 +19,7 @@ class ThreadWrapper {
         thread.join(); 
       } else {
         std::unique_lock<std::mutex> l(join_mutex); 
-        join_event.wait(l, [=] { return done; });
+        join_event.wait(l, [=] { return done.load(); });
       }
     }
     void start(bool background_thread = false) {
@@ -26,6 +27,9 @@ class ThreadWrapper {
       if (background_thread) {
         thread.detach(); 
       }
+    }
+    void stop() {
+      done.store(true); 
     }
     void set_affinity(int cpu) {
       cpu_set_t cpuset; 
@@ -38,7 +42,17 @@ class ThreadWrapper {
     }
     void thread_body() {
       try {
-        entry(); 
+        while (true) {
+          entry();
+          if (done.load()) {
+            if (!thread.joinable()) {
+              join_event.notify_all(); 
+            } 
+            break;
+          }
+
+        }
+        std::cout << "finished" << std::endl;
       } catch (ThreadAbortException&) {
         abort(); 
       } catch (std::exception& ex) {
@@ -59,7 +73,7 @@ class ThreadWrapper {
     std::thread thread;
     std::mutex join_mutex;
     std::condition_variable join_event;
-    bool done;
+    std::atomic_bool done = {false};
 };
 
 #endif
