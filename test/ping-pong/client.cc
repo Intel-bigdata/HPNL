@@ -19,7 +19,7 @@ class ShutdownCallback : public Callback {
     ShutdownCallback(Client *_clt) : clt(_clt) {}
     virtual ~ShutdownCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
-      std::cout << "shutdown..." << std::endl;
+      std::cout << "connection shutdown..." << std::endl;
       clt->shutdown();
     }
   private:
@@ -53,7 +53,7 @@ class ReadCallback : public Callback {
       if (count >= 1000000) {
         con->shutdown();
         end = timestamp_now();
-        printf("finished, consumes %f s.\n", (end-start)/1000.0);
+        printf("finished, totally consumes %f s, message round trip time is %f us.\n", (end-start)/1000.0, (end-start)*1000/1000000.0);
         return;
       }
       if (count == 1) {

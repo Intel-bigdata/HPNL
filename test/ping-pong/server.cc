@@ -12,7 +12,7 @@ class ShutdownCallback : public Callback {
     ShutdownCallback() {}
     virtual ~ShutdownCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
-      std::cout << "shutdown..." << std::endl;
+      std::cout << "connection shutdown..." << std::endl;
     }
 };
 

@@ -52,7 +52,6 @@ class ThreadWrapper {
           }
 
         }
-        std::cout << "finished" << std::endl;
       } catch (ThreadAbortException&) {
         abort(); 
       } catch (std::exception& ex) {

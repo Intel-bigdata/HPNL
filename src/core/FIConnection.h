@@ -11,6 +11,8 @@
 #include <memory>
 #include <map>
 #include <vector>
+#include <mutex>
+#include <condition_variable>
 
 #include "HPNL/Connection.h"
 #include "HPNL/BufMgr.h"
@@ -18,6 +20,15 @@
 #include "HPNL/Common.h"
 #include "util/Ptr.h"
 #include "demultiplexer/Handle.h"
+
+enum ConStatus {
+  IDLE = 0,
+  CONNECT_REQ,
+  ACCEPT_REQ,
+  CONNECTED,
+  SHUTDOWN_REQ,
+  DOWN
+};
 
 class FIConnection : public Connection {
   public:
@@ -41,6 +52,11 @@ class FIConnection : public Connection {
     Callback* get_read_callback();
     Callback* get_send_callback();
     Callback* get_shutdown_callback();
+
+  public:
+    ConStatus status;
+    std::mutex con_mtx;
+    std::condition_variable con_cv;
     
   private:
     fi_info *info;

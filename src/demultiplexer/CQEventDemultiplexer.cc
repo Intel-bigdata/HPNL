@@ -52,6 +52,9 @@ int CQEventDemultiplexer::wait_event() {
         FIConnection *con = (FIConnection*)ck->con;
         if (entry.flags & FI_RECV) {
           con->read((char*)ck->buffer, entry.len);
+          std::unique_lock<std::mutex> l(con->con_mtx);
+          con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
+          l.unlock();
           if (con->get_read_callback()) {
             (*con->get_read_callback())(&ck->mid, NULL); 
             con->activate_chunk(ck);

@@ -21,7 +21,7 @@ int EQHandler::handle_event(EventType et, void *context) {
     assert(sendCallback);
     eqHandler->set_send_callback(sendCallback);
     if (shutdownCallback) {
-      eqHandler->set_shutdown_callback(shutdownCallback); 
+      eqHandler->set_shutdown_callback(shutdownCallback);
     }
     reactor->register_handler(eqHandler);
   } else if (et == CONNECTED_EVENT) {
@@ -30,22 +30,31 @@ int EQHandler::handle_event(EventType et, void *context) {
       con->set_read_callback(readCallback);
     }
     if (shutdownCallback) {
-      con->set_shutdown_callback(shutdownCallback); 
+      con->set_shutdown_callback(shutdownCallback);
     }
     assert(sendCallback);
     con->set_send_callback(sendCallback);
+   
+    {
+      std::lock_guard<std::mutex> l(con->con_mtx);
+      con->status = CONNECTED;
+    }
+    con->con_cv.notify_one();
+
     if (connectedCallback) {
       (*connectedCallback)(con, NULL);
     }
   } else if (et == CLOSE_EVENT) {
     auto con = stack->get_connection(entry->fid);
+    con->status = SHUTDOWN_REQ;
     if (con->get_shutdown_callback()) {
       (*(con->get_shutdown_callback()))(NULL, NULL);
     }
     reactor->remove_handler(get_handle());
+    con->status = DOWN;
     stack->reap(entry->fid);
   } else {
-  
+    // TODO: exception handler
   }
   return 0;
 }

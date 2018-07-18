@@ -26,8 +26,6 @@ class FIStack {
     fid_fabric* get_fabric();
     fid_cq** get_cqs();
 
-    HandlePtr connected(void*);
-
   private:
     uint64_t seq_num;
     fid_fabric *fabric;
