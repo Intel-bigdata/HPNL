@@ -17,45 +17,46 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
   fi_ep_bind(ep, &conCq->fid, FI_TRANSMIT | FI_RECV);
   
   fi_enable(ep);
-  recv_buf_mgr->rewind();
-  Chunk *ck = recv_buf_mgr->next();
-  while (ck != NULL) {
+
+  int size = 0;
+  while (size < CON_MEM_SIZE) {
     fid_mr *mr;
+    Chunk *ck = recv_buf_mgr->get();
     assert(!fi_mr_reg(domain, ck->buffer, BUFFER_SIZE, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
     ck->con = this;
     ck->mr = mr;
     assert(!fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(mr), 0, ck));
     mr = NULL;
-    ck = recv_buf_mgr->next();
+    recv_buffers.push_back(ck);
+    size++;
   }
-  send_buf_mgr->rewind();
-  ck = send_buf_mgr->next();
-  while (ck != NULL) {
+  size = 0;
+  while (size < CON_MEM_SIZE) {
     fid_mr *mr;
+    Chunk *ck = send_buf_mgr->get();
     assert(!fi_mr_reg(domain, ck->buffer, BUFFER_SIZE, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
     ck->con = this;
     ck->mr = mr;
     mr = NULL;
-    ck = send_buf_mgr->next();
+    send_buffers.push_back(ck);
+    size++;
   }
 
   eqHandle.reset(new Handle(&conEq->fid, EQ_EVENT, conEq));
 }
 
 FIConnection::~FIConnection() {
-  recv_buf_mgr->rewind();
-  Chunk *ck = recv_buf_mgr->next();
-  int size = 0;
-  while (ck != NULL) {
-    size++;
+  while (recv_buffers.size() > 0) {
+    Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
-    ck = recv_buf_mgr->next();
+    recv_buffers.pop_back();
+    recv_buf_mgr->add(ck->mid, ck);
   }
-  send_buf_mgr->rewind();
-  ck = send_buf_mgr->next();
-  while (ck != NULL) {
+  while (send_buffers.size() > 0) {
+    Chunk *ck = send_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
-    ck = send_buf_mgr->next();
+    send_buffers.pop_back();
+    send_buf_mgr->add(ck->mid, ck);
   }
   fi_close(&ep->fid);
   fi_close(&conEq->fid);
@@ -66,7 +67,8 @@ FIConnection::~FIConnection() {
 
 void FIConnection::write(char *buffer, int buffer_size, int mid) {
   // TODO: get send buffer
-  Chunk *ck = send_buf_mgr->get(0);
+  Chunk *ck = send_buffers.back();
+  send_buffers.pop_back();
   memcpy(ck->buffer, buffer, buffer_size);
   if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     // TODO: error handler
@@ -87,6 +89,10 @@ void FIConnection::accept() {
 
 void FIConnection::shutdown() {
   fi_shutdown(ep, 0); 
+}
+
+void FIConnection::take_back_chunk(Chunk *ck) {
+  send_buffers.push_back(ck);
 }
 
 void FIConnection::set_read_callback(Callback *callback) {

@@ -18,14 +18,9 @@ struct Chunk {
 class BufMgr {
   public:
     virtual ~BufMgr() {}
-    virtual Chunk* begin() = 0;
-    virtual Chunk* end() = 0;
-    virtual void rewind() = 0;
-    virtual Chunk* next() = 0;
-    virtual Chunk* prev() = 0;
     virtual Chunk* index(int id) = 0;
     virtual void add(int, Chunk*) = 0;
-    virtual Chunk* get(int id) = 0;
+    virtual Chunk* get() = 0;
 
     int get_id() { return id++; }
   private:

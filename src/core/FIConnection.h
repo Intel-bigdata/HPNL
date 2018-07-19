@@ -38,6 +38,7 @@ class FIConnection : public Connection {
     virtual void read(char*, int) override;
     virtual void write(char*, int, int) override;
     virtual void shutdown() override;
+    void take_back_chunk(Chunk*) override;
     
     void connect();
     void accept();
@@ -68,6 +69,8 @@ class FIConnection : public Connection {
     uint64_t mid;
     BufMgr *recv_buf_mgr;
     BufMgr *send_buf_mgr;
+    std::vector<Chunk*> recv_buffers;
+    std::vector<Chunk*> send_buffers;
 
     HandlePtr cqHandle;
     HandlePtr eqHandle;

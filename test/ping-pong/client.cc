@@ -75,7 +75,8 @@ class SendCallback : public Callback {
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->index(mid);
-      bufMgr->add(mid, ck);
+      Connection *con = (Connection*)ck->con;
+      con->take_back_chunk(ck);
     }
   private:
     BufMgr *bufMgr;
@@ -84,14 +85,14 @@ class SendCallback : public Callback {
 int main(int argc, char *argv[]) {
   BufMgr *recvBufMgr = new PingPongBufMgr();
   Chunk *ck;
-  for (int i = 0; i < CON_MEMPOOL_SIZE; i++) {
+  for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
     ck->mid = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     recvBufMgr->add(ck->mid, ck);
   }
   BufMgr *sendBufMgr = new PingPongBufMgr();
-  for (int i = 0; i < CON_MEMPOOL_SIZE; i++) {
+  for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
     ck->mid = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);

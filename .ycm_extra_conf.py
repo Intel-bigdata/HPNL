@@ -39,6 +39,7 @@ flags = [
     '-I/usr/local/include',
     '-I/usr/include',
     '-I/root/haodong/HPNL/src',
+    '-I/root/haodong/HPNL/include',
     '-std=c++11',
 ]
 
