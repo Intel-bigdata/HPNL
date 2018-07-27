@@ -21,4 +21,13 @@ set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
+add_library(hpnl SHARED ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE} ${SERVICE_FILE})
+set_target_properties(hpnl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
+
+set(CMAKE_INSTALL_PREFIX "/usr/local")
+install(TARGETS hpnl LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+
+file(GLOB INCLUDE_FILE ${PROJECT_SOURCE_DIR}/include/HPNL/*.h)
+install(FILES ${INCLUDE_FILE} DESTINATION include/HPNL)
+
 add_subdirectory(test)
