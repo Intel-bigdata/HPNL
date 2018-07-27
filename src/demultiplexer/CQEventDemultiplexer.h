@@ -13,7 +13,7 @@
 
 class CQEventDemultiplexer {
   public:
-    CQEventDemultiplexer(FIStack*, int num);
+    CQEventDemultiplexer(FIStack*, int);
     ~CQEventDemultiplexer();
     int wait_event();
   private:

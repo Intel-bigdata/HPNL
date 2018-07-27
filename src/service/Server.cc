@@ -2,8 +2,8 @@
 
 Server::Server(const char* ip_, const char* port_, LogPtr logger) : Service(ip_, port_, logger, true) {}
 
-void Server::run() {
-  Service::run();
+void Server::run(int con_num) {
+  Service::run(con_num);
 }
 
 void Server::shutdown() {

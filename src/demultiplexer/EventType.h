@@ -9,7 +9,10 @@ enum EventType {
   RECV_EVENT = 16,
   SEND_EVENT = 32,
   CLOSE_EVENT = 64,
-  ERROR_EVENT = 128
+  ERROR_EVENT = 128,
+  CONNECT = 256,
+  ACCEPT = 512,
+  SHUTDOWN = 1024
 };
 
 #endif

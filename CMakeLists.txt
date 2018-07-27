@@ -7,7 +7,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_COMPILER g++)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -g -pthread")
 
-set(TEST ${PROJECT_SOURCE_DIR}/test/ping-pong)
 set(LOG ${PROJECT_SOURCE_DIR}/src/log)
 set(UTIL ${PROJECT_SOURCE_DIR}/src/util)
 set(DEMULTIPLEXER ${PROJECT_SOURCE_DIR}/src/demultiplexer)
@@ -16,15 +15,10 @@ set(SERVICE ${PROJECT_SOURCE_DIR}/src/service)
 
 set(DEMULTIPLEXER_FILE ${DEMULTIPLEXER}/Reactor.cc ${DEMULTIPLEXER}/EQEventDemultiplexer.cc ${DEMULTIPLEXER}/EQHandler.cc ${DEMULTIPLEXER}/CQEventDemultiplexer.cc)
 set(LOG_FILE ${LOG}/NanoLog.cc)
-set(CORE_FILE ${CORE}/FIConnection.cc ${CORE}/FIStack.cc)
+set(CORE_FILE ${CORE}/FIConnection.cc ${CORE}/FIStack.cc ${CORE}/ConMgr.cc)
 set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc)
-
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-add_executable(server ${TEST}/server.cc ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE} ${SERVICE_FILE})
-target_link_libraries(server fabric)
-
-add_executable(client ${TEST}/client.cc ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE} ${SERVICE_FILE})
-target_link_libraries(client fabric)
+add_subdirectory(test)

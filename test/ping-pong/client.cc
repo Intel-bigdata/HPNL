@@ -9,6 +9,7 @@
 
 int count = 0;
 uint64_t start, end = 0;
+std::mutex mtx;
 
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
@@ -20,7 +21,7 @@ class ShutdownCallback : public Callback {
     virtual ~ShutdownCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       std::cout << "connection shutdown..." << std::endl;
-      clt->shutdown();
+      //clt->shutdown();
     }
   private:
     Client *clt;
@@ -46,11 +47,12 @@ class ReadCallback : public Callback {
     ReadCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
     virtual ~ReadCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
+      std::lock_guard<std::mutex> lk(mtx);
       count++;
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->index(mid);
       Connection *con = (Connection*)ck->con;
-      if (count >= 1000000) {
+      if (count >= 10000000) {
         con->shutdown();
         end = timestamp_now();
         printf("finished, totally consumes %f s, message round trip time is %f us.\n", (end-start)/1000.0, (end-start)*1000/1000000.0);
@@ -114,7 +116,7 @@ int main(int argc, char *argv[]) {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run();
+  client->run(10);
 
   client->wait();
 

@@ -5,10 +5,10 @@
 #include <iostream>
 #include <mutex>
 
-class PingPongBufMgr : public BufMgr {
+class ConBufMgr : public BufMgr {
   public:
-    PingPongBufMgr() {}
-    virtual ~PingPongBufMgr() {
+    ConBufMgr() {}
+    virtual ~ConBufMgr() {
       for (auto buf : buf_map) {
         delete buf.second; 
         buf.second = NULL;

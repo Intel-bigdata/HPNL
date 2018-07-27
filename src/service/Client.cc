@@ -2,8 +2,8 @@
 
 Client::Client(const char *ip_, const char *port_, LogPtr logger) : Service(ip_, port_, logger, false) {} 
 
-void Client::run() {
-  Service::run();
+void Client::run(int con_num) {
+  Service::run(con_num);
 }
 
 void Client::shutdown() {
