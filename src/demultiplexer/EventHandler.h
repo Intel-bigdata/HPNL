@@ -1,6 +1,7 @@
 #ifndef EVENTHANDLER_H
 #define EVENTHANDLER_H
 
+#include "core/ConMgr.h"
 #include "HPNL/Callback.h"
 #include "demultiplexer/EventType.h"
 #include "demultiplexer/Handle.h"
@@ -9,7 +10,7 @@
 class EventHandler {
   public:
     virtual ~EventHandler() {}
-    virtual int handle_event(EventType et, void *context) = 0;
+    virtual int handle_event(EventType, void*) = 0;
     virtual HandlePtr get_handle(void) const = 0;
 
     virtual void set_accept_request_callback(Callback *callback) = 0;

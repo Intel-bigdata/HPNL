@@ -1,6 +1,6 @@
 #include "FIConnection.h"
 
-FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, bool is_server) : info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
+FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, ConMgr* conMgr_, bool is_server) : info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), conMgr(conMgr_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
   fi_endpoint(domain, info, &ep, NULL);
   
   struct fi_eq_attr eq_attr = {
@@ -80,15 +80,15 @@ void FIConnection::read(char *buffer, int buffer_size) {
 }
 
 void FIConnection::connect() {
-  assert(!fi_connect(ep, info->dest_addr, NULL, 0));
+  conMgr->push_event(ep, CONNECT, info->dest_addr);
 }
 
 void FIConnection::accept() {
-  assert(!fi_accept(ep, NULL, 0));
+  conMgr->push_event(ep, ACCEPT, NULL);
 }
 
 void FIConnection::shutdown() {
-  fi_shutdown(ep, 0); 
+  conMgr->push_event(ep, SHUTDOWN, NULL);
 }
 
 void FIConnection::take_back_chunk(Chunk *ck) {

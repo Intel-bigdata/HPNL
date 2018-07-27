@@ -6,6 +6,7 @@
 #include "HPNL/Callback.h"
 #include "core/FIStack.h"
 #include "core/FIConnection.h"
+#include "core/ConMgr.h"
 #include "demultiplexer/Reactor.h"
 #include "demultiplexer/EQHandler.h"
 #include "demultiplexer/EQEventDemultiplexer.h"
@@ -15,7 +16,7 @@ class AcceptRequestCallback;
 
 class Service {
   public:
-    void run();
+    void run(int);
     void shutdown();
     void wait();
     void set_recv_buf_mgr(BufMgr*);
@@ -46,6 +47,7 @@ class Service {
     bool is_server;
 
     FIStack *stack;
+    ConMgr *conMgr;
     EQEventDemultiplexer *eq_demulti_plexer;
     CQEventDemultiplexer *cq_demulti_plexer[WORKERS];
     Reactor *reactor;

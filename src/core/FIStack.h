@@ -10,11 +10,12 @@
 
 #include "HPNL/BufMgr.h"
 #include "core/FIConnection.h"
+#include "core/ConMgr.h"
 #include "demultiplexer/Handle.h"
 
 class FIStack {
   public:
-    FIStack(const char*, const char*, uint64_t);
+    FIStack(const char*, const char*, uint64_t, ConMgr*);
     ~FIStack();
     HandlePtr bind();
     void listen();
@@ -41,6 +42,8 @@ class FIStack {
     Handle *cqHandle[WORKERS];
 
     fid_wait *waitset;
+
+    ConMgr *conMgr;
 };
 
 #endif

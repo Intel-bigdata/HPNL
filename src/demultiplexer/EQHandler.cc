@@ -18,8 +18,9 @@ int EQHandler::handle_event(EventType et, void *context) {
     if (readCallback) {
       eqHandler->set_read_callback(readCallback); 
     }
-    assert(sendCallback);
-    eqHandler->set_send_callback(sendCallback);
+    if (sendCallback) {
+      eqHandler->set_send_callback(sendCallback);
+    }
     if (shutdownCallback) {
       eqHandler->set_shutdown_callback(shutdownCallback);
     }
@@ -32,8 +33,9 @@ int EQHandler::handle_event(EventType et, void *context) {
     if (shutdownCallback) {
       con->set_shutdown_callback(shutdownCallback);
     }
-    assert(sendCallback);
-    con->set_send_callback(sendCallback);
+    if (sendCallback) {
+      con->set_send_callback(sendCallback);
+    }
    
     {
       std::lock_guard<std::mutex> l(con->con_mtx);

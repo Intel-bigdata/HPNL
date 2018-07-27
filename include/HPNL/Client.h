@@ -6,7 +6,7 @@
 class Client : public Service {
   public:
     Client(const char*, const char*, LogPtr);
-    void run();
+    void run(int);
     void shutdown();
     void wait();
     void set_recv_buf_mgr(BufMgr*);

@@ -2,7 +2,9 @@
 
 #include <iostream>
 
-EQEventDemultiplexer::EQEventDemultiplexer(LogPtr logger_) {
+EQEventDemultiplexer::EQEventDemultiplexer(ConMgr *conMgr_, bool is_server_, LogPtr logger_) {
+  conMgr = conMgr_;
+  is_server = is_server_;
   logger = logger_;
 }
 
@@ -35,10 +37,14 @@ int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
         eventMap[handlePtr]->handle_event(ACCEPT_EVENT, &entry); 
       } else if (event == FI_CONNECTED)  {
         logger->log(DEBUG, "FI_CONNECTED");
+        conMgr->notify();
         eventMap[handlePtr]->handle_event(CONNECTED_EVENT, &entry); 
       } else if (event == FI_SHUTDOWN) {
         logger->log(DEBUG, "FI_SHUTDOWN");
         eventMap[handlePtr]->handle_event(CLOSE_EVENT, &entry); 
+        if (!is_server) {
+          conMgr->notify();
+        }
       } else {
         logger->log(DEBUG, "DO NOT KNOW OPERATION");
       }

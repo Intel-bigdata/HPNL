@@ -18,6 +18,8 @@ struct Chunk {
 class BufMgr {
   public:
     virtual ~BufMgr() {}
+
+    // not thread safe
     virtual Chunk* index(int id) = 0;
     virtual void add(int, Chunk*) = 0;
     virtual Chunk* get() = 0;
