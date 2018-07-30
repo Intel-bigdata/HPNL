@@ -5,7 +5,7 @@
 
 class Server : public Service {
   public:
-    Server(const char*, const char*, LogPtr);
+    Server(const char*, const char*);
     void run(int);
     void shutdown();
     void wait();

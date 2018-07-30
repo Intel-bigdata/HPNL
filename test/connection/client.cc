@@ -38,8 +38,6 @@ class ConnectedCallback : public Callback {
 };
 
 void connect() {
-  LogPtr logger(new Log("/tmp/log/", "nanolog.client", nanolog::LogLevel::DEBUG));
-  logger->start();
   BufMgr *recvBufMgr = new ConBufMgr();
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE; i++) {
@@ -55,7 +53,7 @@ void connect() {
     ck->buffer = std::malloc(BUFFER_SIZE);
     sendBufMgr->add(ck->mid, ck);
   }
-  Client *client = new Client("172.168.2.106", "123456", logger);
+  Client *client = new Client("172.168.2.106", "123456");
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 

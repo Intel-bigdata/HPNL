@@ -100,9 +100,7 @@ int main(int argc, char *argv[]) {
     ck->buffer = std::malloc(BUFFER_SIZE);
     sendBufMgr->add(ck->mid, ck);
   }
-  LogPtr logger(new Log("/tmp/log/", "nanolog.client", nanolog::LogLevel::DEBUG));
-  logger->start();
-  Client *client = new Client("172.168.2.106", "123456", logger);
+  Client *client = new Client("172.168.2.106", "123456");
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 

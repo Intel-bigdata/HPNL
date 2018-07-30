@@ -1,7 +1,7 @@
 #include "service/Service.h"
 
-Service::Service(const char* ip_, const char* port_, LogPtr logger_, bool is_server_) 
-  : ip(ip_), port(port_), logger(logger_), is_server(is_server_) {
+Service::Service(const char* ip_, const char* port_, bool is_server_) 
+  : ip(ip_), port(port_), is_server(is_server_) {
   conMgr = new ConMgr();
   stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0, conMgr);
   readCallback = NULL;
@@ -28,7 +28,7 @@ Service::~Service() {
 }
 
 void Service::run(int con_num) {
-  eq_demulti_plexer = new EQEventDemultiplexer(conMgr, is_server, logger);
+  eq_demulti_plexer = new EQEventDemultiplexer(conMgr, is_server);
   for (int i = 0; i < WORKERS; i++) {
     cq_demulti_plexer[i] = new CQEventDemultiplexer(stack, i); 
   }

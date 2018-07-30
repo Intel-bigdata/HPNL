@@ -33,9 +33,7 @@ int main(int argc, char *argv[]) {
     sendBufMgr->add(ck->mid, ck);
   }
 
-  LogPtr logger(new Log("/tmp/log/", "nanolog.server", nanolog::LogLevel::DEBUG));
-  logger->start();
-  Server *server = new Server("172.168.2.106", "123456", logger);
+  Server *server = new Server("172.168.2.106", "123456");
   server->set_recv_buf_mgr(recvBufMgr);
   server->set_send_buf_mgr(sendBufMgr);
 

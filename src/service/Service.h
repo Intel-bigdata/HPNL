@@ -27,7 +27,7 @@ class Service {
     void set_connected_callback(Callback*);
     void set_shutdown_callback(Callback*);
   protected:
-    Service(const char*, const char*, LogPtr, bool is_server_ = false);
+    Service(const char*, const char*, bool is_server_ = false);
     ~Service();
   private:
     friend class AcceptRequestCallback;
@@ -43,7 +43,6 @@ class Service {
     int worker_num;
     const char* ip;
     const char* port;
-    LogPtr logger;
     bool is_server;
 
     FIStack *stack;

@@ -13,7 +13,7 @@
 
 class EQEventDemultiplexer : public EventDemultiplexer {
   public:
-    EQEventDemultiplexer(ConMgr*, bool, LogPtr);
+    EQEventDemultiplexer(ConMgr*, bool);
     virtual ~EQEventDemultiplexer() override;
     virtual int wait_event(std::map<HandlePtr, EventHandlerPtr> &) override;
     virtual int register_event(HandlePtr) override;
@@ -21,7 +21,6 @@ class EQEventDemultiplexer : public EventDemultiplexer {
   private:
     ConMgr *conMgr;
     bool is_server;
-    LogPtr logger;
 };
 
 #endif
