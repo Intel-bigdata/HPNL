@@ -8,8 +8,8 @@
 #include <mutex>
 #include <deque>
 
-#include "util/ThreadWrapper.h"
-#include "demultiplexer/EventType.h"
+#include "HPNL/EventType.h"
+#include "HPNL/ThreadWrapper.h"
 
 class ConMgr;
 
@@ -30,6 +30,7 @@ class ConMgr {
     ~ConMgr();
     void handle_event();
     void notify();
+    void reap();
 
     void connect(fid_ep* ep, void* addr);
     void accept(fid_ep* ep);
@@ -46,6 +47,7 @@ class ConMgr {
     std::mutex event_mtx;
     std::condition_variable event_cv;
     bool ready = true;
+    bool need_reap = false;
 
     EventThread *eventThread;
 };

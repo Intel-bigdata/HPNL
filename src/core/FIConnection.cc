@@ -1,4 +1,4 @@
-#include "FIConnection.h"
+#include "HPNL/FIConnection.h"
 
 FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, ConMgr* conMgr_, bool is_server) : info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), conMgr(conMgr_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
   fi_endpoint(domain, info, &ep, NULL);
@@ -65,11 +65,12 @@ FIConnection::~FIConnection() {
   }
 }
 
-void FIConnection::write(char *buffer, int buffer_size, int mid) {
+void FIConnection::write(const char *buffer, int buffer_size, int mid) {
   // TODO: get send buffer
   Chunk *ck = send_buffers.back();
   send_buffers.pop_back();
-  memcpy(ck->buffer, buffer, buffer_size);
+  //memcpy(ck->buffer, buffer, buffer_size);
+  memset(ck->buffer, '0', buffer_size);
   if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     // TODO: error handler
   }
@@ -80,15 +81,27 @@ void FIConnection::read(char *buffer, int buffer_size) {
 }
 
 void FIConnection::connect() {
-  conMgr->push_event(ep, CONNECT, info->dest_addr);
+  if (conMgr) {
+    conMgr->push_event(ep, CONNECT, info->dest_addr);
+  } else {
+    fi_connect(ep, info->dest_addr, NULL, 0);
+  }
 }
 
 void FIConnection::accept() {
-  conMgr->push_event(ep, ACCEPT, NULL);
+  if (conMgr) {
+    conMgr->push_event(ep, ACCEPT, NULL);
+  } else {
+    fi_accept(ep, NULL, 0);
+  }
 }
 
 void FIConnection::shutdown() {
-  conMgr->push_event(ep, SHUTDOWN, NULL);
+  if (conMgr) {
+    conMgr->push_event(ep, SHUTDOWN, NULL);
+  } else {
+    assert(!fi_shutdown(ep, 0));
+  }
 }
 
 void FIConnection::take_back_chunk(Chunk *ck) {

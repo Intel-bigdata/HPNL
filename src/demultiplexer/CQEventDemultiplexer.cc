@@ -1,4 +1,4 @@
-#include "CQEventDemultiplexer.h"
+#include "HPNL/CQEventDemultiplexer.h"
 
 CQEventDemultiplexer::CQEventDemultiplexer(FIStack *stack, int num) {
   fabric = stack->get_fabric();
@@ -69,7 +69,7 @@ int CQEventDemultiplexer::wait_event() {
         start = end;
       }
       end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-    } while (end-start <= 15);
-  } while (ret == -FI_EAGAIN);
+    } while (end-start <= 25);
+  } while (true);
   return 0;
 }

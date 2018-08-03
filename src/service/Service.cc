@@ -1,4 +1,4 @@
-#include "service/Service.h"
+#include "HPNL/Service.h"
 
 Service::Service(const char* ip_, const char* port_, bool is_server_) 
   : ip(ip_), port(port_), is_server(is_server_) {
@@ -24,7 +24,10 @@ Service::~Service() {
   for (int i = 0; i < WORKERS; i++) {
     delete cqThread[i];
   }
+  eventThread->stop();
   delete conMgr;
+  eventThread->join();
+  delete eventThread;
 }
 
 void Service::run(int con_num) {
@@ -64,7 +67,7 @@ void Service::run(int con_num) {
   for (int i = 0; i < WORKERS; i++) {
     cqThread[i]->start(true); 
   }
-  EventThread *eventThread = new EventThread(conMgr);
+  eventThread = new EventThread(conMgr);
   eventThread->start();
 }
 

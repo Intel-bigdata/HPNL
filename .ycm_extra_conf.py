@@ -40,6 +40,8 @@ flags = [
     '-I/usr/include',
     '-I/root/haodong/HPNL/src',
     '-I/root/haodong/HPNL/include',
+    '-I/usr/lib/jvm/jdk1.8.0_171/include',
+    '-I/usr/lib/jvm/jdk1.8.0_171/include/linux',
     '-std=c++11',
 ]
 

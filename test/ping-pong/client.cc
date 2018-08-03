@@ -21,7 +21,7 @@ class ShutdownCallback : public Callback {
     virtual ~ShutdownCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       std::cout << "connection shutdown..." << std::endl;
-      //clt->shutdown();
+      clt->shutdown();
     }
   private:
     Client *clt;
@@ -52,7 +52,7 @@ class ReadCallback : public Callback {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->index(mid);
       Connection *con = (Connection*)ck->con;
-      if (count >= 10000000) {
+      if (count >= 1000000) {
         con->shutdown();
         end = timestamp_now();
         printf("finished, totally consumes %f s, message round trip time is %f us.\n", (end-start)/1000.0, (end-start)*1000/1000000.0);
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run(10);
+  client->run(1);
 
   client->wait();
 
@@ -123,6 +123,19 @@ int main(int argc, char *argv[]) {
   delete sendCallback;
   delete readCallback;
   delete client;
+
+  int recv_chunk_size = recvBufMgr->get_id();
+  assert(recv_chunk_size == MEM_SIZE);
+  for (int i = 0; i < recv_chunk_size; i++) {
+    Chunk *ck = recvBufMgr->index(i);
+    free(ck->buffer);
+  }
+  int send_chunk_size = sendBufMgr->get_id();
+  for (int i = 0; i < send_chunk_size; i++) {
+    Chunk *ck = sendBufMgr->index(i);
+    free(ck->buffer);
+  }
+
   delete recvBufMgr;
   delete sendBufMgr;
 

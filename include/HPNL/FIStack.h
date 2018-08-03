@@ -9,9 +9,9 @@
 #include <map>
 
 #include "HPNL/BufMgr.h"
-#include "core/FIConnection.h"
-#include "core/ConMgr.h"
-#include "demultiplexer/Handle.h"
+#include "HPNL/FIConnection.h"
+#include "HPNL/ConMgr.h"
+#include "HPNL/Handle.h"
 
 class FIStack {
   public:

@@ -1,4 +1,4 @@
-#include "core/ConMgr.h"
+#include "HPNL/ConMgr.h"
 
 ConMgr::~ConMgr() {
   while (!event_queue.empty()) {
@@ -6,12 +6,16 @@ ConMgr::~ConMgr() {
     event_queue.pop_back();
     delete event;
   }
+  reap();
 }
 
 void ConMgr::handle_event() {
   std::unique_lock<std::mutex> lq(queue_mtx); 
-  while (event_queue.empty()) {
+  while (!need_reap && event_queue.empty()) {
     queue_cv.wait(lq); 
+  }
+  if (need_reap) {
+    return; 
   }
   ConEvent *event = event_queue.back();
   event_queue.pop_back();
@@ -19,7 +23,6 @@ void ConMgr::handle_event() {
 
   std::unique_lock<std::mutex> le(event_mtx);
   event_cv.wait(le, [&]{ return ready; });
-
   if (event->type == CONNECT) {
     connect(event->ep, event->addr); 
   } else if (event->type == ACCEPT) {
@@ -41,6 +44,13 @@ void ConMgr::notify() {
   event_cv.notify_one();
 }
 
+void ConMgr::reap() {
+  std::unique_lock<std::mutex> lq(queue_mtx); 
+  need_reap = true;
+  lq.unlock();
+  queue_cv.notify_one();
+}
+
 void ConMgr::push_event(fid_ep* ep, EventType type, void* addr) {
   ConEvent *event = new ConEvent(ep, type, addr);
   std::unique_lock<std::mutex> lq(queue_mtx); 
@@ -53,10 +63,12 @@ void ConMgr::push_event(fid_ep* ep, EventType type, void* addr) {
 }
 
 void ConMgr::connect(fid_ep* ep, void* addr) {
+  std::cout << "connect" << std::endl;
   fi_connect(ep, addr, NULL, 0);
 }
 
 void ConMgr::accept(fid_ep* ep) {
+  std::cout << "accept" << std::endl;
   fi_accept(ep, NULL, 0);
 }
 

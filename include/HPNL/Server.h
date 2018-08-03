@@ -1,7 +1,7 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include "service/Service.h"
+#include "HPNL/Service.h"
 
 class Server : public Service {
   public:

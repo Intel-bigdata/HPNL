@@ -8,8 +8,8 @@
 
 #include <thread>
 
-#include "core/FIConnection.h"
-#include "core/FIStack.h"
+#include "HPNL/FIConnection.h"
+#include "HPNL/FIStack.h"
 
 class CQEventDemultiplexer {
   public:

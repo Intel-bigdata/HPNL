@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <iostream>
 
-#include "log/Log.h"
+#include "HPNL/Log.h"
 
 class EventHandler;
 class Handle;

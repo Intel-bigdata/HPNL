@@ -1,4 +1,4 @@
-#include "EQEventDemultiplexer.h"
+#include "HPNL/EQEventDemultiplexer.h"
 
 #include <iostream>
 
@@ -35,10 +35,10 @@ int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
         conMgr->notify();
         eventMap[handlePtr]->handle_event(CONNECTED_EVENT, &entry); 
       } else if (event == FI_SHUTDOWN) {
-        eventMap[handlePtr]->handle_event(CLOSE_EVENT, &entry); 
         if (!is_server) {
           conMgr->notify();
         }
+        eventMap[handlePtr]->handle_event(CLOSE_EVENT, &entry); 
       } else {
       }
     }

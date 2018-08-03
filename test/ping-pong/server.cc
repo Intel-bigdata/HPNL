@@ -5,7 +5,7 @@
 #include "HPNL/Common.h"
 #include "PingPongBufMgr.h"
 
-#define SIZE 3
+#define SIZE 4096
 
 class ShutdownCallback : public Callback {
   public:
@@ -81,6 +81,19 @@ int main(int argc, char *argv[]) {
   delete sendCallback;
   delete readCallback;
   delete server;
+
+  int recv_chunk_size = recvBufMgr->get_id();
+  assert(recv_chunk_size == MEM_SIZE);
+  for (int i = 0; i < recv_chunk_size; i++) {
+    Chunk *ck = recvBufMgr->index(i);
+    free(ck->buffer);
+  }
+  int send_chunk_size = sendBufMgr->get_id();
+  for (int i = 0; i < send_chunk_size; i++) {
+    Chunk *ck = sendBufMgr->index(i);
+    free(ck->buffer);
+  }
+
   delete recvBufMgr;
   delete sendBufMgr;
 

@@ -18,9 +18,9 @@
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
 #include "HPNL/Common.h"
-#include "core/ConMgr.h"
-#include "util/Ptr.h"
-#include "demultiplexer/Handle.h"
+#include "HPNL/ConMgr.h"
+#include "HPNL/Ptr.h"
+#include "HPNL/Handle.h"
 
 enum ConStatus {
   IDLE = 0,
@@ -37,16 +37,16 @@ class FIConnection : public Connection {
     ~FIConnection();
 
     virtual void read(char*, int) override;
-    virtual void write(char*, int, int) override;
+    virtual void write(const char*, int, int) override;
     virtual void shutdown() override;
-    void take_back_chunk(Chunk*) override;
+    virtual void take_back_chunk(Chunk*) override;
+    virtual void activate_chunk(Chunk*) override;
     
     void connect();
     void accept();
 
     HandlePtr get_eqhandle();
     fid* get_fid();
-    void activate_chunk(Chunk*);
 
     void set_read_callback(Callback*);
     void set_send_callback(Callback*);

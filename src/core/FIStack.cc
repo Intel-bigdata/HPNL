@@ -1,4 +1,4 @@
-#include "FIStack.h"
+#include "HPNL/FIStack.h"
 
 FIStack::FIStack(const char *addr, const char *port, uint64_t flags, ConMgr *conMgr_) : seq_num(0), conMgr(conMgr_) {
   hints = fi_allocinfo();

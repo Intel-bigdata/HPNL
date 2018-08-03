@@ -1,7 +1,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "service/Service.h"
+#include "HPNL/Service.h"
 
 class Client : public Service {
   public:

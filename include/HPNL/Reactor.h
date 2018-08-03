@@ -5,12 +5,12 @@
 #include <list>
 
 #include "HPNL/Common.h"
-#include "demultiplexer/EventDemultiplexer.h"
-#include "demultiplexer/EventType.h"
-#include "demultiplexer/EventHandler.h"
-#include "util/Ptr.h"
-#include "util/ThreadWrapper.h"
-#include "demultiplexer/CQEventDemultiplexer.h"
+#include "HPNL/EventType.h"
+#include "HPNL/EventDemultiplexer.h"
+#include "HPNL/EventHandler.h"
+#include "HPNL/Ptr.h"
+#include "HPNL/ThreadWrapper.h"
+#include "HPNL/CQEventDemultiplexer.h"
 
 class Reactor {
   public:

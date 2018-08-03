@@ -72,6 +72,19 @@ void connect() {
   delete shutdownCallback;
   delete connectedCallback;
   delete client;
+
+  int recv_chunk_size = recvBufMgr->get_id();
+  assert(recv_chunk_size == MEM_SIZE);
+  for (int i = 0; i < recv_chunk_size; i++) {
+    Chunk *ck = recvBufMgr->index(i);
+    free(ck->buffer);
+  }
+  int send_chunk_size = sendBufMgr->get_id();
+  for (int i = 0; i < send_chunk_size; i++) {
+    Chunk *ck = sendBufMgr->index(i);
+    free(ck->buffer);
+  }
+
   delete recvBufMgr;
   delete sendBufMgr;
 

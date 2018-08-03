@@ -4,10 +4,10 @@
 #include <rdma/fabric.h>
 #include <rdma/fi_cm.h>
 
-#include "core/ConMgr.h"
-#include "demultiplexer/EventDemultiplexer.h"
-#include "demultiplexer/Handle.h"
-#include "util/Ptr.h"
+#include "HPNL/ConMgr.h"
+#include "HPNL/EventDemultiplexer.h"
+#include "HPNL/Handle.h"
+#include "HPNL/Ptr.h"
 
 #define MAX_POLL_CNT 8
 

@@ -3,9 +3,14 @@
 
 #include <memory>
 
+enum ChunkType {
+  RECV_CHUNK = 1,
+  SEND_CHUNK = 2
+};
+
 struct Chunk {
   ~Chunk() {
-    std::free(buffer);
+    buffer = NULL;
     mr = NULL;
     con = NULL;
   }

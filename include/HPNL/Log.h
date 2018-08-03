@@ -3,7 +3,7 @@
 
 #include <ostream>
 
-#include "log/NanoLog.h"
+#include "HPNL/NanoLog.h"
 
 enum LOG_LEVEL {
   INFO,

@@ -4,10 +4,10 @@
 #include <rdma/fi_cm.h>
 
 #include "HPNL/Callback.h"
-#include "core/FIStack.h"
-#include "core/FIConnection.h"
-#include "demultiplexer/Reactor.h"
-#include "demultiplexer/EventHandler.h"
+#include "HPNL/FIStack.h"
+#include "HPNL/FIConnection.h"
+#include "HPNL/Reactor.h"
+#include "HPNL/EventHandler.h"
 
 class EQHandler : public EventHandler {
   public:

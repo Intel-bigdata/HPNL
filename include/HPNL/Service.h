@@ -4,13 +4,13 @@
 #include <string>
 
 #include "HPNL/Callback.h"
-#include "core/FIStack.h"
-#include "core/FIConnection.h"
-#include "core/ConMgr.h"
-#include "demultiplexer/Reactor.h"
-#include "demultiplexer/EQHandler.h"
-#include "demultiplexer/EQEventDemultiplexer.h"
-#include "demultiplexer/CQEventDemultiplexer.h"
+#include "HPNL/FIStack.h"
+#include "HPNL/FIConnection.h"
+#include "HPNL/ConMgr.h"
+#include "HPNL/Reactor.h"
+#include "HPNL/EQHandler.h"
+#include "HPNL/EQEventDemultiplexer.h"
+#include "HPNL/CQEventDemultiplexer.h"
 
 class AcceptRequestCallback;
 
@@ -53,6 +53,7 @@ class Service {
 
     EQThread *eqThread;
     CQThread *cqThread[WORKERS];
+    EventThread *eventThread;
 };
 
 class AcceptRequestCallback : public Callback {

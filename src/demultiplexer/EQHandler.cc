@@ -1,4 +1,4 @@
-#include "EQHandler.h"
+#include "HPNL/EQHandler.h"
 
 #include <iostream>
 

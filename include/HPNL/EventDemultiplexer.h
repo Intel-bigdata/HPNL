@@ -3,8 +3,8 @@
 
 #include <map>
 
-#include "demultiplexer/Handle.h"
-#include "demultiplexer/EventHandler.h"
+#include "HPNL/Handle.h"
+#include "HPNL/EventHandler.h"
 
 class EventDemultiplexer {
   public:

@@ -1,11 +1,11 @@
 #ifndef EVENTHANDLER_H
 #define EVENTHANDLER_H
 
-#include "core/ConMgr.h"
 #include "HPNL/Callback.h"
-#include "demultiplexer/EventType.h"
-#include "demultiplexer/Handle.h"
-#include "util/Ptr.h"
+#include "HPNL/EventType.h"
+#include "HPNL/ConMgr.h"
+#include "HPNL/Handle.h"
+#include "HPNL/Ptr.h"
 
 class EventHandler {
   public:
