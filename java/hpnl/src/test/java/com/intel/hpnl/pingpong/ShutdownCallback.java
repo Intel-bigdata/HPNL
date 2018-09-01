@@ -10,7 +10,7 @@ public class ShutdownCallback implements Handler {
     this.eqService = eqService;
     this.cqService = cqService;
   }
-  public void handle(Connection connection, int blockId) {
+  public void handle(Connection con, int rdmaBufferId, int blockBufferSize, int blockBufferId, long seq) {
     cqService.shutdown();
     cqService.join();
     eqService.shutdown();

@@ -26,26 +26,16 @@ static void _set_self(JNIEnv *env, jobject thisObj, long nativeCon)
   env->SetLongField(thisObj, _get_self_id(env, thisObj), nativeCon);
 }
 
-/*
- * Class:     com_intel_hpnl_Connection
- * Method:    read
- * Signature: (Ljava/lang/String;I)V
- */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobject thisObj, jobject bufferObj, jint mid) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv(JNIEnv *env, jobject thisObj, jobject bufferObj, jint mid) {
   Connection *con = _get_self(env, thisObj);
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(bufferObj);
-  con->read((char*)buffer, mid);
+  con->recv((char*)buffer, mid);
 }
 
-/*
- * Class:     com_intel_hpnl_Connection
- * Method:    write
- * Signature: (Ljava/lang/String;II)V
- */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_write(JNIEnv *env, jobject thisObj, jstring jstr, jint mid_1, jint mid_2) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, jobject thisObj, jobject bufferObj, jint blockBufferSize, jint rdmaBufferId, jint blockBufferId, jlong seq) {
   Connection *con = _get_self(env, thisObj); 
-  const char *str = env->GetStringUTFChars(jstr, 0);
-  con->write(str, BUFFER_SIZE, mid_2);
+  jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(bufferObj);
+  con->send((char*)buffer, blockBufferSize, rdmaBufferId, blockBufferId, seq);
 }
 
 /*

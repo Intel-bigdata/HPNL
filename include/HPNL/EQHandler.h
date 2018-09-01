@@ -11,7 +11,7 @@
 
 class EQHandler : public EventHandler {
   public:
-    EQHandler(FIStack *stack_, Reactor *reactor_, HandlePtr handle_) : stack(stack_), reactor(reactor_), eqHandle(handle_), readCallback(NULL), sendCallback(NULL), acceptRequestCallback(NULL), connectedCallback(NULL), shutdownCallback(NULL) {}
+    EQHandler(FIStack *stack_, Reactor *reactor_, HandlePtr handle_) : stack(stack_), reactor(reactor_), eqHandle(handle_), recvCallback(NULL), sendCallback(NULL), acceptRequestCallback(NULL), connectedCallback(NULL), shutdownCallback(NULL) {}
     virtual ~EQHandler() {}
     virtual int handle_event(EventType, void*) override;
     virtual HandlePtr get_handle(void) const override;
@@ -20,14 +20,14 @@ class EQHandler : public EventHandler {
     virtual void set_connected_callback(Callback*) override;
     virtual void set_shutdown_callback(Callback*) override;
     virtual void set_send_callback(Callback*) override;
-    virtual void set_read_callback(Callback*) override;
+    virtual void set_recv_callback(Callback*) override;
     virtual Callback* get_read_callback() override;
     
   private:
     FIStack *stack;
     Reactor *reactor;
     HandlePtr eqHandle;
-    Callback *readCallback;
+    Callback *recvCallback;
     Callback *sendCallback;
     Callback *acceptRequestCallback;
     Callback *connectedCallback;

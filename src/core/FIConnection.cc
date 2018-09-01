@@ -50,13 +50,13 @@ FIConnection::~FIConnection() {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
-    recv_buf_mgr->add(ck->mid, ck);
+    recv_buf_mgr->add(ck->rdma_buffer_id, ck);
   }
   while (send_buffers.size() > 0) {
     Chunk *ck = send_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     send_buffers.pop_back();
-    send_buf_mgr->add(ck->mid, ck);
+    send_buf_mgr->add(ck->rdma_buffer_id, ck);
   }
   fi_close(&ep->fid);
   fi_close(&conEq->fid);
@@ -65,18 +65,20 @@ FIConnection::~FIConnection() {
   }
 }
 
-void FIConnection::write(const char *buffer, int buffer_size, int mid) {
+void FIConnection::send(const char *buffer, int block_buffer_size, int rdma_buffer_id, int block_buffer_id, long seq) {
   // TODO: get send buffer
   Chunk *ck = send_buffers.back();
   send_buffers.pop_back();
+  ck->block_buffer_id = block_buffer_id;
+  ck->seq = seq;
   //memcpy(ck->buffer, buffer, buffer_size);
-  memset(ck->buffer, '0', buffer_size);
-  if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+  memset(ck->buffer, '0', block_buffer_size);
+  if (fi_send(ep, ck->buffer, block_buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     // TODO: error handler
   }
 }
 
-void FIConnection::read(char *buffer, int buffer_size) {
+void FIConnection::recv(char *buffer, int buffer_size) {
   // TODO: buffer filter
 }
 
@@ -108,7 +110,7 @@ void FIConnection::take_back_chunk(Chunk *ck) {
   send_buffers.push_back(ck);
 }
 
-void FIConnection::set_read_callback(Callback *callback) {
+void FIConnection::set_recv_callback(Callback *callback) {
   read_callback = callback;
 }
 

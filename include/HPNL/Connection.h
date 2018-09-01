@@ -5,8 +5,8 @@
 
 class Connection {
   public:
-    virtual void read(char*, int) {}
-    virtual void write(const char*, int, int) {}
+    virtual void recv(char*, int) {}
+    virtual void send(const char*, int, int, int, long) {}
     virtual void shutdown() {}
     virtual void take_back_chunk(Chunk*) {}
     virtual void activate_chunk(Chunk*) {}

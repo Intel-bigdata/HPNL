@@ -15,8 +15,8 @@ int EQHandler::handle_event(EventType et, void *context) {
     if (connectedCallback) {
       eqHandler->set_connected_callback(connectedCallback); 
     }
-    if (readCallback) {
-      eqHandler->set_read_callback(readCallback); 
+    if (recvCallback) {
+      eqHandler->set_recv_callback(recvCallback); 
     }
     if (sendCallback) {
       eqHandler->set_send_callback(sendCallback);
@@ -27,8 +27,8 @@ int EQHandler::handle_event(EventType et, void *context) {
     reactor->register_handler(eqHandler);
   } else if (et == CONNECTED_EVENT) {
     auto con = stack->get_connection(entry->fid);
-    if (readCallback) {
-      con->set_read_callback(readCallback);
+    if (recvCallback) {
+      con->set_recv_callback(recvCallback);
     }
     if (shutdownCallback) {
       con->set_shutdown_callback(shutdownCallback);
@@ -81,10 +81,10 @@ void EQHandler::set_send_callback(Callback *callback) {
   sendCallback = callback;
 }
 
-void EQHandler::set_read_callback(Callback *callback) {
-  readCallback = callback;
+void EQHandler::set_recv_callback(Callback *callback) {
+  recvCallback = callback;
 }
 
 Callback* EQHandler::get_read_callback() {
-  return readCallback;
+  return recvCallback;
 }

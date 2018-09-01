@@ -26,8 +26,8 @@ void Client::set_send_callback(Callback *callback) {
   Service::set_send_callback(callback);
 }
 
-void Client::set_read_callback(Callback *callback) {
-  Service::set_read_callback(callback);
+void Client::set_recv_callback(Callback *callback) {
+  Service::set_recv_callback(callback);
 }
 
 void Client::set_connected_callback(Callback *callback) {

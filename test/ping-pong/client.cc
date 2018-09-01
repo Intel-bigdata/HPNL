@@ -35,17 +35,17 @@ class ConnectedCallback : public Callback {
       Connection *con = (Connection*)param_1;
       char* buffer = (char*)std::malloc(SIZE);
       memset(buffer, '0', SIZE);
-      con->write(buffer, SIZE, SIZE);
+      con->send(buffer, SIZE, SIZE, 0, 0);
       std::free(buffer);
     }
   private:
     BufMgr *bufMgr;
 };
 
-class ReadCallback : public Callback {
+class RecvCallback : public Callback {
   public:
-    ReadCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
-    virtual ~ReadCallback() {}
+    RecvCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    virtual ~RecvCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       std::lock_guard<std::mutex> lk(mtx);
       count++;
@@ -64,7 +64,7 @@ class ReadCallback : public Callback {
       if (count == 1) {
         start = timestamp_now(); 
       }
-      con->write((char*)ck->buffer, SIZE, SIZE);
+      con->send((char*)ck->buffer, SIZE, SIZE, 0, 0);
     }
   private:
     BufMgr *bufMgr; 
@@ -89,27 +89,27 @@ int main(int argc, char *argv[]) {
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->mid = recvBufMgr->get_id();
+    ck->rdma_buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
-    recvBufMgr->add(ck->mid, ck);
+    recvBufMgr->add(ck->rdma_buffer_id, ck);
   }
   BufMgr *sendBufMgr = new PingPongBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->mid = sendBufMgr->get_id();
+    ck->rdma_buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
-    sendBufMgr->add(ck->mid, ck);
+    sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
   Client *client = new Client("172.168.2.106", "123456");
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 
-  ReadCallback *readCallback = new ReadCallback(recvBufMgr);
+  RecvCallback *recvCallback = new RecvCallback(recvBufMgr);
   SendCallback *sendCallback = new SendCallback(sendBufMgr);
   ConnectedCallback *connectedCallback = new ConnectedCallback(sendBufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback(client);
 
-  client->set_read_callback(readCallback);
+  client->set_recv_callback(recvCallback);
   client->set_send_callback(sendCallback);
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
   delete shutdownCallback;
   delete connectedCallback;
   delete sendCallback;
-  delete readCallback;
+  delete recvCallback;
   delete client;
 
   int recv_chunk_size = recvBufMgr->get_id();
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
   shutdownCallback = NULL;
   connectedCallback = NULL;
   sendCallback = NULL;
-  readCallback = NULL;
+  recvCallback = NULL;
   client = NULL;
   recvBufMgr = NULL;
   sendBufMgr = NULL;

@@ -23,7 +23,7 @@ class Service {
     void set_send_buf_mgr(BufMgr*);
 
     void set_send_callback(Callback*);
-    void set_read_callback(Callback*);
+    void set_recv_callback(Callback*);
     void set_connected_callback(Callback*);
     void set_shutdown_callback(Callback*);
   protected:
@@ -34,7 +34,7 @@ class Service {
     BufMgr *recvBufMgr;
     BufMgr *sendBufMgr;
 
-    Callback *readCallback;
+    Callback *recvCallback;
     Callback *sendCallback;
     Callback *acceptRequestCallback;
     Callback *connectedCallback;

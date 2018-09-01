@@ -8,8 +8,8 @@ public class Connection {
     init(nativeCon);
   }
 
-  public native void read(ByteBuffer buffer, int id);
-  public native void write(String str, int id, int return_id);
+  public native void recv(ByteBuffer buffer, int id);
+  public native void send(ByteBuffer buffer, int rdmaBufferId, int blockBufferSize, int blockBufferId, long seq);
   public native void shutdown();
   private native void init(long eq);
   public native void finalize();
@@ -46,15 +46,15 @@ public class Connection {
     shutdownCallback = callback; 
   }
 
-  public void handleCallback(int eventType, int blockId) {
+  public void handleCallback(int eventType, int rdmaBufferId, int blockBufferSize, int blockBufferId, long seq) {
     if (eventType == EventType.CONNECTED_EVENT && connectedCallback != null) {
-      connectedCallback.handle(this, blockId);
+      connectedCallback.handle(this, rdmaBufferId, 0, 0, seq);
     } else if (eventType == EventType.RECV_EVENT && recvCallback != null) {
-      recvCallback.handle(this, blockId); 
+      recvCallback.handle(this, rdmaBufferId, blockBufferSize, blockBufferId, seq);
     } else if (eventType == EventType.SEND_EVENT && sendCallback != null) {
-      sendCallback.handle(this, blockId); 
+      sendCallback.handle(this, rdmaBufferId, blockBufferSize, blockBufferId, seq);
     } else if (eventType == EventType.SHUTDOWN && shutdownCallback != null) {
-      shutdownCallback.handle(this, blockId); 
+      shutdownCallback.handle(this, rdmaBufferId, 0, 0, seq);
     }
   }
 

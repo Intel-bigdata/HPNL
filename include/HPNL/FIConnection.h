@@ -36,8 +36,8 @@ class FIConnection : public Connection {
     FIConnection(fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, ConMgr*, bool);
     ~FIConnection();
 
-    virtual void read(char*, int) override;
-    virtual void write(const char*, int, int) override;
+    virtual void recv(char*, int) override;
+    virtual void send(const char*, int, int, int, long) override;
     virtual void shutdown() override;
     virtual void take_back_chunk(Chunk*) override;
     virtual void activate_chunk(Chunk*) override;
@@ -48,7 +48,7 @@ class FIConnection : public Connection {
     HandlePtr get_eqhandle();
     fid* get_fid();
 
-    void set_read_callback(Callback*);
+    void set_recv_callback(Callback*);
     void set_send_callback(Callback*);
     void set_shutdown_callback(Callback*);
     Callback* get_read_callback();

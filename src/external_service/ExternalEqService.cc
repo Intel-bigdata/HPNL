@@ -71,16 +71,16 @@ void ExternalEqService::prepare() {
   while (prepared_size < recvSize) {
     Chunk *ck = new Chunk();
     ck->buffer = recvBuffer+prepared_size;
-    ck->mid = recvBufMgr->get_id();
-    recvBufMgr->add(ck->mid, ck);
+    ck->rdma_buffer_id = recvBufMgr->get_id();
+    recvBufMgr->add(ck->rdma_buffer_id, ck);
     prepared_size += BUFFER_SIZE;
   }
   prepared_size = 0;
   while (prepared_size < recvSize) {
     Chunk *ck = new Chunk();
     ck->buffer = sendBuffer+prepared_size;
-    ck->mid = sendBufMgr->get_id();
-    sendBufMgr->add(ck->mid, ck);
+    ck->rdma_buffer_id = sendBufMgr->get_id();
+    sendBufMgr->add(ck->rdma_buffer_id, ck);
     prepared_size += BUFFER_SIZE;
   }
 }

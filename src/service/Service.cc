@@ -4,7 +4,7 @@ Service::Service(const char* ip_, const char* port_, bool is_server_)
   : ip(ip_), port(port_), is_server(is_server_) {
   conMgr = new ConMgr();
   stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0, conMgr);
-  readCallback = NULL;
+  recvCallback = NULL;
   sendCallback = NULL;
   acceptRequestCallback = NULL;
   connectedCallback = NULL;
@@ -51,7 +51,7 @@ void Service::run(int con_num) {
     }
     EventHandlerPtr handler(new EQHandler(stack, reactor, eqHandle[i]));
     acceptRequestCallback = new AcceptRequestCallback(this);
-    handler->set_read_callback(readCallback);
+    handler->set_recv_callback(recvCallback);
     handler->set_send_callback(sendCallback);
     handler->set_accept_request_callback(acceptRequestCallback);
     handler->set_connected_callback(connectedCallback);
@@ -87,8 +87,8 @@ void Service::set_send_buf_mgr(BufMgr* bufMgr) {
   sendBufMgr = bufMgr;
 }
 
-void Service::set_read_callback(Callback *callback) {
-  readCallback = callback;
+void Service::set_recv_callback(Callback *callback) {
+  recvCallback = callback;
 }
 
 void Service::set_send_callback(Callback *callback) {

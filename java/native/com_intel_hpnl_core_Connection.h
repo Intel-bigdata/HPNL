@@ -9,19 +9,19 @@ extern "C" {
 #endif
 /*
  * Class:     com_intel_hpnl_core_Connection
- * Method:    read
+ * Method:    recv
  * Signature: (Ljava/nio/ByteBuffer;I)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_read
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv
   (JNIEnv *, jobject, jobject, jint);
 
 /*
  * Class:     com_intel_hpnl_core_Connection
- * Method:    write
- * Signature: (Ljava/lang/String;II)V
+ * Method:    send
+ * Signature: (Ljava/nio/ByteBuffer;IIIJ)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_write
-  (JNIEnv *, jobject, jstring, jint, jint);
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send
+  (JNIEnv *, jobject, jobject, jint, jint, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_Connection

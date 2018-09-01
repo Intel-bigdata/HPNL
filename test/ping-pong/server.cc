@@ -16,15 +16,15 @@ class ShutdownCallback : public Callback {
     }
 };
 
-class ReadCallback : public Callback {
+class RecvCallback : public Callback {
   public:
-    ReadCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
-    virtual ~ReadCallback() {}
+    RecvCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    virtual ~RecvCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->index(mid);
       Connection *con = (Connection*)ck->con;
-      con->write((char*)ck->buffer, SIZE, SIZE);
+      con->send((char*)ck->buffer, SIZE, SIZE, 0, 0);
     }
   private:
     BufMgr *bufMgr;
@@ -49,27 +49,27 @@ int main(int argc, char *argv[]) {
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->mid = recvBufMgr->get_id();
+    ck->rdma_buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
-    recvBufMgr->add(ck->mid, ck);
+    recvBufMgr->add(ck->rdma_buffer_id, ck);
   }
   BufMgr *sendBufMgr = new PingPongBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->mid = sendBufMgr->get_id();
+    ck->rdma_buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
-    sendBufMgr->add(ck->mid, ck);
+    sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
 
   Server *server = new Server("172.168.2.106", "123456");
   server->set_recv_buf_mgr(recvBufMgr);
   server->set_send_buf_mgr(sendBufMgr);
 
-  ReadCallback *readCallback = new ReadCallback(recvBufMgr);
+  RecvCallback *recvCallback = new RecvCallback(recvBufMgr);
   SendCallback *sendCallback = new SendCallback(sendBufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback();
 
-  server->set_read_callback(readCallback);
+  server->set_recv_callback(recvCallback);
   server->set_send_callback(sendCallback);
   server->set_connected_callback(NULL);
   server->set_shutdown_callback(shutdownCallback);
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
   server->wait();
 
   delete sendCallback;
-  delete readCallback;
+  delete recvCallback;
   delete server;
 
   int recv_chunk_size = recvBufMgr->get_id();
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   delete sendBufMgr;
 
   sendCallback = NULL;
-  readCallback = NULL;
+  recvCallback = NULL;
   server = NULL;
   recvBufMgr = NULL;
   sendBufMgr = NULL;

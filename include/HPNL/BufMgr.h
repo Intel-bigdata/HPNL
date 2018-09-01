@@ -15,9 +15,11 @@ struct Chunk {
     con = NULL;
   }
   void *buffer;
-  int mid;
   void *mr;
   void *con;
+  int rdma_buffer_id;
+  int block_buffer_id;
+  long seq;
 };
 
 class BufMgr {

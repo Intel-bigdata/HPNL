@@ -63,7 +63,7 @@ public class EqService {
       connection.setSendCallback(sendCallback);
       connection.setShutdownCallback(shutdownCallback);
     }
-    connection.handleCallback(eventType, blockId);
+    connection.handleCallback(eventType, 0, 0, 0, 0);
   }
 
   public void setConnectedCallback(Handler callback) {

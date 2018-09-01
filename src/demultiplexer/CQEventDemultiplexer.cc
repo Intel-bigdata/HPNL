@@ -51,17 +51,17 @@ int CQEventDemultiplexer::wait_event() {
         Chunk *ck = (Chunk*)entry.op_context;
         FIConnection *con = (FIConnection*)ck->con;
         if (entry.flags & FI_RECV) {
-          con->read((char*)ck->buffer, entry.len);
+          con->recv((char*)ck->buffer, entry.len);
           std::unique_lock<std::mutex> l(con->con_mtx);
           con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
           l.unlock();
           if (con->get_read_callback()) {
-            (*con->get_read_callback())(&ck->mid, NULL); 
+            (*con->get_read_callback())(&ck->rdma_buffer_id, &entry.len);
             con->activate_chunk(ck);
           }
         } else if (entry.flags & FI_SEND) {
           assert(con->get_send_callback());
-          (*con->get_send_callback())(&ck->mid, NULL); 
+          (*con->get_send_callback())(&ck->rdma_buffer_id, NULL); 
         } else if (entry.flags & FI_READ) {
         } else if (entry.flags & FI_WRITE) {
         } else {

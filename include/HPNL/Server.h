@@ -11,7 +11,7 @@ class Server : public Service {
     void wait();
     void set_recv_buf_mgr(BufMgr*);
     void set_send_buf_mgr(BufMgr*);
-    void set_read_callback(Callback *callback);
+    void set_recv_callback(Callback *callback);
     void set_send_callback(Callback *callback);
     void set_connected_callback(Callback *callback);
 };

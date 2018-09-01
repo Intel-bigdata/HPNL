@@ -42,16 +42,16 @@ void connect() {
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->mid = recvBufMgr->get_id();
+    ck->rdma_buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
-    recvBufMgr->add(ck->mid, ck);
+    recvBufMgr->add(ck->rdma_buffer_id, ck);
   }
   BufMgr *sendBufMgr = new ConBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->mid = sendBufMgr->get_id();
+    ck->rdma_buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
-    sendBufMgr->add(ck->mid, ck);
+    sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
   Client *client = new Client("172.168.2.106", "123456");
   client->set_recv_buf_mgr(recvBufMgr);
@@ -60,7 +60,7 @@ void connect() {
   ConnectedCallback *connectedCallback = new ConnectedCallback(sendBufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback(client);
 
-  client->set_read_callback(NULL);
+  client->set_recv_callback(NULL);
   client->set_send_callback(NULL);
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);

@@ -21,16 +21,16 @@ int main(int argc, char *argv[]) {
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->mid = recvBufMgr->get_id();
+    ck->rdma_buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
-    recvBufMgr->add(ck->mid, ck);
+    recvBufMgr->add(ck->rdma_buffer_id, ck);
   }
   BufMgr *sendBufMgr = new ConBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->mid = sendBufMgr->get_id();
+    ck->rdma_buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
-    sendBufMgr->add(ck->mid, ck);
+    sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
 
   Server *server = new Server("172.168.2.106", "123456");
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
 
   ShutdownCallback *shutdownCallback = new ShutdownCallback();
 
-  server->set_read_callback(NULL);
+  server->set_recv_callback(NULL);
   server->set_send_callback(NULL);
   server->set_connected_callback(NULL);
   server->set_shutdown_callback(shutdownCallback);
