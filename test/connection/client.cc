@@ -18,8 +18,7 @@ class ShutdownCallback : public Callback {
     ShutdownCallback(Client *_clt) : clt(_clt) {}
     virtual ~ShutdownCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
-      std::cout << "connection shutdown..." << std::endl;
-      //clt->shutdown();
+      clt->shutdown();
     }
   private:
     Client *clt;
@@ -65,7 +64,7 @@ void connect() {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run(200);
+  client->run(300);
 
   client->wait();
 

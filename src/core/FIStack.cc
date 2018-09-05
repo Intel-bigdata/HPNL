@@ -1,6 +1,6 @@
 #include "HPNL/FIStack.h"
 
-FIStack::FIStack(const char *addr, const char *port, uint64_t flags, ConMgr *conMgr_) : seq_num(0), conMgr(conMgr_) {
+FIStack::FIStack(const char *addr, const char *port, uint64_t flags) : seq_num(0) {
   hints = fi_allocinfo();
   hints->addr_format = FI_SOCKADDR_IN;
   hints->ep_attr->type = FI_EP_MSG;
@@ -64,7 +64,7 @@ void FIStack::listen() {
 }
 
 HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(fabric, info, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, conMgr, false);
+  FIConnection *con = new FIConnection(fabric, info, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, false);
   con->status = CONNECT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
@@ -73,7 +73,7 @@ HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
 }
 
 HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(fabric, (fi_info*)info_, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, conMgr, true);
+  FIConnection *con = new FIConnection(fabric, (fi_info*)info_, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, true);
   con->status = ACCEPT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));

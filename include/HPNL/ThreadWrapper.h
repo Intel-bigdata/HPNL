@@ -43,14 +43,13 @@ class ThreadWrapper {
     void thread_body() {
       try {
         while (true) {
-          entry();
-          if (done.load()) {
+          int ret = entry();
+          if (done.load() || ret == -1) {
             if (!thread.joinable()) {
               join_event.notify_all(); 
             } 
             break;
           }
-
         }
       } catch (ThreadAbortException&) {
         abort(); 
@@ -64,7 +63,7 @@ class ThreadWrapper {
     class ThreadAbortException : std::exception {};
 
   protected:
-    virtual void entry() = 0;
+    virtual int entry() = 0;
     virtual void abort() = 0;
     virtual void ExceptionCaught(std::exception& exception) {}
     virtual void UnknownExceptionCaught() {}

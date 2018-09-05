@@ -27,12 +27,12 @@ int CQEventDemultiplexer::wait_event() {
   int ret = 0;
   do {
     if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
-      int epoll_ret = epoll_wait(epfd, &event, 1, -1);
+      int epoll_ret = epoll_wait(epfd, &event, 1, 2000);
       if (event.data.ptr != (void*)&cq->fid) {
-        std::cout << "got error event" << std::endl; 
+        std::cout << "Epoll wait error." << std::endl;
       }
-      if (epoll_ret < 0) {
-        return epoll_ret; 
+      if (epoll_ret <= 0) {
+        return 0;
       }
     }
     uint64_t start, end = 0;
@@ -44,7 +44,7 @@ int CQEventDemultiplexer::wait_event() {
       if (ret == -FI_EAVAIL) {
         fi_cq_err_entry err_entry;
         fi_cq_readerr(cq, &err_entry, entry.flags); 
-        std::cout << "error" << std::endl;
+        std::cout << "fi_cq_read ERROR." << std::endl;
         break;
       } else if (ret == -FI_EAGAIN) {
       } else {

@@ -4,7 +4,7 @@
   <groupId>com.intel.hpnl</groupId>
   <artifactId>hpnl</artifactId>
   <packaging>jar</packaging>
-  <version>1.0-SNAPSHOT</version>
+  <version>0.5</version>
   <name>hpnl</name>
   <url>http://maven.apache.org</url>
   <build>

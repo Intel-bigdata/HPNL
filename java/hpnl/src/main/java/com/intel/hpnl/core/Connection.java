@@ -58,10 +58,10 @@ public class Connection {
     }
   }
 
-  private Handler connectedCallback;
-  private Handler recvCallback;
-  private Handler sendCallback;
-  private Handler shutdownCallback;
+  private Handler connectedCallback = null;
+  private Handler recvCallback = null;
+  private Handler sendCallback = null;
+  private Handler shutdownCallback = null;
 
   private long nativeHandle;
 }

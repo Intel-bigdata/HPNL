@@ -15,7 +15,7 @@
 
 class FIStack {
   public:
-    FIStack(const char*, const char*, uint64_t, ConMgr*);
+    FIStack(const char*, const char*, uint64_t);
     ~FIStack();
     HandlePtr bind();
     void listen();
@@ -42,8 +42,6 @@ class FIStack {
     Handle *cqHandle[WORKERS];
 
     fid_wait *waitset;
-
-    ConMgr *conMgr;
 };
 
 #endif

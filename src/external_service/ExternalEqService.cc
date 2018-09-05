@@ -1,7 +1,7 @@
 #include "HPNL/ExternalEqService.h"
 
 ExternalEqService::ExternalEqService(const char* ip_, const char* port_, bool is_server_) : ip(ip_), port(port_), is_server(is_server_) {
-  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0, NULL);
+  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0);
   eq_demulti_plexer = new EQExternalDemultiplexer(stack);
   recvBufMgr = new ExternalEqServiceBufMgr();
   sendBufMgr = new ExternalEqServiceBufMgr();
@@ -15,14 +15,12 @@ ExternalEqService::~ExternalEqService() {
 }
 
 fid_eq* ExternalEqService::accept(fi_info* info) {
-  prepare();
   HandlePtr eqHandle;
   eqHandle = stack->accept(info, recvBufMgr, sendBufMgr);
   return (fid_eq*)eqHandle->get_ctx();
 }
 
 fid_eq* ExternalEqService::connect() {
-  prepare();
   HandlePtr eqHandle;
   if (is_server) {
     eqHandle = stack->bind();
@@ -36,11 +34,27 @@ fid_eq* ExternalEqService::connect() {
 void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size) {
   recvBuffer = buffer;
   recvSize = size;
+  uint64_t prepared_size = 0;
+  while (prepared_size < recvSize) {
+    Chunk *ck = new Chunk();
+    ck->buffer = recvBuffer+prepared_size;
+    ck->rdma_buffer_id = recvBufMgr->get_id();
+    recvBufMgr->add(ck->rdma_buffer_id, ck);
+    prepared_size += BUFFER_SIZE;
+  }
 }
 
 void ExternalEqService::set_send_buffer(char* buffer, uint64_t size) {
   sendBuffer = buffer;
   sendSize = size;
+  uint64_t prepared_size = 0;
+  while (prepared_size < recvSize) {
+    Chunk *ck = new Chunk();
+    ck->buffer = sendBuffer+prepared_size;
+    ck->rdma_buffer_id = sendBufMgr->get_id();
+    sendBufMgr->add(ck->rdma_buffer_id, ck);
+    prepared_size += BUFFER_SIZE;
+  }
 }
 
 int ExternalEqService::wait_eq_event(fid_eq* eq, fi_info** info) {
@@ -65,23 +79,3 @@ Chunk* ExternalEqService::get_chunk(int id, int type) {
     ck = sendBufMgr->index(id);
   return ck;
 }
-
-void ExternalEqService::prepare() {
-  uint64_t prepared_size = 0;
-  while (prepared_size < recvSize) {
-    Chunk *ck = new Chunk();
-    ck->buffer = recvBuffer+prepared_size;
-    ck->rdma_buffer_id = recvBufMgr->get_id();
-    recvBufMgr->add(ck->rdma_buffer_id, ck);
-    prepared_size += BUFFER_SIZE;
-  }
-  prepared_size = 0;
-  while (prepared_size < recvSize) {
-    Chunk *ck = new Chunk();
-    ck->buffer = sendBuffer+prepared_size;
-    ck->rdma_buffer_id = sendBufMgr->get_id();
-    sendBufMgr->add(ck->rdma_buffer_id, ck);
-    prepared_size += BUFFER_SIZE;
-  }
-}
-

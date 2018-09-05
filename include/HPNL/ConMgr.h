@@ -28,9 +28,9 @@ class EventThread;
 class ConMgr {
   public:
     ~ConMgr();
-    void handle_event();
-    void notify();
+    int handle_event();
     void reap();
+    void notify();
 
     void connect(fid_ep* ep, void* addr);
     void accept(fid_ep* ep);
@@ -56,8 +56,8 @@ class EventThread : public ThreadWrapper {
   public:
     EventThread(ConMgr *conMgr_) : conMgr(conMgr_) {}
     virtual ~EventThread() {}
-    virtual void entry() override {
-      conMgr->handle_event(); 
+    virtual int entry() override {
+      return conMgr->handle_event();
     }
     virtual void abort() override {}
   private:

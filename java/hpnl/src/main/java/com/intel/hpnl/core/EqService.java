@@ -3,6 +3,8 @@ package com.intel.hpnl.core;
 import java.util.HashMap;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CountDownLatch;
 
 public class EqService {
   static {
@@ -22,11 +24,25 @@ public class EqService {
     eqThread = new EqThread(this);
   }
 
-  public void start() {
-    long eq = connect();
-    registerEq(eq);
-
+  public void start(int num) {
+    if (is_server) {
+      num = 1;
+    } else {
+      connectLatch = new CountDownLatch(num);
+    }
+    for (int i = 0; i < num; i++) {
+      long eq = connect();
+      registerEq(eq);
+    }
     eqThread.start();
+  }
+
+  public void waitToConnected() {
+    try {
+      this.connectLatch.await();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
   }
 
   public void join() {
@@ -38,7 +54,41 @@ public class EqService {
   }
 
   public void shutdown() {
-    eqThread.iterrupt();
+    needReap.set(true);
+    synchronized(this) {
+      if (!needStop) {
+        needStop = true;
+        this.notify();
+      }
+    }
+  }
+
+  public void waitToStop() {
+    synchronized(this) {
+      while (!needStop) {
+        try {
+          this.wait();
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
+    }
+  }
+
+  public boolean maybeStop() {
+    if (conInflight == 0 && needReap.get() == true) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  public void incConNum() {
+    conInflight++;
+  }
+
+  public void decConNum() {
+    conInflight--;
   }
 
   private void registerEq(long eq) {
@@ -64,34 +114,37 @@ public class EqService {
       connection.setShutdownCallback(shutdownCallback);
     }
     connection.handleCallback(eventType, 0, 0, 0, 0);
+    if (!is_server && eventType == EventType.CONNECTED_EVENT) {
+      this.connectLatch.countDown();
+    }
   }
 
   public void setConnectedCallback(Handler callback) {
-    connectedCallback = callback; 
+    connectedCallback = callback;
   }
 
   public void setRecvCallback(Handler callback) {
-    recvCallback = callback; 
+    recvCallback = callback;
   }
 
   public void setSendCallback(Handler callback) {
-    sendCallback = callback; 
+    sendCallback = callback;
   }
 
   public void setShutdownCallback(Handler callback) {
-    shutdownCallback = callback; 
+    shutdownCallback = callback;
   }
 
   public ConcurrentHashMap<Long, Integer> getEqs() {
-    return eqs; 
+    return eqs;
   }
 
   public HashMap<Long, Connection> getConMap() {
-    return conMap; 
+    return conMap;
   }
 
   public long getNativeHandle() {
-    return nativeHandle; 
+    return nativeHandle;
   }
 
   private native long connect();
@@ -114,8 +167,8 @@ public class EqService {
   private Handler shutdownCallback;
 
   private EqThread eqThread;
-  private int count = 0;
-  private long startTime;
-  private long endTime;
-  private float totalTime = 0;
+  private int conInflight = 0;
+  private final AtomicBoolean needReap = new AtomicBoolean(false);
+  private boolean needStop = false;
+  private CountDownLatch connectLatch;
 }

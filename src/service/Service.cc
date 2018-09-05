@@ -2,8 +2,7 @@
 
 Service::Service(const char* ip_, const char* port_, bool is_server_) 
   : ip(ip_), port(port_), is_server(is_server_) {
-  conMgr = new ConMgr();
-  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0, conMgr);
+  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0);
   recvCallback = NULL;
   sendCallback = NULL;
   acceptRequestCallback = NULL;
@@ -24,14 +23,10 @@ Service::~Service() {
   for (int i = 0; i < WORKERS; i++) {
     delete cqThread[i];
   }
-  eventThread->stop();
-  delete conMgr;
-  eventThread->join();
-  delete eventThread;
 }
 
 void Service::run(int con_num) {
-  eq_demulti_plexer = new EQEventDemultiplexer(conMgr, is_server);
+  eq_demulti_plexer = new EQEventDemultiplexer();
   for (int i = 0; i < WORKERS; i++) {
     cq_demulti_plexer[i] = new CQEventDemultiplexer(stack, i); 
   }
@@ -65,14 +60,16 @@ void Service::run(int con_num) {
   }
   eqThread->start(); 
   for (int i = 0; i < WORKERS; i++) {
-    cqThread[i]->start(true); 
+    cqThread[i]->start(); 
   }
-  eventThread = new EventThread(conMgr);
-  eventThread->start();
 }
 
 void Service::shutdown() {
-  eqThread->stop();
+  for (int i = 0; i < WORKERS; i++) {
+    cqThread[i]->stop(); 
+    cqThread[i]->join();
+  }
+  eq_demulti_plexer->shutdown();
 }
 
 void Service::wait() {

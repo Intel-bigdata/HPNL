@@ -16,8 +16,8 @@ class Reactor {
   public:
     Reactor(EventDemultiplexer* eqDemultiplexer_, CQEventDemultiplexer** cqDemultiplexer_);
     ~Reactor();
-    void eq_service();
-    void cq_service(int num);
+    int eq_service();
+    int cq_service(int num);
     int register_handler(EventHandlerPtr eh);
     int remove_handler(EventHandlerPtr eh);
     int remove_handler(HandlePtr handle);
@@ -32,8 +32,8 @@ class EQThread : public ThreadWrapper {
   public:
     EQThread(Reactor *reactor_) : reactor(reactor_) {}
     virtual ~EQThread() {}
-    virtual void entry() override {
-      reactor->eq_service();
+    virtual int entry() override {
+      return reactor->eq_service();
     }
     virtual void abort() override {}
   private:
@@ -44,8 +44,8 @@ class CQThread : public ThreadWrapper {
   public:
     CQThread(Reactor *reactor_, int num) : reactor(reactor_), worker_num(num) {}
     virtual ~CQThread() {}
-    virtual void entry() override {
-      reactor->cq_service(worker_num);
+    virtual int entry() override {
+      return reactor->cq_service(worker_num);
     } 
     virtual void abort() override {}
   private:

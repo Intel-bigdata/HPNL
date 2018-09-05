@@ -2,10 +2,7 @@
 
 #include <iostream>
 
-EQEventDemultiplexer::EQEventDemultiplexer(ConMgr *conMgr_, bool is_server_) {
-  conMgr = conMgr_;
-  is_server = is_server_;
-}
+EQEventDemultiplexer::EQEventDemultiplexer() {}
 
 EQEventDemultiplexer::~EQEventDemultiplexer() {}
 
@@ -32,13 +29,16 @@ int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
       if (event == FI_CONNREQ) {
         eventMap[handlePtr]->handle_event(ACCEPT_EVENT, &entry); 
       } else if (event == FI_CONNECTED)  {
-        conMgr->notify();
-        eventMap[handlePtr]->handle_event(CONNECTED_EVENT, &entry); 
+        eventMap[handlePtr]->handle_event(CONNECTED_EVENT, &entry);
+        con_inflight++;
       } else if (event == FI_SHUTDOWN) {
-        if (!is_server) {
-          conMgr->notify();
-        }
         eventMap[handlePtr]->handle_event(CLOSE_EVENT, &entry); 
+        con_inflight--;
+        if (con_inflight == 0) {
+          if (done.load()) {
+            return -1;
+          }
+        }
       } else {
       }
     }
@@ -52,4 +52,8 @@ int EQEventDemultiplexer::register_event(HandlePtr handle) {
 
 int EQEventDemultiplexer::remove_event(HandlePtr handle) {
   return 0;
+}
+
+void EQEventDemultiplexer::shutdown() {
+  done.store(true);
 }

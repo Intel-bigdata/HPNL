@@ -13,14 +13,15 @@
 
 class EQEventDemultiplexer : public EventDemultiplexer {
   public:
-    EQEventDemultiplexer(ConMgr*, bool);
+    EQEventDemultiplexer();
     virtual ~EQEventDemultiplexer() override;
     virtual int wait_event(std::map<HandlePtr, EventHandlerPtr> &) override;
     virtual int register_event(HandlePtr) override;
     virtual int remove_event(HandlePtr) override;
+    void shutdown();
   private:
-    ConMgr *conMgr;
-    bool is_server;
+    int con_inflight = 0;
+    std::atomic<bool> done{false};
 };
 
 #endif

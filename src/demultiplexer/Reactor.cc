@@ -12,12 +12,12 @@ Reactor::~Reactor() {
   eventMap.erase(eventMap.begin(), eventMap.end()); 
 }
 
-void Reactor::eq_service() {
-  eqDemultiplexer->wait_event(eventMap);
+int Reactor::eq_service() {
+  return eqDemultiplexer->wait_event(eventMap);
 }
 
-void Reactor::cq_service(int num) {
-  cqDemultiplexer[num]->wait_event();
+int Reactor::cq_service(int num) {
+  return cqDemultiplexer[num]->wait_event();
 }
 
 int Reactor::register_handler(EventHandlerPtr eh) {

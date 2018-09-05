@@ -38,7 +38,6 @@ cd HPNL/java/hpnl; mvn package
 ```
 
 ## Benchmark
-![benchmark](./doc/intro/picture/perf.png)
 
 ## Usage
 To get started, refer to the mini tutorial. Simple C/S examples can be found in [HPNL/test](https://github.com/Intel-bigdata/HPNL/tree/master/test) directory. 

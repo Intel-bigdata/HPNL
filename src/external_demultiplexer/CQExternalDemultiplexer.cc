@@ -46,7 +46,7 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
     fi_cq_readerr(cq, &err_entry, entry.flags); 
     std::cout << "error" << std::endl;
     end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-    return 0;
+    return -1;
   } else if (ret == -FI_EAGAIN) {
     end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
     return 0;
@@ -57,6 +57,9 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
     *block_buffer_id = ck->block_buffer_id;
     *seq = ck->seq;
     FIConnection *con = (FIConnection*)ck->con;
+    if (!con) {
+      return 0;
+    }
     fid_eq *eq_tmp = (fid_eq*)con->get_eqhandle()->get_ctx();
     *eq = eq_tmp;
     if (entry.flags & FI_RECV) {

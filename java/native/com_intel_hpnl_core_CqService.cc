@@ -44,7 +44,8 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
     return 0; 
   }
   Connection *con = externalCqService->get_connection(eq);
-  assert(con);
+  if (!con)
+    return -1;
   assert(thisObj);
   jclass thisClass = (*env).GetObjectClass(thisObj);
   jmethodID handleCqCallback = (*env).GetMethodID(thisClass, "handleCqCallback", "(JIIIIJ)V");

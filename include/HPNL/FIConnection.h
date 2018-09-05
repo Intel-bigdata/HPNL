@@ -18,7 +18,6 @@
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
 #include "HPNL/Common.h"
-#include "HPNL/ConMgr.h"
 #include "HPNL/Ptr.h"
 #include "HPNL/Handle.h"
 
@@ -33,7 +32,7 @@ enum ConStatus {
 
 class FIConnection : public Connection {
   public:
-    FIConnection(fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, ConMgr*, bool);
+    FIConnection(fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool);
     ~FIConnection();
 
     virtual void recv(char*, int) override;
@@ -78,7 +77,6 @@ class FIConnection : public Connection {
 
     fid_wait *waitset;
 
-    ConMgr *conMgr;
     bool server;
 
     Callback* read_callback;

@@ -1,7 +1,7 @@
 #include "HPNL/FIConnection.h"
 
-FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, ConMgr* conMgr_, bool is_server) : info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), conMgr(conMgr_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
-  fi_endpoint(domain, info, &ep, NULL);
+FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, bool is_server) : info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
+  assert(!fi_endpoint(domain, info, &ep, NULL));
   
   struct fi_eq_attr eq_attr = {
     .size = 0,
@@ -11,12 +11,14 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
     .wait_set = NULL
   };
 
-  fi_eq_open(fabric_, &eq_attr, &conEq, &eqHandle);
-  fi_ep_bind(ep, &conEq->fid, 0);
+  if (fi_eq_open(fabric_, &eq_attr, &conEq, &eqHandle)) {
+    std::cout << "eq open error " << errno << std::endl; 
+  }
+  assert(!fi_ep_bind(ep, &conEq->fid, 0));
 
-  fi_ep_bind(ep, &conCq->fid, FI_TRANSMIT | FI_RECV);
+  assert(!fi_ep_bind(ep, &conCq->fid, FI_TRANSMIT | FI_RECV));
   
-  fi_enable(ep);
+  assert(!fi_enable(ep));
 
   int size = 0;
   while (size < CON_MEM_SIZE) {
@@ -68,10 +70,12 @@ FIConnection::~FIConnection() {
 void FIConnection::send(const char *buffer, int block_buffer_size, int rdma_buffer_id, int block_buffer_id, long seq) {
   // TODO: get send buffer
   Chunk *ck = send_buffers.back();
+  assert(ck);
   send_buffers.pop_back();
   ck->block_buffer_id = block_buffer_id;
   ck->seq = seq;
   //memcpy(ck->buffer, buffer, buffer_size);
+  assert(ck->buffer);
   memset(ck->buffer, '0', block_buffer_size);
   if (fi_send(ep, ck->buffer, block_buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     // TODO: error handler
@@ -83,27 +87,18 @@ void FIConnection::recv(char *buffer, int buffer_size) {
 }
 
 void FIConnection::connect() {
-  if (conMgr) {
-    conMgr->push_event(ep, CONNECT, info->dest_addr);
-  } else {
-    fi_connect(ep, info->dest_addr, NULL, 0);
-  }
+  std::cout << "connect." << std::endl;
+  assert(!fi_connect(ep, info->dest_addr, NULL, 0));
 }
 
 void FIConnection::accept() {
-  if (conMgr) {
-    conMgr->push_event(ep, ACCEPT, NULL);
-  } else {
-    fi_accept(ep, NULL, 0);
-  }
+  std::cout << "accept." << std::endl;
+  assert(!fi_accept(ep, NULL, 0));
 }
 
 void FIConnection::shutdown() {
-  if (conMgr) {
-    conMgr->push_event(ep, SHUTDOWN, NULL);
-  } else {
-    assert(!fi_shutdown(ep, 0));
-  }
+  std::cout << "shutdown." << std::endl;
+  assert(!fi_shutdown(ep, 0));
 }
 
 void FIConnection::take_back_chunk(Chunk *ck) {

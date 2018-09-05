@@ -14,7 +14,16 @@ public class EqThread extends Thread {
       Map<Long, Integer> eqs = service.getEqs();
       for (Map.Entry<Long, Integer> entry : eqs.entrySet()) {
         if (entry.getValue() == 1) {
-          service.wait_eq_event(entry.getKey());
+          int ret = service.wait_eq_event(entry.getKey());
+          if (ret == EventType.CONNECTED_EVENT) {
+            service.incConNum();
+          } else if (ret == EventType.SHUTDOWN) {
+            service.decConNum();
+            if (service.maybeStop()) {
+              running.set(false);
+              return;
+            }
+          }
         }
       }
     }

@@ -1,8 +1,6 @@
 #include "HPNL/EQExternalDemultiplexer.h"
 
-EQExternalDemultiplexer::EQExternalDemultiplexer(FIStack *stack_) : stack(stack_) {
-
-}
+EQExternalDemultiplexer::EQExternalDemultiplexer(FIStack *stack_) : stack(stack_) {}
 
 int EQExternalDemultiplexer::wait_event(fid_eq* eq, fi_info** info) {
   int ret = 0;   
@@ -14,7 +12,7 @@ int EQExternalDemultiplexer::wait_event(fid_eq* eq, fi_info** info) {
   } else if (ret < 0) {
     fi_eq_err_entry err_entry;
     fi_eq_readerr(eq, &err_entry, event);
-    return 0;
+    return -1;
   } else {
     entry.fid = &eq->fid;
     if (event == FI_CONNREQ) {

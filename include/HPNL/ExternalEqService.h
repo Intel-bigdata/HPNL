@@ -24,8 +24,6 @@ class ExternalEqService {
     FIStack* get_stack();
     Chunk* get_chunk(int, int);
   private:
-    void prepare();
-  private:
     FIStack *stack;
 
     int worker_num;
@@ -39,8 +37,6 @@ class ExternalEqService {
     uint64_t sendSize;
     ExternalEqServiceBufMgr *recvBufMgr;
     ExternalEqServiceBufMgr *sendBufMgr;
-
-    ConMgr *conMgr;
 
     EQExternalDemultiplexer *eq_demulti_plexer;
 };
