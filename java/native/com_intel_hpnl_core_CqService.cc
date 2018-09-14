@@ -35,11 +35,9 @@ static void _set_self(JNIEnv *env, jobject thisObj, ExternalCqService *self)
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv *env, jobject thisObj, jint index) {
   ExternalCqService *externalCqService = _get_self(env, thisObj);
   fid_eq *eq;
-  int rdma_buffer_id = 0;
   int block_buffer_size = 0;
-  int block_buffer_id = 0;
-  long seq = 0;
-  int ret = externalCqService->wait_cq_event(index, &eq, &rdma_buffer_id, &block_buffer_size, &block_buffer_id, &seq);
+  int rdma_buffer_id = 0;
+  int ret = externalCqService->wait_cq_event(index, &eq, &rdma_buffer_id, &block_buffer_size);
   if (ret <= 0) {
     return 0; 
   }
@@ -48,15 +46,14 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
     return -1;
   assert(thisObj);
   jclass thisClass = (*env).GetObjectClass(thisObj);
-  jmethodID handleCqCallback = (*env).GetMethodID(thisClass, "handleCqCallback", "(JIIIIJ)V");
+  jmethodID handleCqCallback = (*env).GetMethodID(thisClass, "handleCqCallback", "(JIII)V");
   jlong jEq = *(jlong*)&eq;
-  (*env).CallVoidMethod(thisObj, handleCqCallback, jEq, ret, rdma_buffer_id, block_buffer_size, block_buffer_id, seq);
+  (*env).CallVoidMethod(thisObj, handleCqCallback, jEq, ret, rdma_buffer_id, block_buffer_size);
   if (ret == RECV_EVENT) {
     Chunk *ck = externalCqService->get_chunk(rdma_buffer_id, RECV_CHUNK);
     con->activate_chunk(ck); 
   } else if (ret == SEND_EVENT) {
     Chunk *ck = externalCqService->get_chunk(rdma_buffer_id, SEND_CHUNK); 
-    con->take_back_chunk(ck); 
   }
   return ret;
 }

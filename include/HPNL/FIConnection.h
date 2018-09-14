@@ -9,7 +9,7 @@
 #include <rdma/fi_endpoint.h>
 
 #include <memory>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <mutex>
 #include <condition_variable>
@@ -37,6 +37,7 @@ class FIConnection : public Connection {
 
     virtual void recv(char*, int) override;
     virtual void send(const char*, int, int, int, long) override;
+    virtual void send(int, int) override;
     virtual void shutdown() override;
     virtual void take_back_chunk(Chunk*) override;
     virtual void activate_chunk(Chunk*) override;
@@ -50,6 +51,9 @@ class FIConnection : public Connection {
     void set_recv_callback(Callback*);
     void set_send_callback(Callback*);
     void set_shutdown_callback(Callback*);
+
+    std::vector<Chunk*> get_send_buffer();
+
     Callback* get_read_callback();
     Callback* get_send_callback();
     Callback* get_shutdown_callback();
@@ -71,6 +75,7 @@ class FIConnection : public Connection {
     BufMgr *send_buf_mgr;
     std::vector<Chunk*> recv_buffers;
     std::vector<Chunk*> send_buffers;
+    std::unordered_map<int, Chunk*> send_buffers_map;
 
     HandlePtr cqHandle;
     HandlePtr eqHandle;

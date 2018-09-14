@@ -18,10 +18,10 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv
 /*
  * Class:     com_intel_hpnl_core_Connection
  * Method:    send
- * Signature: (Ljava/nio/ByteBuffer;IIIJ)V
+ * Signature: (Ljava/nio/ByteBuffer;II)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send
-  (JNIEnv *, jobject, jobject, jint, jint, jint, jlong);
+  (JNIEnv *, jobject, jint, jint);
 
 /*
  * Class:     com_intel_hpnl_core_Connection

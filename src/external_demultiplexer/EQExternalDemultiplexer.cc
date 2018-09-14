@@ -3,7 +3,7 @@
 EQExternalDemultiplexer::EQExternalDemultiplexer(FIStack *stack_) : stack(stack_) {}
 
 int EQExternalDemultiplexer::wait_event(fid_eq* eq, fi_info** info) {
-  int ret = 0;   
+  int ret = 0;
   uint32_t event;
   fi_eq_cm_entry entry;
   ret = fi_eq_read(eq, &event, &entry, sizeof(entry), 2000);

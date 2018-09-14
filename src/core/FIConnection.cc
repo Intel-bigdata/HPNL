@@ -41,6 +41,7 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
     ck->mr = mr;
     mr = NULL;
     send_buffers.push_back(ck);
+    send_buffers_map.insert(std::pair<int, Chunk*>(ck->rdma_buffer_id, ck));
     size++;
   }
 
@@ -70,13 +71,16 @@ FIConnection::~FIConnection() {
 void FIConnection::send(const char *buffer, int block_buffer_size, int rdma_buffer_id, int block_buffer_id, long seq) {
   // TODO: get send buffer
   Chunk *ck = send_buffers.back();
-  assert(ck);
-  send_buffers.pop_back();
-  ck->block_buffer_id = block_buffer_id;
-  ck->seq = seq;
-  //memcpy(ck->buffer, buffer, buffer_size);
   assert(ck->buffer);
-  memset(ck->buffer, '0', block_buffer_size);
+  send_buffers.pop_back();
+  memcpy(ck->buffer, buffer, block_buffer_size);
+  if (fi_send(ep, ck->buffer, block_buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+    // TODO: error handler
+  }
+}
+
+void FIConnection::send(int block_buffer_size, int rdma_buffer_id) {
+  Chunk *ck = send_buffers_map[rdma_buffer_id];
   if (fi_send(ep, ck->buffer, block_buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     // TODO: error handler
   }
@@ -103,6 +107,10 @@ void FIConnection::shutdown() {
 
 void FIConnection::take_back_chunk(Chunk *ck) {
   send_buffers.push_back(ck);
+}
+
+std::vector<Chunk*> FIConnection::get_send_buffer() {
+  return send_buffers;
 }
 
 void FIConnection::set_recv_callback(Callback *callback) {

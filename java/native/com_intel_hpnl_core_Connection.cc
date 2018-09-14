@@ -32,10 +32,9 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv(JNIEnv *env, job
   con->recv((char*)buffer, mid);
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, jobject thisObj, jobject bufferObj, jint blockBufferSize, jint rdmaBufferId, jint blockBufferId, jlong seq) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, jobject thisObj, jint blockBufferSize, jint rdmaBufferId) {
   Connection *con = _get_self(env, thisObj); 
-  jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(bufferObj);
-  con->send((char*)buffer, blockBufferSize, rdmaBufferId, blockBufferId, seq);
+  con->send(blockBufferSize, rdmaBufferId);
 }
 
 /*

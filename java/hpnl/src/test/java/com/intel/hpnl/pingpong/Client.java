@@ -1,6 +1,5 @@
 package com.intel.hpnl.pingpong;
 
-import java.util.Arrays;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
@@ -8,10 +7,17 @@ import java.util.List;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
+import com.intel.hpnl.core.Buffer;
 
 public class Client {
   public static void main(String args[]) {
-    final int BUFFER_SIZE = 4096*65536;
+    final int BUFFER_SIZE = 4096;
+    final int BUFFER_NUM = 32;
+
+    ByteBuffer byteBufferTmp = ByteBuffer.allocate(4096);
+    byteBufferTmp.putChar('a');
+    byteBufferTmp.flip();
+
     EqService eqService = new EqService("172.168.2.106", "123456", false);
     CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
 
@@ -25,10 +31,12 @@ public class Client {
     eqService.setSendCallback(null);
     eqService.setShutdownCallback(shutdownCallback);
 
-    ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
-    ByteBuffer sendBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
-    eqService.set_recv_buffer(recvBuf, BUFFER_SIZE);
-    eqService.set_send_buffer(sendBuf, BUFFER_SIZE);
+    for (int i = 0; i < BUFFER_NUM; i++) {
+      ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
+      ByteBuffer sendBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
+      eqService.setRecvBuffer(recvBuf, BUFFER_SIZE, i);
+      eqService.setSendBuffer(sendBuf, BUFFER_SIZE, i);
+    }
 
     cqService.start();
     eqService.start(1);
@@ -37,10 +45,9 @@ public class Client {
     System.out.println("connected, start to pingpong.");
     
     for (Connection con: conList) {
-      byte[] byteArray = new byte[4096];
-      Arrays.fill(byteArray, (byte)'0');
-      ByteBuffer buffer = ByteBuffer.wrap(byteArray);
-      con.send(buffer, 4096, 0, 0, 0);
+      Buffer buffer = con.getSendBuffer();
+      buffer.put(byteBufferTmp, 1, 10);
+      con.send(buffer.getByteBuffer().remaining(), buffer.getRdmaBufferId());
     }
 
     eqService.waitToStop();
@@ -48,7 +55,6 @@ public class Client {
     for (Connection con: conList) {
       con.shutdown();
     }
-
     eqService.join();
     cqService.shutdown();
     cqService.join();

@@ -31,30 +31,18 @@ fid_eq* ExternalEqService::connect() {
   return (fid_eq*)eqHandle->get_ctx();
 }
 
-void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size) {
-  recvBuffer = buffer;
-  recvSize = size;
-  uint64_t prepared_size = 0;
-  while (prepared_size < recvSize) {
-    Chunk *ck = new Chunk();
-    ck->buffer = recvBuffer+prepared_size;
-    ck->rdma_buffer_id = recvBufMgr->get_id();
-    recvBufMgr->add(ck->rdma_buffer_id, ck);
-    prepared_size += BUFFER_SIZE;
-  }
+void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id) {
+  Chunk *ck = new Chunk();
+  ck->buffer = buffer;
+  ck->rdma_buffer_id = rdma_buffer_id;
+  recvBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
-void ExternalEqService::set_send_buffer(char* buffer, uint64_t size) {
-  sendBuffer = buffer;
-  sendSize = size;
-  uint64_t prepared_size = 0;
-  while (prepared_size < recvSize) {
-    Chunk *ck = new Chunk();
-    ck->buffer = sendBuffer+prepared_size;
-    ck->rdma_buffer_id = sendBufMgr->get_id();
-    sendBufMgr->add(ck->rdma_buffer_id, ck);
-    prepared_size += BUFFER_SIZE;
-  }
+void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int rdma_buffer_id) {
+  Chunk *ck = new Chunk();
+  ck->buffer = buffer;
+  ck->rdma_buffer_id = rdma_buffer_id;
+  sendBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
 int ExternalEqService::wait_eq_event(fid_eq* eq, fi_info** info) {

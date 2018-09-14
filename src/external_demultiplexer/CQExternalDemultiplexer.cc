@@ -22,7 +22,7 @@ CQExternalDemultiplexer::~CQExternalDemultiplexer() {
   close(epfd);
 }
 
-int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* block_buffer_size, int* block_buffer_id, long* seq) {
+int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* block_buffer_size) {
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
@@ -54,8 +54,6 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
     end = start;
     Chunk *ck = (Chunk*)entry.op_context;
     *rdma_buffer_id = ck->rdma_buffer_id;
-    *block_buffer_id = ck->block_buffer_id;
-    *seq = ck->seq;
     FIConnection *con = (FIConnection*)ck->con;
     if (!con) {
       return 0;

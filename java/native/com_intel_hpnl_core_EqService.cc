@@ -93,6 +93,15 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     jlong jEq = *(jlong*)&eq;
     jlong jCon = *(jlong*)&con;
     (*env).CallVoidMethod(thisObj, registerCon, jEq, jCon);
+
+    //set send buffer;
+    std::vector<Chunk*> send_buffer = con->get_send_buffer();
+    int chunks_size = send_buffer.size();
+    for (int i = 0; i < chunks_size; i++) {
+      jmethodID putSendBuffer = (*env).GetMethodID(thisClass, "putSendBuffer", "(JI)V");
+      assert(putSendBuffer);
+      (*env).CallVoidMethod(thisObj, putSendBuffer, jEq, send_buffer[i]->rdma_buffer_id);
+    }
     
     //callback
     jmethodID handleEqCallback = (*env).GetMethodID(thisClass, "handleEqCallback", "(JII)V");
@@ -121,11 +130,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
  * Method:    set_recv_buffer
  * Signature: (Ljava/nio/ByteBuffer;J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIEnv *env, jobject thisObj, jobject recv_buffer, jlong size) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIEnv *env, jobject thisObj, jobject recv_buffer, jlong size, jint rdmaBufferId) {
   ExternalEqService *service = _get_self(env, thisObj);
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(recv_buffer);
   assert(buffer != NULL);
-  service->set_recv_buffer((char*)buffer, size);
+  service->set_recv_buffer((char*)buffer, size, rdmaBufferId);
 }
 
 /*
@@ -133,9 +142,9 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIE
  * Method:    set_send_buffer
  * Signature: (Ljava/nio/ByteBuffer;J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size, jint rdmaBufferId) {
   ExternalEqService *service = _get_self(env, thisObj);
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(send_buffer);
-  service->set_send_buffer((char*)buffer, size);
+  service->set_send_buffer((char*)buffer, size, rdmaBufferId);
 }
 

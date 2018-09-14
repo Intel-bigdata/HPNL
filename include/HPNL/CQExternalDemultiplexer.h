@@ -11,7 +11,7 @@ class CQExternalDemultiplexer {
   public:
     CQExternalDemultiplexer(FIStack*, fid_cq*);
     ~CQExternalDemultiplexer();
-    int wait_event(fid_eq**, int*, int*, int*, long*);
+    int wait_event(fid_eq**, int*, int*);
   private:
     int epfd;
     int fd;

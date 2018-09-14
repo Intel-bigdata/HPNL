@@ -18,8 +18,6 @@ struct Chunk {
   void *mr;
   void *con;
   int rdma_buffer_id;
-  int block_buffer_id;
-  long seq;
 };
 
 class BufMgr {

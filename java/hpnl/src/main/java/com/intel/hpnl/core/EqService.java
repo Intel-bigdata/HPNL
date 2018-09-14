@@ -19,6 +19,9 @@ public class EqService {
     this.eqs = new ConcurrentHashMap<Long, Integer>();
     this.conMap = new HashMap<Long, Connection>();
 
+    this.sendBufferMap = new HashMap<Integer, Buffer>();
+    this.recvBufferMap = new HashMap<Integer, Buffer>();
+
     init(ip, port, is_server);
 
     eqThread = new EqThread(this);
@@ -96,7 +99,7 @@ public class EqService {
   }
 
   private void registerCon(long eq, long con) {
-    Connection connection = new Connection(con);
+    Connection connection = new Connection(con, this);
     conMap.put(eq, connection);
   }
 
@@ -113,7 +116,7 @@ public class EqService {
       connection.setSendCallback(sendCallback);
       connection.setShutdownCallback(shutdownCallback);
     }
-    connection.handleCallback(eventType, 0, 0, 0, 0);
+    connection.handleCallback(eventType, 0, 0);
     if (!is_server && eventType == EventType.CONNECTED_EVENT) {
       this.connectLatch.countDown();
     }
@@ -147,10 +150,35 @@ public class EqService {
     return nativeHandle;
   }
 
+  public void setRecvBuffer(ByteBuffer byteBuffer, long size, int rdmaBufferId) {
+    Buffer buffer = new Buffer(rdmaBufferId, byteBuffer);
+    recvBufferMap.put(rdmaBufferId, buffer);
+    set_recv_buffer(byteBuffer, size, rdmaBufferId);
+  }
+
+  public void setSendBuffer(ByteBuffer byteBuffer, long size, int rdmaBufferId) {
+    Buffer buffer = new Buffer(rdmaBufferId, byteBuffer);
+    sendBufferMap.put(rdmaBufferId, buffer);
+    set_send_buffer(byteBuffer, size, rdmaBufferId);
+  }
+
+  public void putSendBuffer(long eq, int rdmaBufferId) {
+    Connection connection = conMap.get(eq);
+    connection.putSendBuffer(rdmaBufferId, sendBufferMap.get(rdmaBufferId));
+  }
+
+  public Buffer getRecvBuffer(int rdmaBufferId) {
+    return recvBufferMap.get(rdmaBufferId);
+  }
+
+  public Buffer getSendBuffer(int rdmaBufferId) {
+    return sendBufferMap.get(rdmaBufferId); 
+  }
+
   private native long connect();
   public native int wait_eq_event(long eq);
-  public native void set_recv_buffer(ByteBuffer buffer, long size);
-  public native void set_send_buffer(ByteBuffer buffer, long size);
+  public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
+  public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
   private native void init(String ip_, String port_, boolean is_server_);
   public native void finalize();
 
@@ -160,6 +188,9 @@ public class EqService {
   public boolean is_server;
   private HashMap<Long, Connection> conMap;
   private ConcurrentHashMap<Long, Integer> eqs;
+
+  private HashMap<Integer, Buffer> sendBufferMap;
+  private HashMap<Integer, Buffer> recvBufferMap;
 
   private Handler connectedCallback;
   private Handler recvCallback;

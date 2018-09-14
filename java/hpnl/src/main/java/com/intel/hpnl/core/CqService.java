@@ -36,9 +36,9 @@ public class CqService {
     }
   }
 
-  private void handleCqCallback(long eq, int eventType, int rdma_buffer_id, int block_buffer_size, int block_buffer_id, long seq) {
+  private void handleCqCallback(long eq, int eventType, int rdma_buffer_id, int block_buffer_size) {
     Connection connection = eqService.getConMap().get(eq);
-    connection.handleCallback(eventType, rdma_buffer_id, block_buffer_size, block_buffer_id, seq);
+    connection.handleCallback(eventType, rdma_buffer_id, block_buffer_size);
   }
   public native int wait_cq_event(int index);
   private native void init(long Service);

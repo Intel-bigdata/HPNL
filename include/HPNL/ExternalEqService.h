@@ -15,8 +15,8 @@ class ExternalEqService {
     ~ExternalEqService();
     fid_eq* connect();
     fid_eq* accept(fi_info*);
-    void set_recv_buffer(char* buffer, uint64_t size);
-    void set_send_buffer(char* buffer, uint64_t size);
+    void set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
+    void set_send_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
 
     int wait_eq_event(fid_eq*, fi_info**);
 

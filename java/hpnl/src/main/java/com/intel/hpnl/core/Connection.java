@@ -1,15 +1,18 @@
 package com.intel.hpnl.core;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Connection {
 
-  public Connection(long nativeCon) {
+  public Connection(long nativeCon, EqService service) {
+    this.service = service;
+    this.sendBufferList = new LinkedBlockingQueue<Buffer>(16);
     init(nativeCon);
   }
 
   public native void recv(ByteBuffer buffer, int id);
-  public native void send(ByteBuffer buffer, int rdmaBufferId, int blockBufferSize, int blockBufferId, long seq);
+  public native void send(int blockBufferSize, int rdmaBufferId);
   public native void shutdown();
   private native void init(long eq);
   public native void finalize();
@@ -46,17 +49,45 @@ public class Connection {
     shutdownCallback = callback; 
   }
 
-  public void handleCallback(int eventType, int rdmaBufferId, int blockBufferSize, int blockBufferId, long seq) {
-    if (eventType == EventType.CONNECTED_EVENT && connectedCallback != null) {
-      connectedCallback.handle(this, rdmaBufferId, 0, 0, seq);
-    } else if (eventType == EventType.RECV_EVENT && recvCallback != null) {
-      recvCallback.handle(this, rdmaBufferId, blockBufferSize, blockBufferId, seq);
-    } else if (eventType == EventType.SEND_EVENT && sendCallback != null) {
-      sendCallback.handle(this, rdmaBufferId, blockBufferSize, blockBufferId, seq);
-    } else if (eventType == EventType.SHUTDOWN && shutdownCallback != null) {
-      shutdownCallback.handle(this, rdmaBufferId, 0, 0, seq);
+  public void putSendBuffer(int rdmaBufferId, Buffer buffer) {
+    try {
+      sendBufferList.put(buffer);
+    } catch (InterruptedException e) {
+      e.printStackTrace(); 
     }
   }
+
+  public Buffer getSendBuffer() {
+    try {
+      return sendBufferList.take();
+    } catch (InterruptedException e) {
+      e.printStackTrace(); 
+      return null;
+    }
+  }
+
+  public Buffer getRecvBuffer(int rdmaBufferId) {
+    return service.getRecvBuffer(rdmaBufferId);
+  }
+
+  public void handleCallback(int eventType, int rdmaBufferId, int blockBufferSize) {
+    if (eventType == EventType.CONNECTED_EVENT && connectedCallback != null) {
+      connectedCallback.handle(this, rdmaBufferId, 0);
+    } else if (eventType == EventType.RECV_EVENT && recvCallback != null) {
+      recvCallback.handle(this, rdmaBufferId, blockBufferSize);
+    } else if (eventType == EventType.SEND_EVENT) {
+      putSendBuffer(rdmaBufferId, service.getSendBuffer(rdmaBufferId));
+      if (sendCallback != null) {
+        sendCallback.handle(this, rdmaBufferId, blockBufferSize);
+      }
+    } else if (eventType == EventType.SHUTDOWN && shutdownCallback != null) {
+      shutdownCallback.handle(this, rdmaBufferId, 0);
+    }
+  }
+
+  EqService service;
+ 
+  LinkedBlockingQueue<Buffer> sendBufferList;
 
   private Handler connectedCallback = null;
   private Handler recvCallback = null;

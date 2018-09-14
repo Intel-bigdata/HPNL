@@ -6,6 +6,6 @@ import com.intel.hpnl.core.Connection;
 public class ShutdownCallback implements Handler {
   public ShutdownCallback() {
   }
-  public void handle(Connection con, int rdmaBufferId, int blockBufferSize, int blockBufferId, long seq) {
+  public void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
   }
 }
