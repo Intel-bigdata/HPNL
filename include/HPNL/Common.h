@@ -1,9 +1,9 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 65536
 #define MEM_SIZE 65536
-#define CON_MEM_SIZE 4
+#define CON_MEM_SIZE 16
 #define WORKERS 1
 
 #endif
