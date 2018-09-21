@@ -11,9 +11,16 @@ public class Connection {
     init(nativeCon);
   }
 
+  public void shutdown(long eq) {
+    this.service.deregCon(eq);
+    this.service.shutdown(eq);
+    if (shutdownCallback != null) {
+      shutdownCallback.handle(null, 0, 0);
+    }
+  }
+
   public native void recv(ByteBuffer buffer, int id);
   public native void send(int blockBufferSize, int rdmaBufferId);
-  public native void shutdown();
   private native void init(long eq);
   public native void finalize();
 
@@ -80,9 +87,7 @@ public class Connection {
       if (sendCallback != null) {
         sendCallback.handle(this, rdmaBufferId, blockBufferSize);
       }
-    } else if (eventType == EventType.SHUTDOWN && shutdownCallback != null) {
-      shutdownCallback.handle(this, rdmaBufferId, 0);
-    }
+    }   
   }
 
   EqService service;

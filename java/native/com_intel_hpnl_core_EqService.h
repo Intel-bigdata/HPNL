@@ -25,6 +25,15 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event
 
 /*
  * Class:     com_intel_hpnl_core_EqService
+ * Method:    shutdown
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown
+  (JNIEnv *, jobject, jlong);
+
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
  * Method:    set_recv_buffer
  * Signature: (Ljava/nio/ByteBuffer;JI)V
  */
@@ -54,6 +63,15 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_init
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_finalize
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    free
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free
+  (JNIEnv *, jobject);
+
 
 #ifdef __cplusplus
 }

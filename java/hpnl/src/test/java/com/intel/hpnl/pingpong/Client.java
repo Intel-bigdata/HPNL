@@ -11,7 +11,7 @@ import com.intel.hpnl.core.Buffer;
 
 public class Client {
   public static void main(String args[]) {
-    final int BUFFER_SIZE = 4096;
+    final int BUFFER_SIZE = 65536;
     final int BUFFER_NUM = 32;
 
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(4096);
@@ -49,14 +49,8 @@ public class Client {
       buffer.put(byteBufferTmp, 1, 10);
       con.send(buffer.getByteBuffer().remaining(), buffer.getRdmaBufferId());
     }
-
-    eqService.waitToStop();
-
-    for (Connection con: conList) {
-      con.shutdown();
-    }
-    eqService.join();
-    cqService.shutdown();
     cqService.join();
+    eqService.shutdown();
+    eqService.join();
   }
 }

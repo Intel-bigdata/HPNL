@@ -1,6 +1,5 @@
 package com.intel.hpnl.core;
 
-import java.lang.Thread;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class CqThread extends Thread {
@@ -16,7 +15,7 @@ public class CqThread extends Thread {
     }
   }
 
-  public void iterrupt() {
+  public void shutdown() {
     running.set(false); 
   }
 

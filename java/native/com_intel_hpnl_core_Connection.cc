@@ -7,10 +7,10 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {
   static int init = 0;
   static jfieldID fidSelfPtr;
-  if(!init)
-  {
+  if (!init) {
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
+    init = 1;
   }
   return fidSelfPtr;
 }
@@ -39,17 +39,6 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, job
 
 /*
  * Class:     com_intel_hpnl_Connection
- * Method:    shutdown
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_shutdown(JNIEnv *env, jobject thisObj) {
-  Connection *con = _get_self(env, thisObj); 
-  assert(con);
-  con->shutdown();
-}
-
-/*
- * Class:     com_intel_hpnl_Connection
  * Method:    init
  * Signature: (J)V
  */
@@ -63,8 +52,5 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init(JNIEnv *env, job
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize(JNIEnv *env, jobject thisObj) {
-  //Connection *con = _get_self(env, thisObj);
-  //if (con != NULL) {
-  //  _set_self(env, thisObj, 0);
-  //}
+  _set_self(env, thisObj, 0);
 }

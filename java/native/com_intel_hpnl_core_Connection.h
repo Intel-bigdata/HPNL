@@ -25,14 +25,6 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send
 
 /*
  * Class:     com_intel_hpnl_core_Connection
- * Method:    shutdown
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_shutdown
-  (JNIEnv *, jobject);
-
-/*
- * Class:     com_intel_hpnl_core_Connection
  * Method:    init
  * Signature: (J)V
  */

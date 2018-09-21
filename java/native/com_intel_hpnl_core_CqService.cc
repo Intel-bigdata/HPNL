@@ -11,6 +11,7 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   {
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
+    init = 1;
   }
   return fidSelfPtr;
 }
@@ -75,6 +76,15 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_init(JNIEnv *env, jobj
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_finalize(JNIEnv *env, jobject thisObj) {
+  _set_self(env, thisObj, NULL);
+}
+
+/*
+ * Class:     com_intel_hpnl_core_CqService
+ * Method:    free
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_free(JNIEnv *env, jobject thisObj) {
   ExternalCqService *externalCqService = _get_self(env, thisObj);
   if (externalCqService != NULL) {
     delete externalCqService;

@@ -55,6 +55,10 @@ Connection* ExternalEqService::get_connection(fid_eq* eq) {
   return con;
 }
 
+void ExternalEqService::reap(fid *con_id) {
+  stack->reap(con_id);
+}
+
 FIStack* ExternalEqService::get_stack() {
   return stack;
 }

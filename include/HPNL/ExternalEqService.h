@@ -21,6 +21,7 @@ class ExternalEqService {
     int wait_eq_event(fid_eq*, fi_info**);
 
     Connection* get_connection(fid_eq*);
+    void reap(fid*);
     FIStack* get_stack();
     Chunk* get_chunk(int, int);
   private:

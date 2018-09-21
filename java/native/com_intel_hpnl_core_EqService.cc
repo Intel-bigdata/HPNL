@@ -13,6 +13,7 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   {
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
+    init = 1;
   }
   return fidSelfPtr;
 }
@@ -43,12 +44,17 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_init(JNIEnv *env, jobj
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_finalize(JNIEnv *env, jobject thisObj) {
+  _set_self(env, thisObj, NULL);
+}
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free(JNIEnv *env, jobject thisObj) {
   ExternalEqService *service = _get_self(env, thisObj);
   if (service != NULL) {
     delete service;
     _set_self(env, thisObj, NULL);
   }
 }
+
 
 /*
  * Class:     com_intel_hpnl_EqService
@@ -70,10 +76,6 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect(JNIEnv *env, 
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv *env, jobject thisObj, jlong eqPtr) {
   ExternalEqService *service = _get_self(env, thisObj);
   fid_eq *eq = *(fid_eq**)&eqPtr;
-  static int i = 0;
-  if (i == 0) {
-    i++;
-  }
   fi_info *info = NULL;
   FIConnection *con = (FIConnection*)service->get_connection(eq);
   int ret = service->wait_eq_event(eq, &info);
@@ -113,9 +115,6 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     con->con_cv.notify_one();
   } else if (ret == SHUTDOWN) {
     jlong jEq = *(jlong*)&eq;
-    //callback
-    jmethodID handleEqCallback = (*env).GetMethodID(thisClass, "handleEqCallback", "(JII)V");
-    (*env).CallVoidMethod(thisObj, handleEqCallback, jEq, ret, 0);
 
     jmethodID deregCon = (*env).GetMethodID(thisClass, "deregCon", "(J)V");
     assert(deregCon);
@@ -124,6 +123,19 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
   }
   return ret;
 }
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, jobject thisObj, jlong eqPtr) {
+  ExternalEqService *service = _get_self(env, thisObj);
+  fid_eq *eq = *(fid_eq**)&eqPtr;
+  FIConnection *con = (FIConnection*)service->get_connection(eq);
+
+  if (con->status < DOWN) {
+    con->shutdown();
+    con->status = DOWN;
+    service->reap(&eq->fid);
+  }
+}
+
 
 /*
  * Class:     com_intel_hpnl_EqService

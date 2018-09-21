@@ -1,6 +1,5 @@
 package com.intel.hpnl.core;
 
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EqThread extends Thread {
@@ -10,26 +9,14 @@ public class EqThread extends Thread {
   }
 
   public void run() {
-    while (running.get()) {
-      Map<Long, Integer> eqs = service.getEqs();
-      for (Map.Entry<Long, Integer> entry : eqs.entrySet()) {
-        if (entry.getValue() == 1) {
-          int ret = service.wait_eq_event(entry.getKey());
-          if (ret == EventType.CONNECTED_EVENT) {
-            service.incConNum();
-          } else if (ret == EventType.SHUTDOWN) {
-            service.decConNum();
-            if (service.maybeStop()) {
-              running.set(false);
-              return;
-            }
-          }
-        }
-      }
+    while (running.get() || service.getReapCon().size() != 0) {
+      this.service.wait_eq_event();
+      this.service.externalEvent();
     }
   }
 
-  public void iterrupt() {
+  
+  public void shutdown() {
     running.set(false); 
   }
 

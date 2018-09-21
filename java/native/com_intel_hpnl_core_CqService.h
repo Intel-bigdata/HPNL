@@ -31,6 +31,15 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_init
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_finalize
   (JNIEnv *, jobject);
 
+/*
+ * Class:     com_intel_hpnl_core_CqService
+ * Method:    free
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_free
+  (JNIEnv *, jobject);
+
+
 #ifdef __cplusplus
 }
 #endif

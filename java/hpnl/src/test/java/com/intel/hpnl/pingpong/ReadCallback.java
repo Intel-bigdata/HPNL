@@ -24,7 +24,6 @@ public class ReadCallback implements Handler {
         endTime = System.currentTimeMillis();
         totally_time = (float)(endTime-startTime)/1000;
         System.out.println("finished, total time is " + totally_time + " s");
-        eqService.shutdown();
         return;
       }
     }

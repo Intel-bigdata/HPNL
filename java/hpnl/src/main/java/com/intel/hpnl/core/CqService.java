@@ -4,10 +4,17 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class CqService {
+  static {
+    System.load("/usr/local/lib/libhpnl.so");
+  }
+
   public CqService(EqService service, int num, long serviceNativeHandle) {
     this.eqService = service;
     this.num = num;
     this.serviceNativeHandle = serviceNativeHandle;
+
+    Runtime.getRuntime().addShutdownHook(new CqShutdownThread(eqService, this));
+
     init(serviceNativeHandle);
     cqThreads = new ArrayList<CqThread>();
     for (int i = 0; i < this.num; i++) {
@@ -22,7 +29,9 @@ public class CqService {
   }
   public void shutdown() {
     for (CqThread cqThread : cqThreads) {
-      cqThread.iterrupt();
+      synchronized(this) {
+        cqThread.shutdown();
+      }
     }
   }
 
@@ -33,6 +42,10 @@ public class CqService {
       }
     } catch (InterruptedException e) {
       e.printStackTrace();
+    } finally {
+      synchronized(this) {
+        free();
+      }
     }
   }
 
@@ -43,6 +56,7 @@ public class CqService {
   public native int wait_cq_event(int index);
   private native void init(long Service);
   public native void finalize();
+  private native void free();
   private long nativeHandle;
   private EqService eqService;
   private int num;

@@ -19,11 +19,11 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
   assert(!fi_ep_bind(ep, &conCq->fid, FI_TRANSMIT | FI_RECV));
   
   assert(!fi_enable(ep));
-
   int size = 0;
   while (size < CON_MEM_SIZE) {
     fid_mr *mr;
     Chunk *ck = recv_buf_mgr->get();
+    assert(ck->buffer);
     assert(!fi_mr_reg(domain, ck->buffer, BUFFER_SIZE, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
     ck->con = this;
     ck->mr = mr;
@@ -49,18 +49,18 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
 }
 
 FIConnection::~FIConnection() {
+  for (auto buffer: send_buffers_map) {
+    Chunk *ck = buffer.second;
+    fi_close(&((fid_mr*)ck->mr)->fid);
+    send_buf_mgr->add(ck->rdma_buffer_id, ck);
+  }
   while (recv_buffers.size() > 0) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
     recv_buf_mgr->add(ck->rdma_buffer_id, ck);
   }
-  while (send_buffers.size() > 0) {
-    Chunk *ck = send_buffers.back();
-    fi_close(&((fid_mr*)ck->mr)->fid);
-    send_buffers.pop_back();
-    send_buf_mgr->add(ck->rdma_buffer_id, ck);
-  }
+  shutdown();
   fi_close(&ep->fid);
   fi_close(&conEq->fid);
   if (server) {

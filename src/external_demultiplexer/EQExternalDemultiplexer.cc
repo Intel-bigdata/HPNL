@@ -22,8 +22,10 @@ int EQExternalDemultiplexer::wait_event(fid_eq* eq, fi_info** info) {
       return CONNECTED_EVENT;
     } else if (event == FI_SHUTDOWN) {
       auto con = stack->get_connection(entry.fid);
-      con->status = DOWN;
-      stack->reap(entry.fid);
+      if (con) {
+        con->status = DOWN;
+        stack->reap(entry.fid);
+      }
       return SHUTDOWN;
     } else {
       return 0;

@@ -1,6 +1,8 @@
 package com.intel.hpnl.core;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,6 +20,7 @@ public class EqService {
 
     this.eqs = new ConcurrentHashMap<Long, Integer>();
     this.conMap = new HashMap<Long, Connection>();
+    this.reapCons = new ConcurrentHashMap<Long, Connection>();
 
     this.sendBufferMap = new HashMap<Integer, Buffer>();
     this.recvBufferMap = new HashMap<Integer, Buffer>();
@@ -53,45 +56,20 @@ public class EqService {
       eqThread.join();
     } catch (InterruptedException e) {
       e.printStackTrace();
+    } finally {
+      synchronized(this) {
+        free();
+      }
     }
   }
 
   public void shutdown() {
-    needReap.set(true);
+    for (Map.Entry<Long, Connection> entry: conMap.entrySet()) {
+      addReapCon(entry.getKey(), entry.getValue());
+    }
     synchronized(this) {
-      if (!needStop) {
-        needStop = true;
-        this.notify();
-      }
+      eqThread.shutdown();
     }
-  }
-
-  public void waitToStop() {
-    synchronized(this) {
-      while (!needStop) {
-        try {
-          this.wait();
-        } catch (InterruptedException e) {
-          e.printStackTrace();
-        }
-      }
-    }
-  }
-
-  public boolean maybeStop() {
-    if (conInflight == 0 && needReap.get() == true) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  public void incConNum() {
-    conInflight++;
-  }
-
-  public void decConNum() {
-    conInflight--;
   }
 
   private void registerEq(long eq) {
@@ -103,9 +81,14 @@ public class EqService {
     conMap.put(eq, connection);
   }
 
-  private void deregCon(long eq) {
+  public void deregCon(long eq) {
     eqs.put(eq, 0);
-    conMap.remove(eq);
+    if (conMap.containsKey(eq)) {
+      conMap.remove(eq);
+    }
+    if (!is_server) {
+      eqThread.shutdown(); 
+    }
   }
 
   private void handleEqCallback(long eq, int eventType, int blockId) {
@@ -175,11 +158,37 @@ public class EqService {
     return sendBufferMap.get(rdmaBufferId); 
   }
 
+  public void addReapCon(Long eq, Connection con) {
+    reapCons.put(eq, con);
+  }
+
+  public Map<Long, Connection> getReapCon() {
+    return reapCons; 
+  }
+
+  public void wait_eq_event() {
+    for (Map.Entry<Long, Integer> entry : eqs.entrySet()) {
+      if (entry.getValue() == 1) {
+        int ret = wait_eq_event(entry.getKey());
+      }
+    }
+  }
+
+  public void externalEvent() {
+    for (Iterator<Map.Entry<Long, Connection>> it = reapCons.entrySet().iterator(); it.hasNext();){
+      Map.Entry<Long, Connection> item = it.next();
+      item.getValue().shutdown(item.getKey());
+      it.remove();
+    }
+  }
+
+  public native void shutdown(long eq);
   private native long connect();
   public native int wait_eq_event(long eq);
   public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
   public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
   private native void init(String ip_, String port_, boolean is_server_);
+  private native void free();
   public native void finalize();
 
   private long nativeHandle;
@@ -188,6 +197,7 @@ public class EqService {
   public boolean is_server;
   private HashMap<Long, Connection> conMap;
   private ConcurrentHashMap<Long, Integer> eqs;
+  private ConcurrentHashMap<Long, Connection> reapCons;
 
   private HashMap<Integer, Buffer> sendBufferMap;
   private HashMap<Integer, Buffer> recvBufferMap;
@@ -198,7 +208,6 @@ public class EqService {
   private Handler shutdownCallback;
 
   private EqThread eqThread;
-  private int conInflight = 0;
   private final AtomicBoolean needReap = new AtomicBoolean(false);
   private boolean needStop = false;
   private CountDownLatch connectLatch;
