@@ -51,6 +51,7 @@ int main(int argc, char *argv[]) {
     ck = new Chunk();
     ck->rdma_buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
+    ck->capacity = BUFFER_SIZE;
     recvBufMgr->add(ck->rdma_buffer_id, ck);
   }
   BufMgr *sendBufMgr = new PingPongBufMgr();
@@ -58,6 +59,7 @@ int main(int argc, char *argv[]) {
     ck = new Chunk();
     ck->rdma_buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
+    ck->capacity = BUFFER_SIZE;
     sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
 

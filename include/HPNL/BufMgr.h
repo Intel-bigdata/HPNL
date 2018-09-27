@@ -17,6 +17,7 @@ struct Chunk {
   void *buffer;
   void *mr;
   void *con;
+  uint64_t capacity;
   int rdma_buffer_id;
 };
 

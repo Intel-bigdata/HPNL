@@ -24,10 +24,10 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
     fid_mr *mr;
     Chunk *ck = recv_buf_mgr->get();
     assert(ck->buffer);
-    assert(!fi_mr_reg(domain, ck->buffer, BUFFER_SIZE, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
+    assert(!fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
     ck->con = this;
     ck->mr = mr;
-    assert(!fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc(mr), 0, ck));
+    assert(!fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc(mr), 0, ck));
     mr = NULL;
     recv_buffers.push_back(ck);
     size++;
@@ -36,7 +36,7 @@ FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *doma
   while (size < CON_MEM_SIZE) {
     fid_mr *mr;
     Chunk *ck = send_buf_mgr->get();
-    assert(!fi_mr_reg(domain, ck->buffer, BUFFER_SIZE, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
+    assert(!fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
     ck->con = this;
     ck->mr = mr;
     mr = NULL;
@@ -143,7 +143,7 @@ fid* FIConnection::get_fid() {
 
 void FIConnection::activate_chunk(Chunk *ck) {
   ck->con = this;
-  fi_recv(ep, ck->buffer, BUFFER_SIZE, fi_mr_desc((fid_mr*)ck->mr), 0, ck);
+  fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc((fid_mr*)ck->mr), 0, ck);
 }
 
 HandlePtr FIConnection::get_eqhandle() {

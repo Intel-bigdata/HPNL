@@ -35,6 +35,7 @@ void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size, int rdma_bu
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
   ck->rdma_buffer_id = rdma_buffer_id;
+  ck->capacity = size;
   recvBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
@@ -42,6 +43,7 @@ void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int rdma_bu
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
   ck->rdma_buffer_id = rdma_buffer_id;
+  ck->capacity = size;
   sendBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
