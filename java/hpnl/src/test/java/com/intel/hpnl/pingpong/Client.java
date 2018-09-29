@@ -49,6 +49,7 @@ public class Client {
       buffer.put(byteBufferTmp, 1, 10);
       con.send(buffer.getByteBuffer().remaining(), buffer.getRdmaBufferId());
     }
+    //cqService.shutdown();
     cqService.join();
     eqService.shutdown();
     eqService.join();

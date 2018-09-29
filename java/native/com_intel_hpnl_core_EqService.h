@@ -18,9 +18,25 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    wait_eq_event
- * Signature: (J)I
+ * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    add_eq_event
+ * Signature: (j)I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_add_1eq_1event
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    delete_eq_event
+ * Signature: (j)I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event
   (JNIEnv *, jobject, jlong);
 
 /*

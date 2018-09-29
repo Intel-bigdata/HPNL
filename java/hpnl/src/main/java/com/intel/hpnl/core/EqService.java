@@ -18,7 +18,6 @@ public class EqService {
     this.port = port;
     this.is_server = is_server;
 
-    this.eqs = new ConcurrentHashMap<Long, Integer>();
     this.conMap = new HashMap<Long, Connection>();
     this.reapCons = new ConcurrentHashMap<Long, Connection>();
 
@@ -37,8 +36,8 @@ public class EqService {
       connectLatch = new CountDownLatch(num);
     }
     for (int i = 0; i < num; i++) {
-      long eq = connect();
-      registerEq(eq);
+      localEq = connect();
+      add_eq_event(localEq);
     }
     eqThread.start();
   }
@@ -70,10 +69,7 @@ public class EqService {
     synchronized(this) {
       eqThread.shutdown();
     }
-  }
-
-  private void registerEq(long eq) {
-    eqs.put(eq, 1);
+    delete_eq_event(localEq);
   }
 
   private void registerCon(long eq, long con) {
@@ -82,7 +78,6 @@ public class EqService {
   }
 
   public void deregCon(long eq) {
-    eqs.put(eq, 0);
     if (conMap.containsKey(eq)) {
       conMap.remove(eq);
     }
@@ -121,10 +116,6 @@ public class EqService {
     shutdownCallback = callback;
   }
 
-  public ConcurrentHashMap<Long, Integer> getEqs() {
-    return eqs;
-  }
-
   public HashMap<Long, Connection> getConMap() {
     return conMap;
   }
@@ -147,7 +138,7 @@ public class EqService {
 
   public void putSendBuffer(long eq, int rdmaBufferId) {
     Connection connection = conMap.get(eq);
-    connection.putSendBuffer(rdmaBufferId, sendBufferMap.get(rdmaBufferId));
+    connection.putSendBuffer(sendBufferMap.get(rdmaBufferId));
   }
 
   public Buffer getRecvBuffer(int rdmaBufferId) {
@@ -166,14 +157,6 @@ public class EqService {
     return reapCons; 
   }
 
-  public void wait_eq_event() {
-    for (Map.Entry<Long, Integer> entry : eqs.entrySet()) {
-      if (entry.getValue() == 1) {
-        int ret = wait_eq_event(entry.getKey());
-      }
-    }
-  }
-
   public void externalEvent() {
     for (Iterator<Map.Entry<Long, Connection>> it = reapCons.entrySet().iterator(); it.hasNext();){
       Map.Entry<Long, Connection> item = it.next();
@@ -184,7 +167,9 @@ public class EqService {
 
   public native void shutdown(long eq);
   private native long connect();
-  public native int wait_eq_event(long eq);
+  public native int wait_eq_event();
+  public native int add_eq_event(long eq);
+  public native int delete_eq_event(long eq);
   public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
   public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
   private native void init(String ip_, String port_, boolean is_server_);
@@ -192,11 +177,11 @@ public class EqService {
   public native void finalize();
 
   private long nativeHandle;
+  private long localEq;
   private String ip;
   private String port;
   public boolean is_server;
   private HashMap<Long, Connection> conMap;
-  private ConcurrentHashMap<Long, Integer> eqs;
   private ConcurrentHashMap<Long, Connection> reapCons;
 
   private HashMap<Integer, Buffer> sendBufferMap;

@@ -29,12 +29,12 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
   if (end - start >= 20000) {
     if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
       int epoll_ret = epoll_wait(epfd, &event, 1, 2000);
-      if (event.data.ptr != (void*)&cq->fid) {
-        std::cout << "got error event" << std::endl;
-      }
       if (epoll_ret < 0) {
         std::cout << "error" << std::endl;
         return epoll_ret;
+      }
+      if (event.data.ptr != (void*)&cq->fid) {
+        std::cout << "got error event" << std::endl;
       }
     }
     start = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);

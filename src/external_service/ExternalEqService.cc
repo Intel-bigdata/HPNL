@@ -9,6 +9,7 @@ ExternalEqService::ExternalEqService(const char* ip_, const char* port_, bool is
 
 ExternalEqService::~ExternalEqService() {
   delete stack;
+  std::cout << "external eq service deleted" << std::endl;
   delete eq_demulti_plexer;
   delete recvBufMgr;
   delete sendBufMgr;
@@ -47,8 +48,8 @@ void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int rdma_bu
   sendBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
-int ExternalEqService::wait_eq_event(fid_eq* eq, fi_info** info) {
-  int ret = eq_demulti_plexer->wait_event(eq, info);
+int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq) {
+  int ret = eq_demulti_plexer->wait_event(info, eq);
   return ret;
 }
 
@@ -72,4 +73,15 @@ Chunk* ExternalEqService::get_chunk(int id, int type) {
   else
     ck = sendBufMgr->index(id);
   return ck;
+}
+
+int ExternalEqService::add_eq_event(fid_eq *eq) {
+  eq_demulti_plexer->add_event(eq);
+  return 0;
+}
+
+int ExternalEqService::delete_eq_event(fid_eq *eq) {
+  assert(eq_demulti_plexer);
+  eq_demulti_plexer->delete_event(eq);
+  return 0;
 }

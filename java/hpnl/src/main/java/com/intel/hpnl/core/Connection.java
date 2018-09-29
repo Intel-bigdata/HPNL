@@ -56,7 +56,7 @@ public class Connection {
     shutdownCallback = callback; 
   }
 
-  public void putSendBuffer(int rdmaBufferId, Buffer buffer) {
+  public void putSendBuffer(Buffer buffer) {
     try {
       sendBufferList.put(buffer);
     } catch (InterruptedException e) {
@@ -83,7 +83,7 @@ public class Connection {
     } else if (eventType == EventType.RECV_EVENT && recvCallback != null) {
       recvCallback.handle(this, rdmaBufferId, blockBufferSize);
     } else if (eventType == EventType.SEND_EVENT) {
-      putSendBuffer(rdmaBufferId, service.getSendBuffer(rdmaBufferId));
+      putSendBuffer(service.getSendBuffer(rdmaBufferId));
       if (sendCallback != null) {
         sendCallback.handle(this, rdmaBufferId, blockBufferSize);
       }

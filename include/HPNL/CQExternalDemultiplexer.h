@@ -13,10 +13,10 @@ class CQExternalDemultiplexer {
     ~CQExternalDemultiplexer();
     int wait_event(fid_eq**, int*, int*);
   private:
+    fid_fabric *fabric;
+    struct epoll_event event;
     int epfd;
     int fd;
-    struct epoll_event event;
-    fid_fabric *fabric;
     fid_cq *cq;
     uint64_t start;
     uint64_t end;

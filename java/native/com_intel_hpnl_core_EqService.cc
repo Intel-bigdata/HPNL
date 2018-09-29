@@ -71,23 +71,21 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect(JNIEnv *env, 
 /*
  * Class:     com_intel_hpnl_EqService
  * Method:    wait_eq_event
- * Signature: (JJ)I
+ * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv *env, jobject thisObj, jlong eqPtr) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv *env, jobject thisObj) {
   ExternalEqService *service = _get_self(env, thisObj);
-  fid_eq *eq = *(fid_eq**)&eqPtr;
   fi_info *info = NULL;
+  fid_eq *eq;
+  int ret = service->wait_eq_event(&info, &eq);
+  if (ret < 0) return ret;
   FIConnection *con = (FIConnection*)service->get_connection(eq);
-  int ret = service->wait_eq_event(eq, &info);
   jclass thisClass = (*env).GetObjectClass(thisObj);
   if (ret == ACCEPT_EVENT) {
     //accept new connection and register eq id
     fid_eq *new_eq;
     new_eq = service->accept(info);
-    jmethodID registerEq = (*env).GetMethodID(thisClass, "registerEq", "(J)V");
-    assert(registerEq);
-    jlong jEq = *(jlong*)&new_eq;
-    (*env).CallVoidMethod(thisObj, registerEq, jEq);
+    service->add_eq_event(new_eq);
   } else if (ret == CONNECTED_EVENT) {
     //register connection  
     jmethodID registerCon = (*env).GetMethodID(thisClass, "registerCon", "(JJ)V");
@@ -115,13 +113,35 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     con->con_cv.notify_one();
   } else if (ret == SHUTDOWN) {
     jlong jEq = *(jlong*)&eq;
-
     jmethodID deregCon = (*env).GetMethodID(thisClass, "deregCon", "(J)V");
     assert(deregCon);
     (*env).CallVoidMethod(thisObj, deregCon, jEq);
   } else {
   }
   return ret;
+}
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    add_eq_event
+ * Signature: (j)I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_add_1eq_1event(JNIEnv *env, jobject thisObj, jlong eqPtr) {
+  ExternalEqService *service = _get_self(env, thisObj);
+  fid_eq *eq = *(fid_eq**)&eqPtr;
+  return service->add_eq_event(eq);
+}
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    delete_eq_event
+ * Signature: (j)I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event(JNIEnv *env, jobject thisObj, jlong eqPtr) {
+  ExternalEqService *service = _get_self(env, thisObj);
+  if (service == NULL) return 0;
+  fid_eq *eq = *(fid_eq**)&eqPtr;
+  return service->delete_eq_event(eq);
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, jobject thisObj, jlong eqPtr) {
