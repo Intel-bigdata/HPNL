@@ -9,7 +9,6 @@ ExternalEqService::ExternalEqService(const char* ip_, const char* port_, bool is
 
 ExternalEqService::~ExternalEqService() {
   delete stack;
-  std::cout << "external eq service deleted" << std::endl;
   delete eq_demulti_plexer;
   delete recvBufMgr;
   delete sendBufMgr;
@@ -30,6 +29,14 @@ fid_eq* ExternalEqService::connect() {
     eqHandle = stack->connect(recvBufMgr, sendBufMgr);  
   }
   return (fid_eq*)eqHandle->get_ctx();
+}
+
+uint64_t ExternalEqService::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
+  return stack->reg_rma_buffer(buffer, buffer_size, rdma_buffer_id);
+}
+
+Chunk* ExternalEqService::get_rma_buffer(int rdma_buffer_id) {
+  return chunkMap[rdma_buffer_id];
 }
 
 void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id) {

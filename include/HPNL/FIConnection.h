@@ -7,6 +7,7 @@
 #include <rdma/fabric.h>
 #include <rdma/fi_cm.h>
 #include <rdma/fi_endpoint.h>
+#include <rdma/fi_rma.h>
 
 #include <memory>
 #include <unordered_map>
@@ -30,14 +31,17 @@ enum ConStatus {
   DOWN
 };
 
+class FIStack;
+
 class FIConnection : public Connection {
   public:
-    FIConnection(fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool);
+    FIConnection(FIStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool);
     ~FIConnection();
 
     virtual void recv(char*, int) override;
     virtual void send(const char*, int, int, int, long) override;
     virtual void send(int, int) override;
+    virtual void read(int, int, uint64_t, uint64_t, uint64_t) override;
     virtual void shutdown() override;
     virtual void take_back_chunk(Chunk*) override;
     virtual void activate_chunk(Chunk*) override;
@@ -64,6 +68,8 @@ class FIConnection : public Connection {
     std::condition_variable con_cv;
     
   private:
+    FIStack *stack;
+
     fi_info *info;
     fid_domain *domain;
     fid_ep *ep;

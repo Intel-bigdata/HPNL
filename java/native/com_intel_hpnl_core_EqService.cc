@@ -180,3 +180,26 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer(JNIE
   service->set_send_buffer((char*)buffer, size, rdmaBufferId);
 }
 
+/*
+ * Class:     com_intel_hpnl_EqService
+ * Method:    reg_rma_buffer
+ * Signature: (Ljava/nio/ByteBuffer;J)V
+ */
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size, jint rdmaBufferId) {
+  ExternalEqService *service = _get_self(env, thisObj);
+  jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(send_buffer);
+  return service->reg_rma_buffer((char*)buffer, size, rdmaBufferId);
+}
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    get_buffer_address
+ * Signature: (Ljava/nio/ByteBuffer)J
+ */
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_get_1buffer_1address(JNIEnv *env, jobject thisObj, jobject rma_buffer) {
+  ExternalEqService *service = _get_self(env, thisObj);
+  jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(rma_buffer);
+  jlong buffer_address = *(jlong*)&buffer;
+  return buffer_address;
+}
+

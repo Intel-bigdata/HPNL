@@ -17,6 +17,7 @@ public class EqService {
     this.ip = ip;
     this.port = port;
     this.is_server = is_server;
+    this.rmaBufferId = 0;
 
     this.conMap = new HashMap<Long, Connection>();
     this.reapCons = new ConcurrentHashMap<Long, Connection>();
@@ -92,6 +93,7 @@ public class EqService {
       connection.setConnectedCallback(connectedCallback);
       connection.setRecvCallback(recvCallback);
       connection.setSendCallback(sendCallback);
+      connection.setReadCallback(readCallback);
       connection.setShutdownCallback(shutdownCallback);
     }
     connection.handleCallback(eventType, 0, 0);
@@ -110,6 +112,10 @@ public class EqService {
 
   public void setSendCallback(Handler callback) {
     sendCallback = callback;
+  }
+
+  public void setReadCallback(Handler callback) {
+    readCallback = callback; 
   }
 
   public void setShutdownCallback(Handler callback) {
@@ -149,6 +155,15 @@ public class EqService {
     return sendBufferMap.get(rdmaBufferId); 
   }
 
+  public Buffer getRmaBuffer(int bufferSize) {
+    // allocate memory from on-heap, off-heap or AEP.
+    ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
+    long address = get_buffer_address(byteBuffer);
+    long rkey = reg_rma_buffer(byteBuffer, bufferSize, this.rmaBufferId);
+    Buffer buffer = new Buffer(this.rmaBufferId++, byteBuffer, rkey, address);
+    return buffer; 
+  }
+
   public void addReapCon(Long eq, Connection con) {
     reapCons.put(eq, con);
   }
@@ -172,6 +187,8 @@ public class EqService {
   public native int delete_eq_event(long eq);
   public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
   public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
+  private native long reg_rma_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
+  private native long get_buffer_address(ByteBuffer buffer);
   private native void init(String ip_, String port_, boolean is_server_);
   private native void free();
   public native void finalize();
@@ -186,10 +203,12 @@ public class EqService {
 
   private HashMap<Integer, Buffer> sendBufferMap;
   private HashMap<Integer, Buffer> recvBufferMap;
+  private int rmaBufferId;
 
   private Handler connectedCallback;
   private Handler recvCallback;
   private Handler sendCallback;
+  private Handler readCallback;
   private Handler shutdownCallback;
 
   private EqThread eqThread;

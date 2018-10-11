@@ -25,6 +25,14 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send
 
 /*
  * Class:     com_intel_hpnl_core_Connection
+ * Method:    read
+ * Signature: (Ljava/nio/ByteBuffer;IIJJJ)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_read
+  (JNIEnv *, jobject, jint, jint, jlong, jlong, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_Connection
  * Method:    init
  * Signature: (J)V
  */

@@ -1,6 +1,7 @@
 #include "HPNL/FIConnection.h"
+#include "HPNL/FIStack.h"
 
-FIConnection::FIConnection(fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, bool is_server) : info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
+FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, bool is_server) : stack(stack_), info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
   assert(!fi_endpoint(domain, info, &ep, NULL));
   
   struct fi_eq_attr eq_attr = {
@@ -88,6 +89,12 @@ void FIConnection::send(int block_buffer_size, int rdma_buffer_id) {
 
 void FIConnection::recv(char *buffer, int buffer_size) {
   // TODO: buffer filter
+}
+
+void FIConnection::read(int rdma_buffer_id, int local_offset, uint64_t len, uint64_t remote_addr, uint64_t remote_key) {
+  Chunk *ck = stack->get_rma_chunk(rdma_buffer_id);
+  ck->con = this;
+  assert(!fi_read(ep, (char*)ck->buffer+local_offset, len, fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck));
 }
 
 void FIConnection::connect() {

@@ -64,7 +64,7 @@ void FIStack::listen() {
 }
 
 HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(fabric, info, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, false);
+  FIConnection *con = new FIConnection(this, fabric, info, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, false);
   con->status = CONNECT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
@@ -73,12 +73,30 @@ HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
 }
 
 HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(fabric, (fi_info*)info_, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, true);
+  FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%WORKERS], waitset, recv_buf_mgr, send_buf_mgr, true);
   con->status = ACCEPT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
   con->accept();
   return con->get_eqhandle();
+}
+
+uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
+  Chunk *ck = new Chunk();
+  ck->buffer = buffer;
+  ck->capacity = buffer_size;
+  ck->rdma_buffer_id = rdma_buffer_id;
+  fid_mr *mr;
+  assert(!fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
+  ck->mr = mr;
+  std::lock_guard<std::mutex> lk(mtx);
+  chunkMap.insert(std::pair<int, Chunk*>(rdma_buffer_id, ck));
+  return ((fid_mr*)ck->mr)->key;
+}
+
+Chunk* FIStack::get_rma_chunk(int rdma_buffer_id) {
+  std::lock_guard<std::mutex> lk(mtx);
+  return chunkMap[rdma_buffer_id];
 }
 
 void FIStack::shutdown() {

@@ -21,6 +21,7 @@ public class Connection {
 
   public native void recv(ByteBuffer buffer, int id);
   public native void send(int blockBufferSize, int rdmaBufferId);
+  public native void read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr);
   private native void init(long eq);
   public native void finalize();
 
@@ -46,6 +47,10 @@ public class Connection {
 
   public void setSendCallback(Handler callback) {
     sendCallback = callback; 
+  }
+
+  public void setReadCallback(Handler callback) {
+    readCallback = callback; 
   }
 
   public Handler getShutdownCallback() {
@@ -87,7 +92,11 @@ public class Connection {
       if (sendCallback != null) {
         sendCallback.handle(this, rdmaBufferId, blockBufferSize);
       }
-    }   
+    } else if (eventType == EventType.READ_EVENT) {
+      if (readCallback != null) {
+        readCallback.handle(this, rdmaBufferId, blockBufferSize); 
+      }
+    }
   }
 
   EqService service;
@@ -97,6 +106,7 @@ public class Connection {
   private Handler connectedCallback = null;
   private Handler recvCallback = null;
   private Handler sendCallback = null;
+  private Handler readCallback = null;
   private Handler shutdownCallback = null;
 
   private long nativeHandle;

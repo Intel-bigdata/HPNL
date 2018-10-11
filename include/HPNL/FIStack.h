@@ -21,6 +21,8 @@ class FIStack {
     void listen();
     HandlePtr connect(BufMgr*, BufMgr*);
     HandlePtr accept(void*, BufMgr*, BufMgr*);
+    uint64_t reg_rma_buffer(char*, uint64_t, int);
+    Chunk* get_rma_chunk(int);
     void shutdown();
     void reap(void*);
     FIConnection* get_connection(fid* id);
@@ -42,6 +44,9 @@ class FIStack {
     Handle *cqHandle[WORKERS];
 
     fid_wait *waitset;
+
+    std::map<int, Chunk*> chunkMap;
+    std::mutex mtx;
 };
 
 #endif

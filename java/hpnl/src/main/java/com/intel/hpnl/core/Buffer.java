@@ -8,6 +8,13 @@ public class Buffer {
     this.byteBuffer = byteBuffer;
   }
 
+  public Buffer(int rdmaBufferId, ByteBuffer byteBuffer, long rkey, long address) {
+    this.rdmaBufferId = rdmaBufferId;
+    this.byteBuffer = byteBuffer;
+    this.rkey = rkey;
+    this.address = address;
+  }
+
   public int getRdmaBufferId() {
     return this.rdmaBufferId;
   }
@@ -22,6 +29,14 @@ public class Buffer {
 
   public int getSeq() {
     return this.seq; 
+  }
+
+  public long getRKey() {
+    return this.rkey; 
+  }
+
+  public long getAddress() {
+    return address; 
   }
 
   public void put(ByteBuffer src, int blockBufferId, int seq) {
@@ -46,4 +61,6 @@ public class Buffer {
   private int blockBufferId;
   private int seq;
   private ByteBuffer byteBuffer;
+  private long rkey;
+  private long address;
 }

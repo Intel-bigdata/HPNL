@@ -1,4 +1,4 @@
-package com.intel.hpnl.pingpong;
+package com.intel.hpnl.rma;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
+import com.intel.hpnl.core.Buffer;
 
 public class Server {
   public static void main(String args[]) {
@@ -18,10 +19,12 @@ public class Server {
 
     List<Connection> conList = new ArrayList<Connection>();
 
+    Buffer buffer = eqService.getRmaBuffer(40960);
+
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
-    ReadCallback readCallback = new ReadCallback(true, eqService);
+    ServerRecvCallback recvCallback = new ServerRecvCallback(true, buffer);
     eqService.setConnectedCallback(connectedCallback);
-    eqService.setRecvCallback(readCallback);
+    eqService.setRecvCallback(recvCallback);
 
     for (int i = 0; i < BUFFER_NUM; i++) {
       ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
