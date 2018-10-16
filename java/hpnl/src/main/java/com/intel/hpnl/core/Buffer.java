@@ -19,8 +19,8 @@ public class Buffer {
     return this.rdmaBufferId;
   }
 
-  public ByteBuffer getByteBuffer() {
-    return this.byteBuffer; 
+  public byte getType() {
+    return this.type;
   }
 
   public int getBlockBufferId() {
@@ -31,18 +31,27 @@ public class Buffer {
     return this.seq; 
   }
 
+  public ByteBuffer getRawBuffer() {
+    return this.byteBuffer;
+  }
+
   public long getRKey() {
-    return this.rkey; 
+    return this.rkey;
   }
 
   public long getAddress() {
-    return address; 
+    return address;
   }
 
-  public void put(ByteBuffer src, int blockBufferId, int seq) {
+  public int remaining() {
+    return this.byteBuffer.remaining();
+  }
+
+  public void put(ByteBuffer src, byte type, int blockBufferId, int seq) {
     assert byteBuffer.capacity() > src.remaining();
     byteBuffer.rewind();
-    byteBuffer.limit(8+src.remaining());
+    byteBuffer.limit(9+src.remaining());
+    byteBuffer.put(type);
     byteBuffer.putInt(blockBufferId);
     byteBuffer.putInt(seq);
     byteBuffer.put(src.slice());
@@ -52,12 +61,14 @@ public class Buffer {
   public ByteBuffer get(int blockBufferSize) {
     byteBuffer.position(0); 
     byteBuffer.limit(blockBufferSize);
+    this.type = byteBuffer.get();
     this.blockBufferId = byteBuffer.getInt();
     this.seq = byteBuffer.getInt();
     return byteBuffer.slice();
   }
 
   private int rdmaBufferId;
+  private byte type;
   private int blockBufferId;
   private int seq;
   private ByteBuffer byteBuffer;

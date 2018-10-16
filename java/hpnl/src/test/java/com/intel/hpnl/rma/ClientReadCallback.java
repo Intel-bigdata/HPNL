@@ -11,9 +11,9 @@ public class ClientReadCallback implements Handler {
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     System.out.println("client read handler, read sucessfully.");
     for (int i = 0; i < 200; i++) {
-      System.out.println("get int " + this.buffer[0].getByteBuffer().getInt());
+      System.out.println("get int " + this.buffer[0].getRawBuffer().getInt());
     }
-    this.buffer[0].getByteBuffer().flip();
+    this.buffer[0].getRawBuffer().flip();
   }
   private Buffer[] buffer;
 }

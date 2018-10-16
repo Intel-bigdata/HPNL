@@ -11,9 +11,6 @@ public class ReadCallback implements Handler {
   public ReadCallback(boolean is_server, EqService eqService) {
     this.is_server = is_server;
     this.eqService = eqService;
-    byteBufferTmp = ByteBuffer.allocate(4096);
-    byteBufferTmp.putChar('a');
-    byteBufferTmp.flip();
   }
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     if (!is_server) {
@@ -32,14 +29,13 @@ public class ReadCallback implements Handler {
 
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
-    sendBuffer.put(recvByteBuffer, 1, 10);
-    con.send(sendBuffer.getByteBuffer().remaining(), sendBuffer.getRdmaBufferId());
+    sendBuffer.put(recvByteBuffer, (byte)0, 1, 10);
+    con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
   }
   private int count = 0;
   private long startTime;
   private long endTime;
   private float totally_time = 0;
-  private ByteBuffer byteBufferTmp;
 
   boolean is_server = false;
   private EqService eqService;

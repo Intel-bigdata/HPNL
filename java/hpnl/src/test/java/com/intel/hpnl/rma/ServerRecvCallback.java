@@ -13,7 +13,7 @@ public class ServerRecvCallback implements Handler {
 
     this.byteBufferTmp = ByteBuffer.allocate(40960);
     for (int i = 0; i < 200; i++) {
-      this.buffer.getByteBuffer().putInt(i*4);
+      this.buffer.getRawBuffer().putInt(i*4);
     }
 
     byteBufferTmp.putLong(this.buffer.getAddress());
@@ -23,8 +23,8 @@ public class ServerRecvCallback implements Handler {
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     Buffer sendBuffer = con.getSendBuffer();
 
-    sendBuffer.put(this.byteBufferTmp, 1, 10);
-    con.send(sendBuffer.getByteBuffer().remaining(), sendBuffer.getRdmaBufferId());
+    sendBuffer.put(this.byteBufferTmp, (byte)0, 1, 10);
+    con.send(sendBuffer.getRawBuffer().remaining(), sendBuffer.getRdmaBufferId());
   }
   private ByteBuffer byteBufferTmp;
 

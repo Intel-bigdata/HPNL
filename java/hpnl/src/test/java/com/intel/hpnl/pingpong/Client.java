@@ -15,7 +15,9 @@ public class Client {
     final int BUFFER_NUM = 32;
 
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(4096);
-    byteBufferTmp.putChar('a');
+    for (int i = 0; i < 4096; i++) {
+      byteBufferTmp.put((byte)0);
+    }
     byteBufferTmp.flip();
 
     EqService eqService = new EqService("172.168.2.106", "123456", false);
@@ -46,8 +48,8 @@ public class Client {
     
     for (Connection con: conList) {
       Buffer buffer = con.getSendBuffer();
-      buffer.put(byteBufferTmp, 1, 10);
-      con.send(buffer.getByteBuffer().remaining(), buffer.getRdmaBufferId());
+      buffer.put(byteBufferTmp, (byte)0, 1, 10);
+      con.send(buffer.remaining(), buffer.getRdmaBufferId());
     }
     //cqService.shutdown();
     cqService.join();
