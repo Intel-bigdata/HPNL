@@ -61,5 +61,5 @@ public class CqService {
   private EqService eqService;
   private int num;
   private long serviceNativeHandle;
-  private List<CqThread> cqThreads; 
+  private List<CqThread> cqThreads;
 }

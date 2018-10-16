@@ -22,6 +22,7 @@ class ExternalCqService {
       }
     }
     int wait_cq_event(int num, fid_eq** eq, int* rdma_buffer_id, int* block_buffer_size) {
+      assert(num <= WORKERS);
       return cq_demulti_plexer[num]->wait_event(eq, rdma_buffer_id, block_buffer_size);
     }
     Connection* get_connection(fid_eq* eq) {

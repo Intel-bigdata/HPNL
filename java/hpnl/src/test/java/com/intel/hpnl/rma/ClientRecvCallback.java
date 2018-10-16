@@ -1,5 +1,7 @@
 package com.intel.hpnl.rma;
 
+import java.nio.ByteBuffer;
+
 import com.intel.hpnl.core.Handler;
 import com.intel.hpnl.core.Buffer;
 import com.intel.hpnl.core.Connection;
@@ -11,13 +13,11 @@ public class ClientRecvCallback implements Handler {
   }
   public synchronized void handle(final Connection con, int rdmaBufferId, int blockBufferSize) {
     Buffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
-
-    int blockId = recvBuffer.getByteBuffer().getInt();
-    int seq = recvBuffer.getByteBuffer().getInt();
+    ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
     final Buffer[] buf = this.buffer;
-    final long address = recvBuffer.getByteBuffer().getLong();
-    final long rkey = recvBuffer.getByteBuffer().getLong();
+    final long address = recvByteBuffer.getLong();
+    final long rkey = recvByteBuffer.getLong();
 
     for (int i = 0; i < 200; i++) {
       final int offset = i*4;

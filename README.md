@@ -39,6 +39,10 @@ cd HPNL/java/hpnl; mvn package
 
 ## Benchmark
 
+<div>
+    <a href="https://plot.ly/~haodongt/7/?share_key=R7XHlNOGTnsHBhdUrAukRp" target="_blank" title="HPNL" style="display: block; text-align: center;"><img src="https://plot.ly/~haodongt/7.png?share_key=R7XHlNOGTnsHBhdUrAukRp" alt="HPNL" style="max-width: 100%;width: 600px;"  width="600" onerror="this.onerror=null;this.src='https://plot.ly/404.png';" /></a>
+</div>
+
 ## Usage
 To get started, refer to the mini tutorial. Simple C/S examples can be found in [HPNL/test](https://github.com/Intel-bigdata/HPNL/tree/master/test) directory. 
 
