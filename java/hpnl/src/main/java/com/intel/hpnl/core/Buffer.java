@@ -47,14 +47,24 @@ public class Buffer {
     return this.byteBuffer.remaining();
   }
 
-  public void put(ByteBuffer src, byte type, int blockBufferId, int seq) {
-    assert byteBuffer.capacity() > src.remaining();
-    byteBuffer.rewind();
-    byteBuffer.limit(9+src.remaining());
+  private void putMetadata(int srcSize, byte type, int blockBufferId, int seq) {
+    byteBuffer.limit(9+srcSize);
     byteBuffer.put(type);
     byteBuffer.putInt(blockBufferId);
     byteBuffer.putInt(seq);
+  }
+
+  public void put(ByteBuffer src, byte type, int blockBufferId, int seq) {
+    byteBuffer.rewind();
+    putMetadata(src.remaining(), type, blockBufferId, seq);
     byteBuffer.put(src.slice());
+    byteBuffer.flip();
+  }
+
+  public void putInt(int src, byte type, int blockBufferId, int seq) {
+    byteBuffer.rewind();
+    putMetadata(4, type, blockBufferId, seq);
+    byteBuffer.putInt(src);
     byteBuffer.flip();
   }
 
