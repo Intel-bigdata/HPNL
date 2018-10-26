@@ -11,7 +11,7 @@ public class CqThread extends Thread {
 
   public void run() {
     while (running.get()) {
-      cqService.wait_cq_event(index);
+      cqService.wait_event(index);
     }
   }
 

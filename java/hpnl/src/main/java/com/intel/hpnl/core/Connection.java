@@ -69,12 +69,16 @@ public class Connection {
     }
   }
 
-  public Buffer getSendBuffer() {
-    try {
-      return sendBufferList.take();
-    } catch (InterruptedException e) {
-      e.printStackTrace(); 
+  public Buffer getSendBuffer(boolean wait) {
+    if (wait) {
+      try {
+        return sendBufferList.take();
+      } catch (InterruptedException e) {
+        e.printStackTrace(); 
+      }
       return null;
+    } else {
+      return sendBufferList.poll();
     }
   }
 

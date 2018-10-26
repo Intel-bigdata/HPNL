@@ -51,7 +51,7 @@ public class Client {
     System.out.println("connected, start to remote read.");
     
     for (Connection con: conList) {
-      Buffer sendBuffer = con.getSendBuffer();
+      Buffer sendBuffer = con.getSendBuffer(true);
       sendBuffer.put(byteBufferTmp, (byte)0, 1, 10);
       con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
     }

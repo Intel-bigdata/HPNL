@@ -21,7 +21,7 @@ public class ServerRecvCallback implements Handler {
     byteBufferTmp.flip();
   }
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
-    Buffer sendBuffer = con.getSendBuffer();
+    Buffer sendBuffer = con.getSendBuffer(true);
 
     sendBuffer.put(this.byteBufferTmp, (byte)0, 1, 10);
     con.send(sendBuffer.getRawBuffer().remaining(), sendBuffer.getRdmaBufferId());
