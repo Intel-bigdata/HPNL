@@ -21,7 +21,7 @@ FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_, fi_info *info_,
   
   assert(!fi_enable(ep));
   int size = 0;
-  while (size < CON_MEM_SIZE) {
+  while (size < CON_MEM_SIZE*2) {
     fid_mr *mr;
     Chunk *ck = recv_buf_mgr->get();
     assert(ck->buffer);

@@ -24,7 +24,7 @@ public class ReadCallback implements Handler {
         return;
       }
     }
-    Buffer sendBuffer = con.getSendBuffer();
+    Buffer sendBuffer = con.getSendBuffer(true);
     Buffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
 
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);

@@ -38,10 +38,13 @@ public class Client {
     eqService.setShutdownCallback(shutdownCallback);
 
     for (int i = 0; i < BUFFER_NUM; i++) {
-      ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
       ByteBuffer sendBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
-      eqService.setRecvBuffer(recvBuf, BUFFER_SIZE, i);
       eqService.setSendBuffer(sendBuf, BUFFER_SIZE, i);
+    }
+
+    for (int i = 0; i < BUFFER_NUM*2; i++) {
+      ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
+      eqService.setRecvBuffer(recvBuf, BUFFER_SIZE, i);
     }
 
     cqService.start();
@@ -51,7 +54,7 @@ public class Client {
     System.out.println("connected, start to remote read.");
     
     for (Connection con: conList) {
-      Buffer sendBuffer = con.getSendBuffer();
+      Buffer sendBuffer = con.getSendBuffer(true);
       sendBuffer.put(byteBufferTmp, (byte)0, 1, 10);
       con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
     }

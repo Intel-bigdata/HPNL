@@ -2,6 +2,7 @@ package com.intel.hpnl.core;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.function.Function;
 
 public class CqService {
   static {
@@ -21,6 +22,7 @@ public class CqService {
       CqThread cqThread = new CqThread(this, i);
       cqThreads.add(cqThread);
     }
+    this.externalHandlers = new ArrayList<ExternalHandler>();
   }
   public void start() {
     for (CqThread cqThread : cqThreads) {
@@ -53,6 +55,24 @@ public class CqService {
     Connection connection = eqService.getConMap().get(eq);
     connection.handleCallback(eventType, rdma_buffer_id, block_buffer_size);
   }
+
+  public void addExternalEvent(ExternalHandler externalHandler) {
+    externalHandlers.add(externalHandler); 
+  }
+
+  private int waitExternalEvent(int index) {
+    for (ExternalHandler handler: externalHandlers) {
+      handler.handle();
+    }
+    return 0;
+  }
+
+  public int wait_event(int index) {
+    wait_cq_event(index);
+    waitExternalEvent(index);
+    return 0;
+  }
+
   public native int wait_cq_event(int index);
   private native void init(long Service);
   public native void finalize();
@@ -62,4 +82,5 @@ public class CqService {
   private int num;
   private long serviceNativeHandle;
   private List<CqThread> cqThreads;
+  private List<ExternalHandler> externalHandlers;
 }

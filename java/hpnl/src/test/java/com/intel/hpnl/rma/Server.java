@@ -27,10 +27,13 @@ public class Server {
     eqService.setRecvCallback(recvCallback);
 
     for (int i = 0; i < BUFFER_NUM; i++) {
-      ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
       ByteBuffer sendBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
-      eqService.setRecvBuffer(recvBuf, BUFFER_SIZE, i);
       eqService.setSendBuffer(sendBuf, BUFFER_SIZE, i);
+    }
+
+    for (int i = 0; i < BUFFER_NUM*2; i++) {
+      ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
+      eqService.setRecvBuffer(recvBuf, BUFFER_SIZE, i);
     }
 
     cqService.start();

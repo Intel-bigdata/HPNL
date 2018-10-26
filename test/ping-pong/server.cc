@@ -47,7 +47,7 @@ class SendCallback : public Callback {
 int main(int argc, char *argv[]) {
   BufMgr *recvBufMgr = new PingPongBufMgr();
   Chunk *ck;
-  for (int i = 0; i < MEM_SIZE; i++) {
+  for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();
     ck->rdma_buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
   delete server;
 
   int recv_chunk_size = recvBufMgr->get_id();
-  assert(recv_chunk_size == MEM_SIZE);
+  assert(recv_chunk_size == MEM_SIZE*2);
   for (int i = 0; i < recv_chunk_size; i++) {
     Chunk *ck = recvBufMgr->index(i);
     free(ck->buffer);

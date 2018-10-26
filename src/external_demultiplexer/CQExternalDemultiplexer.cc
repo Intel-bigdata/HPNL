@@ -40,41 +40,43 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
     start = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
   }
   fi_cq_msg_entry entry;
-  ret = fi_cq_read(cq, &entry, 1);
-  if (ret == -FI_EAVAIL) {
-    fi_cq_err_entry err_entry;
-    fi_cq_readerr(cq, &err_entry, entry.flags); 
-    std::cout << "error" << std::endl;
-    end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-    return -1;
-  } else if (ret == -FI_EAGAIN) {
-    end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-    return 0;
-  } else {
-    end = start;
-    Chunk *ck = (Chunk*)entry.op_context;
-    *rdma_buffer_id = ck->rdma_buffer_id;
-    FIConnection *con = (FIConnection*)ck->con;
-    if (!con) {
+  while (ret > 0) {
+    ret = fi_cq_read(cq, &entry, 1);
+    if (ret == -FI_EAVAIL) {
+      fi_cq_err_entry err_entry;
+      fi_cq_readerr(cq, &err_entry, entry.flags); 
+      std::cout << "error" << std::endl;
+      end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
+      return -1;
+    } else if (ret == -FI_EAGAIN) {
+      end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
       return 0;
-    }
-    fid_eq *eq_tmp = (fid_eq*)con->get_eqhandle()->get_ctx();
-    *eq = eq_tmp;
-    if (entry.flags & FI_RECV) {
-      std::unique_lock<std::mutex> l(con->con_mtx);
-      con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
-      l.unlock();
-      con->recv((char*)ck->buffer, entry.len);
-      *block_buffer_size = entry.len;
-      return RECV_EVENT;
-    } else if (entry.flags & FI_SEND) {
-      return SEND_EVENT;
-    } else if (entry.flags & FI_READ) {
-      return READ_EVENT;
-    } else if (entry.flags & FI_WRITE) {
-      return WRITE_EVENT;
     } else {
-      return 0;
+      end = start;
+      Chunk *ck = (Chunk*)entry.op_context;
+      *rdma_buffer_id = ck->rdma_buffer_id;
+      FIConnection *con = (FIConnection*)ck->con;
+      if (!con) {
+        return 0;
+      }
+      fid_eq *eq_tmp = (fid_eq*)con->get_eqhandle()->get_ctx();
+      *eq = eq_tmp;
+      if (entry.flags & FI_RECV) {
+        std::unique_lock<std::mutex> l(con->con_mtx);
+        con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
+        l.unlock();
+        con->recv((char*)ck->buffer, entry.len);
+        *block_buffer_size = entry.len;
+        return RECV_EVENT;
+      } else if (entry.flags & FI_SEND) {
+        return SEND_EVENT;
+      } else if (entry.flags & FI_READ) {
+        return READ_EVENT;
+      } else if (entry.flags & FI_WRITE) {
+        return WRITE_EVENT;
+      } else {
+        return 0;
+      }
     }
   }
   return 0;
