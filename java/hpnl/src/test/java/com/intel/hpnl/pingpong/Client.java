@@ -21,7 +21,7 @@ public class Client {
     byteBufferTmp.flip();
 
     EqService eqService = new EqService("172.168.2.106", "123456", false);
-    CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
+    CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle(), 1L<<2);
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();
 

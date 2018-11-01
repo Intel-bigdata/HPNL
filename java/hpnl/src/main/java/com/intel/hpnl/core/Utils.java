@@ -27,4 +27,12 @@ public class Utils {
     }
     throw new IllegalStateException("Could not find a free TCP/IP port.");
   }
+
+  public static void setAffinity(long affinity) {
+    if (affinity > 0L) {
+      set_affinity(affinity);
+    }
+  }
+
+  private static native void set_affinity(long affinity);
 }

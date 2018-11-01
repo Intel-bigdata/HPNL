@@ -2,14 +2,13 @@ package com.intel.hpnl.core;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.function.Function;
 
 public class CqService {
   static {
     System.load("/usr/local/lib/libhpnl.so");
   }
 
-  public CqService(EqService service, int num, long serviceNativeHandle) {
+  public CqService(EqService service, int num, long serviceNativeHandle, long affinity) {
     this.eqService = service;
     this.num = num;
     this.serviceNativeHandle = serviceNativeHandle;
@@ -19,7 +18,7 @@ public class CqService {
     init(serviceNativeHandle);
     cqThreads = new ArrayList<CqThread>();
     for (int i = 0; i < this.num; i++) {
-      CqThread cqThread = new CqThread(this, i);
+      CqThread cqThread = new CqThread(this, i, affinity);
       cqThreads.add(cqThread);
     }
     this.externalHandlers = new ArrayList<ExternalHandler>();
