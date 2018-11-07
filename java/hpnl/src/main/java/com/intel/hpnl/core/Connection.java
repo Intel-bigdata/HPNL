@@ -21,7 +21,7 @@ public class Connection {
 
   public native void recv(ByteBuffer buffer, int id);
   public native void send(int blockBufferSize, int rdmaBufferId);
-  public native void read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr);
+  public native int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr);
   private native void init(long eq);
   public native void finalize();
 
@@ -84,6 +84,10 @@ public class Connection {
 
   public Buffer getRecvBuffer(int rdmaBufferId) {
     return service.getRecvBuffer(rdmaBufferId);
+  }
+
+  public ByteBuffer getRmaBuffer(int rmaBufferId) {
+    return service.getRmaBufferByBufferId(rmaBufferId);
   }
 
   public void handleCallback(int eventType, int rdmaBufferId, int blockBufferSize) {

@@ -36,7 +36,7 @@ uint64_t ExternalEqService::reg_rma_buffer(char* buffer, uint64_t buffer_size, i
 }
 
 Chunk* ExternalEqService::get_rma_buffer(int rdma_buffer_id) {
-  return chunkMap[rdma_buffer_id];
+  return stack->get_rma_chunk(rdma_buffer_id);
 }
 
 void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id) {

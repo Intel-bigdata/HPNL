@@ -19,7 +19,12 @@ public class Server {
 
     List<Connection> conList = new ArrayList<Connection>();
 
-    Buffer buffer = eqService.getRmaBuffer(40960);
+    Buffer[] buffer = new Buffer[200];
+    for (int i = 0; i < 200; i++) {
+      buffer[i] = eqService.getRmaBuffer(40960);
+      buffer[i].getRawBuffer().putInt(i);
+      buffer[i].getRawBuffer().flip();
+    }
 
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
     ServerRecvCallback recvCallback = new ServerRecvCallback(true, buffer);

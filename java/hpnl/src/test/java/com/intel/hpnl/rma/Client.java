@@ -20,8 +20,8 @@ public class Client {
 
     EqService eqService = new EqService("172.168.2.106", "123456", false);
     CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
-    Buffer[] buffer = new Buffer[1];
-    for (int i = 0; i < 1; i++) {
+    Buffer[] buffer = new Buffer[200];
+    for (int i = 0; i < 200; i++) {
       buffer[i] = eqService.getRmaBuffer(40960);
     }
 
@@ -57,6 +57,7 @@ public class Client {
       Buffer sendBuffer = con.getSendBuffer(true);
       sendBuffer.put(byteBufferTmp, (byte)0, 1, 10);
       con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
+      System.out.println("finished sending.");
     }
     //cqService.shutdown();
     cqService.join();

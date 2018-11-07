@@ -12,20 +12,14 @@ public class ClientRecvCallback implements Handler {
     this.buffer = buffer;
   }
   public synchronized void handle(final Connection con, int rdmaBufferId, int blockBufferSize) {
+    System.out.println("block buffer size " + blockBufferSize);
     Buffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
-    final Buffer[] buf = this.buffer;
-    final long address = recvByteBuffer.getLong();
-    final long rkey = recvByteBuffer.getLong();
-
     for (int i = 0; i < 200; i++) {
-      final int offset = i*4;
-      new Thread(new Runnable() {
-        public void run() {
-          con.read(buf[0].getRdmaBufferId(), offset, 4, address+offset, rkey);
-        }
-      }).start();
+      long address = recvByteBuffer.getLong();
+      long rkey = recvByteBuffer.getLong();
+      con.read(buffer[i].getRdmaBufferId(), 0, 4, address, rkey);
     }
   }
   boolean is_server = false;

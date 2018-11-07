@@ -26,7 +26,7 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
-  if (end - start >= 20000) {
+  if (end - start >= 2000) {
     if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
       int epoll_ret = epoll_wait(epfd, &event, 1, 2000);
       if (epoll_ret < 0) {
@@ -40,7 +40,7 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
     start = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
   }
   fi_cq_msg_entry entry;
-  while (ret > 0) {
+  do {
     ret = fi_cq_read(cq, &entry, 1);
     if (ret == -FI_EAVAIL) {
       fi_cq_err_entry err_entry;
@@ -78,6 +78,6 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
         return 0;
       }
     }
-  }
+  } while (ret > 0);
   return 0;
 }

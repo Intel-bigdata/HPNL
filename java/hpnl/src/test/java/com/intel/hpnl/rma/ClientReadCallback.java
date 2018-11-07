@@ -2,6 +2,9 @@ package com.intel.hpnl.rma;
 
 import com.intel.hpnl.core.Handler;
 import com.intel.hpnl.core.Connection;
+
+import java.nio.ByteBuffer;
+
 import com.intel.hpnl.core.Buffer;
 
 public class ClientReadCallback implements Handler {
@@ -10,10 +13,8 @@ public class ClientReadCallback implements Handler {
   }
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     System.out.println("client read handler, read sucessfully.");
-    for (int i = 0; i < 200; i++) {
-      System.out.println("get int " + this.buffer[0].getRawBuffer().getInt());
-    }
-    this.buffer[0].getRawBuffer().flip();
+    ByteBuffer byteBuffer = con.getRmaBuffer(rdmaBufferId);
+    System.out.println(byteBuffer.getInt());
   }
   private Buffer[] buffer;
 }

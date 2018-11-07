@@ -47,7 +47,8 @@ public class Buffer {
     return this.byteBuffer.remaining();
   }
 
-  private void putMetadata(int srcSize, byte type, int blockBufferId, int seq) {
+  public void putMetadata(int srcSize, byte type, int blockBufferId, int seq) {
+    byteBuffer.rewind();
     byteBuffer.limit(9+srcSize);
     byteBuffer.put(type);
     byteBuffer.putInt(blockBufferId);
@@ -55,16 +56,8 @@ public class Buffer {
   }
 
   public void put(ByteBuffer src, byte type, int blockBufferId, int seq) {
-    byteBuffer.rewind();
     putMetadata(src.remaining(), type, blockBufferId, seq);
     byteBuffer.put(src.slice());
-    byteBuffer.flip();
-  }
-
-  public void putInt(int src, byte type, int blockBufferId, int seq) {
-    byteBuffer.rewind();
-    putMetadata(4, type, blockBufferId, seq);
-    byteBuffer.putInt(src);
     byteBuffer.flip();
   }
 

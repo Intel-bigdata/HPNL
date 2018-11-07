@@ -18,7 +18,7 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
     fids[i++] = iter.first;
   }
   if (fi_trywait(fabric, fids, fid_map.size()) == FI_SUCCESS) {
-    int epoll_ret = epoll_wait(epfd, &event, 1, 2000);
+    int epoll_ret = epoll_wait(epfd, &event, 1, 20000);
     if (epoll_ret <= 0) {
       return epoll_ret;
     }

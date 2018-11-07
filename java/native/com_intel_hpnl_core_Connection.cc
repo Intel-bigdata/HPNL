@@ -37,9 +37,9 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, job
   con->send(blockBufferSize, rdmaBufferId);
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jint localOffset, jlong len, jlong remoteAddr, jlong remoteMr) {
+JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jint localOffset, jlong len, jlong remoteAddr, jlong remoteMr) {
   Connection *con = _get_self(env, thisObj); 
-  con->read(rdmaBufferId, localOffset, len, remoteAddr, remoteMr);
+  return con->read(rdmaBufferId, localOffset, len, remoteAddr, remoteMr);
 }
 
 /*

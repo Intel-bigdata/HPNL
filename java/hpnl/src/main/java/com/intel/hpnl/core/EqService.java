@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class EqService {
   static {
@@ -24,6 +25,7 @@ public class EqService {
 
     this.sendBufferMap = new HashMap<Integer, Buffer>();
     this.recvBufferMap = new HashMap<Integer, Buffer>();
+    this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
 
     init(ip, port, is_server);
 
@@ -155,13 +157,28 @@ public class EqService {
     return sendBufferMap.get(rdmaBufferId); 
   }
 
-  public Buffer getRmaBuffer(int bufferSize) {
+  public long getBufferAddress(ByteBuffer bytebuffer) {
+    return get_buffer_address(bytebuffer);
+  }
+
+  public synchronized long regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
+    rmaBufferMap.put(this.rmaBufferId, byteBuffer);
+    long rkey = reg_rma_buffer(byteBuffer, bufferSize, this.rmaBufferId++);
+    return rkey;
+  }
+
+  public synchronized Buffer getRmaBuffer(int bufferSize) {
     // allocate memory from on-heap, off-heap or AEP.
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
     long address = get_buffer_address(byteBuffer);
+    rmaBufferMap.put(this.rmaBufferId, byteBuffer);
     long rkey = reg_rma_buffer(byteBuffer, bufferSize, this.rmaBufferId);
     Buffer buffer = new Buffer(this.rmaBufferId++, byteBuffer, rkey, address);
     return buffer; 
+  }
+
+  public ByteBuffer getRmaBufferByBufferId(int rmaBufferId) {
+    return rmaBufferMap.get(rmaBufferId); 
   }
 
   public void addReapCon(Long eq, Connection con) {
@@ -203,6 +220,8 @@ public class EqService {
 
   private HashMap<Integer, Buffer> sendBufferMap;
   private HashMap<Integer, Buffer> recvBufferMap;
+  private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
+
   private int rmaBufferId;
 
   private Handler connectedCallback;

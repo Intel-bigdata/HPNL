@@ -41,7 +41,7 @@ class FIConnection : public Connection {
     virtual void recv(char*, int) override;
     virtual void send(const char*, int, int, int, long) override;
     virtual void send(int, int) override;
-    virtual void read(int, int, uint64_t, uint64_t, uint64_t) override;
+    virtual int read(int, int, uint64_t, uint64_t, uint64_t) override;
     virtual void shutdown() override;
     virtual void take_back_chunk(Chunk*) override;
     virtual void activate_chunk(Chunk*) override;

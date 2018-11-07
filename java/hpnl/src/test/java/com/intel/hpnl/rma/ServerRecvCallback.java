@@ -7,27 +7,26 @@ import com.intel.hpnl.core.Buffer;
 import com.intel.hpnl.core.Connection;
 
 public class ServerRecvCallback implements Handler {
-  public ServerRecvCallback(boolean is_server, Buffer buffer) {
+  public ServerRecvCallback(boolean is_server, Buffer[] buffer) {
     this.is_server = is_server;
     this.buffer = buffer;
 
-    this.byteBufferTmp = ByteBuffer.allocate(40960);
     for (int i = 0; i < 200; i++) {
-      this.buffer.getRawBuffer().putInt(i*4);
+      this.buffer[i].getRawBuffer().putInt(i*4);
     }
-
-    byteBufferTmp.putLong(this.buffer.getAddress());
-    byteBufferTmp.putLong(this.buffer.getRKey());
-    byteBufferTmp.flip();
   }
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+    System.out.println("server recv.");
     Buffer sendBuffer = con.getSendBuffer(true);
-
-    sendBuffer.put(this.byteBufferTmp, (byte)0, 1, 10);
+    ByteBuffer byteBufferTmp = ByteBuffer.allocate(200*16);
+    for (int i = 0; i < 200; i++) {
+      byteBufferTmp.putLong(this.buffer[i].getAddress());
+      byteBufferTmp.putLong(this.buffer[i].getRKey());
+    }
+    byteBufferTmp.flip();
+    sendBuffer.put(byteBufferTmp, (byte)0, 0, 0);
     con.send(sendBuffer.getRawBuffer().remaining(), sendBuffer.getRdmaBufferId());
   }
-  private ByteBuffer byteBufferTmp;
-
   boolean is_server = false;
-  private Buffer buffer;
+  private Buffer[] buffer;
 }
