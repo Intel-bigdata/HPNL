@@ -7,7 +7,7 @@ public class Connection {
 
   public Connection(long nativeCon, EqService service) {
     this.service = service;
-    this.sendBufferList = new LinkedBlockingQueue<Buffer>();
+    this.sendBufferList = new LinkedBlockingQueue<RdmaBuffer>();
     init(nativeCon);
   }
 
@@ -61,7 +61,7 @@ public class Connection {
     shutdownCallback = callback; 
   }
 
-  public void putSendBuffer(Buffer buffer) {
+  public void putSendBuffer(RdmaBuffer buffer) {
     try {
       sendBufferList.put(buffer);
     } catch (InterruptedException e) {
@@ -69,7 +69,7 @@ public class Connection {
     }
   }
 
-  public Buffer getSendBuffer(boolean wait) {
+  public RdmaBuffer getSendBuffer(boolean wait) {
     if (wait) {
       try {
         return sendBufferList.take();
@@ -82,7 +82,7 @@ public class Connection {
     }
   }
 
-  public Buffer getRecvBuffer(int rdmaBufferId) {
+  public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
     return service.getRecvBuffer(rdmaBufferId);
   }
 
@@ -109,7 +109,7 @@ public class Connection {
 
   EqService service;
  
-  LinkedBlockingQueue<Buffer> sendBufferList;
+  LinkedBlockingQueue<RdmaBuffer> sendBufferList;
 
   private Handler connectedCallback = null;
   private Handler recvCallback = null;

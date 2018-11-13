@@ -3,7 +3,7 @@ package com.intel.hpnl.pingpong;
 import java.nio.ByteBuffer;
 
 import com.intel.hpnl.core.Handler;
-import com.intel.hpnl.core.Buffer;
+import com.intel.hpnl.core.RdmaBuffer;
 import com.intel.hpnl.core.Connection;
 import com.intel.hpnl.core.EqService;
 
@@ -24,8 +24,8 @@ public class ReadCallback implements Handler {
         return;
       }
     }
-    Buffer sendBuffer = con.getSendBuffer(true);
-    Buffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
+    RdmaBuffer sendBuffer = con.getSendBuffer(true);
+    RdmaBuffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
 
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 

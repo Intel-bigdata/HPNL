@@ -7,7 +7,6 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class EqService {
   static {
@@ -23,8 +22,8 @@ public class EqService {
     this.conMap = new HashMap<Long, Connection>();
     this.reapCons = new ConcurrentHashMap<Long, Connection>();
 
-    this.sendBufferMap = new HashMap<Integer, Buffer>();
-    this.recvBufferMap = new HashMap<Integer, Buffer>();
+    this.sendBufferMap = new HashMap<Integer, RdmaBuffer>();
+    this.recvBufferMap = new HashMap<Integer, RdmaBuffer>();
     this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
 
     init(ip, port, is_server);
@@ -133,13 +132,13 @@ public class EqService {
   }
 
   public void setRecvBuffer(ByteBuffer byteBuffer, long size, int rdmaBufferId) {
-    Buffer buffer = new Buffer(rdmaBufferId, byteBuffer);
+    RdmaBuffer buffer = new RdmaBuffer(rdmaBufferId, byteBuffer);
     recvBufferMap.put(rdmaBufferId, buffer);
     set_recv_buffer(byteBuffer, size, rdmaBufferId);
   }
 
   public void setSendBuffer(ByteBuffer byteBuffer, long size, int rdmaBufferId) {
-    Buffer buffer = new Buffer(rdmaBufferId, byteBuffer);
+    RdmaBuffer buffer = new RdmaBuffer(rdmaBufferId, byteBuffer);
     sendBufferMap.put(rdmaBufferId, buffer);
     set_send_buffer(byteBuffer, size, rdmaBufferId);
   }
@@ -149,31 +148,39 @@ public class EqService {
     connection.putSendBuffer(sendBufferMap.get(rdmaBufferId));
   }
 
-  public Buffer getRecvBuffer(int rdmaBufferId) {
+  public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
     return recvBufferMap.get(rdmaBufferId);
   }
 
-  public Buffer getSendBuffer(int rdmaBufferId) {
+  public RdmaBuffer getSendBuffer(int rdmaBufferId) {
     return sendBufferMap.get(rdmaBufferId); 
   }
 
-  public long getBufferAddress(ByteBuffer bytebuffer) {
-    return get_buffer_address(bytebuffer);
-  }
-
-  public synchronized long regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
+  public synchronized RdmaBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
     rmaBufferMap.put(this.rmaBufferId, byteBuffer);
-    long rkey = reg_rma_buffer(byteBuffer, bufferSize, this.rmaBufferId++);
-    return rkey;
+    long rkey = reg_rma_buffer(byteBuffer, bufferSize, this.rmaBufferId);
+    RdmaBuffer buffer = new RdmaBuffer(this.rmaBufferId++, byteBuffer, rkey);
+    return buffer;
   }
 
-  public synchronized Buffer getRmaBuffer(int bufferSize) {
+  public synchronized RdmaBuffer regRmaBufferByAddress(ByteBuffer byteBuffer, long address, int bufferSize) {
+    rmaBufferMap.put(this.rmaBufferId, byteBuffer);
+    long rkey = reg_rma_buffer_by_address(address, bufferSize, this.rmaBufferId);
+    RdmaBuffer buffer = new RdmaBuffer(this.rmaBufferId++, byteBuffer, rkey);
+    return buffer;
+  }
+
+  public synchronized void unregRmaBuffer(int rdmaBufferId) {
+    unreg_rma_buffer(rdmaBufferId);
+  }
+
+  public synchronized RdmaBuffer getRmaBuffer(int bufferSize) {
     // allocate memory from on-heap, off-heap or AEP.
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
     long address = get_buffer_address(byteBuffer);
     rmaBufferMap.put(this.rmaBufferId, byteBuffer);
     long rkey = reg_rma_buffer(byteBuffer, bufferSize, this.rmaBufferId);
-    Buffer buffer = new Buffer(this.rmaBufferId++, byteBuffer, rkey, address);
+    RdmaBuffer buffer = new RdmaBuffer(this.rmaBufferId++, byteBuffer, rkey, address);
     return buffer; 
   }
 
@@ -205,6 +212,8 @@ public class EqService {
   public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
   public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
   private native long reg_rma_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
+  private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId);
+  private native void unreg_rma_buffer(int rdmaBufferId);
   private native long get_buffer_address(ByteBuffer buffer);
   private native void init(String ip_, String port_, boolean is_server_);
   private native void free();
@@ -218,8 +227,8 @@ public class EqService {
   private HashMap<Long, Connection> conMap;
   private ConcurrentHashMap<Long, Connection> reapCons;
 
-  private HashMap<Integer, Buffer> sendBufferMap;
-  private HashMap<Integer, Buffer> recvBufferMap;
+  private HashMap<Integer, RdmaBuffer> sendBufferMap;
+  private HashMap<Integer, RdmaBuffer> recvBufferMap;
   private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
 
   private int rmaBufferId;

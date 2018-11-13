@@ -7,7 +7,7 @@ import java.util.List;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.Buffer;
+import com.intel.hpnl.core.RdmaBuffer;
 
 public class Client {
   public static void main(String args[]) {
@@ -20,7 +20,7 @@ public class Client {
 
     EqService eqService = new EqService("172.168.2.106", "123456", false);
     CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
-    Buffer[] buffer = new Buffer[200];
+    RdmaBuffer[] buffer = new RdmaBuffer[200];
     for (int i = 0; i < 200; i++) {
       buffer[i] = eqService.getRmaBuffer(40960);
     }
@@ -54,7 +54,7 @@ public class Client {
     System.out.println("connected, start to remote read.");
     
     for (Connection con: conList) {
-      Buffer sendBuffer = con.getSendBuffer(true);
+      RdmaBuffer sendBuffer = con.getSendBuffer(true);
       sendBuffer.put(byteBufferTmp, (byte)0, 1, 10);
       con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
       System.out.println("finished sending.");

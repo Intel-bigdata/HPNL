@@ -94,6 +94,11 @@ uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_bu
   return ((fid_mr*)ck->mr)->key;
 }
 
+void FIStack::unreg_rma_buffer(int rdma_buffer_id) {
+  Chunk *ck = get_rma_chunk(rdma_buffer_id);
+  fi_close(&((fid_mr*)ck->mr)->fid);
+}
+
 Chunk* FIStack::get_rma_chunk(int rdma_buffer_id) {
   std::lock_guard<std::mutex> lk(mtx);
   return chunkMap[rdma_buffer_id];

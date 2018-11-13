@@ -3,11 +3,11 @@ package com.intel.hpnl.rma;
 import java.nio.ByteBuffer;
 
 import com.intel.hpnl.core.Handler;
-import com.intel.hpnl.core.Buffer;
+import com.intel.hpnl.core.RdmaBuffer;
 import com.intel.hpnl.core.Connection;
 
 public class ServerRecvCallback implements Handler {
-  public ServerRecvCallback(boolean is_server, Buffer[] buffer) {
+  public ServerRecvCallback(boolean is_server, RdmaBuffer[] buffer) {
     this.is_server = is_server;
     this.buffer = buffer;
 
@@ -17,7 +17,7 @@ public class ServerRecvCallback implements Handler {
   }
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     System.out.println("server recv.");
-    Buffer sendBuffer = con.getSendBuffer(true);
+    RdmaBuffer sendBuffer = con.getSendBuffer(true);
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(200*16);
     for (int i = 0; i < 200; i++) {
       byteBufferTmp.putLong(this.buffer[i].getAddress());
@@ -28,5 +28,5 @@ public class ServerRecvCallback implements Handler {
     con.send(sendBuffer.getRawBuffer().remaining(), sendBuffer.getRdmaBufferId());
   }
   boolean is_server = false;
-  private Buffer[] buffer;
+  private RdmaBuffer[] buffer;
 }

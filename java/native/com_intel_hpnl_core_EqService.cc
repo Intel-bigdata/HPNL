@@ -191,6 +191,16 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer(JNIE
   return service->reg_rma_buffer((char*)buffer, size, rdmaBufferId);
 }
 
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer_1by_1address(JNIEnv *env, jobject thisObj, jlong address, jlong size, jint rdmaBufferId) {
+  ExternalEqService *service = _get_self(env, thisObj);
+  return service->reg_rma_buffer(*(char**)&address, size, rdmaBufferId);
+}
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_unreg_1rma_1buffer(JNIEnv *env, jobject thisObj, jint rdmaBufferId) {
+  ExternalEqService *service = _get_self(env, thisObj);
+  service->unreg_rma_buffer(rdmaBufferId);
+}
+
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    get_buffer_address

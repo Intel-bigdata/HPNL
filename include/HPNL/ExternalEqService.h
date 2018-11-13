@@ -16,6 +16,7 @@ class ExternalEqService {
     fid_eq* connect();
     fid_eq* accept(fi_info*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);
+    void unreg_rma_buffer(int);
     Chunk* get_rma_buffer(int);
     void set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
     void set_send_buffer(char* buffer, uint64_t size, int rdma_buffer_id);

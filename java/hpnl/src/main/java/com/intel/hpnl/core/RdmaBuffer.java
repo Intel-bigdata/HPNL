@@ -2,13 +2,19 @@ package com.intel.hpnl.core;
 
 import java.nio.ByteBuffer;
 
-public class Buffer {
-  public Buffer(int rdmaBufferId, ByteBuffer byteBuffer) {
+public class RdmaBuffer {
+  public RdmaBuffer(int rdmaBufferId, ByteBuffer byteBuffer) {
     this.rdmaBufferId = rdmaBufferId;
     this.byteBuffer = byteBuffer;
   }
 
-  public Buffer(int rdmaBufferId, ByteBuffer byteBuffer, long rkey, long address) {
+  public RdmaBuffer(int rdmaBufferId, ByteBuffer byteBuffer, long rkey) {
+    this.rdmaBufferId = rdmaBufferId;
+    this.byteBuffer = byteBuffer;
+    this.rkey = rkey;
+  }
+
+  public RdmaBuffer(int rdmaBufferId, ByteBuffer byteBuffer, long rkey, long address) {
     this.rdmaBufferId = rdmaBufferId;
     this.byteBuffer = byteBuffer;
     this.rkey = rkey;
@@ -47,7 +53,7 @@ public class Buffer {
     return this.byteBuffer.remaining();
   }
 
-  public void putMetadata(int srcSize, byte type, int blockBufferId, int seq) {
+  private void putMetadata(int srcSize, byte type, int blockBufferId, int seq) {
     byteBuffer.rewind();
     byteBuffer.limit(9+srcSize);
     byteBuffer.put(type);
@@ -68,6 +74,10 @@ public class Buffer {
     this.blockBufferId = byteBuffer.getInt();
     this.seq = byteBuffer.getInt();
     return byteBuffer.slice();
+  }
+
+  public void release() {
+
   }
 
   private int rdmaBufferId;

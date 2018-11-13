@@ -5,10 +5,10 @@ import com.intel.hpnl.core.Connection;
 
 import java.nio.ByteBuffer;
 
-import com.intel.hpnl.core.Buffer;
+import com.intel.hpnl.core.RdmaBuffer;
 
 public class ClientReadCallback implements Handler {
-  public ClientReadCallback(Buffer[] buffer) {
+  public ClientReadCallback(RdmaBuffer[] buffer) {
     this.buffer = buffer;
   }
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
@@ -16,5 +16,5 @@ public class ClientReadCallback implements Handler {
     ByteBuffer byteBuffer = con.getRmaBuffer(rdmaBufferId);
     System.out.println(byteBuffer.getInt());
   }
-  private Buffer[] buffer;
+  private RdmaBuffer[] buffer;
 }

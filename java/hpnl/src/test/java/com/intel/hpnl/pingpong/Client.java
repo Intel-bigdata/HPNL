@@ -7,7 +7,7 @@ import java.util.List;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.Buffer;
+import com.intel.hpnl.core.RdmaBuffer;
 
 public class Client {
   public static void main(String args[]) {
@@ -50,7 +50,7 @@ public class Client {
     System.out.println("connected, start to pingpong.");
     
     for (Connection con: conList) {
-      Buffer buffer = con.getSendBuffer(true);
+      RdmaBuffer buffer = con.getSendBuffer(true);
       buffer.put(byteBufferTmp, (byte)0, 1, 10);
       con.send(buffer.remaining(), buffer.getRdmaBufferId());
     }

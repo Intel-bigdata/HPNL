@@ -72,6 +72,12 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer
   (JNIEnv *, jobject, jobject, jlong, jint);
 
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer_1by_1address
+  (JNIEnv *, jobject, jlong, jlong, jint);
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_unreg_1rma_1buffer
+  (JNIEnv *, jobject, jint);
+
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    get_buffer_address

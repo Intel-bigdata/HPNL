@@ -2,7 +2,6 @@ package com.intel.hpnl.core;
 
 import java.util.List;
 import java.util.ArrayList;
-import java.util.function.Function;
 
 public class CqService {
   static {

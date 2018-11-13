@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.Buffer;
+import com.intel.hpnl.core.RdmaBuffer;
 
 public class Server {
   public static void main(String args[]) {
@@ -19,7 +19,7 @@ public class Server {
 
     List<Connection> conList = new ArrayList<Connection>();
 
-    Buffer[] buffer = new Buffer[200];
+    RdmaBuffer[] buffer = new RdmaBuffer[200];
     for (int i = 0; i < 200; i++) {
       buffer[i] = eqService.getRmaBuffer(40960);
       buffer[i].getRawBuffer().putInt(i);
