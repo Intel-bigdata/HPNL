@@ -8,13 +8,35 @@ import java.nio.ByteBuffer;
 import com.intel.hpnl.core.RdmaBuffer;
 
 public class ClientReadCallback implements Handler {
-  public ClientReadCallback(RdmaBuffer[] buffer) {
-    this.buffer = buffer;
+  public ClientReadCallback() {
   }
   public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
-    System.out.println("client read handler, read sucessfully.");
     ByteBuffer byteBuffer = con.getRmaBuffer(rdmaBufferId);
-    System.out.println(byteBuffer.getInt());
+    if (count == 0) {
+      startTime = System.currentTimeMillis();
+      System.out.println("allocate memory.");
+      for (int i = 0; i < 1024*5; i++) {
+        //ByteBuffer buf = ByteBuffer.allocateDirect(4096*1024);
+      }
+    }
+
+    if (count > 1024*5) {
+      endTime = System.currentTimeMillis();
+      totally_time = (float)(endTime-startTime)/1000;
+      System.out.println("finished, total time is " + totally_time + " s");
+      return; 
+    }
+
+    ByteBuffer byteBufferTmp = ByteBuffer.allocate(4096);
+    byteBufferTmp.putChar('a');
+    byteBufferTmp.flip();
+    RdmaBuffer sendBuffer = con.getSendBuffer(true);
+    sendBuffer.put(byteBufferTmp, (byte)0, 1, 10);
+    con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
+    count++;
   }
-  private RdmaBuffer[] buffer;
+  private int count = 0;
+  private long startTime;
+  private long endTime;
+  private float totally_time = 0;
 }

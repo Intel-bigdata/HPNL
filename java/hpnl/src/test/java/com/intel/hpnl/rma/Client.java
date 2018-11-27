@@ -20,16 +20,13 @@ public class Client {
 
     EqService eqService = new EqService("172.168.2.106", "123456", false);
     CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
-    RdmaBuffer[] buffer = new RdmaBuffer[200];
-    for (int i = 0; i < 200; i++) {
-      buffer[i] = eqService.getRmaBuffer(40960);
-    }
+    RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();
 
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, false);
     ClientRecvCallback recvCallback = new ClientRecvCallback(false, buffer);
-    ClientReadCallback readCallback = new ClientReadCallback(buffer);
+    ClientReadCallback readCallback = new ClientReadCallback();
     ShutdownCallback shutdownCallback = new ShutdownCallback();
     eqService.setConnectedCallback(connectedCallback);
     eqService.setRecvCallback(recvCallback);

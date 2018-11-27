@@ -7,6 +7,13 @@
   <version>0.5</version>
   <name>hpnl</name>
   <url>http://maven.apache.org</url>
+  <dependencies>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-all</artifactId>
+      <version>4.1.22.Final</version>
+    </dependency>
+  </dependencies>
   <build>
     <plugins>
       <plugin>
@@ -19,6 +26,24 @@
               <goal>test-jar</goal>
             </goals>
           </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+            <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+            </descriptorRefs>
+        </configuration>
+        <executions>
+            <execution>
+                <id>make-assembly</id>
+                <phase>package</phase>
+                <goals>
+                    <goal>single</goal>
+                </goals>
+            </execution>
         </executions>
       </plugin>
     </plugins>
