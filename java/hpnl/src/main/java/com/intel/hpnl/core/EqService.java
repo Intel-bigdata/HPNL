@@ -14,7 +14,7 @@ public class EqService {
     System.load("/usr/local/lib/libhpnl.so");
   }
 
-  public EqService(String ip, String port, boolean is_server) {
+  public EqService(String ip, String port, int buffer_num, boolean is_server) {
     this.ip = ip;
     this.port = port;
     this.is_server = is_server;
@@ -27,18 +27,18 @@ public class EqService {
     this.recvBufferMap = new HashMap<Integer, RdmaBuffer>();
     this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
 
-    init(ip, port, is_server);
+    init(ip, port, buffer_num, is_server);
 
     eqThread = new EqThread(this);
   }
 
-  public void start(int num) {
+  public void start(int con_num) {
     if (is_server) {
-      num = 1;
+      con_num = 1;
     } else {
-      connectLatch = new CountDownLatch(num);
+      connectLatch = new CountDownLatch(con_num);
     }
-    for (int i = 0; i < num; i++) {
+    for (int i = 0; i < con_num; i++) {
       localEq = connect();
       add_eq_event(localEq);
     }
@@ -219,7 +219,7 @@ public class EqService {
   private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId);
   private native void unreg_rma_buffer(int rdmaBufferId);
   private native long get_buffer_address(ByteBuffer buffer);
-  private native void init(String ip_, String port_, boolean is_server_);
+  private native void init(String ip_, String port_, int buffer_num_, boolean is_server_);
   private native void free();
   public native void finalize();
 

@@ -27,13 +27,11 @@ public class ServerRecvCallback implements Handler {
     }
     this.last_buf = cur_buf;
     this.buffer = eqService.regRmaBufferByAddress(this.cur_buf.nioBuffer(0, 4096*1024), this.cur_buf.memoryAddress(), 4096*1024);
-    //for (int i = 0; i < 4096*1024; i++) {
-    //  buffer.getRawBuffer().put((byte)i); 
-    //}
+    for (int i = 0; i < 4096*1024; i++) {
+      buffer.getRawBuffer().put((byte)i); 
+    }
     RdmaBuffer sendBuffer = con.getSendBuffer(true);
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(16);
-    //byteBufferTmp.putLong(this.cur_buf.memoryAddress());
-    //byteBufferTmp.putLong(this.buffer.getRKey());
     byteBufferTmp.putLong(this.buf.getAddress());
     byteBufferTmp.putLong(this.buf.getRKey());
 
@@ -48,5 +46,5 @@ public class ServerRecvCallback implements Handler {
   private ByteBuf last_buf = null;
   private ByteBuf cur_buf = null;
   private int count = 0;
-
+  private Connection connection = null;
 }

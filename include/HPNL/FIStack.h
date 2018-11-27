@@ -15,7 +15,7 @@
 
 class FIStack {
   public:
-    FIStack(const char*, const char*, uint64_t);
+    FIStack(const char*, const char*, uint64_t, int);
     ~FIStack();
     HandlePtr bind();
     void listen();
@@ -32,6 +32,8 @@ class FIStack {
 
   private:
     uint64_t seq_num;
+    int buffer_num;
+    int total_buffer_num;
     fid_fabric *fabric;
     fid_domain *domain;
     fi_info *hints, *info;

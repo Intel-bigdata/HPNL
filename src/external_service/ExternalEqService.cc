@@ -1,7 +1,7 @@
 #include "HPNL/ExternalEqService.h"
 
-ExternalEqService::ExternalEqService(const char* ip_, const char* port_, bool is_server_) : ip(ip_), port(port_), is_server(is_server_) {
-  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0);
+ExternalEqService::ExternalEqService(const char* ip_, const char* port_, int buffer_num_, bool is_server_) : buffer_num(buffer_num_), ip(ip_), port(port_), is_server(is_server_) {
+  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0, buffer_num);
   eq_demulti_plexer = new EQExternalDemultiplexer(stack);
   recvBufMgr = new ExternalEqServiceBufMgr();
   sendBufMgr = new ExternalEqServiceBufMgr();
@@ -26,7 +26,7 @@ fid_eq* ExternalEqService::connect() {
     eqHandle = stack->bind();
     stack->listen();
   } else {
-    eqHandle = stack->connect(recvBufMgr, sendBufMgr);  
+    eqHandle = stack->connect(recvBufMgr, sendBufMgr);
   }
   return (fid_eq*)eqHandle->get_ctx();
 }

@@ -1,8 +1,8 @@
 #include "HPNL/Service.h"
 
-Service::Service(const char* ip_, const char* port_, bool is_server_) 
+Service::Service(const char* ip_, const char* port_, int buffer_num, bool is_server_) 
   : ip(ip_), port(port_), is_server(is_server_) {
-  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0);
+  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0, buffer_num);
   recvCallback = NULL;
   sendCallback = NULL;
   acceptRequestCallback = NULL;

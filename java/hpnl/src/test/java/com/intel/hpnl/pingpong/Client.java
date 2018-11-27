@@ -20,7 +20,7 @@ public class Client {
     }
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService("172.168.2.106", "123456", false);
+    EqService eqService = new EqService("172.168.2.106", "123456", BUFFER_NUM, false);
     CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();

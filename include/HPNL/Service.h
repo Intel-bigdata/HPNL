@@ -27,7 +27,7 @@ class Service {
     void set_connected_callback(Callback*);
     void set_shutdown_callback(Callback*);
   protected:
-    Service(const char*, const char*, bool is_server_ = false);
+    Service(const char*, const char*, int buffer_size, bool is_server_ = false);
     ~Service();
   private:
     friend class AcceptRequestCallback;

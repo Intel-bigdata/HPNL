@@ -1,6 +1,6 @@
 #include "HPNL/Server.h"
 
-Server::Server(const char* ip_, const char* port_) : Service(ip_, port_, true) {}
+Server::Server(const char* ip_, const char* port_, int buffer_num) : Service(ip_, port_, buffer_num, true) {}
 
 void Server::run(int con_num) {
   Service::run(con_num);

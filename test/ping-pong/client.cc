@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     ck->capacity = BUFFER_SIZE;
     sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
-  Client *client = new Client("172.168.2.106", "123456");
+  Client *client = new Client("172.168.2.106", "123456", 16);
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 

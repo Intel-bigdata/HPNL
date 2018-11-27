@@ -35,7 +35,7 @@ class FIStack;
 
 class FIConnection : public Connection {
   public:
-    FIConnection(FIStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool);
+    FIConnection(FIStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int buffer_num);
     ~FIConnection();
 
     virtual void recv(char*, int) override;

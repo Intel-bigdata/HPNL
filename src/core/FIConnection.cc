@@ -1,7 +1,7 @@
 #include "HPNL/FIConnection.h"
 #include "HPNL/FIStack.h"
 
-FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, bool is_server) : stack(stack_), info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
+FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, bool is_server, int buffer_num) : stack(stack_), info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
   assert(!fi_endpoint(domain, info, &ep, NULL));
   
   struct fi_eq_attr eq_attr = {
@@ -21,7 +21,7 @@ FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_, fi_info *info_,
   
   assert(!fi_enable(ep));
   int size = 0;
-  while (size < CON_MEM_SIZE*2) {
+  while (size < buffer_num*2) {
     fid_mr *mr;
     Chunk *ck = recv_buf_mgr->get();
     assert(ck->buffer);
@@ -34,7 +34,7 @@ FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_, fi_info *info_,
     size++;
   }
   size = 0;
-  while (size < CON_MEM_SIZE) {
+  while (size < buffer_num) {
     fid_mr *mr;
     Chunk *ck = send_buf_mgr->get();
     assert(!fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));

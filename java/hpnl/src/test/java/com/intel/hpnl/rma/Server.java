@@ -13,7 +13,7 @@ public class Server {
     final int BUFFER_SIZE = 65536;
     final int BUFFER_NUM = 128;
 
-    EqService eqService = new EqService("172.168.2.106", "123456", true);
+    EqService eqService = new EqService("172.168.2.106", "123456", BUFFER_NUM, true);
     CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
 
     List<Connection> conList = new ArrayList<Connection>();

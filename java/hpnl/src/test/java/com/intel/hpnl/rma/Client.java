@@ -18,7 +18,7 @@ public class Client {
     byteBufferTmp.putChar('a');
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService("172.168.2.106", "123456", false);
+    EqService eqService = new EqService("172.168.2.106", "123456", BUFFER_NUM, false);
     CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
     RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
 

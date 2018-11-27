@@ -1,6 +1,6 @@
 #include "HPNL/Client.h"
 
-Client::Client(const char *ip_, const char *port_) : Service(ip_, port_, false) {} 
+Client::Client(const char *ip_, const char *port_, int buffer_num) : Service(ip_, port_, buffer_num, false) {} 
 
 void Client::run(int con_num) {
   Service::run(con_num);
