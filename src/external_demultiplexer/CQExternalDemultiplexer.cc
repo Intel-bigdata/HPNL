@@ -26,9 +26,9 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
-  if (end - start >= 2000) {
+  if (end - start >= 200) {
     if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
-      int epoll_ret = epoll_wait(epfd, &event, 1, 2000);
+      int epoll_ret = epoll_wait(epfd, &event, 1, 200);
       if (epoll_ret < 0) {
         std::cout << "error" << std::endl;
         return epoll_ret;

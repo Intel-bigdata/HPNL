@@ -18,7 +18,7 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
     fids[i++] = iter.first;
   }
   if (fi_trywait(fabric, fids, fid_map.size()) == FI_SUCCESS) {
-    int epoll_ret = epoll_wait(epfd, &event, 1, 20000);
+    int epoll_ret = epoll_wait(epfd, &event, 1, 200);
     if (epoll_ret <= 0) {
       return epoll_ret;
     }
@@ -36,7 +36,7 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
   int ret = 0;
   uint32_t event;
   fi_eq_cm_entry entry;
-  ret = fi_eq_read(*eq, &event, &entry, sizeof(entry), 2000);
+  ret = fi_eq_read(*eq, &event, &entry, sizeof(entry), 0);
   if (ret == -FI_EAGAIN) {
     return 0; 
   } else if (ret < 0) {
