@@ -165,7 +165,7 @@ public class EqService {
     return buffer;
   }
 
-  public RdmaBuffer regRmaBufferByAddress(ByteBuffer byteBuffer, long address, int bufferSize) {
+  public RdmaBuffer regRmaBufferByAddress(ByteBuffer byteBuffer, long address, long bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     if (byteBuffer != null) {
       rmaBufferMap.put(bufferId, byteBuffer);
