@@ -33,7 +33,7 @@ public class RdmaBuffer {
     return this.blockBufferId; 
   }
 
-  public int getSeq() {
+  public long getSeq() {
     return this.seq; 
   }
 
@@ -53,15 +53,15 @@ public class RdmaBuffer {
     return this.byteBuffer.remaining();
   }
 
-  private void putMetadata(int srcSize, byte type, int blockBufferId, int seq) {
+  private void putMetadata(int srcSize, byte type, int blockBufferId, long seq) {
     byteBuffer.rewind();
-    byteBuffer.limit(9+srcSize);
+    byteBuffer.limit(13+srcSize);
     byteBuffer.put(type);
     byteBuffer.putInt(blockBufferId);
-    byteBuffer.putInt(seq);
+    byteBuffer.putLong(seq);
   }
 
-  public void put(ByteBuffer src, byte type, int blockBufferId, int seq) {
+  public void put(ByteBuffer src, byte type, int blockBufferId, long seq) {
     putMetadata(src.remaining(), type, blockBufferId, seq);
     byteBuffer.put(src.slice());
     byteBuffer.flip();
@@ -72,7 +72,7 @@ public class RdmaBuffer {
     byteBuffer.limit(blockBufferSize);
     this.type = byteBuffer.get();
     this.blockBufferId = byteBuffer.getInt();
-    this.seq = byteBuffer.getInt();
+    this.seq = byteBuffer.getLong();
     return byteBuffer.slice();
   }
 
@@ -83,7 +83,7 @@ public class RdmaBuffer {
   private int rdmaBufferId;
   private byte type;
   private int blockBufferId;
-  private int seq;
+  private long seq;
   private ByteBuffer byteBuffer;
   private long rkey;
   private long address;
