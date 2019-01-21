@@ -96,10 +96,10 @@ public class Connection {
     } else if (eventType == EventType.RECV_EVENT && recvCallback != null) {
       recvCallback.handle(this, rdmaBufferId, blockBufferSize);
     } else if (eventType == EventType.SEND_EVENT) {
-      putSendBuffer(service.getSendBuffer(rdmaBufferId));
       if (sendCallback != null) {
         sendCallback.handle(this, rdmaBufferId, blockBufferSize);
       }
+      putSendBuffer(service.getSendBuffer(rdmaBufferId));
     } else if (eventType == EventType.READ_EVENT) {
       if (readCallback != null) {
         readCallback.handle(this, rdmaBufferId, blockBufferSize); 
