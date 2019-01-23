@@ -51,7 +51,7 @@ public class Client {
     
     for (Connection con: conList) {
       RdmaBuffer buffer = con.getSendBuffer(true);
-      buffer.put(byteBufferTmp, (byte)0, 1, 10);
+      buffer.put(byteBufferTmp, (byte)0, 10);
       con.send(buffer.remaining(), buffer.getRdmaBufferId());
     }
     //cqService.shutdown();

@@ -31,7 +31,7 @@ public class ClientReadCallback implements Handler {
     byteBufferTmp.putChar('a');
     byteBufferTmp.flip();
     RdmaBuffer sendBuffer = con.getSendBuffer(true);
-    sendBuffer.put(byteBufferTmp, (byte)0, 1, 10);
+    sendBuffer.put(byteBufferTmp, (byte)0, 10);
     con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
     count++;
   }
