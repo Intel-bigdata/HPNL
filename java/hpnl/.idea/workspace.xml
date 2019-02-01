@@ -2,47 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="dbb471ba-b4f0-4189-a302-654b8056d1d3" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/Connection.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/CqService.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/CqShutdownThread.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/CqThread.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/EqService.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/EqThread.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/EventType.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/ExternalHandler.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/Handler.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/RdmaBuffer.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/classes/com/intel/hpnl/core/Utils.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/hpnl-0.5-jar-with-dependencies.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/hpnl-0.5-tests.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/hpnl-0.5.jar" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/maven-archiver/pom.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/pingpong/Client.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/pingpong/ConnectedCallback.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/pingpong/ReadCallback.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/pingpong/Server.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/pingpong/ShutdownCallback.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/rma/Client.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/rma/ClientReadCallback.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/rma/ClientRecvCallback.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/rma/ConnectedCallback.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/rma/Server.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/rma/ServerRecvCallback.class" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/target/test-classes/com/intel/hpnl/rma/ShutdownCallback.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/Connection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/Connection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/EqService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/EqService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/RdmaBuffer.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/RdmaBuffer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/pingpong/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/pingpong/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/pingpong/ReadCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/pingpong/ReadCallback.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/rma/Client.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/rma/Client.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/rma/ClientReadCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/rma/ClientReadCallback.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/rma/ServerRecvCallback.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/com/intel/hpnl/rma/ServerRecvCallback.java" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -62,11 +22,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/Connection.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1770">
-              <caret line="147" column="14" selection-start-line="147" selection-start-column="14" selection-end-line="147" selection-end-column="14" />
+            <state relative-caret-position="2145">
+              <caret line="145" column="51" selection-start-line="145" selection-start-column="51" selection-end-line="145" selection-end-column="51" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#1256#1257#0" expanded="true" />
@@ -113,7 +73,7 @@
         <entry file="file://$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/EqService.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="360">
-              <caret line="31" column="22" lean-forward="true" selection-start-line="31" selection-start-column="22" selection-end-line="31" selection-end-column="22" />
+              <caret line="31" column="22" selection-start-line="31" selection-start-column="22" selection-end-line="31" selection-end-column="22" />
               <folding>
                 <element signature="e#4167#4168#0" expanded="true" />
                 <element signature="e#4216#4217#0" expanded="true" />
@@ -124,7 +84,7 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/CqService.java">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="90">
@@ -237,7 +197,7 @@
       </list>
     </option>
   </component>
-  <component name="ProjectFrameBounds">
+  <component name="ProjectFrameBounds" extendedState="1">
     <option name="x" value="144" />
     <option name="y" value="73" />
     <option name="width" value="1551" />
@@ -249,7 +209,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -300,6 +259,7 @@
           <select />
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
       <pane id="Scope" />
     </panes>
   </component>
@@ -461,8 +421,9 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="144" y="73" width="1551" height="955" extended-state="0" />
+    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1398277" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14115308" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Favorites" order="3" side_tool="true" />
@@ -673,42 +634,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/Connection.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1770">
-          <caret line="147" column="14" selection-start-line="147" selection-start-column="14" selection-end-line="147" selection-end-column="14" />
-          <folding>
-            <element signature="imports" expanded="true" />
-            <element signature="e#1256#1257#0" expanded="true" />
-            <element signature="e#1283#1284#0" expanded="true" />
-            <element signature="e#1311#1312#0" expanded="true" />
-            <element signature="e#1338#1339#0" expanded="true" />
-            <element signature="e#1675#1676#0" expanded="true" />
-            <element signature="e#1709#1710#0" expanded="true" />
-            <element signature="e#1765#1766#0" expanded="true" />
-            <element signature="e#1804#1805#0" expanded="true" />
-            <element signature="e#1842#1843#0" expanded="true" />
-            <element signature="e#1872#1873#0" expanded="true" />
-            <element signature="e#1923#1924#0" expanded="true" />
-            <element signature="e#1957#1958#0" expanded="true" />
-            <element signature="e#1995#1996#0" expanded="true" />
-            <element signature="e#2025#2026#0" expanded="true" />
-            <element signature="e#2076#2077#0" expanded="true" />
-            <element signature="e#2110#2111#0" expanded="true" />
-            <element signature="e#2161#2162#0" expanded="true" />
-            <element signature="e#2195#2196#0" expanded="true" />
-            <element signature="e#2237#2238#0" expanded="true" />
-            <element signature="e#2271#2272#0" expanded="true" />
-            <element signature="e#2326#2327#0" expanded="true" />
-            <element signature="e#2364#2365#0" expanded="true" />
-            <element signature="e#2971#2972#0" expanded="true" />
-            <element signature="e#3023#3024#0" expanded="true" />
-            <element signature="e#3076#3077#0" expanded="true" />
-            <element signature="e#3136#3137#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="jar:///usr/lib/jvm/java-8-oracle/src.zip!/java/util/concurrent/LinkedBlockingQueue.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4230">
@@ -719,7 +644,7 @@
     <entry file="file://$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/EqService.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="360">
-          <caret line="31" column="22" lean-forward="true" selection-start-line="31" selection-start-column="22" selection-end-line="31" selection-end-column="22" />
+          <caret line="31" column="22" selection-start-line="31" selection-start-column="22" selection-end-line="31" selection-end-column="22" />
           <folding>
             <element signature="e#4167#4168#0" expanded="true" />
             <element signature="e#4216#4217#0" expanded="true" />
@@ -780,6 +705,42 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="90">
           <caret line="7" column="14" selection-start-line="7" selection-start-column="14" selection-end-line="7" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/intel/hpnl/core/Connection.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2145">
+          <caret line="145" column="51" selection-start-line="145" selection-start-column="51" selection-end-line="145" selection-end-column="51" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#1256#1257#0" expanded="true" />
+            <element signature="e#1283#1284#0" expanded="true" />
+            <element signature="e#1311#1312#0" expanded="true" />
+            <element signature="e#1338#1339#0" expanded="true" />
+            <element signature="e#1675#1676#0" expanded="true" />
+            <element signature="e#1709#1710#0" expanded="true" />
+            <element signature="e#1765#1766#0" expanded="true" />
+            <element signature="e#1804#1805#0" expanded="true" />
+            <element signature="e#1842#1843#0" expanded="true" />
+            <element signature="e#1872#1873#0" expanded="true" />
+            <element signature="e#1923#1924#0" expanded="true" />
+            <element signature="e#1957#1958#0" expanded="true" />
+            <element signature="e#1995#1996#0" expanded="true" />
+            <element signature="e#2025#2026#0" expanded="true" />
+            <element signature="e#2076#2077#0" expanded="true" />
+            <element signature="e#2110#2111#0" expanded="true" />
+            <element signature="e#2161#2162#0" expanded="true" />
+            <element signature="e#2195#2196#0" expanded="true" />
+            <element signature="e#2237#2238#0" expanded="true" />
+            <element signature="e#2271#2272#0" expanded="true" />
+            <element signature="e#2326#2327#0" expanded="true" />
+            <element signature="e#2364#2365#0" expanded="true" />
+            <element signature="e#2971#2972#0" expanded="true" />
+            <element signature="e#3023#3024#0" expanded="true" />
+            <element signature="e#3076#3077#0" expanded="true" />
+            <element signature="e#3136#3137#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
