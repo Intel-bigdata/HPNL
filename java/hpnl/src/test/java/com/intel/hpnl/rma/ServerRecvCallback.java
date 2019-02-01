@@ -30,7 +30,7 @@ public class ServerRecvCallback implements Handler {
     for (int i = 0; i < 4096*1024; i++) {
       buffer.getRawBuffer().put((byte)i); 
     }
-    RdmaBuffer sendBuffer = con.getSendBuffer(true);
+    RdmaBuffer sendBuffer = con.takeSendBuffer(true);
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(16);
     byteBufferTmp.putLong(this.buf.getAddress());
     byteBufferTmp.putLong(this.buf.getRKey());

@@ -5,19 +5,62 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Connection {
 
-  public Connection(long nativeCon, EqService service) {
+    private final String host;
+    private final int port;
+
+    private volatile boolean connected;
+
+    public Connection(long nativeCon, EqService service, long eqId) {
     this.service = service;
     this.sendBufferList = new LinkedBlockingQueue<RdmaBuffer>();
+    this.eqId = eqId;
+    this.host = service.getIp();
+    this.port = Integer.parseInt(service.getPort());
     init(nativeCon);
+    connected = true;
   }
 
   public void shutdown(long eq) {
-    this.service.deregCon(eq);
-    this.service.shutdown(eq);
-    if (shutdownCallback != null) {
-      shutdownCallback.handle(null, 0, 0);
+    if(!connected){
+      return;
+    }
+    synchronized (this) {
+      if (!connected) {
+        return;
+      }
+      this.service.deregCon(eq);
+      this.service.shutdown(eq);
+      if (shutdownCallback != null) {
+        shutdownCallback.handle(null, 0, 0);
+      }
+      connected = false;
     }
   }
+
+  public void close(){
+    if(!connected){
+      return;
+    }
+    synchronized (this) {
+      if(!connected){
+        return;
+      }
+      this.service.deregCon(eqId);
+      this.service.shutdown(eqId);
+      if (shutdownCallback != null) {
+        shutdownCallback.handle(null, 0, 0);
+      }
+      connected = false;
+    }
+  }
+
+    public String getHost() {
+        return host;
+    }
+
+    public int getPort() {
+        return port;
+    }
 
   public native void recv(ByteBuffer buffer, int id);
   public native void send(int blockBufferSize, int rdmaBufferId);
@@ -69,7 +112,7 @@ public class Connection {
     }
   }
 
-  public RdmaBuffer getSendBuffer(boolean wait) {
+  public RdmaBuffer takeSendBuffer(boolean wait) {
     if (wait) {
       try {
         return sendBufferList.take();
@@ -82,6 +125,10 @@ public class Connection {
     }
   }
 
+  public RdmaBuffer getSendBuffer(int rdmaBufferId){
+    return service.getSendBuffer(rdmaBufferId);
+  }
+
   public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
     return service.getRecvBuffer(rdmaBufferId);
   }
@@ -91,20 +138,32 @@ public class Connection {
   }
 
   public void handleCallback(int eventType, int rdmaBufferId, int blockBufferSize) {
-    if (eventType == EventType.CONNECTED_EVENT && connectedCallback != null) {
-      connectedCallback.handle(this, rdmaBufferId, 0);
-    } else if (eventType == EventType.RECV_EVENT && recvCallback != null) {
-      recvCallback.handle(this, rdmaBufferId, blockBufferSize);
+    Exception e = null;
+    if (eventType == EventType.CONNECTED_EVENT) {
+      e = executeCallback(connectedCallback, rdmaBufferId, 0);
+    } else if (eventType == EventType.RECV_EVENT) {
+      e = executeCallback(recvCallback, rdmaBufferId, blockBufferSize);
     } else if (eventType == EventType.SEND_EVENT) {
+      e = executeCallback(sendCallback, rdmaBufferId, blockBufferSize);
       putSendBuffer(service.getSendBuffer(rdmaBufferId));
-      if (sendCallback != null) {
-        sendCallback.handle(this, rdmaBufferId, blockBufferSize);
-      }
     } else if (eventType == EventType.READ_EVENT) {
-      if (readCallback != null) {
-        readCallback.handle(this, rdmaBufferId, blockBufferSize); 
-      }
+      e = executeCallback(readCallback, rdmaBufferId, blockBufferSize);
     }
+    if(e != null){
+      e.printStackTrace();
+    }
+  }
+
+  private Exception executeCallback(Handler handler, int rdmaBufferId, int blockBufferSize){
+    if(handler == null){
+      return null;
+    }
+    try{
+      handler.handle(this, rdmaBufferId, blockBufferSize);
+    }catch(Exception e){
+      return e;
+    }
+    return null;
   }
 
   EqService service;
@@ -118,4 +177,5 @@ public class Connection {
   private Handler shutdownCallback = null;
 
   private long nativeHandle;
+  private final long eqId;
 }

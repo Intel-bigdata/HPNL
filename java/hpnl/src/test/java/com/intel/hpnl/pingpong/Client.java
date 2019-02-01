@@ -50,7 +50,7 @@ public class Client {
     System.out.println("connected, start to pingpong.");
     
     for (Connection con: conList) {
-      RdmaBuffer buffer = con.getSendBuffer(true);
+      RdmaBuffer buffer = con.takeSendBuffer(true);
       buffer.put(byteBufferTmp, (byte)0, 1, 10);
       con.send(buffer.remaining(), buffer.getRdmaBufferId());
     }

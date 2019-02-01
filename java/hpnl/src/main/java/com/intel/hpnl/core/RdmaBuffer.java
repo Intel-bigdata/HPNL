@@ -53,7 +53,7 @@ public class RdmaBuffer {
     return this.byteBuffer.remaining();
   }
 
-  private void putMetadata(int srcSize, byte type, int blockBufferId, long seq) {
+  public void putMetadata(int srcSize, byte type, int blockBufferId, long seq) {
     byteBuffer.rewind();
     byteBuffer.limit(13+srcSize);
     byteBuffer.put(type);
@@ -74,6 +74,14 @@ public class RdmaBuffer {
     this.blockBufferId = byteBuffer.getInt();
     this.seq = byteBuffer.getLong();
     return byteBuffer.slice();
+  }
+
+  public int getWritableBytes(){
+    return this.byteBuffer.capacity() - getMetadataSize();
+  }
+
+  public static int getMetadataSize(){
+    return 13;
   }
 
   public void release() {

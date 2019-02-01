@@ -76,7 +76,7 @@ public class EqService {
   }
 
   private void registerCon(long eq, long con) {
-    Connection connection = new Connection(con, this);
+    Connection connection = new Connection(con, this, eq);
     conMap.put(eq, connection);
   }
 
@@ -224,6 +224,14 @@ public class EqService {
   private native void init(String ip_, String port_, int buffer_num_, boolean is_server_);
   private native void free();
   public native void finalize();
+
+  public String getIp() {
+    return ip;
+  }
+
+  public String getPort() {
+    return port;
+  }
 
   private long nativeHandle;
   private long localEq;
