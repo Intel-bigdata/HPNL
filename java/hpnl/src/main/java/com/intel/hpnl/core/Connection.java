@@ -5,9 +5,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Connection {
 
-  public Connection(long nativeCon, EqService service) {
+  public Connection(long nativeCon, EqService service, String peer_addr, int peer_port) {
     this.service = service;
     this.sendBufferList = new LinkedBlockingQueue<RdmaBuffer>();
+    this.peer_addr = peer_addr;
+    this.peer_port = peer_port;
     init(nativeCon);
   }
 
@@ -90,6 +92,14 @@ public class Connection {
     return service.getRmaBufferByBufferId(rmaBufferId);
   }
 
+  public String getPeerAddr() {
+    return this.peer_addr;
+  }
+
+  public int getPeerPort() {
+    return this.peer_port;
+  }
+
   public void handleCallback(int eventType, int rdmaBufferId, int blockBufferSize) {
     if (eventType == EventType.CONNECTED_EVENT && connectedCallback != null) {
       connectedCallback.handle(this, rdmaBufferId, 0);
@@ -107,9 +117,12 @@ public class Connection {
     }
   }
 
-  EqService service;
+  private EqService service;
  
-  LinkedBlockingQueue<RdmaBuffer> sendBufferList;
+  private LinkedBlockingQueue<RdmaBuffer> sendBufferList;
+
+  private String peer_addr;
+  private int peer_port;
 
   private Handler connectedCallback = null;
   private Handler recvCallback = null;

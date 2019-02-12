@@ -87,12 +87,17 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     new_eq = service->accept(info);
     service->add_eq_event(new_eq);
   } else if (ret == CONNECTED_EVENT) {
+    char **addr = (char**)malloc(sizeof(char*));
+    size_t port;
+    con->get_peer_addr(addr, &port);
+    jstring addr_str = (*env).NewStringUTF(*addr);
+    free(addr);
     //register connection  
-    jmethodID registerCon = (*env).GetMethodID(thisClass, "registerCon", "(JJ)V");
+    jmethodID registerCon = (*env).GetMethodID(thisClass, "registerCon", "(JJLjava/lang/String;I)V");
     assert(registerCon);
     jlong jEq = *(jlong*)&eq;
     jlong jCon = *(jlong*)&con;
-    (*env).CallVoidMethod(thisObj, registerCon, jEq, jCon);
+    (*env).CallVoidMethod(thisObj, registerCon, jEq, jCon, addr_str, port);
 
     //set send buffer;
     std::vector<Chunk*> send_buffer = con->get_send_buffer();

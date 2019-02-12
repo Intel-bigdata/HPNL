@@ -49,6 +49,9 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
       *info = entry.info;
       return ACCEPT_EVENT;
     } else if (event == FI_CONNECTED)  {
+      auto con = stack->get_connection(entry.fid);
+      assert(con);
+      con->init_peer_addr();
       return CONNECTED_EVENT;
     } else if (event == FI_SHUTDOWN) {
       delete_event(*eq);
