@@ -1,5 +1,7 @@
 #include "HPNL/FIConnection.h"
 #include "HPNL/FIStack.h"
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_, fi_info *info_, fid_domain *domain_, fid_cq* cq_, fid_wait *waitset_, BufMgr *recv_buf_mgr_, BufMgr *send_buf_mgr_, bool is_server, int buffer_num) : stack(stack_), info(info_), domain(domain_), conCq(cq_), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), waitset(waitset_), server(is_server), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {
   assert(!fi_endpoint(domain, info, &ep, NULL));
@@ -98,18 +100,28 @@ int FIConnection::read(int rdma_buffer_id, int local_offset, uint64_t len, uint6
 }
 
 void FIConnection::connect() {
-  std::cout << "connect." << std::endl;
   assert(!fi_connect(ep, info->dest_addr, NULL, 0));
 }
 
 void FIConnection::accept() {
-  std::cout << "accept." << std::endl;
   assert(!fi_accept(ep, NULL, 0));
 }
 
 void FIConnection::shutdown() {
-  std::cout << "shutdown." << std::endl;
   assert(!fi_shutdown(ep, 0));
+}
+
+void FIConnection::init_peer_addr() {
+  if (info->dest_addr != NULL) {
+    struct sockaddr_in *dest_addr_in = (struct sockaddr_in*)info->dest_addr;
+    peer_port = dest_addr_in->sin_port;
+    peer_addr = inet_ntoa(dest_addr_in->sin_addr);
+  }
+}
+
+void FIConnection::get_peer_addr(char** addr, size_t *port) {
+  *addr = peer_addr;
+  *port = peer_port;
 }
 
 void FIConnection::take_back_chunk(Chunk *ck) {
