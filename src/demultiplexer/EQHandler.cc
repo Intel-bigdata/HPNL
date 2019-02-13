@@ -43,6 +43,8 @@ int EQHandler::handle_event(EventType et, void *context) {
     }
     con->con_cv.notify_one();
 
+    con->init_peer_addr();
+
     if (connectedCallback) {
       (*connectedCallback)(con, NULL);
     }

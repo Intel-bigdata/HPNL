@@ -52,7 +52,7 @@ public class Client {
     
     for (Connection con: conList) {
       RdmaBuffer sendBuffer = con.takeSendBuffer(true);
-      sendBuffer.put(byteBufferTmp, (byte)0, 1, 10);
+      sendBuffer.put(byteBufferTmp, (byte)0, 10);
       con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
       System.out.println("finished sending.");
     }

@@ -29,7 +29,7 @@ public class ReadCallback implements Handler {
 
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
-    sendBuffer.put(recvByteBuffer, (byte)0, 1, 10);
+    sendBuffer.put(recvByteBuffer, (byte)0, 10);
     con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
   }
   private int count = 0;

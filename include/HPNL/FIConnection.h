@@ -49,6 +49,9 @@ class FIConnection : public Connection {
     void connect();
     void accept();
 
+    void init_peer_addr();
+    void get_peer_addr(char**, size_t*);
+
     HandlePtr get_eqhandle();
     fid* get_fid();
 
@@ -89,6 +92,9 @@ class FIConnection : public Connection {
     fid_wait *waitset;
 
     bool server;
+
+    size_t peer_port;
+    char *peer_addr;
 
     Callback* read_callback;
     Callback* send_callback;

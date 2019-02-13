@@ -36,7 +36,7 @@ public class ServerRecvCallback implements Handler {
     byteBufferTmp.putLong(this.buf.getRKey());
 
     byteBufferTmp.flip();
-    sendBuffer.put(byteBufferTmp, (byte)0, 0, 0);
+    sendBuffer.put(byteBufferTmp, (byte)0, 0);
     con.send(sendBuffer.getRawBuffer().remaining(), sendBuffer.getRdmaBufferId());
   }
   private boolean is_server = false;
