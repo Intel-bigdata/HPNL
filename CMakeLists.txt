@@ -1,11 +1,15 @@
 cmake_minimum_required (VERSION 2.8)
-project (RDMA_MSG)
+project (HPNL)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_CXX_COMPILER g++)
+set(CMAKE_CXX_COMPILER /usr/bin/g++)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -g -pthread -fPIC")
+
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(/usr/local/include)
 
 set(LOG ${PROJECT_SOURCE_DIR}/src/log)
 set(UTIL ${PROJECT_SOURCE_DIR}/src/util)
@@ -21,10 +25,6 @@ set(LOG_FILE ${LOG}/NanoLog.cc)
 set(CORE_FILE ${CORE}/FIConnection.cc ${CORE}/FIStack.cc)
 set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc)
 set(EXTERNAL_SERVICE_FILE ${EXTERNAL_SERVICE}/ExternalEqService.cc)
-
-include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_SOURCE_DIR}/include)
-include_directories(/usr/local/include)
 
 add_subdirectory(test)
 add_subdirectory(java)

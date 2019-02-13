@@ -3,6 +3,7 @@
 
 #include <rdma/fi_domain.h>
 
+#include "HPNL/Common.h"
 #include "HPNL/ExternalEqService.h"
 #include "HPNL/Connection.h"
 #include "HPNL/FIConnection.h"
@@ -12,17 +13,16 @@
 class ExternalCqService {
   public:
     ExternalCqService(ExternalEqService *service_, FIStack *stack_) : service(service_), stack(stack_) {
-      for (int i = 0; i < WORKERS; i++) {
+      for (int i = 0; i < service->getConf()->worker_num; i++) {
         cq_demulti_plexer[i] = new CQExternalDemultiplexer(stack, stack->get_cqs()[i]); 
       }
     }
     ~ExternalCqService() {
-      for (int i = 0; i < WORKERS; i++) {
+      for (int i = 0; i < service->getConf()->worker_num; i++) {
         delete cq_demulti_plexer[i];
       }
     }
     int wait_cq_event(int num, fid_eq** eq, int* rdma_buffer_id, int* block_buffer_size) {
-      assert(num <= WORKERS);
       return cq_demulti_plexer[num]->wait_event(eq, rdma_buffer_id, block_buffer_size);
     }
     Connection* get_connection(fid_eq* eq) {
@@ -34,7 +34,7 @@ class ExternalCqService {
   private:
     ExternalEqService *service;
     FIStack *stack;
-    CQExternalDemultiplexer *cq_demulti_plexer[WORKERS];
+    CQExternalDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
 };
 
 #endif

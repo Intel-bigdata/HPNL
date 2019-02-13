@@ -2,7 +2,8 @@
 
 Service::Service(const char* ip_, const char* port_, int buffer_num, bool is_server_) 
   : ip(ip_), port(port_), is_server(is_server_) {
-  stack = new FIStack(ip, port, is_server ? FI_SOURCE : 0, buffer_num);
+  config = new Config();
+  stack = new FIStack(config, ip, port, is_server ? FI_SOURCE : 0, buffer_num);
   recvCallback = NULL;
   sendCallback = NULL;
   acceptRequestCallback = NULL;
@@ -14,23 +15,24 @@ Service::~Service() {
   // TODO: IOService deconstruction
   delete stack;
   delete eq_demulti_plexer;
-  for (int i = 0; i < WORKERS; i++) {
+  for (int i = 0; i < config->worker_num; i++) {
     delete cq_demulti_plexer[i]; 
   }
   delete reactor;
   delete acceptRequestCallback;
   delete eqThread;
-  for (int i = 0; i < WORKERS; i++) {
+  for (int i = 0; i < config->worker_num; i++) {
     delete cqThread[i];
   }
+  delete config;
 }
 
 void Service::run(int con_num) {
   eq_demulti_plexer = new EQEventDemultiplexer();
-  for (int i = 0; i < WORKERS; i++) {
+  for (int i = 0; i < config->worker_num; i++) {
     cq_demulti_plexer[i] = new CQEventDemultiplexer(stack, i); 
   }
-  reactor = new Reactor(eq_demulti_plexer, cq_demulti_plexer);
+  reactor = new Reactor(config, eq_demulti_plexer, cq_demulti_plexer);
 
   if (is_server) {
     con_num = 1; 
@@ -55,17 +57,17 @@ void Service::run(int con_num) {
   }
   
   eqThread = new EQThread(reactor);
-  for (int i = 0; i < WORKERS; i++) {
+  for (int i = 0; i < config->worker_num; i++) {
     cqThread[i] = new CQThread(reactor, i); 
   }
   eqThread->start(); 
-  for (int i = 0; i < WORKERS; i++) {
+  for (int i = 0; i < config->worker_num; i++) {
     cqThread[i]->start(); 
   }
 }
 
 void Service::shutdown() {
-  for (int i = 0; i < WORKERS; i++) {
+  for (int i = 0; i < config->worker_num; i++) {
     cqThread[i]->stop(); 
     cqThread[i]->join();
   }

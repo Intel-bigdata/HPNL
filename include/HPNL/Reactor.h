@@ -5,6 +5,7 @@
 #include <list>
 
 #include "HPNL/Common.h"
+#include "HPNL/Config.h"
 #include "HPNL/EventType.h"
 #include "HPNL/EventDemultiplexer.h"
 #include "HPNL/EventHandler.h"
@@ -14,7 +15,7 @@
 
 class Reactor {
   public:
-    Reactor(EventDemultiplexer* eqDemultiplexer_, CQEventDemultiplexer** cqDemultiplexer_);
+    Reactor(Config*, EventDemultiplexer* eqDemultiplexer_, CQEventDemultiplexer** cqDemultiplexer_);
     ~Reactor();
     int eq_service();
     int cq_service(int num);
@@ -25,7 +26,7 @@ class Reactor {
   private:
     std::map<HandlePtr, EventHandlerPtr> eventMap;
     EventDemultiplexer *eqDemultiplexer;
-    CQEventDemultiplexer *cqDemultiplexer[WORKERS];
+    CQEventDemultiplexer *cqDemultiplexer[MAX_WORKERS];
 };
 
 class EQThread : public ThreadWrapper {
