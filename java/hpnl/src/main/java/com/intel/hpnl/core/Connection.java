@@ -5,34 +5,17 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Connection {
 
-  public Connection(long eqId, long nativeCon, EqService service, String peer_addr, int peer_port) {
+  public Connection(long nativeEq, long nativeCon, EqService service, String peer_addr, int peer_port) {
     this.service = service;
     this.sendBufferList = new LinkedBlockingQueue<RdmaBuffer>();
     this.peer_addr = peer_addr;
     this.peer_port = peer_port;
-    this.eqId = eqId;
+    this.nativeEq = nativeEq;
     init(nativeCon);
     connected = true;
   }
 
-  public void shutdown(long eq) {
-    if(!connected){
-      return;
-    }
-    synchronized (this) {
-      if (!connected) {
-        return;
-      }
-      this.service.deregCon(eq);
-      this.service.shutdown(eq);
-      if (shutdownCallback != null) {
-        shutdownCallback.handle(null, 0, 0);
-      }
-      connected = false;
-    }
-  }
-
-  public void close(){
+  public void shutdown(){
     if(!connected){
       return;
     }
@@ -40,8 +23,8 @@ public class Connection {
       if(!connected){
         return;
       }
-      this.service.deregCon(eqId);
-      this.service.shutdown(eqId);
+      this.service.unregCon(nativeEq);
+      this.service.shutdown(nativeEq);
       if (shutdownCallback != null) {
         shutdownCallback.handle(null, 0, 0);
       }
@@ -176,5 +159,5 @@ public class Connection {
   private Handler shutdownCallback = null;
 
   private long nativeHandle;
-  private final long eqId;
+  private final long nativeEq;
 }

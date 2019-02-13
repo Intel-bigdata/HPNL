@@ -93,11 +93,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     jstring addr_str = (*env).NewStringUTF(*addr);
     free(addr);
     //register connection  
-    jmethodID registerCon = (*env).GetMethodID(thisClass, "registerCon", "(JJLjava/lang/String;I)V");
-    assert(registerCon);
+    jmethodID regCon = (*env).GetMethodID(thisClass, "regCon", "(JJLjava/lang/String;I)V");
+    assert(regCon);
     jlong jEq = *(jlong*)&eq;
     jlong jCon = *(jlong*)&con;
-    (*env).CallVoidMethod(thisObj, registerCon, jEq, jCon, addr_str, port);
+    (*env).CallVoidMethod(thisObj, regCon, jEq, jCon, addr_str, port);
 
     //set send buffer;
     std::vector<Chunk*> send_buffer = con->get_send_buffer();
@@ -118,9 +118,9 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     con->con_cv.notify_one();
   } else if (ret == SHUTDOWN) {
     jlong jEq = *(jlong*)&eq;
-    jmethodID deregCon = (*env).GetMethodID(thisClass, "deregCon", "(J)V");
-    assert(deregCon);
-    (*env).CallVoidMethod(thisObj, deregCon, jEq);
+    jmethodID unregCon = (*env).GetMethodID(thisClass, "unregCon", "(J)V");
+    assert(unregCon);
+    (*env).CallVoidMethod(thisObj, unregCon, jEq);
   } else {
   }
   return ret;

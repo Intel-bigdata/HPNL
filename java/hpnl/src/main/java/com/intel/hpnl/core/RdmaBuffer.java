@@ -78,10 +78,6 @@ public class RdmaBuffer {
     return 9;
   }
 
-  public void release() {
-
-  }
-
   private int rdmaBufferId;
   private byte type;
   private long seq;

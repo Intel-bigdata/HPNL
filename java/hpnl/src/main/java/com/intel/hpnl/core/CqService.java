@@ -13,7 +13,7 @@ public class CqService {
     this.num = num;
     this.serviceNativeHandle = serviceNativeHandle;
 
-    Runtime.getRuntime().addShutdownHook(new CqShutdownThread(eqService, this));
+    //Runtime.getRuntime().addShutdownHook(new CqShutdownThread(eqService, this));
 
     init(serviceNativeHandle);
     cqThreads = new ArrayList<CqThread>();

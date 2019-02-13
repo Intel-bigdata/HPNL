@@ -9,7 +9,7 @@ public class EqThread extends Thread {
   }
 
   public void run() {
-    while (running.get() || service.getReapCon().size() != 0) {
+    while (running.get() || service.needReap()) {
       this.service.wait_eq_event();
       this.service.externalEvent();
     }
