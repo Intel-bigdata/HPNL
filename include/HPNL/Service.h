@@ -3,6 +3,7 @@
 
 #include <string>
 
+#include "HPNL/Common.h"
 #include "HPNL/Callback.h"
 #include "HPNL/FIStack.h"
 #include "HPNL/FIConnection.h"
@@ -48,11 +49,13 @@ class Service {
     FIStack *stack;
     ConMgr *conMgr;
     EQEventDemultiplexer *eq_demulti_plexer;
-    CQEventDemultiplexer *cq_demulti_plexer[WORKERS];
+    CQEventDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
     Reactor *reactor;
 
+    Config *config;
+
     EQThread *eqThread;
-    CQThread *cqThread[WORKERS];
+    CQThread *cqThread[MAX_WORKERS];
     EventThread *eventThread;
 };
 

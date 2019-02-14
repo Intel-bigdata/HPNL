@@ -3,6 +3,6 @@
 
 #define BUFFER_SIZE 65536
 #define MEM_SIZE 65536
-#define WORKERS 1
+#define MAX_WORKERS 10
 
 #endif

@@ -51,7 +51,7 @@ public class RdmaBuffer {
 
   private void putMetadata(int srcSize, byte type, long seq) {
     byteBuffer.rewind();
-    byteBuffer.limit(9+srcSize);
+    byteBuffer.limit(getMetadataSize()+srcSize);
     byteBuffer.put(type);
     byteBuffer.putLong(seq);
   }
@@ -70,8 +70,12 @@ public class RdmaBuffer {
     return byteBuffer.slice();
   }
 
-  public void release() {
+  public int getWritableBytes(){
+    return this.byteBuffer.capacity() - getMetadataSize();
+  }
 
+  public static int getMetadataSize(){
+    return 9;
   }
 
   private int rdmaBufferId;

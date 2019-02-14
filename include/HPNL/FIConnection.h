@@ -18,7 +18,6 @@
 #include "HPNL/Connection.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/Common.h"
 #include "HPNL/Ptr.h"
 #include "HPNL/Handle.h"
 

@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-Reactor::Reactor(EventDemultiplexer *eqDemultiplexer_, CQEventDemultiplexer **cqDemultiplexer_) : eqDemultiplexer(eqDemultiplexer_) {
-  for (int i = 0; i < WORKERS; i++) {
+Reactor::Reactor(Config *config, EventDemultiplexer *eqDemultiplexer_, CQEventDemultiplexer **cqDemultiplexer_) : eqDemultiplexer(eqDemultiplexer_) {
+  for (int i = 0; i < config->worker_num; i++) {
     cqDemultiplexer[i] = *(cqDemultiplexer_+i);
   }
 }

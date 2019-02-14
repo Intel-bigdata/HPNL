@@ -8,14 +8,17 @@
 
 #include <map>
 
+#include "HPNL/Config.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/FIConnection.h"
 #include "HPNL/ConMgr.h"
 #include "HPNL/Handle.h"
 
+#define MAX_WORKER_NUM 10
+
 class FIStack {
   public:
-    FIStack(const char*, const char*, uint64_t, int);
+    FIStack(Config*, const char*, const char*, uint64_t, int);
     ~FIStack();
     HandlePtr bind();
     void listen();
@@ -43,9 +46,10 @@ class FIStack {
     std::map<fid*, FIConnection*> conMap;
     HandlePtr peqHandle;
 
-    fid_cq *cqs[WORKERS];
-    Handle *cqHandle[WORKERS];
+    Config *config;
 
+    fid_cq *cqs[MAX_WORKER_NUM];
+    Handle *cqHandle[MAX_WORKER_NUM];
     fid_wait *waitset;
 
     std::map<int, Chunk*> chunkMap;

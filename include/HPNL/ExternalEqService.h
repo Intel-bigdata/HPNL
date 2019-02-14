@@ -29,7 +29,9 @@ class ExternalEqService {
     void reap(fid*);
     FIStack* get_stack();
     Chunk* get_chunk(int, int);
+    Config* getConf();
   private:
+    Config *config;
     FIStack *stack;
 
     int buffer_num;

@@ -1,10 +1,9 @@
 package com.intel.hpnl.core;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,7 +20,7 @@ public class EqService {
     this.rmaBufferId = new AtomicInteger(0);
 
     this.conMap = new HashMap<Long, Connection>();
-    this.reapCons = new ConcurrentHashMap<Long, Connection>();
+    this.reapCons = new LinkedBlockingQueue<Connection>();
 
     this.sendBufferMap = new HashMap<Integer, RdmaBuffer>();
     this.recvBufferMap = new HashMap<Integer, RdmaBuffer>();
@@ -66,8 +65,8 @@ public class EqService {
   }
 
   public void shutdown() {
-    for (Map.Entry<Long, Connection> entry: conMap.entrySet()) {
-      addReapCon(entry.getKey(), entry.getValue());
+    for (Connection con : reapCons) {
+      addReapCon(con);
     }
     synchronized(this) {
       eqThread.shutdown();
@@ -75,12 +74,12 @@ public class EqService {
     delete_eq_event(localEq);
   }
 
-  private void registerCon(long eq, long con, String addr, int port) {
-    Connection connection = new Connection(con, this, addr, port);
+  private void regCon(long eq, long con, String addr, int port) {
+    Connection connection = new Connection(eq, con, this, addr, port);
     conMap.put(eq, connection);
   }
 
-  public void deregCon(long eq) {
+  public void unregCon(long eq) {
     if (conMap.containsKey(eq)) {
       conMap.remove(eq);
     }
@@ -149,12 +148,12 @@ public class EqService {
     connection.putSendBuffer(sendBufferMap.get(rdmaBufferId));
   }
 
-  public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
-    return recvBufferMap.get(rdmaBufferId);
-  }
-
   public RdmaBuffer getSendBuffer(int rdmaBufferId) {
     return sendBufferMap.get(rdmaBufferId); 
+  }
+
+  public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
+    return recvBufferMap.get(rdmaBufferId);
   }
 
   public RdmaBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
@@ -194,19 +193,18 @@ public class EqService {
     return rmaBufferMap.get(rmaBufferId); 
   }
 
-  public void addReapCon(Long eq, Connection con) {
-    reapCons.put(eq, con);
+  public void addReapCon(Connection con) {
+    reapCons.offer(con);
   }
 
-  public Map<Long, Connection> getReapCon() {
-    return reapCons; 
+  public boolean needReap() {
+    return reapCons.size() > 0; 
   }
 
   public void externalEvent() {
-    for (Iterator<Map.Entry<Long, Connection>> it = reapCons.entrySet().iterator(); it.hasNext();){
-      Map.Entry<Long, Connection> item = it.next();
-      item.getValue().shutdown(item.getKey());
-      it.remove();
+    while (needReap()) {
+      Connection con = reapCons.poll();
+      con.shutdown();
     }
   }
 
@@ -225,13 +223,21 @@ public class EqService {
   private native void free();
   public native void finalize();
 
+  public String getIp() {
+    return ip;
+  }
+
+  public String getPort() {
+    return port;
+  }
+
   private long nativeHandle;
   private long localEq;
   private String ip;
   private String port;
   public boolean is_server;
   private HashMap<Long, Connection> conMap;
-  private ConcurrentHashMap<Long, Connection> reapCons;
+  private LinkedBlockingQueue<Connection> reapCons;
 
   private HashMap<Integer, RdmaBuffer> sendBufferMap;
   private HashMap<Integer, RdmaBuffer> recvBufferMap;
