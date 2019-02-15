@@ -33,15 +33,7 @@ public class Client {
     eqService.setSendCallback(null);
     eqService.setShutdownCallback(shutdownCallback);
 
-    for (int i = 0; i < BUFFER_NUM*10; i++) {
-      ByteBuffer sendBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
-      eqService.setSendBuffer(sendBuf, BUFFER_SIZE, i);
-    }
-
-    for (int i = 0; i < BUFFER_NUM*2*10; i++) {
-      ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
-      eqService.setRecvBuffer(recvBuf, BUFFER_SIZE, i);
-    }
+    eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
     cqService.start();
     eqService.start();

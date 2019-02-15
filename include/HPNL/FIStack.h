@@ -8,7 +8,6 @@
 
 #include <map>
 
-#include "HPNL/Config.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/FIConnection.h"
 #include "HPNL/ConMgr.h"

@@ -24,12 +24,15 @@ class PingPongBufMgr : public BufMgr {
         buf_map[mid] = ck;
       bufs.push_back(ck);
     }
-
     virtual Chunk* get() override {
       std::lock_guard<std::mutex> l(mtx);
       Chunk *ck = bufs.back();
       bufs.pop_back();
       return ck;
+    }
+    virtual int free_size() override {
+      std::lock_guard<std::mutex> l(mtx);
+      return bufs.size(); 
     }
   private:
     std::mutex mtx;

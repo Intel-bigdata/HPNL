@@ -2,7 +2,6 @@ package com.intel.hpnl.pingpong;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.nio.ByteBuffer;
 
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
@@ -23,15 +22,7 @@ public class Server {
     eqService.setConnectedCallback(connectedCallback);
     eqService.setRecvCallback(readCallback);
 
-    for (int i = 0; i < BUFFER_NUM*10; i++) {
-      ByteBuffer sendBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
-      eqService.setSendBuffer(sendBuf, BUFFER_SIZE, i);
-    }
-
-    for (int i = 0; i < BUFFER_NUM*2*10; i++) {
-      ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
-      eqService.setRecvBuffer(recvBuf, BUFFER_SIZE, i);
-    }
+    eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
     cqService.start();
     eqService.start();

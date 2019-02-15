@@ -5,7 +5,6 @@
 #include <list>
 
 #include "HPNL/Common.h"
-#include "HPNL/Config.h"
 #include "HPNL/EventType.h"
 #include "HPNL/EventDemultiplexer.h"
 #include "HPNL/EventHandler.h"
