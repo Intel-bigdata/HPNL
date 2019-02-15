@@ -20,8 +20,8 @@ public class Client {
     }
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService("172.168.2.106", "123456", BUFFER_NUM, false);
-    CqService cqService = new CqService(eqService, 1, eqService.getNativeHandle());
+    EqService eqService = new EqService("172.168.2.106", "123456", 1, BUFFER_NUM, false);
+    CqService cqService = new CqService(eqService, eqService.getNativeHandle());
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();
 
@@ -33,18 +33,18 @@ public class Client {
     eqService.setSendCallback(null);
     eqService.setShutdownCallback(shutdownCallback);
 
-    for (int i = 0; i < BUFFER_NUM; i++) {
+    for (int i = 0; i < BUFFER_NUM*10; i++) {
       ByteBuffer sendBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
       eqService.setSendBuffer(sendBuf, BUFFER_SIZE, i);
     }
 
-    for (int i = 0; i < BUFFER_NUM*2; i++) {
+    for (int i = 0; i < BUFFER_NUM*2*10; i++) {
       ByteBuffer recvBuf = ByteBuffer.allocateDirect(BUFFER_SIZE);
       eqService.setRecvBuffer(recvBuf, BUFFER_SIZE, i);
     }
 
     cqService.start();
-    eqService.start(1);
+    eqService.start();
 
     eqService.waitToConnected();
     System.out.println("connected, start to pingpong.");

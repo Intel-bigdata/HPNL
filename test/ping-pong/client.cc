@@ -36,6 +36,7 @@ class ConnectedCallback : public Callback {
       char* buffer = (char*)std::malloc(SIZE);
       memset(buffer, '0', SIZE);
       con->send(buffer, SIZE, SIZE, 0, 0);
+      std::cout << "send." << std::endl;
       std::free(buffer);
     }
   private:
@@ -102,7 +103,7 @@ int main(int argc, char *argv[]) {
     ck->capacity = BUFFER_SIZE;
     sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
-  Client *client = new Client("172.168.2.106", "123456", 16);
+  Client *client = new Client("172.168.2.106", "123456");
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 
@@ -116,7 +117,7 @@ int main(int argc, char *argv[]) {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run(1);
+  client->run(1, 16);
 
   client->wait();
 

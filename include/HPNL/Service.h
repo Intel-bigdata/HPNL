@@ -17,7 +17,7 @@ class AcceptRequestCallback;
 
 class Service {
   public:
-    void run(int);
+    void run(int, int);
     void shutdown();
     void wait();
     void set_recv_buf_mgr(BufMgr*);
@@ -28,7 +28,7 @@ class Service {
     void set_connected_callback(Callback*);
     void set_shutdown_callback(Callback*);
   protected:
-    Service(const char*, const char*, int buffer_size, bool is_server_ = false);
+    Service(const char*, const char*, bool is_server_ = false);
     ~Service();
   private:
     friend class AcceptRequestCallback;
@@ -51,8 +51,6 @@ class Service {
     EQEventDemultiplexer *eq_demulti_plexer;
     CQEventDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
     Reactor *reactor;
-
-    Config *config;
 
     EQThread *eqThread;
     CQThread *cqThread[MAX_WORKERS];

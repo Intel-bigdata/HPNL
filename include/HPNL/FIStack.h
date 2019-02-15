@@ -18,7 +18,7 @@
 
 class FIStack {
   public:
-    FIStack(Config*, const char*, const char*, uint64_t, int);
+    FIStack(const char*, const char*, uint64_t, int, int);
     ~FIStack();
     HandlePtr bind();
     void listen();
@@ -35,6 +35,7 @@ class FIStack {
 
   private:
     uint64_t seq_num;
+    int worker_num;
     int buffer_num;
     int total_buffer_num;
     fid_fabric *fabric;
@@ -45,8 +46,6 @@ class FIStack {
 
     std::map<fid*, FIConnection*> conMap;
     HandlePtr peqHandle;
-
-    Config *config;
 
     fid_cq *cqs[MAX_WORKER_NUM];
     Handle *cqHandle[MAX_WORKER_NUM];

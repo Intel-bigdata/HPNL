@@ -13,9 +13,11 @@ public class EqService {
     System.load("/usr/local/lib/libhpnl.so");
   }
 
-  public EqService(String ip, String port, int buffer_num, boolean is_server) {
+  public EqService(String ip, String port, int worker_num, int buffer_num, boolean is_server) {
     this.ip = ip;
     this.port = port;
+    this.worker_num = worker_num;
+    this.buffer_num = buffer_num;
     this.is_server = is_server;
     this.rmaBufferId = new AtomicInteger(0);
 
@@ -26,20 +28,20 @@ public class EqService {
     this.recvBufferMap = new HashMap<Integer, RdmaBuffer>();
     this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
 
-    init(ip, port, buffer_num, is_server);
+    init(ip, port, worker_num, buffer_num, is_server);
 
-    eqThread = new EqThread(this);
+    this.eqThread = new EqThread(this);
   }
 
-  public void start(int con_num) {
-    if (is_server) {
-      con_num = 1;
-    } else {
-      connectLatch = new CountDownLatch(con_num);
+  public void start() {
+    if (!is_server) {
+      connectLatch = new CountDownLatch(worker_num);
     }
-    for (int i = 0; i < con_num; i++) {
+    for (int i = 0; i < worker_num; i++) {
       localEq = connect();
       add_eq_event(localEq);
+      if (is_server)
+        break;
     }
     eqThread.start();
   }
@@ -208,6 +210,13 @@ public class EqService {
     }
   }
 
+  public int getWorkerNum() {
+    if (is_server)
+      return this.worker_num;
+    else
+      return 1; 
+  }
+
   public native void shutdown(long eq);
   private native long connect();
   public native int wait_eq_event();
@@ -219,7 +228,7 @@ public class EqService {
   private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId);
   private native void unreg_rma_buffer(int rdmaBufferId);
   private native long get_buffer_address(ByteBuffer buffer);
-  private native void init(String ip_, String port_, int buffer_num_, boolean is_server_);
+  private native void init(String ip_, String port_, int worker_num_, int buffer_num_, boolean is_server_);
   private native void free();
   public native void finalize();
 
@@ -235,6 +244,8 @@ public class EqService {
   private long localEq;
   private String ip;
   private String port;
+  private int worker_num;
+  private int buffer_num;
   public boolean is_server;
   private HashMap<Long, Connection> conMap;
   private LinkedBlockingQueue<Connection> reapCons;

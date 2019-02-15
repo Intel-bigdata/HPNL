@@ -27,11 +27,14 @@ int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
     } else {
       entry.fid = handlePtr->get_fid();
       if (event == FI_CONNREQ) {
+        std::cout << "FI_CONNREQ" << std::endl;
         eventMap[handlePtr]->handle_event(ACCEPT_EVENT, &entry); 
       } else if (event == FI_CONNECTED)  {
+        std::cout << "FI_CONNECTED" << std::endl;
         eventMap[handlePtr]->handle_event(CONNECTED_EVENT, &entry);
         con_inflight++;
       } else if (event == FI_SHUTDOWN) {
+        std::cout << "FI_SHUTDOWN" << std::endl;
         eventMap[handlePtr]->handle_event(CLOSE_EVENT, &entry); 
         con_inflight--;
         if (con_inflight == 0) {
