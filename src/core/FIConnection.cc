@@ -111,17 +111,26 @@ void FIConnection::shutdown() {
   assert(!fi_shutdown(ep, 0));
 }
 
-void FIConnection::init_peer_addr() {
+void FIConnection::init_addr() {
   if (info->dest_addr != NULL) {
     struct sockaddr_in *dest_addr_in = (struct sockaddr_in*)info->dest_addr;
-    peer_port = dest_addr_in->sin_port;
-    peer_addr = inet_ntoa(dest_addr_in->sin_addr);
+    dest_port = dest_addr_in->sin_port;
+    dest_addr = inet_ntoa(dest_addr_in->sin_addr);
+  }
+
+  if (info->src_addr != NULL) {
+    struct sockaddr_in *src_addr_in = (struct sockaddr_in*)info->src_addr;
+    src_port = src_addr_in->sin_port;
+    src_addr = inet_ntoa(src_addr_in->sin_addr);
   }
 }
 
-void FIConnection::get_peer_addr(char** addr, size_t *port) {
-  *addr = peer_addr;
-  *port = peer_port;
+void FIConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_addr_, size_t* src_port_) {
+  *dest_addr_ = dest_addr;
+  *dest_port_ = dest_port;
+
+  *src_addr_ = src_addr;
+  *src_port_ = src_port;
 }
 
 void FIConnection::take_back_chunk(Chunk *ck) {

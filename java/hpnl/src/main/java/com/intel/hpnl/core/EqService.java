@@ -76,8 +76,9 @@ public class EqService {
     delete_eq_event(localEq);
   }
 
-  private void regCon(long eq, long con, String addr, int port) {
-    Connection connection = new Connection(eq, con, this, addr, port);
+  private void regCon(long eq, long con, String dest_addr, int dest_port, String src_addr, int src_port) {
+    Connection connection = new Connection(eq, con, this);
+    connection.setAddrInfo(dest_addr, dest_port, src_addr, src_port);
     conMap.put(eq, connection);
   }
 
