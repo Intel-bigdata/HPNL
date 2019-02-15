@@ -87,17 +87,21 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     new_eq = service->accept(info);
     service->add_eq_event(new_eq);
   } else if (ret == CONNECTED_EVENT) {
-    char **addr = (char**)malloc(sizeof(char*));
-    size_t port;
-    con->get_peer_addr(addr, &port);
-    jstring addr_str = (*env).NewStringUTF(*addr);
-    free(addr);
+    char **dest_addr = (char**)malloc(sizeof(char*));
+    size_t dest_port;
+    char **src_addr = (char**)malloc(sizeof(char*));
+    size_t src_port;
+    con->get_addr(dest_addr, &dest_port, src_addr, &src_port);
+    jstring dest_addr_str = (*env).NewStringUTF(*dest_addr);
+    jstring src_addr_str = (*env).NewStringUTF(*src_addr);
+    free(dest_addr);
+    free(src_addr);
     //register connection  
-    jmethodID regCon = (*env).GetMethodID(thisClass, "regCon", "(JJLjava/lang/String;I)V");
+    jmethodID regCon = (*env).GetMethodID(thisClass, "regCon", "(JJLjava/lang/String;ILjava/lang/String;I)V");
     assert(regCon);
     jlong jEq = *(jlong*)&eq;
     jlong jCon = *(jlong*)&con;
-    (*env).CallVoidMethod(thisObj, regCon, jEq, jCon, addr_str, port);
+    (*env).CallVoidMethod(thisObj, regCon, jEq, jCon, dest_addr_str, dest_port, src_addr_str, src_port);
 
     //set send buffer;
     std::vector<Chunk*> send_buffer = con->get_send_buffer();

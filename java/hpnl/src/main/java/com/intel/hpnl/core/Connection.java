@@ -5,11 +5,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Connection {
 
-  public Connection(long nativeEq, long nativeCon, EqService service, String peer_addr, int peer_port) {
+  public Connection(long nativeEq, long nativeCon, EqService service) {
     this.service = service;
     this.sendBufferList = new LinkedBlockingQueue<RdmaBuffer>();
-    this.peer_addr = peer_addr;
-    this.peer_port = peer_port;
     this.nativeEq = nativeEq;
     init(nativeCon);
     connected = true;
@@ -107,12 +105,27 @@ public class Connection {
     return service.getRmaBufferByBufferId(rmaBufferId);
   }
 
-  public String getPeerAddr() {
-    return this.peer_addr;
+  public void setAddrInfo(String destAddr, int destPort, String srcAddr, int srcPort) {
+    this.destAddr = destAddr;
+    this.destPort = destPort;
+    this.srcAddr = srcAddr;
+    this.srcPort = srcPort;
   }
 
-  public int getPeerPort() {
-    return this.peer_port;
+  public String getDestAddr() {
+    return this.destAddr;
+  }
+
+  public int getDestPort() {
+    return this.destPort;
+  }
+
+  public String getSrcAddr() {
+    return this.srcAddr; 
+  }
+
+  public int getSrcPort() {
+    return this.srcPort; 
   }
 
   public void handleCallback(int eventType, int rdmaBufferId, int blockBufferSize) {
@@ -148,8 +161,11 @@ public class Connection {
  
   private LinkedBlockingQueue<RdmaBuffer> sendBufferList;
 
-  private String peer_addr;
-  private int peer_port;
+  private String destAddr;
+  private int destPort;
+  private String srcAddr;
+  private int srcPort;
+
   private boolean connected;
 
   private Handler connectedCallback = null;
