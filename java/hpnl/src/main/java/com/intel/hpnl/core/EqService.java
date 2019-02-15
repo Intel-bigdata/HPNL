@@ -24,10 +24,8 @@ public class EqService {
     this.conMap = new HashMap<Long, Connection>();
     this.reapCons = new LinkedBlockingQueue<Connection>();
 
-    this.sendBufferMap = new HashMap<Integer, RdmaBuffer>();
-    this.recvBufferMap = new HashMap<Integer, RdmaBuffer>();
     this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
-
+    
     init(ip, port, worker_num, buffer_num, is_server);
 
     this.eqThread = new EqThread(this);
@@ -44,6 +42,7 @@ public class EqService {
         break;
     }
     eqThread.start();
+
   }
 
   public void waitToConnected() {
@@ -134,29 +133,27 @@ public class EqService {
     return nativeHandle;
   }
 
-  public void setRecvBuffer(ByteBuffer byteBuffer, long size, int rdmaBufferId) {
-    RdmaBuffer buffer = new RdmaBuffer(rdmaBufferId, byteBuffer);
-    recvBufferMap.put(rdmaBufferId, buffer);
-    set_recv_buffer(byteBuffer, size, rdmaBufferId);
+  public void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
+    this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, MemPool.Type.SEND);
+    this.recvBufferPool = new MemPool(this, initBufferNum*2, bufferSize, nextBufferNum*2, MemPool.Type.RECV);
   }
 
-  public void setSendBuffer(ByteBuffer byteBuffer, long size, int rdmaBufferId) {
-    RdmaBuffer buffer = new RdmaBuffer(rdmaBufferId, byteBuffer);
-    sendBufferMap.put(rdmaBufferId, buffer);
-    set_send_buffer(byteBuffer, size, rdmaBufferId);
+  public void reallocBufferPool() {
+    this.sendBufferPool.realloc();
+    this.recvBufferPool.realloc();
   }
 
   public void putSendBuffer(long eq, int rdmaBufferId) {
     Connection connection = conMap.get(eq);
-    connection.putSendBuffer(sendBufferMap.get(rdmaBufferId));
+    connection.putSendBuffer(sendBufferPool.getBuffer(rdmaBufferId));
   }
 
   public RdmaBuffer getSendBuffer(int rdmaBufferId) {
-    return sendBufferMap.get(rdmaBufferId); 
+    return sendBufferPool.getBuffer(rdmaBufferId); 
   }
 
   public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
-    return recvBufferMap.get(rdmaBufferId);
+    return recvBufferPool.getBuffer(rdmaBufferId);
   }
 
   public RdmaBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
@@ -251,9 +248,10 @@ public class EqService {
   private HashMap<Long, Connection> conMap;
   private LinkedBlockingQueue<Connection> reapCons;
 
-  private HashMap<Integer, RdmaBuffer> sendBufferMap;
-  private HashMap<Integer, RdmaBuffer> recvBufferMap;
   private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
+
+  private MemPool sendBufferPool;
+  private MemPool recvBufferPool;
 
   AtomicInteger rmaBufferId;
 

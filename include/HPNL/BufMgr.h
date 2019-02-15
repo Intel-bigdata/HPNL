@@ -29,6 +29,7 @@ class BufMgr {
     virtual Chunk* index(int id) = 0;
     virtual void add(int, Chunk*) = 0;
     virtual Chunk* get() = 0;
+    virtual int free_size() = 0;
 
     int get_id() { return id++; }
   private:

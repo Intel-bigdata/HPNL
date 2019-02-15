@@ -31,7 +31,6 @@ class ExternalEqService {
     Chunk* get_chunk(int, int);
     int get_worker_num();
   private:
-    Config *config;
     FIStack *stack;
 
     int worker_num;

@@ -19,6 +19,8 @@ ExternalEqService::~ExternalEqService() {
 }
 
 fid_eq* ExternalEqService::accept(fi_info* info) {
+  if (sendBufMgr->free_size() < buffer_num || recvBufMgr->free_size() < buffer_num*2)
+    return NULL;
   HandlePtr eqHandle;
   eqHandle = stack->accept(info, recvBufMgr, sendBufMgr);
   return (fid_eq*)eqHandle->get_ctx();

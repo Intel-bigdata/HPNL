@@ -85,6 +85,13 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     //accept new connection and register eq id
     fid_eq *new_eq;
     new_eq = service->accept(info);
+    if (!new_eq) {
+      jmethodID reallocBufferPool = (*env).GetMethodID(thisClass, "reallocBufferPool", "()V");
+      assert(reallocBufferPool);
+      (*env).CallVoidMethod(thisObj, reallocBufferPool);
+      new_eq = service->accept(info);
+      assert(new_eq != NULL);
+    }
     service->add_eq_event(new_eq);
   } else if (ret == CONNECTED_EVENT) {
     char **dest_addr = (char**)malloc(sizeof(char*));

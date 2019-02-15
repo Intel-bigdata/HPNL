@@ -30,6 +30,10 @@ class ExternalEqServiceBufMgr : public BufMgr {
       bufs.pop_back();
       return ck;
     }
+    virtual int free_size() override {
+      std::lock_guard<std::mutex> l(mtx);
+      return bufs.size(); 
+    }
   private:
     std::mutex mtx;
     std::vector<Chunk*> bufs;
