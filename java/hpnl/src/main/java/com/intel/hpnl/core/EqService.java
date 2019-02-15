@@ -125,8 +125,8 @@ public class EqService {
     shutdownCallback = callback;
   }
 
-  public HashMap<Long, Connection> getConMap() {
-    return conMap;
+  public Connection getCon(long eq) {
+    return conMap.get(eq);
   }
 
   public long getNativeHandle() {

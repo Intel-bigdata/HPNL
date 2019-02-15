@@ -53,10 +53,10 @@ public class CqService {
     }
   }
 
-  private void handleCqCallback(long eq, int eventType, int rdma_buffer_id, int block_buffer_size) {
-    Connection connection = eqService.getConMap().get(eq);
+  private void handleCqCallback(long eq, int eventType, int rdmaBufferId, int block_buffer_size) {
+    Connection connection = eqService.getCon(eq);
     if (connection != null) {
-      connection.handleCallback(eventType, rdma_buffer_id, block_buffer_size);
+      connection.handleCallback(eventType, rdmaBufferId, block_buffer_size);
     }
   }
 
