@@ -11,7 +11,7 @@
 
 class ExternalEqService {
   public:
-    ExternalEqService(const char*, const char*, int, bool is_server_ = false);
+    ExternalEqService(const char*, const char*, int, int, bool is_server_ = false);
     ~ExternalEqService();
     fid_eq* connect();
     fid_eq* accept(fi_info*);
@@ -29,14 +29,14 @@ class ExternalEqService {
     void reap(fid*);
     FIStack* get_stack();
     Chunk* get_chunk(int, int);
-    Config* getConf();
+    int get_worker_num();
   private:
     Config *config;
     FIStack *stack;
 
+    int worker_num;
     int buffer_num;
 
-    int worker_num;
     const char* ip;
     const char* port;
     bool is_server;

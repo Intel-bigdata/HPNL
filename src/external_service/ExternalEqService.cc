@@ -1,8 +1,11 @@
 #include "HPNL/ExternalEqService.h"
 
-ExternalEqService::ExternalEqService(const char* ip_, const char* port_, int buffer_num_, bool is_server_) : buffer_num(buffer_num_), ip(ip_), port(port_), is_server(is_server_) {
-  config = new Config();
-  stack = new FIStack(config, ip, port, is_server ? FI_SOURCE : 0, buffer_num);
+ExternalEqService::ExternalEqService(const char* ip_, const char* port_, int worker_num_, int buffer_num_, bool is_server_) : worker_num(worker_num_), buffer_num(buffer_num_), ip(ip_), port(port_), is_server(is_server_) {
+  if (is_server) {
+    stack = new FIStack(ip, port, FI_SOURCE, worker_num, buffer_num);
+  } else {
+    stack = new FIStack(ip, port, 0, 1, buffer_num);
+  }
   eq_demulti_plexer = new EQExternalDemultiplexer(stack);
   recvBufMgr = new ExternalEqServiceBufMgr();
   sendBufMgr = new ExternalEqServiceBufMgr();
@@ -13,7 +16,6 @@ ExternalEqService::~ExternalEqService() {
   delete eq_demulti_plexer;
   delete recvBufMgr;
   delete sendBufMgr;
-  delete config;
 }
 
 fid_eq* ExternalEqService::accept(fi_info* info) {
@@ -88,8 +90,11 @@ Chunk* ExternalEqService::get_chunk(int id, int type) {
   return ck;
 }
 
-Config* ExternalEqService::getConf() {
-  return config;
+int ExternalEqService::get_worker_num() {
+  if (is_server)
+    return worker_num;
+  else
+    return 1;
 }
 
 int ExternalEqService::add_eq_event(fid_eq *eq) {

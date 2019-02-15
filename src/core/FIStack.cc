@@ -1,7 +1,6 @@
 #include "HPNL/FIStack.h"
 
-FIStack::FIStack(Config *config_, const char *addr, const char *port, uint64_t flags, int buffer_num_) : seq_num(0), buffer_num(buffer_num_) {
-  config = config_;
+FIStack::FIStack(const char *addr, const char *port, uint64_t flags, int worker_num_, int buffer_num_) : seq_num(0), worker_num(worker_num_), buffer_num(buffer_num_) {
   hints = fi_allocinfo();
   hints->addr_format = FI_SOCKADDR_IN;
   hints->ep_attr->type = FI_EP_MSG;
@@ -22,8 +21,8 @@ FIStack::FIStack(Config *config_, const char *addr, const char *port, uint64_t f
   assert(!fi_eq_open(fabric, &eq_attr, &peq, &peqHandle));
 
   fi_domain(fabric, info, &domain, NULL);
-  
-  for (int i = 0; i < config->worker_num; i++) {
+ 
+  for (int i = 0; i < worker_num; i++) {
     struct fi_cq_attr cq_attr = {
       .size = 0,
       .flags = 0,
@@ -44,7 +43,7 @@ FIStack::~FIStack() {
   }
   conMap.erase(conMap.begin(), conMap.end());
   fi_close(&peq->fid);
-  for (int i = 0; i < config->worker_num; i++) {
+  for (int i = 0; i < worker_num; i++) {
     fi_close(&cqs[i]->fid); 
   }
   fi_close(&domain->fid);
@@ -65,7 +64,7 @@ void FIStack::listen() {
 }
 
 HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(this, fabric, info, domain, cqs[seq_num%config->worker_num], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num);
+  FIConnection *con = new FIConnection(this, fabric, info, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num);
   con->status = CONNECT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
@@ -74,7 +73,7 @@ HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
 }
 
 HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%config->worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num);
+  FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num);
   con->status = ACCEPT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));

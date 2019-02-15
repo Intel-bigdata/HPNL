@@ -2,8 +2,8 @@
 
 #include <iostream>
 
-Reactor::Reactor(Config *config, EventDemultiplexer *eqDemultiplexer_, CQEventDemultiplexer **cqDemultiplexer_) : eqDemultiplexer(eqDemultiplexer_) {
-  for (int i = 0; i < config->worker_num; i++) {
+Reactor::Reactor(EventDemultiplexer *eqDemultiplexer_, CQEventDemultiplexer **cqDemultiplexer_, int worker_num) : eqDemultiplexer(eqDemultiplexer_) {
+  for (int i = 0; i < worker_num; i++) {
     cqDemultiplexer[i] = *(cqDemultiplexer_+i);
   }
 }
@@ -16,8 +16,9 @@ int Reactor::eq_service() {
   return eqDemultiplexer->wait_event(eventMap);
 }
 
-int Reactor::cq_service(int num) {
-  return cqDemultiplexer[num]->wait_event();
+int Reactor::cq_service(int index) {
+  std::cout << "index " << index << std::endl;
+  return cqDemultiplexer[index]->wait_event();
 }
 
 int Reactor::register_handler(EventHandlerPtr eh) {

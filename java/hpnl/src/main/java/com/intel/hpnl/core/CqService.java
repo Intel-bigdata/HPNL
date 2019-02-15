@@ -8,26 +8,29 @@ public class CqService {
     System.load("/usr/local/lib/libhpnl.so");
   }
 
-  public CqService(EqService service, int num, long serviceNativeHandle) {
+  public CqService(EqService service, long serviceNativeHandle) {
     this.eqService = service;
-    this.num = num;
     this.serviceNativeHandle = serviceNativeHandle;
 
     //Runtime.getRuntime().addShutdownHook(new CqShutdownThread(eqService, this));
 
+    this.cqThreads = new ArrayList<CqThread>();
+    this.externalHandlers = new ArrayList<ExternalHandler>();
+  }
+
+  public void start() {
     init(serviceNativeHandle);
-    cqThreads = new ArrayList<CqThread>();
-    for (int i = 0; i < this.num; i++) {
+    
+    int workerNum = this.eqService.getWorkerNum();
+    for (int i = 0; i < workerNum; i++) {
       CqThread cqThread = new CqThread(this, i);
       cqThreads.add(cqThread);
     }
-    this.externalHandlers = new ArrayList<ExternalHandler>();
-  }
-  public void start() {
     for (CqThread cqThread : cqThreads) {
       cqThread.start();
     }
   }
+
   public void shutdown() {
     for (CqThread cqThread : cqThreads) {
       synchronized(this) {
@@ -80,7 +83,6 @@ public class CqService {
   private native void free();
   private long nativeHandle;
   private EqService eqService;
-  private int num;
   private long serviceNativeHandle;
   private List<CqThread> cqThreads;
   private List<ExternalHandler> externalHandlers;

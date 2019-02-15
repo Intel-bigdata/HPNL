@@ -15,13 +15,13 @@
 
 class Reactor {
   public:
-    Reactor(Config*, EventDemultiplexer* eqDemultiplexer_, CQEventDemultiplexer** cqDemultiplexer_);
+    Reactor(EventDemultiplexer*, CQEventDemultiplexer**, int);
     ~Reactor();
     int eq_service();
-    int cq_service(int num);
-    int register_handler(EventHandlerPtr eh);
-    int remove_handler(EventHandlerPtr eh);
-    int remove_handler(HandlePtr handle);
+    int cq_service(int);
+    int register_handler(EventHandlerPtr);
+    int remove_handler(EventHandlerPtr);
+    int remove_handler(HandlePtr);
     int handle_events(int timeout = 0);
   private:
     std::map<HandlePtr, EventHandlerPtr> eventMap;
@@ -43,15 +43,15 @@ class EQThread : public ThreadWrapper {
 
 class CQThread : public ThreadWrapper {
   public:
-    CQThread(Reactor *reactor_, int num) : reactor(reactor_), worker_num(num) {}
+    CQThread(Reactor *reactor_, int index_) : reactor(reactor_), index(index_) {}
     virtual ~CQThread() {}
     virtual int entry() override {
-      return reactor->cq_service(worker_num);
+      return reactor->cq_service(index);
     } 
     virtual void abort() override {}
   private:
     Reactor *reactor;
-    int worker_num;
+    int index;
 };
 
 #endif

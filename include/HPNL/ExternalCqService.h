@@ -13,12 +13,12 @@
 class ExternalCqService {
   public:
     ExternalCqService(ExternalEqService *service_, FIStack *stack_) : service(service_), stack(stack_) {
-      for (int i = 0; i < service->getConf()->worker_num; i++) {
+      for (int i = 0; i < service->get_worker_num(); i++) {
         cq_demulti_plexer[i] = new CQExternalDemultiplexer(stack, stack->get_cqs()[i]); 
       }
     }
     ~ExternalCqService() {
-      for (int i = 0; i < service->getConf()->worker_num; i++) {
+      for (int i = 0; i < service->get_worker_num(); i++) {
         delete cq_demulti_plexer[i];
       }
     }

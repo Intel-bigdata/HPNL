@@ -92,7 +92,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_get_1buffer_1address
  * Signature: (Ljava/lang/String;Ljava/lang/String;Z)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_init
-  (JNIEnv *, jobject, jstring, jstring, jint, jboolean);
+  (JNIEnv *, jobject, jstring, jstring, jint, jint, jboolean);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
