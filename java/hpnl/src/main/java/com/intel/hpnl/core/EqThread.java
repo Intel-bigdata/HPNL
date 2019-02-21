@@ -3,15 +3,17 @@ package com.intel.hpnl.core;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class EqThread extends Thread {
-  public EqThread(EqService service_) {
-    this.service = service_;
+  public EqThread(EqService eqService) {
+    this.eqService = eqService;
     running.set(true);
   }
 
   public void run() {
-    while (running.get() || service.needReap()) {
-      this.service.wait_eq_event();
-      this.service.externalEvent();
+    while (running.get() || eqService.needReap()) {
+      if (this.eqService.wait_eq_event() == -1) {
+        shutdown();
+      }
+      this.eqService.externalEvent();
     }
   }
 
@@ -20,6 +22,6 @@ public class EqThread extends Thread {
     running.set(false); 
   }
 
-  private EqService service;
+  private EqService eqService;
   private final AtomicBoolean running = new AtomicBoolean(false);
 }

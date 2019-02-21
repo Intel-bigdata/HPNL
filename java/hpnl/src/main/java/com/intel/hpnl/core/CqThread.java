@@ -11,7 +11,9 @@ public class CqThread extends Thread {
 
   public void run() {
     while (running.get()) {
-      cqService.wait_event(index);
+      if (this.cqService.wait_event(index) == -1) {
+        shutdown();
+      }
     }
   }
 

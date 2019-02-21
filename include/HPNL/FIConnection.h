@@ -37,16 +37,17 @@ class FIConnection : public Connection {
     FIConnection(FIStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int buffer_num);
     ~FIConnection();
 
+    virtual int init() override;
     virtual void recv(char*, int) override;
-    virtual void send(const char*, int, int, int, long) override;
-    virtual void send(int, int) override;
+    virtual int send(const char*, int, int, int, long) override;
+    virtual int send(int, int) override;
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) override;
     virtual void shutdown() override;
     virtual void take_back_chunk(Chunk*) override;
-    virtual void activate_chunk(Chunk*) override;
+    virtual int activate_chunk(Chunk*) override;
     
-    void connect();
-    void accept();
+    int connect();
+    int accept();
 
     void init_addr();
     void get_addr(char**, size_t*, char**, size_t*);
@@ -71,7 +72,7 @@ class FIConnection : public Connection {
     
   private:
     FIStack *stack;
-
+    fid_fabric *fabric;
     fi_info *info;
     fid_domain *domain;
     fid_ep *ep;
@@ -90,7 +91,9 @@ class FIConnection : public Connection {
 
     fid_wait *waitset;
 
-    bool server;
+    bool is_server;
+
+    int buffer_num;
 
     size_t dest_port;
     char *dest_addr;

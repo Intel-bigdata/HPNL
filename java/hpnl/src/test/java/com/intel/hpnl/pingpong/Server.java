@@ -12,9 +12,9 @@ public class Server {
     final int BUFFER_SIZE = 65536;
     final int BUFFER_NUM = 32;
 
-    EqService eqService = new EqService("172.168.2.106", "123456", 3, BUFFER_NUM, true);
-    CqService cqService = new CqService(eqService, eqService.getNativeHandle());
-
+    EqService eqService = new EqService("172.168.2.106", "123456", 3, BUFFER_NUM, true).init();
+    CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
+    
     List<Connection> conList = new ArrayList<Connection>();
 
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
@@ -24,9 +24,9 @@ public class Server {
 
     eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
-    cqService.start();
     eqService.start();
-
+    cqService.start();
+    
     cqService.join();
     eqService.shutdown();
     eqService.join();

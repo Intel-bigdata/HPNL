@@ -28,13 +28,11 @@ Service::~Service() {
 
 void Service::run(int worker_num, int buffer_num) {
   if (is_server) {
-    std::cout << "server " << worker_num << std::endl;
     stack = new FIStack(ip, port, FI_SOURCE, worker_num, buffer_num);
   } else {
-    std::cout << "client " << worker_num << std::endl;
     stack = new FIStack(ip, port, 0, 1, buffer_num);
   }
-  
+  stack->init();
   eq_demulti_plexer = new EQEventDemultiplexer();
   for (int i = 0; i < worker_num; i++) {
     cq_demulti_plexer[i] = new CQEventDemultiplexer(stack, i);
@@ -47,7 +45,6 @@ void Service::run(int worker_num, int buffer_num) {
     HandlePtr eqHandle;
     eqHandle = stack->bind();
     stack->listen();
-    std::cout << "listen" << std::endl;
 
     EventHandlerPtr handler(new EQHandler(stack, reactor, eqHandle));
     acceptRequestCallback = new AcceptRequestCallback(this);
@@ -62,7 +59,6 @@ void Service::run(int worker_num, int buffer_num) {
     HandlePtr eqHandle[worker_num];
     for (int i = 0; i< worker_num; i++) {
       eqHandle[i] = stack->connect(recvBufMgr, sendBufMgr);
-      std::cout << "connect" << std::endl;
 
       EventHandlerPtr handler(new EQHandler(stack, reactor, eqHandle[i]));
       acceptRequestCallback = new AcceptRequestCallback(this);

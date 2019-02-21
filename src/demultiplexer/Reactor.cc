@@ -17,7 +17,6 @@ int Reactor::eq_service() {
 }
 
 int Reactor::cq_service(int index) {
-  std::cout << "index " << index << std::endl;
   return cqDemultiplexer[index]->wait_event();
 }
 

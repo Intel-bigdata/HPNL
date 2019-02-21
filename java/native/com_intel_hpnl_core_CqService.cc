@@ -40,7 +40,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
   int rdma_buffer_id = 0;
   int ret = externalCqService->wait_cq_event(index, &eq, &rdma_buffer_id, &block_buffer_size);
   if (ret <= 0) {
-    return 0; 
+    return ret; 
   }
   Connection *con = externalCqService->get_connection(eq);
   if (!con)
@@ -52,7 +52,9 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
   (*env).CallVoidMethod(thisObj, handleCqCallback, jEq, ret, rdma_buffer_id, block_buffer_size);
   if (ret == RECV_EVENT) {
     Chunk *ck = externalCqService->get_chunk(rdma_buffer_id, RECV_CHUNK);
-    con->activate_chunk(ck); 
+    if (con->activate_chunk(ck)) {
+      // TODO: error handler 
+    }
   } else if (ret == SEND_EVENT) {
     Chunk *ck = externalCqService->get_chunk(rdma_buffer_id, SEND_CHUNK); 
   }
@@ -64,10 +66,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
  * Method:    init
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_init(JNIEnv *env, jobject thisObj, jlong service) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_init(JNIEnv *env, jobject thisObj, jlong service) {
   ExternalEqService *externalEqService = *(ExternalEqService**)&service;
   ExternalCqService *externalCqService = new ExternalCqService(externalEqService, externalEqService->get_stack());
   _set_self(env, thisObj, externalCqService);
+  return externalCqService->init();
 }
 
 /*
@@ -76,7 +79,11 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_init(JNIEnv *env, jobj
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_finalize(JNIEnv *env, jobject thisObj) {
-  _set_self(env, thisObj, NULL);
+  ExternalCqService *externalCqService = _get_self(env, thisObj);
+  if (externalCqService != NULL) {
+    delete externalCqService;
+    _set_self(env, thisObj, NULL);
+  }
 }
 
 /*

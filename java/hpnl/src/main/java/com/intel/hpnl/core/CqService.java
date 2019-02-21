@@ -13,14 +13,17 @@ public class CqService {
     this.serviceNativeHandle = serviceNativeHandle;
 
     //Runtime.getRuntime().addShutdownHook(new CqShutdownThread(eqService, this));
-
     this.cqThreads = new ArrayList<CqThread>();
     this.externalHandlers = new ArrayList<ExternalHandler>();
   }
 
-  public void start() {
-    init(serviceNativeHandle);
-    
+  public CqService init() {
+    if (init(serviceNativeHandle) == -1)
+      return null;
+    return this;
+  }
+
+  public int start() {
     int workerNum = this.eqService.getWorkerNum();
     for (int i = 0; i < workerNum; i++) {
       CqThread cqThread = new CqThread(this, i);
@@ -29,6 +32,7 @@ public class CqService {
     for (CqThread cqThread : cqThreads) {
       cqThread.start();
     }
+    return 0;
   }
 
   public void shutdown() {
@@ -72,13 +76,15 @@ public class CqService {
   }
 
   public int wait_event(int index) {
-    wait_cq_event(index);
+    if (wait_cq_event(index) < 0) {
+      return -1;
+    }
     waitExternalEvent(index);
     return 0;
   }
 
   public native int wait_cq_event(int index);
-  private native void init(long Service);
+  private native int init(long Service);
   public native void finalize();
   private native void free();
   private long nativeHandle;
