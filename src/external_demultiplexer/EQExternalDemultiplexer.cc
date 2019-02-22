@@ -1,14 +1,23 @@
 #include "HPNL/EQExternalDemultiplexer.h"
 
-EQExternalDemultiplexer::EQExternalDemultiplexer(FIStack *stack_) : stack(stack_) {
-  fabric = stack->get_fabric();
-  epfd = epoll_create1(0);
-  memset((void*)&event, 0, sizeof event);
-}
+#include "rdma/fi_errno.h"
+
+EQExternalDemultiplexer::EQExternalDemultiplexer(FIStack *stack_) : stack(stack_) {}
 
 EQExternalDemultiplexer::~EQExternalDemultiplexer() {
   fid_map.clear();
   close(epfd);
+}
+
+int EQExternalDemultiplexer::init() {
+  fabric = stack->get_fabric();
+  epfd = epoll_create1(0);
+  if (epfd == -1) {
+    perror("epoll_create1");
+    return -1;
+  }
+  memset((void*)&event, 0, sizeof event);
+  return 0;
 }
 
 int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
@@ -19,30 +28,31 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
   }
   if (fi_trywait(fabric, fids, fid_map.size()) == FI_SUCCESS) {
     int epoll_ret = epoll_wait(epfd, &event, 1, 200);
-    if (epoll_ret <= 0) {
-      return epoll_ret;
+    if (epoll_ret > 0) {
+      *eq = fid_map[(fid*)event.data.ptr];
+    } else if (epoll_ret == -1) {
+      if (errno != EINTR) {
+        perror("epoll_wait");
+        return -1;
+      }
+      return 0;
+    } else {
+      return 0; 
     }
-    if (fid_map.count((fid*)event.data.ptr) == 0) {
-      std::cout << "got error event" << std::endl;
-      return -1;
-    }
-    *eq = fid_map[(fid*)event.data.ptr];
   }
-
-  if (*eq == NULL) {
-    return -1;
-  }
-
-  int ret = 0;
   uint32_t event;
   fi_eq_cm_entry entry;
-  ret = fi_eq_read(*eq, &event, &entry, sizeof(entry), 0);
+  int ret = fi_eq_read(*eq, &event, &entry, sizeof(entry), 0);
   if (ret == -FI_EAGAIN) {
     return 0; 
   } else if (ret < 0) {
     fi_eq_err_entry err_entry;
     fi_eq_readerr(*eq, &err_entry, event);
-    return -1;
+    perror("fi_eq_read");
+    if (err_entry.err == FI_EOVERRUN) {
+      return -1;
+    }
+    return 0;
   } else {
     entry.fid = &(*eq)->fid;
     if (event == FI_CONNREQ) {
@@ -50,7 +60,6 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
       return ACCEPT_EVENT;
     } else if (event == FI_CONNECTED)  {
       auto con = stack->get_connection(entry.fid);
-      assert(con);
       con->init_addr();
       return CONNECTED_EVENT;
     } else if (event == FI_SHUTDOWN) {
@@ -70,37 +79,45 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
 
 int EQExternalDemultiplexer::add_event(fid_eq *eq) {
   std::lock_guard<std::mutex> lk(mtx);
-  if (fid_map.count(&eq->fid) != 0) return -1;
+  if (fid_map.count(&eq->fid) != 0) {
+    std::cerr << "got unknown eq fd" << std::endl;
+    return -1;
+  }
   int fd;
-  int ret = fi_control(&eq->fid, FI_GETWAIT, (void*)&fd);
-  if (ret) {
-    std::cout << "fi_controll error." << std::endl;
+  if (fi_control(&eq->fid, FI_GETWAIT, (void*)&fd)) {
+    perror("fi_control");
+    goto quit_add_event;
   }
   event.events = EPOLLIN;
   event.data.ptr = &eq->fid;
-  ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
-  if (ret) {
-    std::cout << "epoll add error." << std::endl;
+  if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event) < 0) {
+    perror("epoll_ctl");
+    goto quit_add_event;
   }
   fid_map.insert(std::make_pair(&eq->fid, eq));
   return 0;
+quit_add_event:
+  close(fd);
+  return -1;
 }
 
 int EQExternalDemultiplexer::delete_event(fid_eq *eq) {
   std::lock_guard<std::mutex> lk(mtx);
   if (fid_map.count(&eq->fid) == 0) return -1;
   int fd;
-  int ret = fi_control(&eq->fid, FI_GETWAIT, (void*)&fd);
-  if (ret) {
-    std::cout << "fi_controll error." << std::endl;
+  if (fi_control(&eq->fid, FI_GETWAIT, (void*)&fd)) {
+    perror("fi_control");
+    goto quit_delete_event;
   }
   event.events = EPOLLIN;
   event.data.ptr = &eq->fid;
-  ret = epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &event);
-  if (ret) {
-    std::cout << "epoll delete error." << std::endl;
-    return -1;
+  if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &event) < 0) {
+    perror("epoll_ctl");
+    goto quit_delete_event;
   }
   fid_map.erase(&eq->fid);
   return 0;
+quit_delete_event:
+  close(fd);
+  return -1;
 }

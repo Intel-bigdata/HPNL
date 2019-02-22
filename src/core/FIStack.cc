@@ -1,16 +1,45 @@
 #include "HPNL/FIStack.h"
 
-FIStack::FIStack(const char *addr, const char *port, uint64_t flags, int worker_num_, int buffer_num_) : seq_num(0), worker_num(worker_num_), buffer_num(buffer_num_) {
-  hints = fi_allocinfo();
-  hints->addr_format = FI_SOCKADDR_IN;
-  hints->ep_attr->type = FI_EP_MSG;
-  hints->domain_attr->mr_mode = FI_MR_BASIC;
-  hints->caps = FI_MSG;
-  hints->mode = FI_CONTEXT | FI_LOCAL_MR;
+FIStack::FIStack(const char *ip_, const char *port_, uint64_t flags_, int worker_num_, int buffer_num_) : 
+  ip(ip_), port(port_), flags(flags_), 
+  worker_num(worker_num_), buffer_num(buffer_num_), 
+  fabric(NULL), domain(NULL), hints(NULL), info(NULL), 
+  peq(NULL), pep(NULL), waitset(NULL) {}
 
-  fi_getinfo(FI_VERSION(1, 5), addr, port, flags, hints, &info);
-  fi_fabric(info->fabric_attr, &fabric, NULL);
+FIStack::~FIStack() {
+  for (auto iter : conMap) {
+    delete iter.second; 
+  }
+  conMap.erase(conMap.begin(), conMap.end());
+  if (peq) {
+    fi_close(&peq->fid);
+    peq = nullptr;
+  }
+  for (int i = 0; i < worker_num; i++) {
+    if (cqs[i]) {
+      fi_close(&cqs[i]->fid);
+      cqs[i] = nullptr;
+    }
+  }
+  if (domain) {
+    fi_close(&domain->fid);
+    domain = nullptr;
+  }
+  if (fabric) {
+    fi_close(&fabric->fid);
+    fabric = nullptr;
+  }
+  if (hints) {
+    fi_freeinfo(hints);
+    hints = nullptr;
+  }
+  if (info) {
+    fi_freeinfo(info);
+    info = nullptr;
+  }
+}
 
+int FIStack::init() {
   struct fi_eq_attr eq_attr = {
     .size = 0,
     .flags = 0,
@@ -18,9 +47,35 @@ FIStack::FIStack(const char *addr, const char *port, uint64_t flags, int worker_
     .signaling_vector = 0,
     .wait_set = NULL
   };
-  assert(!fi_eq_open(fabric, &eq_attr, &peq, &peqHandle));
 
-  fi_domain(fabric, info, &domain, NULL);
+  if ((hints = fi_allocinfo()) == NULL) {
+    perror("fi_allocinfo");
+    goto free_hints;
+  }
+  hints->addr_format = FI_SOCKADDR_IN;
+  hints->ep_attr->type = FI_EP_MSG;
+  hints->domain_attr->mr_mode = FI_MR_BASIC;
+  hints->caps = FI_MSG;
+  hints->mode = FI_CONTEXT | FI_LOCAL_MR;
+
+  if (fi_getinfo(FI_VERSION(1, 5), ip, port, flags, hints, &info)) {
+    perror("fi_getinfo");
+    goto free_info;
+  }
+  if (fi_fabric(info->fabric_attr, &fabric, NULL)) {
+    perror("fi_fabric");
+    goto free_fabric;
+  }
+
+  if (fi_eq_open(fabric, &eq_attr, &peq, &peqHandle)) {
+    perror("fi_eq_open");
+    goto free_eq;
+  }
+
+  if (fi_domain(fabric, info, &domain, NULL)) {
+    perror("fi_domain");
+    goto free_domain;
+  }
  
   for (int i = 0; i < worker_num; i++) {
     struct fi_cq_attr cq_attr = {
@@ -33,51 +88,93 @@ FIStack::FIStack(const char *addr, const char *port, uint64_t flags, int worker_
       .wait_set = NULL
     };
 
-    fi_cq_open(domain, &cq_attr, &cqs[i], NULL);
+    if (fi_cq_open(domain, &cq_attr, &cqs[i], NULL)) {
+      perror("fi_cq_open");
+      goto free_cq;
+    }
   }
-}
+  return 0;
 
-FIStack::~FIStack() {
-  for (auto iter : conMap) {
-    delete iter.second; 
-  }
-  conMap.erase(conMap.begin(), conMap.end());
-  fi_close(&peq->fid);
+free_cq:
   for (int i = 0; i < worker_num; i++) {
-    fi_close(&cqs[i]->fid); 
+    if (cqs[i])
+      fi_close(&cqs[i]->fid); 
   }
-  fi_close(&domain->fid);
-  fi_close(&fabric->fid);
-  fi_freeinfo(hints);
-  fi_freeinfo(info);
+free_domain:
+  if (domain) {
+    fi_close(&domain->fid);
+    domain = nullptr;
+  }
+free_eq:
+  if (peq) {
+    fi_close(&peq->fid);
+    peq = nullptr;
+  }
+free_fabric:
+  if (fabric) {
+    fi_close(&fabric->fid);
+    fabric = nullptr;
+  }
+free_info:
+  if (info) {
+    fi_freeinfo(info);
+    info = nullptr;
+  }
+free_hints:
+  if (hints) {
+    fi_freeinfo(hints);
+    hints = nullptr;
+  }
+  return -1;
 }
 
 HandlePtr FIStack::bind() {
-  fi_passive_ep(fabric, info, &pep, NULL);  
-  fi_pep_bind(pep, &peq->fid, 0);
+  if (fi_passive_ep(fabric, info, &pep, NULL)) {
+    perror("fi_passive_ep");
+    return NULL;
+  }
+  if (fi_pep_bind(pep, &peq->fid, 0)) {
+    perror("fi_pep_bind");
+    return NULL;
+  }
   peqHandle.reset(new Handle(&peq->fid, EQ_EVENT, peq));
   return peqHandle;
 }
 
-void FIStack::listen() {
-  fi_listen(pep);
+int FIStack::listen() {
+  if (fi_listen(pep)) {
+    perror("fi_listen");
+    return -1; 
+  }
+  return 0;
 }
 
 HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   FIConnection *con = new FIConnection(this, fabric, info, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num);
+  if (con->init())
+    return NULL;
+  if (int res = con->connect()) {
+    if (res == EAGAIN) {
+      // TODO: try again  
+    } else {
+      return NULL;  
+    }
+  }
   con->status = CONNECT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
-  con->connect();
   return con->get_eqhandle();
 }
 
 HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num);
+  if (con->init())
+    return NULL; 
   con->status = ACCEPT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
-  con->accept();
+  if (con->accept())
+    return NULL;
   return con->get_eqhandle();
 }
 
@@ -87,7 +184,10 @@ uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_bu
   ck->capacity = buffer_size;
   ck->rdma_buffer_id = rdma_buffer_id;
   fid_mr *mr;
-  assert(!fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL));
+  if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
+    perror("fi_mr_reg");
+    return -1;
+  }
   ck->mr = mr;
   std::lock_guard<std::mutex> lk(mtx);
   chunkMap.insert(std::pair<int, Chunk*>(rdma_buffer_id, ck));
@@ -114,7 +214,9 @@ void FIStack::reap(void *con_id) {
   delete con;
   con = NULL;
   auto iter = conMap.find(id);
-  assert(iter != conMap.end());
+  if (iter == conMap.end()) {
+    assert("connection reap failure." == 0);
+  }
   conMap.erase(iter);
 }
 

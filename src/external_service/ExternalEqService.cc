@@ -1,21 +1,56 @@
 #include "HPNL/ExternalEqService.h"
 
-ExternalEqService::ExternalEqService(const char* ip_, const char* port_, int worker_num_, int buffer_num_, bool is_server_) : worker_num(worker_num_), buffer_num(buffer_num_), ip(ip_), port(port_), is_server(is_server_) {
-  if (is_server) {
-    stack = new FIStack(ip, port, FI_SOURCE, worker_num, buffer_num);
-  } else {
-    stack = new FIStack(ip, port, 0, 1, buffer_num);
-  }
-  eq_demulti_plexer = new EQExternalDemultiplexer(stack);
+ExternalEqService::ExternalEqService(const char* ip_, const char* port_, int worker_num_, int buffer_num_, bool is_server_) : ip(ip_), port(port_), worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
   recvBufMgr = new ExternalEqServiceBufMgr();
   sendBufMgr = new ExternalEqServiceBufMgr();
 }
 
 ExternalEqService::~ExternalEqService() {
-  delete stack;
-  delete eq_demulti_plexer;
-  delete recvBufMgr;
-  delete sendBufMgr;
+  if (stack) {
+    delete stack;
+    stack = nullptr;
+  }
+  if (eq_demulti_plexer) {
+    delete eq_demulti_plexer;
+    eq_demulti_plexer = nullptr;
+  }
+  if (recvBufMgr) {
+    delete recvBufMgr;
+    recvBufMgr = nullptr;
+  }
+  if (sendBufMgr) {
+    delete sendBufMgr;
+    sendBufMgr = nullptr;
+  }
+}
+
+int ExternalEqService::init() {
+  if (is_server) {
+    stack = new FIStack(ip, port, FI_SOURCE, worker_num, buffer_num);
+  } else {
+    stack = new FIStack(ip, port, 0, 1, buffer_num);
+  }
+  if (stack->init() == -1)
+    goto free_stack;
+
+  eq_demulti_plexer = new EQExternalDemultiplexer(stack);
+  if (eq_demulti_plexer->init() == -1)
+    goto free_eq_demulti_plexer;
+
+  return 0;
+
+free_eq_demulti_plexer:
+  if (eq_demulti_plexer) {
+    delete eq_demulti_plexer;
+    eq_demulti_plexer = nullptr;
+  }
+free_stack:
+  if (stack) {
+    delete stack;
+    stack = nullptr;
+  }
+
+  return -1;
 }
 
 fid_eq* ExternalEqService::accept(fi_info* info) {
@@ -23,6 +58,8 @@ fid_eq* ExternalEqService::accept(fi_info* info) {
     return NULL;
   HandlePtr eqHandle;
   eqHandle = stack->accept(info, recvBufMgr, sendBufMgr);
+  if (!eqHandle)
+    return NULL;
   return (fid_eq*)eqHandle->get_ctx();
 }
 
@@ -30,9 +67,15 @@ fid_eq* ExternalEqService::connect() {
   HandlePtr eqHandle;
   if (is_server) {
     eqHandle = stack->bind();
-    stack->listen();
+    if (!eqHandle)
+      return NULL;
+    if (stack->listen()) {
+      return NULL; 
+    }
   } else {
     eqHandle = stack->connect(recvBufMgr, sendBufMgr);
+    if (!eqHandle)
+      return NULL;
   }
   return (fid_eq*)eqHandle->get_ctx();
 }
@@ -105,7 +148,6 @@ int ExternalEqService::add_eq_event(fid_eq *eq) {
 }
 
 int ExternalEqService::delete_eq_event(fid_eq *eq) {
-  assert(eq_demulti_plexer);
   eq_demulti_plexer->delete_event(eq);
   return 0;
 }

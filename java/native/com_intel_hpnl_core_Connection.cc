@@ -15,7 +15,7 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   return fidSelfPtr;
 }
 
-static  Connection*_get_self(JNIEnv *env, jobject thisObj)
+static Connection*_get_self(JNIEnv *env, jobject thisObj)
 {
   jlong selfPtr = env->GetLongField(thisObj, _get_self_id(env, thisObj));
   return *(Connection**)&selfPtr;
@@ -32,9 +32,9 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv(JNIEnv *env, job
   con->recv((char*)buffer, mid);
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, jobject thisObj, jint blockBufferSize, jint rdmaBufferId) {
+JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, jobject thisObj, jint blockBufferSize, jint rdmaBufferId) {
   Connection *con = _get_self(env, thisObj); 
-  con->send(blockBufferSize, rdmaBufferId);
+  return con->send(blockBufferSize, rdmaBufferId);
 }
 
 JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jint localOffset, jlong len, jlong remoteAddr, jlong remoteMr) {

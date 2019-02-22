@@ -31,7 +31,7 @@ public class Connection {
   }
 
   public native void recv(ByteBuffer buffer, int id);
-  public native void send(int blockBufferSize, int rdmaBufferId);
+  public native int send(int blockBufferSize, int rdmaBufferId);
   public native int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr);
   private native void init(long eq);
   public native void finalize();

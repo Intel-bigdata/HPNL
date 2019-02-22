@@ -20,7 +20,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event
  * Method:    init
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_init
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_init
   (JNIEnv *, jobject, jlong);
 
 /*

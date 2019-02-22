@@ -23,26 +23,31 @@ public class EqService {
 
     this.conMap = new HashMap<Long, Connection>();
     this.reapCons = new LinkedBlockingQueue<Connection>();
-
     this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
-    
-    init(ip, port, worker_num, buffer_num, is_server);
-
     this.eqThread = new EqThread(this);
   }
 
-  public void start() {
+  public EqService init() {
+    if (init(ip, port, worker_num, buffer_num, is_server) == -1)
+      return null;
+    return this; 
+  }
+
+  public int start() {
     if (!is_server) {
       connectLatch = new CountDownLatch(worker_num);
     }
     for (int i = 0; i < worker_num; i++) {
       localEq = connect();
+      if (localEq == -1) {
+        return -1;
+      }
       add_eq_event(localEq);
       if (is_server)
         break;
     }
     eqThread.start();
-
+    return 0;
   }
 
   public void waitToConnected() {
@@ -160,6 +165,9 @@ public class EqService {
     int bufferId = this.rmaBufferId.getAndIncrement();
     rmaBufferMap.put(bufferId, byteBuffer);
     long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId);
+    if (rkey < 0) {
+      return null;
+    }
     RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey);
     return buffer;
   }
@@ -170,6 +178,9 @@ public class EqService {
       rmaBufferMap.put(bufferId, byteBuffer);
     }
     long rkey = reg_rma_buffer_by_address(address, bufferSize, bufferId);
+    if (rkey < 0) {
+      return null;
+    }
     RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey);
     return buffer;
   }
@@ -185,6 +196,9 @@ public class EqService {
     long address = get_buffer_address(byteBuffer);
     rmaBufferMap.put(bufferId, byteBuffer);
     long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId);
+    if (rkey < 0) {
+      return null;
+    }
     RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey, address);
     return buffer; 
   }
@@ -226,7 +240,7 @@ public class EqService {
   private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId);
   private native void unreg_rma_buffer(int rdmaBufferId);
   private native long get_buffer_address(ByteBuffer buffer);
-  private native void init(String ip_, String port_, int worker_num_, int buffer_num_, boolean is_server_);
+  private native int init(String ip_, String port_, int worker_num_, int buffer_num_, boolean is_server_);
   private native void free();
   public native void finalize();
 

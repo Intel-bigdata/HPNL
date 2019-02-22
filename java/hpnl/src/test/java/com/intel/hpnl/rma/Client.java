@@ -18,8 +18,8 @@ public class Client {
     byteBufferTmp.putChar('a');
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService("172.168.2.106", "123456", 1, BUFFER_NUM, false);
-    CqService cqService = new CqService(eqService, eqService.getNativeHandle());
+    EqService eqService = new EqService("172.168.2.106", "123456", 1, BUFFER_NUM, false).init();
+    CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();

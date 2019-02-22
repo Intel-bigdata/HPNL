@@ -36,7 +36,6 @@ class ConnectedCallback : public Callback {
       char* buffer = (char*)std::malloc(SIZE);
       memset(buffer, '0', SIZE);
       con->send(buffer, SIZE, SIZE, 0, 0);
-      std::cout << "send." << std::endl;
       std::free(buffer);
     }
   private:

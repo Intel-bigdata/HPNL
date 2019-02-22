@@ -5,13 +5,14 @@
 
 class Connection {
   public:
+    virtual int init() { return 0; }
     virtual void recv(char*, int) {}
-    virtual void send(const char*, int, int, int, long) {}
-    virtual void send(int, int) {}
-    virtual int read(int, int, uint64_t, uint64_t, uint64_t) {}
-    virtual void shutdown() {}
+    virtual int send(const char*, int, int, int, long) { return 0; }
+    virtual int send(int, int) { return 0; }
+    virtual int read(int, int, uint64_t, uint64_t, uint64_t) { return 0; }
+    virtual void shutdown() { }
     virtual void take_back_chunk(Chunk*) {}
-    virtual void activate_chunk(Chunk*) {}
+    virtual int activate_chunk(Chunk*) { return 0; }
 };
 
 #endif

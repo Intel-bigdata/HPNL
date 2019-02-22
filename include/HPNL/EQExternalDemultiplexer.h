@@ -8,11 +8,13 @@
 
 #include "HPNL/FIStack.h"
 #include "HPNL/FIConnection.h"
+#include "HPNL/Common.h"
 
 class EQExternalDemultiplexer {
   public:
     EQExternalDemultiplexer(FIStack*);
     ~EQExternalDemultiplexer();
+    int init();
     int wait_event(fi_info**, fid_eq**);
     int add_event(fid_eq*);
     int delete_event(fid_eq*);
