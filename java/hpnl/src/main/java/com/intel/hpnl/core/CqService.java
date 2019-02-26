@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 public class CqService {
   static {
-    System.load("/usr/local/lib/libhpnl.so");
+    System.loadLibrary("hpnl");
   }
 
   public CqService(EqService service, long serviceNativeHandle) {
