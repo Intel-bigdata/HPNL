@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class EqService {
   static {
-    System.load("/usr/local/lib/libhpnl.so");
+    System.loadLibrary("hpnl");
   }
 
   public EqService(String ip, String port, int worker_num, int buffer_num, boolean is_server) {
