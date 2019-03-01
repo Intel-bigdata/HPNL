@@ -48,6 +48,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_finalize(JNIEnv *env, 
   ExternalEqService *service = _get_self(env, thisObj);
   if (service != NULL) {
     delete service;
+    service = NULL;
     _set_self(env, thisObj, NULL);
   }
 }
@@ -56,6 +57,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free(JNIEnv *env, jobj
   ExternalEqService *service = _get_self(env, thisObj);
   if (service != NULL) {
     delete service;
+    service = NULL;
     _set_self(env, thisObj, NULL);
   }
 }

@@ -64,9 +64,6 @@ public class EqService {
     } catch (InterruptedException e) {
       e.printStackTrace();
     } finally {
-      synchronized(this) {
-        free();
-      }
     }
   }
 
