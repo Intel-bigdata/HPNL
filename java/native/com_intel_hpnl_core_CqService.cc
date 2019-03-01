@@ -82,6 +82,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_finalize(JNIEnv *env, 
   ExternalCqService *externalCqService = _get_self(env, thisObj);
   if (externalCqService != NULL) {
     delete externalCqService;
+    externalCqService = NULL;
     _set_self(env, thisObj, NULL);
   }
 }
@@ -93,8 +94,10 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_finalize(JNIEnv *env, 
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_free(JNIEnv *env, jobject thisObj) {
   ExternalCqService *externalCqService = _get_self(env, thisObj);
+
   if (externalCqService != NULL) {
     delete externalCqService;
+    externalCqService = NULL;
     _set_self(env, thisObj, NULL);
   }
 }

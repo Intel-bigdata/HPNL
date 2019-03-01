@@ -51,9 +51,6 @@ public class CqService {
     } catch (InterruptedException e) {
       e.printStackTrace();
     } finally {
-      synchronized(this) {
-        free();
-      }
     }
   }
 
