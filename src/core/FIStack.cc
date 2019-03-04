@@ -57,6 +57,8 @@ int FIStack::init() {
   hints->domain_attr->mr_mode = FI_MR_BASIC;
   hints->caps = FI_MSG;
   hints->mode = FI_CONTEXT | FI_LOCAL_MR;
+  hints->tx_attr->msg_order = FI_ORDER_SAS;
+  hints->rx_attr->msg_order = FI_ORDER_SAS;
 
   if (fi_getinfo(FI_VERSION(1, 5), ip, port, flags, hints, &info)) {
     perror("fi_getinfo");
