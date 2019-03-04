@@ -96,9 +96,9 @@ class FIConnection : public Connection {
     int buffer_num;
 
     size_t dest_port;
-    char *dest_addr;
+    char dest_addr[20];
     size_t src_port;
-    char *src_addr;
+    char src_addr[20];
 
     Callback* read_callback;
     Callback* send_callback;
