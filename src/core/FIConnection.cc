@@ -191,13 +191,15 @@ void FIConnection::init_addr() {
   if (info->dest_addr != NULL) {
     struct sockaddr_in *dest_addr_in = (struct sockaddr_in*)info->dest_addr;
     dest_port = dest_addr_in->sin_port;
-    dest_addr = inet_ntoa(dest_addr_in->sin_addr);
+    char *addr = inet_ntoa(dest_addr_in->sin_addr);
+    strcpy(dest_addr, addr);
   }
 
   if (info->src_addr != NULL) {
     struct sockaddr_in *src_addr_in = (struct sockaddr_in*)info->src_addr;
     src_port = src_addr_in->sin_port;
-    src_addr = inet_ntoa(src_addr_in->sin_addr);
+    char *addr = inet_ntoa(src_addr_in->sin_addr);
+    strcpy(src_addr, addr);
   }
 }
 
