@@ -1,13 +1,13 @@
-package com.intel.hpnl.pingpong;
+package com.intel.hpnl.buffer;
+
+import com.intel.hpnl.core.Connection;
+import com.intel.hpnl.core.CqService;
+import com.intel.hpnl.core.EqService;
+import com.intel.hpnl.core.RdmaBuffer;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
-
-import com.intel.hpnl.core.EqService;
-import com.intel.hpnl.core.CqService;
-import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.RdmaBuffer;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Client {
   public static void main(String args[]) {
@@ -42,12 +42,7 @@ public class Client {
 
     eqService.waitToConnected();
     System.out.println("connected, start to pingpong.");
-    
-    for (Connection con: conList) {
-      RdmaBuffer buffer = con.takeSendBuffer(true);
-      buffer.put(byteBufferTmp, (byte)0, 10);
-      con.send(buffer.remaining(), buffer.getRdmaBufferId());
-    }
+
     //cqService.shutdown();
     cqService.join();
     eqService.shutdown();
