@@ -43,7 +43,7 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
   uint32_t event;
   fi_eq_cm_entry entry;
   int ret = fi_eq_read(*eq, &event, &entry, sizeof(entry), 0);
-  if (ret == -FI_EAGAIN) {
+  if (ret == -FI_EAGAIN || ret == 0) {
     return 0; 
   } else if (ret < 0) {
     fi_eq_err_entry err_entry;
