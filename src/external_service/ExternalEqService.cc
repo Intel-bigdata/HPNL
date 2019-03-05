@@ -73,6 +73,8 @@ fid_eq* ExternalEqService::connect() {
       return NULL; 
     }
   } else {
+    if (sendBufMgr->free_size() < buffer_num || recvBufMgr->free_size() < buffer_num*2)
+      return NULL;
     eqHandle = stack->connect(recvBufMgr, sendBufMgr);
     if (!eqHandle)
       return NULL;

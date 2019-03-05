@@ -70,11 +70,18 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free(JNIEnv *env, jobj
  */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect(JNIEnv *env, jobject thisObj) {
   ExternalEqService *service = _get_self(env, thisObj);
-  fid_eq *eq = service->connect();
-  if (!eq) {
-    return -1;
+  fid_eq *new_eq = service->connect();
+  if (!new_eq) {
+    jclass thisClass = (*env).GetObjectClass(thisObj);
+    jmethodID reallocBufferPool = (*env).GetMethodID(thisClass, "reallocBufferPool", "()V");
+    assert(reallocBufferPool);
+    (*env).CallVoidMethod(thisObj, reallocBufferPool);
+    new_eq = service->connect();
+    if (!new_eq) {
+      return -1;
+    }
   }
-  jlong ret = *(jlong*)&eq;
+  jlong ret = *(jlong*)&new_eq;
   return ret;
 }
 
