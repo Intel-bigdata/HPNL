@@ -1,11 +1,11 @@
-package com.intel.hpnl.pingpong;
+package com.intel.hpnl.buffer;
+
+import com.intel.hpnl.core.Connection;
+import com.intel.hpnl.core.CqService;
+import com.intel.hpnl.core.EqService;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import com.intel.hpnl.core.EqService;
-import com.intel.hpnl.core.CqService;
-import com.intel.hpnl.core.Connection;
 
 public class Server {
   public static void main(String args[]) {
@@ -19,10 +19,10 @@ public class Server {
     
     List<Connection> conList = new ArrayList<Connection>();
 
-    ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
-    ReadCallback readCallback = new ReadCallback(true, eqService);
+    ServerConnectedCallback connectedCallback = new ServerConnectedCallback(conList, true);
+//    ReadCallback readCallback = new ReadCallback(true, eqService);
     eqService.setConnectedCallback(connectedCallback);
-    eqService.setRecvCallback(readCallback);
+//    eqService.setRecvCallback(readCallback);
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
