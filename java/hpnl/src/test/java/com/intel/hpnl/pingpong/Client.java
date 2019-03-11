@@ -19,10 +19,12 @@ public class Client {
     byteBufferTmp.flip();
 
     String addr = args.length >=1 ? args[0] : "localhost";
-    int bufferSize = args.length >=2 ? Integer.valueOf(args[1]) : 65536;
-    int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
+    String port = args.length >=2 ? args[1] : "123456";
+    int bufferSize = args.length >=3 ? Integer.valueOf(args[2]) : 65536;
+    int bufferNbr = args.length >=4 ? Integer.valueOf(args[3]) : 32;
 
-    EqService eqService = new EqService(addr, "123456", 1, bufferNbr, false).init();
+
+    EqService eqService = new EqService(addr, port, 1, bufferNbr, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();
