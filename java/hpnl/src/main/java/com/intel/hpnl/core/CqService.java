@@ -26,7 +26,7 @@ public class CqService {
   public int start() {
     int workerNum = this.eqService.getWorkerNum();
     for (int i = 0; i < workerNum; i++) {
-      CqThread cqThread = new CqThread(this, i);
+      CqThread cqThread = new CqThread(this, i, affinities==null ? -1 : 1L<<affinities[i]);
       cqThreads.add(cqThread);
     }
     for (CqThread cqThread : cqThreads) {
@@ -52,6 +52,10 @@ public class CqService {
       e.printStackTrace();
     } finally {
     }
+  }
+
+  public void setAffinities(int[] affinities) {
+    this.affinities = affinities; 
   }
 
   private void handleCqCallback(long eq, int eventType, int rdmaBufferId, int block_buffer_size) {
@@ -89,4 +93,5 @@ public class CqService {
   private long serviceNativeHandle;
   private List<CqThread> cqThreads;
   private List<ExternalHandler> externalHandlers;
+  private int[] affinities = null;
 }

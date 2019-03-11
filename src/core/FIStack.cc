@@ -2,7 +2,7 @@
 
 FIStack::FIStack(const char *ip_, const char *port_, uint64_t flags_, int worker_num_, int buffer_num_) : 
   ip(ip_), port(port_), flags(flags_), 
-  worker_num(worker_num_), buffer_num(buffer_num_), 
+  worker_num(worker_num_), seq_num(0), buffer_num(buffer_num_), 
   fabric(NULL), domain(NULL), hints(NULL), info(NULL), 
   peq(NULL), pep(NULL), waitset(NULL) {}
 
@@ -78,7 +78,7 @@ int FIStack::init() {
     perror("fi_domain");
     goto free_domain;
   }
- 
+
   for (int i = 0; i < worker_num; i++) {
     struct fi_cq_attr cq_attr = {
       .size = 0,

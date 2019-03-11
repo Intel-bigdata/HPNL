@@ -1,0 +1,1 @@
+java -cp ../../target/hpnl-0.5-jar-with-dependencies.jar:../../target/hpnl-0.5-tests.jar com.intel.hpnl.pingpong.Client $*

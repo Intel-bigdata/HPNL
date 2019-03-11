@@ -3,26 +3,53 @@ package com.intel.hpnl.pingpong;
 import java.util.ArrayList;
 import java.util.List;
 
+import picocli.CommandLine;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Command;
+
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
 
-public class Server {
-  public static void main(String args[]) {
-    String addr = args.length >=1 ? args[0] : "localhost";
-    int bufferSize = args.length >=2 ? Integer.valueOf(args[1]) : 65536;
-    int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
-    int workNbr = args.length >=4 ? Integer.valueOf(args[3]) : 3;
+@Command(mixinStandardHelpOptions = true, version = "auto help demo - picocli 3.0")
+public class Server implements Runnable {
 
-    EqService eqService = new EqService(addr, "123456", workNbr, bufferNbr, true).init();
+  @Option(names = {"-a", "--address"}, required = false, description = "server address")
+  String addr = "localhost";
+
+  @Option(names = {"-p", "--port"}, required = false, description = "server port")
+  String port = "123456";
+
+  @Option(names = {"-s", "--buffer_size"}, required = false, description = "buffer size")
+  int bufferSize = 65536;
+
+  @Option(names = {"-n", "--buffer_number"}, required = false, description = "buffer number")
+  int bufferNbr = 32;
+
+  @Option(names = {"-m", "--message_size"}, required = false, description = "pingpong message size")
+  int msgSize = 4096;
+
+  @Option(names = {"-w", "--worker_number"}, required = false, description = "worker numbers")
+  int workNbr = 3;
+  
+  @Option(names = {"-i", "--interval"}, required = false, description = "statistics interval time")
+  int interval = 5;
+
+  @Option(names = {"-f", "--affinity"}, required = false, split = ",", description = "HPNL thread affinity")
+  int[] affinities = null;
+
+  public void run() {
+    EqService eqService = new EqService(addr, port, workNbr, bufferNbr, true).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     
+    cqService.setAffinities(affinities);
+
     List<Connection> conList = new ArrayList<Connection>();
 
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
-    ReadCallback readCallback = new ReadCallback(true, eqService);
+    RecvCallback recvCallback = new RecvCallback(true, interval, msgSize);
     eqService.setConnectedCallback(connectedCallback);
-    eqService.setRecvCallback(readCallback);
+    eqService.setRecvCallback(recvCallback);
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
@@ -32,5 +59,9 @@ public class Server {
     cqService.join();
     eqService.shutdown();
     eqService.join();
+  }
+
+  public static void main(String... args) {
+    CommandLine.run(new Server(), args);
   }
 }

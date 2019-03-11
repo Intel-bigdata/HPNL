@@ -24,7 +24,6 @@ public class EqService {
     this.conMap = new HashMap<Long, Connection>();
     this.reapCons = new LinkedBlockingQueue<Connection>();
     this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
-    this.eqThread = new EqThread(this);
   }
 
   public EqService init() {
@@ -46,7 +45,8 @@ public class EqService {
       if (is_server)
         break;
     }
-    eqThread.start();
+    this.eqThread = new EqThread(this);
+    this.eqThread.start();
     return 0;
   }
 

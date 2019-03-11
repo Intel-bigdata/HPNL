@@ -4,34 +4,61 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
 
+import picocli.CommandLine;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Command;
+
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
 import com.intel.hpnl.core.RdmaBuffer;
 
-public class Client {
-  public static void main(String args[]) {
+@Command(mixinStandardHelpOptions = true, version = "auto help demo - picocli 3.0")
+public class Client implements Runnable {
 
-    ByteBuffer byteBufferTmp = ByteBuffer.allocate(4096);
-    for (int i = 0; i < 4096; i++) {
+  @Option(names = {"-a", "--address"}, required = true, description = "server address")
+  String addr = "localhost";
+
+  @Option(names = {"-p", "--port"}, required = false, description = "server port")
+  String port = "123456";
+
+  @Option(names = {"-s", "--buffer_size"}, required = false, description = "buffer size")
+  int bufferSize = 65536;
+
+  @Option(names = {"-n", "--buffer_number"}, required = false, description = "buffer number")
+  int bufferNbr = 32;
+
+  @Option(names = {"-m", "--message_size"}, required = false, description = "pingpong message size")
+  int msgSize = 4096;
+
+  @Option(names = {"-w", "--worker_number"}, required = false, description = "worker numbers")
+  int workNbr = 1;
+
+  @Option(names = {"-i", "--interval"}, required = false, description = "statistics interval time")
+  int interval = 5;
+
+  @Option(names = {"-f", "--affinity"}, required = false, split = ",",  description = "HPNL thread affinity")
+  int[] affinities = null;
+
+  public void run() {
+    ByteBuffer byteBufferTmp = ByteBuffer.allocate(msgSize);
+    for (int i = 0; i < msgSize; i++) {
       byteBufferTmp.put((byte)0);
     }
     byteBufferTmp.flip();
 
-    String addr = args.length >=1 ? args[0] : "localhost";
-    int bufferSize = args.length >=2 ? Integer.valueOf(args[1]) : 65536;
-    int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
-
-    EqService eqService = new EqService(addr, "123456", 1, bufferNbr, false).init();
+    EqService eqService = new EqService(addr, port, workNbr, bufferNbr, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
+
+    cqService.setAffinities(affinities);
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();
 
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, false);
-    ReadCallback readCallback = new ReadCallback(false, eqService);
+    RecvCallback recvCallback = new RecvCallback(false, interval, msgSize);
     ShutdownCallback shutdownCallback = new ShutdownCallback();
     eqService.setConnectedCallback(connectedCallback);
-    eqService.setRecvCallback(readCallback);
+    eqService.setRecvCallback(recvCallback);
     eqService.setSendCallback(null);
     eqService.setShutdownCallback(shutdownCallback);
 
@@ -48,9 +75,13 @@ public class Client {
       buffer.put(byteBufferTmp, (byte)0, 10);
       con.send(buffer.remaining(), buffer.getRdmaBufferId());
     }
-    //cqService.shutdown();
+
     cqService.join();
     eqService.shutdown();
     eqService.join();
+  }
+
+  public static void main(String... args) {
+    CommandLine.run(new Client(), args);
   }
 }
