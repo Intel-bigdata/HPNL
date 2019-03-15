@@ -7,6 +7,7 @@ public class CqThread extends Thread {
     this.cqService = cqService;
     this.index = index; 
     running.set(true);
+    this.setDaemon(true);
   }
 
   public void run() {
