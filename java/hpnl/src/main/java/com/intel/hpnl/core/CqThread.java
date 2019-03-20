@@ -8,6 +8,7 @@ public class CqThread extends Thread {
     this.index = index; 
     this.affinity = affinity;
     running.set(true);
+    this.setDaemon(true);
   }
 
   public void run() {

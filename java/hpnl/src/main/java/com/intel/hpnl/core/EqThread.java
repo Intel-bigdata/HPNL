@@ -6,6 +6,7 @@ public class EqThread extends Thread {
   public EqThread(EqService eqService) {
     this.eqService = eqService;
     running.set(true);
+    this.setDaemon(true);
   }
 
   public void run() {
