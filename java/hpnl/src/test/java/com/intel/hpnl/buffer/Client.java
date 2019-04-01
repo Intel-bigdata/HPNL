@@ -3,7 +3,6 @@ package com.intel.hpnl.buffer;
 import com.intel.hpnl.core.Connection;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.EqService;
-import com.intel.hpnl.core.RdmaBuffer;
 
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -22,7 +21,7 @@ public class Client {
     int bufferSize = args.length >=2 ? Integer.valueOf(args[1]) : 65536;
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
 
-    EqService eqService = new EqService(addr, "123456", 1, bufferNbr, false).init();
+    EqService eqService = new EqService(1, bufferNbr, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();
@@ -37,7 +36,7 @@ public class Client {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.start();
+    eqService.start(addr, "123456");
     cqService.start();
 
     eqService.waitToConnected();

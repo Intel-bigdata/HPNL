@@ -14,7 +14,7 @@ public class Server {
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
     int workNbr = args.length >=4 ? Integer.valueOf(args[3]) : 3;
 
-    EqService eqService = new EqService(addr, "123456", workNbr, bufferNbr, true).init();
+    EqService eqService = new EqService(workNbr, bufferNbr, true).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     
     List<Connection> conList = new ArrayList<Connection>();
@@ -26,7 +26,7 @@ public class Server {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.start();
+    eqService.start(addr, "123456");
     cqService.start();
     
     cqService.join();

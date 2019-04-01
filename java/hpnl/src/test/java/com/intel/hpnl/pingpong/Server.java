@@ -39,7 +39,7 @@ public class Server implements Runnable {
   int[] affinities = null;
 
   public void run() {
-    EqService eqService = new EqService(addr, port, workNbr, bufferNbr, true).init();
+    EqService eqService = new EqService(workNbr, bufferNbr, true).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     
     cqService.setAffinities(affinities);
@@ -53,7 +53,7 @@ public class Server implements Runnable {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.start();
+    eqService.start(addr, port);
     cqService.start();
     
     cqService.join();

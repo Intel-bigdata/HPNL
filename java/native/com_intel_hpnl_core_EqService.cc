@@ -30,11 +30,9 @@ static void _set_self(JNIEnv *env, jobject thisObj, ExternalEqService *self)
   env->SetLongField(thisObj, _get_self_id(env, thisObj), selfPtr);
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init(JNIEnv *env, jobject thisObj, jstring ip_, jstring port_, jint worker_num_, jint buffer_num_, jboolean is_server_) {
-  const char *ip = (*env).GetStringUTFChars(ip_, 0);
-  const char *port = (*env).GetStringUTFChars(port_, 0);
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init(JNIEnv *env, jobject thisObj, jint worker_num_, jint buffer_num_, jboolean is_server_) {
   const bool is_server = (bool)is_server_;
-  ExternalEqService *service = new ExternalEqService(ip, port, worker_num_, buffer_num_, is_server);
+  ExternalEqService *service = new ExternalEqService(worker_num_, buffer_num_, is_server);
   _set_self(env, thisObj, service);
   return service->init();
 }
@@ -68,15 +66,18 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free(JNIEnv *env, jobj
  * Method:    connect
  * Signature: (I)J
  */
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect(JNIEnv *env, jobject thisObj) {
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect(JNIEnv *env, jobject thisObj, jstring ip_, jstring port_) {
   ExternalEqService *service = _get_self(env, thisObj);
-  fid_eq *new_eq = service->connect();
+  const char *ip = (*env).GetStringUTFChars(ip_, 0);
+  const char *port = (*env).GetStringUTFChars(port_, 0);
+
+  fid_eq *new_eq = service->connect(ip, port);
   if (!new_eq) {
     jclass thisClass = (*env).GetObjectClass(thisObj);
     jmethodID reallocBufferPool = (*env).GetMethodID(thisClass, "reallocBufferPool", "()V");
     assert(reallocBufferPool);
     (*env).CallVoidMethod(thisObj, reallocBufferPool);
-    new_eq = service->connect();
+    new_eq = service->connect(ip, port);
     if (!new_eq) {
       return -1;
     }

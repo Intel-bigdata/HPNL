@@ -33,7 +33,7 @@ FIConnection::~FIConnection() {
     fi_close(&conEq->fid);
     conEq = nullptr;
   }
-  if (is_server) {
+  if (info) {
     fi_freeinfo(info);
     info = nullptr;
   }

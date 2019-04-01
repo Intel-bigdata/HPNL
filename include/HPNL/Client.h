@@ -5,8 +5,8 @@
 
 class Client : public Service {
   public:
-    Client(const char*, const char*);
-    void run(int, int);
+    Client();
+    void run(const char*, const char*, int, int);
     void shutdown();
     void wait();
     void set_recv_buf_mgr(BufMgr*);
