@@ -110,8 +110,8 @@ void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int rdma_bu
   sendBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
-int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq) {
-  int ret = eq_demulti_plexer->wait_event(info, eq);
+int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, FIConnection** con) {
+  int ret = eq_demulti_plexer->wait_event(info, eq, con);
   return ret;
 }
 

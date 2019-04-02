@@ -34,8 +34,8 @@ class ExternalCqService {
       }
       return 0; 
     }
-    int wait_cq_event(int num, fid_eq** eq, int* rdma_buffer_id, int* block_buffer_size) {
-      return cq_demulti_plexer[num]->wait_event(eq, rdma_buffer_id, block_buffer_size);
+    int wait_cq_event(int num, fid_eq** eq, Chunk** ck, int* rdma_buffer_id, int* block_buffer_size) {
+      return cq_demulti_plexer[num]->wait_event(eq, ck, rdma_buffer_id, block_buffer_size);
     }
     Connection* get_connection(fid_eq* eq) {
       return stack->get_connection(&eq->fid);
