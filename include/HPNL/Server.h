@@ -5,8 +5,8 @@
 
 class Server : public Service {
   public:
-    Server(const char*, const char*);
-    void run(int, int);
+    Server();
+    void run(const char*, const char*, int, int);
     void shutdown();
     void wait();
     void set_recv_buf_mgr(BufMgr*);

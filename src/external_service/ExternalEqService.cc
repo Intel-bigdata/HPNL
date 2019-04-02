@@ -1,6 +1,6 @@
 #include "HPNL/ExternalEqService.h"
 
-ExternalEqService::ExternalEqService(const char* ip_, const char* port_, int worker_num_, int buffer_num_, bool is_server_) : ip(ip_), port(port_), worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
+ExternalEqService::ExternalEqService(int worker_num_, int buffer_num_, bool is_server_) : worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
   recvBufMgr = new ExternalEqServiceBufMgr();
   sendBufMgr = new ExternalEqServiceBufMgr();
 }
@@ -26,9 +26,9 @@ ExternalEqService::~ExternalEqService() {
 
 int ExternalEqService::init() {
   if (is_server) {
-    stack = new FIStack(ip, port, FI_SOURCE, worker_num, buffer_num);
+    stack = new FIStack(FI_SOURCE, worker_num, buffer_num);
   } else {
-    stack = new FIStack(ip, port, 0, 1, buffer_num);
+    stack = new FIStack(0, worker_num, buffer_num);
   }
   if (stack->init() == -1)
     goto free_stack;
@@ -63,10 +63,10 @@ fid_eq* ExternalEqService::accept(fi_info* info) {
   return (fid_eq*)eqHandle->get_ctx();
 }
 
-fid_eq* ExternalEqService::connect() {
+fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
   HandlePtr eqHandle;
   if (is_server) {
-    eqHandle = stack->bind();
+    eqHandle = stack->bind(ip, port);
     if (!eqHandle)
       return NULL;
     if (stack->listen()) {
@@ -75,7 +75,7 @@ fid_eq* ExternalEqService::connect() {
   } else {
     if (sendBufMgr->free_size() < buffer_num || recvBufMgr->free_size() < buffer_num*2)
       return NULL;
-    eqHandle = stack->connect(recvBufMgr, sendBufMgr);
+    eqHandle = stack->connect(ip, port, recvBufMgr, sendBufMgr);
     if (!eqHandle)
       return NULL;
   }
@@ -138,10 +138,7 @@ Chunk* ExternalEqService::get_chunk(int id, int type) {
 }
 
 int ExternalEqService::get_worker_num() {
-  if (is_server)
-    return worker_num;
-  else
-    return 1;
+  return worker_num;
 }
 
 int ExternalEqService::add_eq_event(fid_eq *eq) {

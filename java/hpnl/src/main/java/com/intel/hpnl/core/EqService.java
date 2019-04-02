@@ -13,9 +13,7 @@ public class EqService {
     System.loadLibrary("hpnl");
   }
 
-  public EqService(String ip, String port, int worker_num, int buffer_num, boolean is_server) {
-    this.ip = ip;
-    this.port = port;
+  public EqService(int worker_num, int buffer_num, boolean is_server) {
     this.worker_num = worker_num;
     this.buffer_num = buffer_num;
     this.is_server = is_server;
@@ -27,24 +25,20 @@ public class EqService {
   }
 
   public EqService init() {
-    if (init(ip, port, worker_num, buffer_num, is_server) == -1)
+    if (init(worker_num, buffer_num, is_server) == -1)
       return null;
     return this; 
   }
 
-  public int start() {
+  public int start(String ip, String port) {
     if (!is_server) {
-      connectLatch = new CountDownLatch(worker_num);
+      connectLatch = new CountDownLatch(1);
     }
-    for (int i = 0; i < worker_num; i++) {
-      localEq = connect();
-      if (localEq == -1) {
-        return -1;
-      }
-      add_eq_event(localEq);
-      if (is_server)
-        break;
+    localEq = connect(ip, port);
+    if (localEq == -1) {
+      return -1;
     }
+    add_eq_event(localEq);
     this.eqThread = new EqThread(this);
     this.eqThread.start();
     return 0;
@@ -220,14 +214,11 @@ public class EqService {
   }
 
   public int getWorkerNum() {
-    if (is_server)
-      return this.worker_num;
-    else
-      return 1; 
+    return this.worker_num;
   }
 
   public native void shutdown(long eq);
-  private native long connect();
+  private native long connect(String ip, String port);
   public native int wait_eq_event();
   public native int add_eq_event(long eq);
   public native int delete_eq_event(long eq);
@@ -237,7 +228,7 @@ public class EqService {
   private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId);
   private native void unreg_rma_buffer(int rdmaBufferId);
   private native long get_buffer_address(ByteBuffer buffer);
-  private native int init(String ip_, String port_, int worker_num_, int buffer_num_, boolean is_server_);
+  private native int init(int worker_num_, int buffer_num_, boolean is_server_);
   private native void free();
   public native void finalize();
 

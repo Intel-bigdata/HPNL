@@ -18,7 +18,7 @@ public class Client {
     byteBufferTmp.putChar('a');
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService("172.168.2.106", "123456", 1, BUFFER_NUM, false).init();
+    EqService eqService = new EqService(1, BUFFER_NUM, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
@@ -37,7 +37,7 @@ public class Client {
     eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
     cqService.start();
-    eqService.start();
+    eqService.start("172.168.2.106", "123456");
 
     eqService.waitToConnected();
     System.out.println("connected, start to remote read.");

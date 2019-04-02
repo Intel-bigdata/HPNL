@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
     sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
 
-  Server *server = new Server("172.168.2.106", "123456");
+  Server *server = new Server();
   server->set_recv_buf_mgr(recvBufMgr);
   server->set_send_buf_mgr(sendBufMgr);
 
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   server->set_connected_callback(NULL);
   server->set_shutdown_callback(shutdownCallback);
 
-  server->run(1, 16);
+  server->run("172.168.2.106", "123456", 1, 16);
 
   server->wait();
 

@@ -17,7 +17,7 @@ class AcceptRequestCallback;
 
 class Service {
   public:
-    void run(int, int);
+    void run(const char*, const char*, int, int);
     void shutdown();
     void wait();
     void set_recv_buf_mgr(BufMgr*);
@@ -28,7 +28,7 @@ class Service {
     void set_connected_callback(Callback*);
     void set_shutdown_callback(Callback*);
   protected:
-    Service(const char*, const char*, bool is_server_ = false);
+    Service(bool is_server_ = false);
     ~Service();
   private:
     friend class AcceptRequestCallback;
@@ -42,8 +42,6 @@ class Service {
     Callback *shutdownCallback;
 
     int worker_num;
-    const char* ip;
-    const char* port;
     bool is_server;
 
     FIStack *stack;

@@ -47,7 +47,7 @@ public class Client implements Runnable {
     }
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService(addr, port, workNbr, bufferNbr, false).init();
+    EqService eqService = new EqService(workNbr, bufferNbr, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
 
     cqService.setAffinities(affinities);
@@ -64,7 +64,7 @@ public class Client implements Runnable {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.start();
+    eqService.start(addr, port);
     cqService.start();
 
     eqService.waitToConnected();

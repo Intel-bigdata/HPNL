@@ -13,7 +13,7 @@ extern "C" {
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jstring, jstring);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
@@ -92,7 +92,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_get_1buffer_1address
  * Signature: (Ljava/lang/String;Ljava/lang/String;Z)V
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init
-  (JNIEnv *, jobject, jstring, jstring, jint, jint, jboolean);
+  (JNIEnv *, jobject, jint, jint, jboolean);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
