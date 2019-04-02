@@ -25,11 +25,7 @@ ExternalEqService::~ExternalEqService() {
 }
 
 int ExternalEqService::init() {
-  if (is_server) {
-    stack = new FIStack(FI_SOURCE, worker_num, buffer_num);
-  } else {
-    stack = new FIStack(0, worker_num, buffer_num);
-  }
+  stack = new FIStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
   if (stack->init() == -1)
     goto free_stack;
 
