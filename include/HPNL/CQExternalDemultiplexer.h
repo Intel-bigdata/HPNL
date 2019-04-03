@@ -13,7 +13,7 @@ class CQExternalDemultiplexer {
     CQExternalDemultiplexer(FIStack*, fid_cq*);
     ~CQExternalDemultiplexer();
     int init();
-    int wait_event(fid_eq**, int*, int*);
+    int wait_event(fid_eq**, Chunk**, int*, int*);
   private:
     FIStack *stack;
     fid_cq *cq;

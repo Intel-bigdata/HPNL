@@ -4,10 +4,6 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class CqService {
-  static {
-    System.loadLibrary("hpnl");
-  }
-
   public CqService(EqService service, long serviceNativeHandle) {
     this.eqService = service;
     this.serviceNativeHandle = serviceNativeHandle;
@@ -77,17 +73,17 @@ public class CqService {
   }
 
   public int wait_event(int index) {
-    if (wait_cq_event(index) < 0) {
+    if (wait_cq_event(index, nativeHandle) < 0) {
       return -1;
     }
     waitExternalEvent(index);
     return 0;
   }
 
-  public native int wait_cq_event(int index);
+  public native int wait_cq_event(int index, long nativeHandle);
   private native int init(long Service);
   public native void finalize();
-  private native void free();
+  private native void free(long nativeHandle);
   private long nativeHandle;
   private EqService eqService;
   private long serviceNativeHandle;

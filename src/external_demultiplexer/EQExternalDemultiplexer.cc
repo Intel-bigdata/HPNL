@@ -20,7 +20,7 @@ int EQExternalDemultiplexer::init() {
   return 0;
 }
 
-int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
+int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FIConnection** con) {
   struct fid *fids[fid_map.size()];
   int i = 0;
   for (auto iter: fid_map) {
@@ -59,14 +59,14 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq) {
       *info = entry.info;
       return ACCEPT_EVENT;
     } else if (event == FI_CONNECTED)  {
-      auto con = stack->get_connection(entry.fid);
-      con->init_addr();
+      *con = stack->get_connection(entry.fid);
+      (*con)->init_addr();
       return CONNECTED_EVENT;
     } else if (event == FI_SHUTDOWN) {
       delete_event(*eq);
-      auto con = stack->get_connection(entry.fid);
-      if (con) {
-        con->status = DOWN;
+      *con = stack->get_connection(entry.fid);
+      if (*con) {
+        (*con)->status = DOWN;
         stack->reap(entry.fid);
       }
       return SHUTDOWN;

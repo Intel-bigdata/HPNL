@@ -22,7 +22,7 @@ public class Connection {
         return;
       }
       this.service.unregCon(nativeEq);
-      this.service.shutdown(nativeEq);
+      this.service.shutdown(nativeEq, service.getNativeHandle());
       if (shutdownCallback != null) {
         shutdownCallback.handle(null, 0, 0);
       }
@@ -30,9 +30,21 @@ public class Connection {
     }
   }
 
-  public native void recv(ByteBuffer buffer, int id);
-  public native int send(int blockBufferSize, int rdmaBufferId);
-  public native int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr);
+  public void recv(ByteBuffer buffer, int id) {
+    recv(buffer, id, this.nativeHandle);
+  }
+
+  public int send(int blockBufferSize, int rdmaBufferId) {
+    return send(blockBufferSize, rdmaBufferId, this.nativeHandle); 
+  }
+
+  public int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr) {
+    return read(rdmaBufferId, localOffset, len, remoteAddr, remoteMr, this.nativeHandle); 
+  }
+
+  public native void recv(ByteBuffer buffer, int id, long nativeHandle);
+  public native int send(int blockBufferSize, int rdmaBufferId, long nativeHandle);
+  public native int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr, long nativeHandle);
   private native void init(long eq);
   public native void finalize();
 

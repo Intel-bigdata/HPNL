@@ -22,7 +22,7 @@ class ExternalEqService {
     void set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
     void set_send_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
 
-    int wait_eq_event(fi_info**, fid_eq**);
+    int wait_eq_event(fi_info**, fid_eq**, FIConnection**);
     int add_eq_event(fid_eq*);
     int delete_eq_event(fid_eq*);
 

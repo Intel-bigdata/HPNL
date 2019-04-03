@@ -25,11 +25,7 @@ ExternalEqService::~ExternalEqService() {
 }
 
 int ExternalEqService::init() {
-  if (is_server) {
-    stack = new FIStack(FI_SOURCE, worker_num, buffer_num);
-  } else {
-    stack = new FIStack(0, worker_num, buffer_num);
-  }
+  stack = new FIStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
   if (stack->init() == -1)
     goto free_stack;
 
@@ -110,8 +106,8 @@ void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int rdma_bu
   sendBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
-int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq) {
-  int ret = eq_demulti_plexer->wait_event(info, eq);
+int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, FIConnection** con) {
+  int ret = eq_demulti_plexer->wait_event(info, eq, con);
   return ret;
 }
 

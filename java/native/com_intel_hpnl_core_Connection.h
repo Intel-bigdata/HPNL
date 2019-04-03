@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (Ljava/nio/ByteBuffer;I)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv
-  (JNIEnv *, jobject, jobject, jint);
+  (JNIEnv *, jobject, jobject, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_Connection
@@ -21,7 +21,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv
  * Signature: (Ljava/nio/ByteBuffer;II)V
  */
 JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_send
-  (JNIEnv *, jobject, jint, jint);
+  (JNIEnv *, jobject, jint, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_Connection
@@ -29,7 +29,7 @@ JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_send
  * Signature: (Ljava/nio/ByteBuffer;IIJJJ)V
  */
 JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read
-  (JNIEnv *, jobject, jint, jint, jlong, jlong, jlong);
+  (JNIEnv *, jobject, jint, jint, jlong, jlong, jlong, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_Connection

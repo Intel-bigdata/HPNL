@@ -34,11 +34,11 @@ public class EqService {
     if (!is_server) {
       connectLatch = new CountDownLatch(1);
     }
-    localEq = connect(ip, port);
+    localEq = connect(ip, port, nativeHandle);
     if (localEq == -1) {
       return -1;
     }
-    add_eq_event(localEq);
+    add_eq_event(localEq, nativeHandle);
     this.eqThread = new EqThread(this);
     this.eqThread.start();
     return 0;
@@ -68,7 +68,7 @@ public class EqService {
     synchronized(this) {
       eqThread.shutdown();
     }
-    delete_eq_event(localEq);
+    delete_eq_event(localEq, nativeHandle);
   }
 
   private void regCon(long eq, long con, String dest_addr, int dest_port, String src_addr, int src_port) {
@@ -125,10 +125,6 @@ public class EqService {
     return conMap.get(eq);
   }
 
-  public long getNativeHandle() {
-    return nativeHandle;
-  }
-
   public void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
     this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, MemPool.Type.SEND);
     this.recvBufferPool = new MemPool(this, initBufferNum*2, bufferSize, nextBufferNum*2, MemPool.Type.RECV);
@@ -155,7 +151,7 @@ public class EqService {
   public RdmaBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     rmaBufferMap.put(bufferId, byteBuffer);
-    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId);
+    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId, nativeHandle);
     if (rkey < 0) {
       return null;
     }
@@ -168,7 +164,7 @@ public class EqService {
     if (byteBuffer != null) {
       rmaBufferMap.put(bufferId, byteBuffer);
     }
-    long rkey = reg_rma_buffer_by_address(address, bufferSize, bufferId);
+    long rkey = reg_rma_buffer_by_address(address, bufferSize, bufferId, nativeHandle);
     if (rkey < 0) {
       return null;
     }
@@ -177,16 +173,16 @@ public class EqService {
   }
 
   public void unregRmaBuffer(int rdmaBufferId) {
-    unreg_rma_buffer(rdmaBufferId);
+    unreg_rma_buffer(rdmaBufferId, nativeHandle);
   }
 
   public RdmaBuffer getRmaBuffer(int bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     // allocate memory from on-heap, off-heap or AEP.
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
-    long address = get_buffer_address(byteBuffer);
+    long address = get_buffer_address(byteBuffer, nativeHandle);
     rmaBufferMap.put(bufferId, byteBuffer);
-    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId);
+    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId, nativeHandle);
     if (rkey < 0) {
       return null;
     }
@@ -217,19 +213,23 @@ public class EqService {
     return this.worker_num;
   }
 
-  public native void shutdown(long eq);
-  private native long connect(String ip, String port);
-  public native int wait_eq_event();
-  public native int add_eq_event(long eq);
-  public native int delete_eq_event(long eq);
-  public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
-  public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
-  private native long reg_rma_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
-  private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId);
-  private native void unreg_rma_buffer(int rdmaBufferId);
-  private native long get_buffer_address(ByteBuffer buffer);
+  public long getNativeHandle() {
+    return nativeHandle; 
+  }
+
+  public native void shutdown(long eq, long nativeHandle);
+  private native long connect(String ip, String port, long nativeHandle);
+  public native int wait_eq_event(long nativeHandle);
+  public native int add_eq_event(long eq, long nativeHandle);
+  public native int delete_eq_event(long eq, long nativeHandle);
+  public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  private native long reg_rma_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId, long nativeHandle);
+  private native void unreg_rma_buffer(int rdmaBufferId, long nativeHandle);
+  private native long get_buffer_address(ByteBuffer buffer, long nativeHandle);
   private native int init(int worker_num_, int buffer_num_, boolean is_server_);
-  private native void free();
+  private native void free(long nativeHandle);
   public native void finalize();
 
   public String getIp() {

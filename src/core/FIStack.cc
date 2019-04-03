@@ -1,8 +1,8 @@
 #include "HPNL/FIStack.h"
 
-FIStack::FIStack(uint64_t flags_, int worker_num_, int buffer_num_) : 
+FIStack::FIStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_) : 
   flags(flags_), 
-  worker_num(worker_num_), seq_num(0), buffer_num(buffer_num_), 
+  worker_num(worker_num_), seq_num(0), buffer_num(buffer_num_), is_server(is_server_),
   fabric(NULL), domain(NULL), hints(NULL), info(NULL), hints_tmp(NULL), info_tmp(NULL), 
   peq(NULL), pep(NULL), waitset(NULL) {}
 
@@ -41,7 +41,7 @@ FIStack::~FIStack() {
     fi_freeinfo(hints_tmp);
     hints_tmp = nullptr;
   }
-  if (info_tmp) {
+  if (is_server && info_tmp) {
     fi_freeinfo(info_tmp);
     info_tmp = nullptr;
   }
