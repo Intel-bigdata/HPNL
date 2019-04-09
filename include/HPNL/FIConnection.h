@@ -39,7 +39,7 @@ class FIConnection : public Connection {
 
     virtual int init() override;
     virtual void recv(char*, int) override;
-    virtual int send(const char*, int, int, int, long) override;
+    virtual int send(const char*, int, long) override;
     virtual int send(int, int) override;
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) override;
     virtual void shutdown() override;
@@ -57,12 +57,14 @@ class FIConnection : public Connection {
 
     void set_recv_callback(Callback*);
     void set_send_callback(Callback*);
+    void set_read_callback(Callback*);
     void set_shutdown_callback(Callback*);
 
     std::vector<Chunk*> get_send_buffer();
 
-    Callback* get_read_callback();
+    Callback* get_recv_callback();
     Callback* get_send_callback();
+    Callback* get_read_callback();
     Callback* get_shutdown_callback();
 
   public:
@@ -100,8 +102,9 @@ class FIConnection : public Connection {
     size_t src_port;
     char src_addr[20];
 
-    Callback* read_callback;
+    Callback* recv_callback;
     Callback* send_callback;
+    Callback* read_callback;
     Callback* shutdown_callback;
 };
 

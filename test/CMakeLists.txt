@@ -26,3 +26,17 @@ set_target_properties(connection_client
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/connection")
 
+set(PMEM_TEST ${PROJECT_SOURCE_DIR}/test/pmem)
+
+add_executable(pmem_server ${PMEM_TEST}/server.cc ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
+target_link_libraries(pmem_server fabric pmemobj)
+set_target_properties(pmem_server
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pmem")
+
+add_executable(pmem_client ${PMEM_TEST}/client.cc ${DEMULTIPLEXER_FILE} ${LOG_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
+target_link_libraries(pmem_client fabric pmemobj)
+set_target_properties(pmem_client
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pmem")
+

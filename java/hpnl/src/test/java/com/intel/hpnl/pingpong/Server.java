@@ -44,11 +44,7 @@ public class Server implements Runnable {
     
     cqService.setAffinities(affinities);
 
-    List<Connection> conList = new ArrayList<Connection>();
-
-    ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
     RecvCallback recvCallback = new RecvCallback(true, interval, msgSize);
-    eqService.setConnectedCallback(connectedCallback);
     eqService.setRecvCallback(recvCallback);
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);

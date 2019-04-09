@@ -25,8 +25,13 @@ class Service {
 
     void set_send_callback(Callback*);
     void set_recv_callback(Callback*);
+    void set_read_callback(Callback*);
     void set_connected_callback(Callback*);
     void set_shutdown_callback(Callback*);
+
+    uint64_t reg_rma_buffer(char*, uint64_t, int);
+    void unreg_rma_buffer(int);
+    Chunk* get_rma_buffer(int);
   protected:
     Service(bool is_server_ = false);
     ~Service();
@@ -37,6 +42,7 @@ class Service {
 
     Callback *recvCallback;
     Callback *sendCallback;
+    Callback *readCallback;
     Callback *acceptRequestCallback;
     Callback *connectedCallback;
     Callback *shutdownCallback;

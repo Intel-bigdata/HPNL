@@ -30,6 +30,23 @@ void Client::set_recv_callback(Callback *callback) {
   Service::set_recv_callback(callback);
 }
 
+void Client::set_read_callback(Callback *callback) {
+  Service::set_read_callback(callback);
+}
+
 void Client::set_connected_callback(Callback *callback) {
   Service::set_connected_callback(callback);
 }
+
+uint64_t Client::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
+  return Service::reg_rma_buffer(buffer, buffer_size, rdma_buffer_id);
+}
+
+void Client::unreg_rma_buffer(int rdma_buffer_id) {
+  Service::unreg_rma_buffer(rdma_buffer_id);
+}
+
+Chunk* Client::get_rma_buffer(int rdma_buffer_id) {
+  return Service::get_rma_buffer(rdma_buffer_id);
+}
+

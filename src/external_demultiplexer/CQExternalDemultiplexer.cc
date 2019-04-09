@@ -65,7 +65,7 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* rdma_buffe
     } else {
       end = start;
       *ck = (Chunk*)entry.op_context;
-      *rdma_buffer_id = (*ck)->rdma_buffer_id;
+      *rdma_buffer_id = (*ck)->buffer_id;
       FIConnection *con = (FIConnection*)(*ck)->con;
       if (!con) {
         return 0;
