@@ -36,10 +36,9 @@ public class Client {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.start(addr, "123456");
+    eqService.start(addr, "123456", 0);
     cqService.start();
 
-    eqService.waitToConnected();
     System.out.println("connected, start to pingpong.");
 
     //cqService.shutdown();

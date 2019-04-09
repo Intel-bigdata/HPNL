@@ -64,10 +64,9 @@ public class Client implements Runnable {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.start(addr, port);
+    eqService.start(addr, port, 0);
     cqService.start();
 
-    eqService.waitToConnected();
     System.out.println("connected, start to pingpong.");
     
     for (Connection con: conList) {

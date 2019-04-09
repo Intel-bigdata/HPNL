@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,34 +23,42 @@ public class EqService {
     this.conMap = new HashMap<Long, Connection>();
     this.reapCons = new LinkedBlockingQueue<Connection>();
     this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
+    this.connectLatch = new ConcurrentHashMap<Long, CountDownLatch>();
   }
 
   public EqService init() {
     if (init(worker_num, buffer_num, is_server) == -1)
       return null;
-    return this; 
-  }
-
-  public int start(String ip, String port) {
-    if (!is_server) {
-      connectLatch = new CountDownLatch(1);
-    }
-    localEq = connect(ip, port, nativeHandle);
-    if (localEq == -1) {
-      return -1;
-    }
-    add_eq_event(localEq, nativeHandle);
     this.eqThread = new EqThread(this);
     this.eqThread.start();
-    return 0;
+    return this;
   }
 
-  public void waitToConnected() {
-    try {
-      this.connectLatch.await();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
+  public int start(String ip, String port, long timeout) {
+    synchronized (EqService.class) {
+      localEq = connect(ip, port, nativeHandle);
+      if (localEq == -1) {
+        return -1;
+      }
+      if (!is_server) {
+        connectLatch.put(localEq, new CountDownLatch(1));
+      }
+      add_eq_event(localEq, nativeHandle);
+      if (!is_server) {
+        try {
+          if (timeout == 0) {
+            this.connectLatch.get(localEq).await();
+          } else {
+            if (!this.connectLatch.get(localEq).await(timeout, TimeUnit.MILLISECONDS)) {
+              return -1;
+            }
+          }
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+      }
     }
+    return 0;
   }
 
   public void join() {
@@ -65,7 +74,7 @@ public class EqService {
     for (Connection con : reapCons) {
       addReapCon(con);
     }
-    synchronized(this) {
+    synchronized(EqService.class) {
       eqThread.shutdown();
     }
     delete_eq_event(localEq, nativeHandle);
@@ -97,7 +106,8 @@ public class EqService {
     }
     connection.handleCallback(eventType, 0, 0);
     if (!is_server && eventType == EventType.CONNECTED_EVENT) {
-      this.connectLatch.countDown();
+      this.connectLatch.get(eq).countDown();
+      this.connectLatch.remove(eq);
     }
   }
 
@@ -247,6 +257,7 @@ public class EqService {
   private int worker_num;
   private int buffer_num;
   public boolean is_server;
+  private ConcurrentHashMap<Long, CountDownLatch> connectLatch;
   private HashMap<Long, Connection> conMap;
   private LinkedBlockingQueue<Connection> reapCons;
 
@@ -266,5 +277,4 @@ public class EqService {
   private EqThread eqThread;
   private final AtomicBoolean needReap = new AtomicBoolean(false);
   private boolean needStop = false;
-  private CountDownLatch connectLatch;
 }

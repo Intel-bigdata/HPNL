@@ -21,6 +21,7 @@ int EQExternalDemultiplexer::init() {
 }
 
 int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FIConnection** con) {
+  if (fid_map.empty()) return 0;
   struct fid *fids[fid_map.size()];
   int i = 0;
   for (auto iter: fid_map) {

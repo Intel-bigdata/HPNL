@@ -37,9 +37,8 @@ public class Client {
     eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
     cqService.start();
-    eqService.start("172.168.2.106", "123456");
+    eqService.start("172.168.2.106", "123456", 0);
 
-    eqService.waitToConnected();
     System.out.println("connected, start to remote read.");
     
     for (Connection con: conList) {

@@ -33,7 +33,7 @@ public class CqService {
 
   public void shutdown() {
     for (CqThread cqThread : cqThreads) {
-      synchronized(this) {
+      synchronized(CqService.class) {
         cqThread.shutdown();
       }
     }
