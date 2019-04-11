@@ -2,27 +2,27 @@ package com.intel.hpnl.core;
 
 import java.nio.ByteBuffer;
 
-public class RdmaBuffer {
-  public RdmaBuffer(int rdmaBufferId, ByteBuffer byteBuffer) {
-    this.rdmaBufferId = rdmaBufferId;
+public class HpnlBuffer {
+  public HpnlBuffer(int bufferId, ByteBuffer byteBuffer) {
+    this.bufferId = bufferId;
     this.byteBuffer = byteBuffer;
   }
 
-  public RdmaBuffer(int rdmaBufferId, ByteBuffer byteBuffer, long rkey) {
-    this.rdmaBufferId = rdmaBufferId;
+  public HpnlBuffer(int bufferId, ByteBuffer byteBuffer, long rkey) {
+    this.bufferId = bufferId;
     this.byteBuffer = byteBuffer;
     this.rkey = rkey;
   }
 
-  public RdmaBuffer(int rdmaBufferId, ByteBuffer byteBuffer, long rkey, long address) {
-    this.rdmaBufferId = rdmaBufferId;
+  public HpnlBuffer(int bufferId, ByteBuffer byteBuffer, long rkey, long address) {
+    this.bufferId = bufferId;
     this.byteBuffer = byteBuffer;
     this.rkey = rkey;
     this.address = address;
   }
 
-  public int getRdmaBufferId() {
-    return this.rdmaBufferId;
+  public int getBufferId() {
+    return this.bufferId;
   }
 
   public byte getType() {
@@ -78,7 +78,7 @@ public class RdmaBuffer {
     return 9;
   }
 
-  private int rdmaBufferId;
+  private int bufferId;
   private byte type;
   private long seq;
   private ByteBuffer byteBuffer;

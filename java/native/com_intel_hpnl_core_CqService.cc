@@ -47,10 +47,10 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
   ExternalCqService *service = *(ExternalCqService**)&cqServicePtr;
   fid_eq *eq;
   int block_buffer_size = 0;
-  int rdma_buffer_id = 0;
+  int buffer_id = 0;
   FIConnection *con = NULL;
   Chunk *ck = NULL;
-  int ret = service->wait_cq_event(index, &eq, &ck, &rdma_buffer_id, &block_buffer_size);
+  int ret = service->wait_cq_event(index, &eq, &ck, &buffer_id, &block_buffer_size);
   if (ret <= 0) {
     return ret; 
   }
@@ -58,7 +58,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
   if (!con)
     return -1;
   jlong jEq = *(jlong*)&eq;
-  (*env).CallVoidMethod(thisObj, handleCqCallback, jEq, ret, rdma_buffer_id, block_buffer_size);
+  (*env).CallVoidMethod(thisObj, handleCqCallback, jEq, ret, buffer_id, block_buffer_size);
   if (ret == RECV_EVENT) {
     if (con->activate_chunk(ck)) {
       // TODO: error handler 

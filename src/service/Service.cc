@@ -123,15 +123,15 @@ void Service::set_shutdown_callback(Callback *callback) {
   shutdownCallback = callback;
 }
 
-uint64_t Service::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
-  return stack->reg_rma_buffer(buffer, buffer_size, rdma_buffer_id);
+uint64_t Service::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+  return stack->reg_rma_buffer(buffer, buffer_size, buffer_id);
 }
 
-void Service::unreg_rma_buffer(int rdma_buffer_id) {
-  stack->unreg_rma_buffer(rdma_buffer_id);
+void Service::unreg_rma_buffer(int buffer_id) {
+  stack->unreg_rma_buffer(buffer_id);
 }
 
-Chunk* Service::get_rma_buffer(int rdma_buffer_id) {
-  return stack->get_rma_chunk(rdma_buffer_id);
+Chunk* Service::get_rma_buffer(int buffer_id) {
+  return stack->get_rma_chunk(buffer_id);
 }
 

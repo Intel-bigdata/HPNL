@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.RdmaBuffer;
+import com.intel.hpnl.core.HpnlBuffer;
 
 public class Client {
   public static void main(String args[]) {
@@ -18,7 +18,7 @@ public class Client {
 
     EqService eqService = new EqService(1, BUFFER_NUM, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
-    RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
+    HpnlBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
     ClientRecvCallback recvCallback = new ClientRecvCallback(false, buffer);
     ClientReadCallback readCallback = new ClientReadCallback();
@@ -35,9 +35,9 @@ public class Client {
 
     System.out.println("connected, start to remote read.");
     
-    RdmaBuffer sendBuffer = con.takeSendBuffer(true);
+    HpnlBuffer sendBuffer = con.takeSendBuffer(true);
     sendBuffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
+    con.send(sendBuffer.remaining(), sendBuffer.getBufferId());
     //cqService.shutdown();
     cqService.join();
     eqService.shutdown();

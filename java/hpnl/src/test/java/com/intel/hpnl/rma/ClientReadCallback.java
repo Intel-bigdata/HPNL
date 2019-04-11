@@ -5,13 +5,12 @@ import com.intel.hpnl.core.Connection;
 
 import java.nio.ByteBuffer;
 
-import com.intel.hpnl.core.RdmaBuffer;
+import com.intel.hpnl.core.HpnlBuffer;
 
 public class ClientReadCallback implements Handler {
   public ClientReadCallback() {
   }
-  public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
-    ByteBuffer byteBuffer = con.getRmaBuffer(rdmaBufferId);
+  public synchronized void handle(Connection con, int bufferId, int blockBufferSize) {
     if (count == 0) {
       startTime = System.currentTimeMillis();
       System.out.println("allocate memory.");
@@ -30,9 +29,9 @@ public class ClientReadCallback implements Handler {
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(4096);
     byteBufferTmp.putChar('a');
     byteBufferTmp.flip();
-    RdmaBuffer sendBuffer = con.takeSendBuffer(true);
+    HpnlBuffer sendBuffer = con.takeSendBuffer(true);
     sendBuffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
+    con.send(sendBuffer.remaining(), sendBuffer.getBufferId());
     count++;
   }
   private int count = 0;

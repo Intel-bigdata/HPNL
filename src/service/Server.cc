@@ -38,15 +38,15 @@ void Server::set_connected_callback(Callback *callback) {
   Service::set_connected_callback(callback);
 }
 
-uint64_t Server::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
-  return Service::reg_rma_buffer(buffer, buffer_size, rdma_buffer_id);
+uint64_t Server::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+  return Service::reg_rma_buffer(buffer, buffer_size, buffer_id);
 }
 
-void Server::unreg_rma_buffer(int rdma_buffer_id) {
-  Service::unreg_rma_buffer(rdma_buffer_id);
+void Server::unreg_rma_buffer(int buffer_id) {
+  Service::unreg_rma_buffer(buffer_id);
 }
 
-Chunk* Server::get_rma_buffer(int rdma_buffer_id) {
-  return Service::get_rma_buffer(rdma_buffer_id);
+Chunk* Server::get_rma_buffer(int buffer_id) {
+  return Service::get_rma_buffer(buffer_id);
 }
 
