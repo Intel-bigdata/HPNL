@@ -35,7 +35,7 @@ class ConnectedCallback : public Callback {
       Connection *con = (Connection*)param_1;
       char* buffer = (char*)std::malloc(SIZE);
       memset(buffer, '0', SIZE);
-      con->send(buffer, SIZE, 0);
+      con->send(buffer, SIZE, SIZE, 0, 0);
       std::free(buffer);
     }
   private:
@@ -64,7 +64,7 @@ class RecvCallback : public Callback {
       if (count == 1) {
         start = timestamp_now(); 
       }
-      con->send((char*)ck->buffer, SIZE, 0);
+      con->send((char*)ck->buffer, SIZE, SIZE, 0, 0);
     }
   private:
     BufMgr *bufMgr; 
@@ -89,18 +89,18 @@ int main(int argc, char *argv[]) {
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();
-    ck->buffer_id = recvBufMgr->get_id();
+    ck->rdma_buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->add(ck->buffer_id, ck);
+    recvBufMgr->add(ck->rdma_buffer_id, ck);
   }
   BufMgr *sendBufMgr = new PingPongBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->buffer_id = sendBufMgr->get_id();
+    ck->rdma_buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    sendBufMgr->add(ck->buffer_id, ck);
+    sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
   Client *client = new Client();
   client->set_recv_buf_mgr(recvBufMgr);

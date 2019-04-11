@@ -18,7 +18,7 @@ struct Chunk {
   void *mr;
   void *con;
   uint64_t capacity;
-  int buffer_id;
+  int rdma_buffer_id;
 };
 
 class BufMgr {

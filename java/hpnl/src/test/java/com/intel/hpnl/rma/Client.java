@@ -1,11 +1,13 @@
 package com.intel.hpnl.rma;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.HpnlBuffer;
+import com.intel.hpnl.core.RdmaBuffer;
 
 public class Client {
   public static void main(String args[]) {
@@ -18,11 +20,15 @@ public class Client {
 
     EqService eqService = new EqService(1, BUFFER_NUM, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
-    HpnlBuffer buffer = eqService.getRmaBuffer(4096*1024);
+    RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
+    List<Connection> conList = new CopyOnWriteArrayList<Connection>();
+
+    ConnectedCallback connectedCallback = new ConnectedCallback(conList, false);
     ClientRecvCallback recvCallback = new ClientRecvCallback(false, buffer);
     ClientReadCallback readCallback = new ClientReadCallback();
     ShutdownCallback shutdownCallback = new ShutdownCallback();
+    eqService.setConnectedCallback(connectedCallback);
     eqService.setRecvCallback(recvCallback);
     eqService.setSendCallback(null);
     eqService.setReadCallback(readCallback);
@@ -31,13 +37,16 @@ public class Client {
     eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
     cqService.start();
-    Connection con = eqService.connect("172.168.2.106", "123456", 0);
+    eqService.connect("172.168.2.106", "123456", 0);
 
     System.out.println("connected, start to remote read.");
     
-    HpnlBuffer sendBuffer = con.takeSendBuffer(true);
-    sendBuffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(sendBuffer.remaining(), sendBuffer.getBufferId());
+    for (Connection con: conList) {
+      RdmaBuffer sendBuffer = con.takeSendBuffer(true);
+      sendBuffer.put(byteBufferTmp, (byte)0, 10);
+      con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
+      System.out.println("finished sending.");
+    }
     //cqService.shutdown();
     cqService.join();
     eqService.shutdown();

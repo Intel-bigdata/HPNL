@@ -153,31 +153,31 @@ public class EqService {
     this.recvBufferPool.realloc();
   }
 
-  public void putSendBuffer(long eq, int bufferId) {
+  public void putSendBuffer(long eq, int rdmaBufferId) {
     Connection connection = conMap.get(eq);
-    connection.putSendBuffer(sendBufferPool.getBuffer(bufferId));
+    connection.putSendBuffer(sendBufferPool.getBuffer(rdmaBufferId));
   }
 
-  public HpnlBuffer getSendBuffer(int bufferId) {
-    return sendBufferPool.getBuffer(bufferId); 
+  public RdmaBuffer getSendBuffer(int rdmaBufferId) {
+    return sendBufferPool.getBuffer(rdmaBufferId); 
   }
 
-  public HpnlBuffer getRecvBuffer(int bufferId) {
-    return recvBufferPool.getBuffer(bufferId);
+  public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
+    return recvBufferPool.getBuffer(rdmaBufferId);
   }
 
-  public HpnlBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
+  public RdmaBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     rmaBufferMap.put(bufferId, byteBuffer);
     long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId, nativeHandle);
     if (rkey < 0) {
       return null;
     }
-    HpnlBuffer buffer = new HpnlBuffer(bufferId, byteBuffer, rkey);
+    RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey);
     return buffer;
   }
 
-  public HpnlBuffer regRmaBufferByAddress(ByteBuffer byteBuffer, long address, long bufferSize) {
+  public RdmaBuffer regRmaBufferByAddress(ByteBuffer byteBuffer, long address, long bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     if (byteBuffer != null) {
       rmaBufferMap.put(bufferId, byteBuffer);
@@ -186,15 +186,15 @@ public class EqService {
     if (rkey < 0) {
       return null;
     }
-    HpnlBuffer buffer = new HpnlBuffer(bufferId, byteBuffer, rkey);
+    RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey);
     return buffer;
   }
 
-  public void unregRmaBuffer(int bufferId) {
-    unreg_rma_buffer(bufferId, nativeHandle);
+  public void unregRmaBuffer(int rdmaBufferId) {
+    unreg_rma_buffer(rdmaBufferId, nativeHandle);
   }
 
-  public HpnlBuffer getRmaBuffer(int bufferSize) {
+  public RdmaBuffer getRmaBuffer(int bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     // allocate memory from on-heap, off-heap or AEP.
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
@@ -204,7 +204,7 @@ public class EqService {
     if (rkey < 0) {
       return null;
     }
-    HpnlBuffer buffer = new HpnlBuffer(bufferId, byteBuffer, rkey, address);
+    RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey, address);
     return buffer; 
   }
 
@@ -240,11 +240,11 @@ public class EqService {
   public native int wait_eq_event(long nativeHandle);
   public native int add_eq_event(long eq, long nativeHandle);
   public native int delete_eq_event(long eq, long nativeHandle);
-  public native void set_recv_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
-  public native void set_send_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
-  private native long reg_rma_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
-  private native long reg_rma_buffer_by_address(long address, long size, int bufferId, long nativeHandle);
-  private native void unreg_rma_buffer(int bufferId, long nativeHandle);
+  public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  private native long reg_rma_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId, long nativeHandle);
+  private native void unreg_rma_buffer(int rdmaBufferId, long nativeHandle);
   private native long get_buffer_address(ByteBuffer buffer, long nativeHandle);
   private native int init(int worker_num_, int buffer_num_, boolean is_server_);
   private native void free(long nativeHandle);

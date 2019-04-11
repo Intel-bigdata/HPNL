@@ -1,9 +1,12 @@
 package com.intel.hpnl.buffer;
 
+import com.intel.hpnl.core.Connection;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.EqService;
 
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Client {
   public static void main(String args[]) {
@@ -21,16 +24,20 @@ public class Client {
     EqService eqService = new EqService(1, bufferNbr, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
 
+    List<Connection> conList = new CopyOnWriteArrayList<Connection>();
+
+    ConnectedCallback connectedCallback = new ConnectedCallback(conList, false);
     ReadCallback readCallback = new ReadCallback(false, eqService);
     ShutdownCallback shutdownCallback = new ShutdownCallback();
+    eqService.setConnectedCallback(connectedCallback);
     eqService.setRecvCallback(readCallback);
     eqService.setSendCallback(null);
     eqService.setShutdownCallback(shutdownCallback);
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    cqService.start();
     eqService.connect(addr, "123456", 0);
+    cqService.start();
 
     System.out.println("connected, start to pingpong.");
 

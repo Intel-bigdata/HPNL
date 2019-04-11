@@ -7,7 +7,7 @@ class Connection {
   public:
     virtual int init() { return 0; }
     virtual void recv(char*, int) {}
-    virtual int send(const char*, int, long) { return 0; }
+    virtual int send(const char*, int, int, int, long) { return 0; }
     virtual int send(int, int) { return 0; }
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) { return 0; }
     virtual void shutdown() { }

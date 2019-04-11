@@ -1,11 +1,15 @@
 package com.intel.hpnl.pingpong;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
 
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
+import com.intel.hpnl.core.Connection;
 
 @Command(mixinStandardHelpOptions = true, version = "auto help demo - picocli 3.0")
 public class Server implements Runnable {
@@ -40,7 +44,11 @@ public class Server implements Runnable {
     
     cqService.setAffinities(affinities);
 
+    List<Connection> conList = new ArrayList<Connection>();
+
+    ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
     RecvCallback recvCallback = new RecvCallback(true, interval, msgSize);
+    eqService.setConnectedCallback(connectedCallback);
     eqService.setRecvCallback(recvCallback);
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);

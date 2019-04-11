@@ -10,19 +10,19 @@ FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_,
   stack(stack_), fabric(fabric_), info(info_), domain(domain_), ep(NULL),
   conCq(cq_), conEq(NULL), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), 
   waitset(waitset_), is_server(is_server_), buffer_num(buffer_num_), 
-  recv_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {}
+  read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {}
 
 FIConnection::~FIConnection() {
   for (auto buffer: send_buffers_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
-    send_buf_mgr->add(ck->buffer_id, ck);
+    send_buf_mgr->add(ck->rdma_buffer_id, ck);
   }
   while (recv_buffers.size() > 0) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
-    recv_buf_mgr->add(ck->buffer_id, ck);
+    recv_buf_mgr->add(ck->rdma_buffer_id, ck);
   }
   if (ep) {
     shutdown();
@@ -98,7 +98,7 @@ int FIConnection::init() {
     ck->mr = mr;
     mr = NULL;
     send_buffers.push_back(ck);
-    send_buffers_map.insert(std::pair<int, Chunk*>(ck->buffer_id, ck));
+    send_buffers_map.insert(std::pair<int, Chunk*>(ck->rdma_buffer_id, ck));
     size++;
   }
 
@@ -109,14 +109,14 @@ free_send_buf:
   for (auto buffer: send_buffers_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
-    send_buf_mgr->add(ck->buffer_id, ck);
+    send_buf_mgr->add(ck->rdma_buffer_id, ck);
   }
 free_recv_buf:
   while (recv_buffers.size() > 0) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
-    recv_buf_mgr->add(ck->buffer_id, ck);
+    recv_buf_mgr->add(ck->rdma_buffer_id, ck);
   }
 free_eq:
   if (conEq) {
@@ -132,20 +132,20 @@ free_ep:
   return -1;
 }
 
-int FIConnection::send(const char *buffer, int buffer_size, long seq) {
+int FIConnection::send(const char *buffer, int block_buffer_size, int rdma_buffer_id, int block_buffer_id, long seq) {
   Chunk *ck = send_buffers.back();
   send_buffers.pop_back();
-  memcpy(ck->buffer, buffer, buffer_size);
-  if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+  memcpy(ck->buffer, buffer, block_buffer_size);
+  if (fi_send(ep, ck->buffer, block_buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
     return -1;
   }
   return 0;
 }
 
-int FIConnection::send(int buffer_size, int buffer_id) {
-  Chunk *ck = send_buffers_map[buffer_id];
-  if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+int FIConnection::send(int block_buffer_size, int rdma_buffer_id) {
+  Chunk *ck = send_buffers_map[rdma_buffer_id];
+  if (fi_send(ep, ck->buffer, block_buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
     return -1;
   }
@@ -156,8 +156,8 @@ void FIConnection::recv(char *buffer, int buffer_size) {
   // TODO: buffer filter
 }
 
-int FIConnection::read(int buffer_id, int local_offset, uint64_t len, uint64_t remote_addr, uint64_t remote_key) {
-  Chunk *ck = stack->get_rma_chunk(buffer_id);
+int FIConnection::read(int rdma_buffer_id, int local_offset, uint64_t len, uint64_t remote_addr, uint64_t remote_key) {
+  Chunk *ck = stack->get_rma_chunk(rdma_buffer_id);
   ck->con = this;
   return fi_read(ep, (char*)ck->buffer+local_offset, len, fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
 }
@@ -220,31 +220,23 @@ std::vector<Chunk*> FIConnection::get_send_buffer() {
 }
 
 void FIConnection::set_recv_callback(Callback *callback) {
-  recv_callback = callback;
+  read_callback = callback;
 }
 
 void FIConnection::set_send_callback(Callback *callback) {
   send_callback = callback;
 }
 
-void FIConnection::set_read_callback(Callback *callback) {
-  read_callback = callback;
-}
-
 void FIConnection::set_shutdown_callback(Callback *callback) {
   shutdown_callback = callback;
 }
 
-Callback* FIConnection::get_recv_callback() {
-  return recv_callback;
+Callback* FIConnection::get_read_callback() {
+  return read_callback;
 }
 
 Callback* FIConnection::get_send_callback() {
   return send_callback;
-}
-
-Callback* FIConnection::get_read_callback() {
-  return read_callback;
 }
 
 Callback* FIConnection::get_shutdown_callback() {

@@ -218,11 +218,11 @@ HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mg
   return con->get_eqhandle();
 }
 
-uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
   ck->capacity = buffer_size;
-  ck->buffer_id = buffer_id;
+  ck->rdma_buffer_id = rdma_buffer_id;
   fid_mr *mr;
   if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
     perror("fi_mr_reg");
@@ -230,18 +230,18 @@ uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_
   }
   ck->mr = mr;
   std::lock_guard<std::mutex> lk(mtx);
-  chunkMap.insert(std::pair<int, Chunk*>(buffer_id, ck));
+  chunkMap.insert(std::pair<int, Chunk*>(rdma_buffer_id, ck));
   return ((fid_mr*)ck->mr)->key;
 }
 
-void FIStack::unreg_rma_buffer(int buffer_id) {
-  Chunk *ck = get_rma_chunk(buffer_id);
+void FIStack::unreg_rma_buffer(int rdma_buffer_id) {
+  Chunk *ck = get_rma_chunk(rdma_buffer_id);
   fi_close(&((fid_mr*)ck->mr)->fid);
 }
 
-Chunk* FIStack::get_rma_chunk(int buffer_id) {
+Chunk* FIStack::get_rma_chunk(int rdma_buffer_id) {
   std::lock_guard<std::mutex> lk(mtx);
-  return chunkMap[buffer_id];
+  return chunkMap[rdma_buffer_id];
 }
 
 void FIStack::shutdown() {

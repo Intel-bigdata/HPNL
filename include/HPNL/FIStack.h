@@ -26,7 +26,7 @@ class FIStack {
     HandlePtr connect(const char*, const char*, BufMgr*, BufMgr*);
     HandlePtr accept(void*, BufMgr*, BufMgr*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);
-    void unreg_rma_buffer(int);
+    void unreg_rma_buffer(int rdma_buffer_id);
     Chunk* get_rma_chunk(int);
     void shutdown();
     void reap(void*);

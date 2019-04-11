@@ -32,14 +32,14 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv(JNIEnv *env, job
   con->recv((char*)buffer, mid);
 }
 
-JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, jobject thisObj, jint blockBufferSize, jint bufferId, jlong conPtr) {
+JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, jobject thisObj, jint blockBufferSize, jint rdmaBufferId, jlong conPtr) {
   Connection *con = *(Connection**)&conPtr;
-  return con->send(blockBufferSize, bufferId);
+  return con->send(blockBufferSize, rdmaBufferId);
 }
 
-JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobject thisObj, jint bufferId, jint localOffset, jlong len, jlong remoteAddr, jlong remoteMr, jlong conPtr) {
+JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jint localOffset, jlong len, jlong remoteAddr, jlong remoteMr, jlong conPtr) {
   Connection *con = *(Connection**)&conPtr;
-  return con->read(bufferId, localOffset, len, remoteAddr, remoteMr);
+  return con->read(rdmaBufferId, localOffset, len, remoteAddr, remoteMr);
 }
 
 /*

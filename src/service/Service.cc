@@ -4,7 +4,6 @@ Service::Service(bool is_server_)
   : is_server(is_server_) {
   recvCallback = NULL;
   sendCallback = NULL;
-  readCallback = NULL;
   acceptRequestCallback = NULL;
   connectedCallback = NULL;
   shutdownCallback = NULL;
@@ -47,7 +46,6 @@ void Service::run(const char* ip_, const char* port_, int worker_num, int buffer
     acceptRequestCallback = new AcceptRequestCallback(this);
     handler->set_recv_callback(recvCallback);
     handler->set_send_callback(sendCallback);
-    handler->set_read_callback(readCallback);
     handler->set_accept_request_callback(acceptRequestCallback);
     handler->set_connected_callback(connectedCallback);
     handler->set_shutdown_callback(shutdownCallback);
@@ -62,7 +60,6 @@ void Service::run(const char* ip_, const char* port_, int worker_num, int buffer
       acceptRequestCallback = new AcceptRequestCallback(this);
       handler->set_recv_callback(recvCallback);
       handler->set_send_callback(sendCallback);
-      handler->set_read_callback(readCallback);
       handler->set_accept_request_callback(acceptRequestCallback);
       handler->set_connected_callback(connectedCallback);
       handler->set_shutdown_callback(shutdownCallback);
@@ -111,10 +108,6 @@ void Service::set_send_callback(Callback *callback) {
   sendCallback = callback;
 }
 
-void Service::set_read_callback(Callback *callback) {
-  readCallback = callback;
-}
-
 void Service::set_connected_callback(Callback *callback) {
   connectedCallback = callback;
 }
@@ -122,16 +115,3 @@ void Service::set_connected_callback(Callback *callback) {
 void Service::set_shutdown_callback(Callback *callback) {
   shutdownCallback = callback;
 }
-
-uint64_t Service::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
-  return stack->reg_rma_buffer(buffer, buffer_size, buffer_id);
-}
-
-void Service::unreg_rma_buffer(int buffer_id) {
-  stack->unreg_rma_buffer(buffer_id);
-}
-
-Chunk* Service::get_rma_buffer(int buffer_id) {
-  return stack->get_rma_chunk(buffer_id);
-}
-

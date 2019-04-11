@@ -24,7 +24,7 @@ class RecvCallback : public Callback {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->index(mid);
       Connection *con = (Connection*)ck->con;
-      con->send((char*)ck->buffer, SIZE, 0);
+      con->send((char*)ck->buffer, SIZE, SIZE, 0, 0);
     }
   private:
     BufMgr *bufMgr;
@@ -49,18 +49,18 @@ int main(int argc, char *argv[]) {
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();
-    ck->buffer_id = recvBufMgr->get_id();
+    ck->rdma_buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->add(ck->buffer_id, ck);
+    recvBufMgr->add(ck->rdma_buffer_id, ck);
   }
   BufMgr *sendBufMgr = new PingPongBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
-    ck->buffer_id = sendBufMgr->get_id();
+    ck->rdma_buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    sendBufMgr->add(ck->buffer_id, ck);
+    sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
 
   Server *server = new Server();

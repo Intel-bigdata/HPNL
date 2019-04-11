@@ -1,9 +1,9 @@
-package com.intel.hpnl.buffer;
-
-import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.Handler;
+package com.intel.hpnl.pingpong;
 
 import java.util.List;
+
+import com.intel.hpnl.core.Handler;
+import com.intel.hpnl.core.Connection;
 
 public class ConnectedCallback implements Handler {
   public ConnectedCallback(List<Connection> conList, boolean isServer) {

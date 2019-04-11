@@ -21,7 +21,7 @@ class EQHandler : public EventHandler {
     virtual void set_shutdown_callback(Callback*) override;
     virtual void set_send_callback(Callback*) override;
     virtual void set_recv_callback(Callback*) override;
-    virtual void set_read_callback(Callback*) override;
+    virtual Callback* get_read_callback() override;
     
   private:
     FIStack *stack;
@@ -29,7 +29,6 @@ class EQHandler : public EventHandler {
     HandlePtr eqHandle;
     Callback *recvCallback;
     Callback *sendCallback;
-    Callback *readCallback;
     Callback *acceptRequestCallback;
     Callback *connectedCallback;
     Callback *shutdownCallback;

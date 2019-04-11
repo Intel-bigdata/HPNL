@@ -15,7 +15,7 @@ public class MemPool {
     this.bufferSize = bufferSize;
     this.nextBufferNum = nextBufferNum;
     this.type = type;
-    this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
+    this.bufferMap = new ConcurrentHashMap<Integer, RdmaBuffer>();
     this.seqId = new AtomicInteger(0);
     for (int i = 0; i < this.initBufferNum; i++) {
       alloc();
@@ -28,15 +28,15 @@ public class MemPool {
     }
   }
 
-  public HpnlBuffer getBuffer(int bufferId) {
+  public RdmaBuffer getBuffer(int bufferId) {
     return bufferMap.get(bufferId); 
   }
 
   private void alloc() {
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
     int seq = seqId.getAndIncrement();
-    HpnlBuffer buffer = new HpnlBuffer(seq, byteBuffer);
-    bufferMap.put(seq, buffer);
+    RdmaBuffer rdmaBuffer = new RdmaBuffer(seq, byteBuffer);
+    bufferMap.put(seq, rdmaBuffer);
     if (type == Type.SEND)
       eqService.set_send_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
     else
@@ -48,6 +48,6 @@ public class MemPool {
   private int bufferSize;
   private int nextBufferNum;
   private Type type;
-  private ConcurrentHashMap<Integer, HpnlBuffer> bufferMap;
+  private ConcurrentHashMap<Integer, RdmaBuffer> bufferMap;
   private AtomicInteger seqId;
 }

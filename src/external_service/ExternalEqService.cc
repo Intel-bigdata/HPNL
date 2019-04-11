@@ -78,32 +78,32 @@ fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
   return (fid_eq*)eqHandle->get_ctx();
 }
 
-uint64_t ExternalEqService::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
-  return stack->reg_rma_buffer(buffer, buffer_size, buffer_id);
+uint64_t ExternalEqService::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
+  return stack->reg_rma_buffer(buffer, buffer_size, rdma_buffer_id);
 }
 
-void ExternalEqService::unreg_rma_buffer(int buffer_id) {
-  stack->unreg_rma_buffer(buffer_id);
+void ExternalEqService::unreg_rma_buffer(int rdma_buffer_id) {
+  stack->unreg_rma_buffer(rdma_buffer_id);
 }
 
-Chunk* ExternalEqService::get_rma_buffer(int buffer_id) {
-  return stack->get_rma_chunk(buffer_id);
+Chunk* ExternalEqService::get_rma_buffer(int rdma_buffer_id) {
+  return stack->get_rma_chunk(rdma_buffer_id);
 }
 
-void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size, int buffer_id) {
+void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id) {
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
-  ck->buffer_id = buffer_id;
+  ck->rdma_buffer_id = rdma_buffer_id;
   ck->capacity = size;
-  recvBufMgr->add(ck->buffer_id, ck);
+  recvBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
-void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int buffer_id) {
+void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int rdma_buffer_id) {
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
-  ck->buffer_id = buffer_id;
+  ck->rdma_buffer_id = rdma_buffer_id;
   ck->capacity = size;
-  sendBufMgr->add(ck->buffer_id, ck);
+  sendBufMgr->add(ck->rdma_buffer_id, ck);
 }
 
 int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, FIConnection** con) {

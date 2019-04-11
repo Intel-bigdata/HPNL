@@ -7,7 +7,7 @@ public class Connection {
 
   public Connection(long nativeEq, long nativeCon, EqService service) {
     this.service = service;
-    this.sendBufferList = new LinkedBlockingQueue<HpnlBuffer>();
+    this.sendBufferList = new LinkedBlockingQueue<RdmaBuffer>();
     this.nativeEq = nativeEq;
     init(nativeCon);
     connected = true;
@@ -34,17 +34,17 @@ public class Connection {
     recv(buffer, id, this.nativeHandle);
   }
 
-  public int send(int blockBufferSize, int bufferId) {
-    return send(blockBufferSize, bufferId, this.nativeHandle); 
+  public int send(int blockBufferSize, int rdmaBufferId) {
+    return send(blockBufferSize, rdmaBufferId, this.nativeHandle); 
   }
 
-  public int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr) {
-    return read(bufferId, localOffset, len, remoteAddr, remoteMr, this.nativeHandle); 
+  public int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr) {
+    return read(rdmaBufferId, localOffset, len, remoteAddr, remoteMr, this.nativeHandle); 
   }
 
   public native void recv(ByteBuffer buffer, int id, long nativeHandle);
-  public native int send(int blockBufferSize, int bufferId, long nativeHandle);
-  public native int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr, long nativeHandle);
+  public native int send(int blockBufferSize, int rdmaBufferId, long nativeHandle);
+  public native int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr, long nativeHandle);
   private native void init(long eq);
   public native void finalize();
 
@@ -84,7 +84,7 @@ public class Connection {
     shutdownCallback = callback; 
   }
 
-  public void putSendBuffer(HpnlBuffer buffer) {
+  public void putSendBuffer(RdmaBuffer buffer) {
     try {
       sendBufferList.put(buffer);
     } catch (InterruptedException e) {
@@ -92,7 +92,7 @@ public class Connection {
     }
   }
 
-  public HpnlBuffer takeSendBuffer(boolean wait) {
+  public RdmaBuffer takeSendBuffer(boolean wait) {
     if (wait) {
       try {
         return sendBufferList.take();
@@ -105,12 +105,12 @@ public class Connection {
     }
   }
 
-  public HpnlBuffer getSendBuffer(int bufferId){
-    return service.getSendBuffer(bufferId);
+  public RdmaBuffer getSendBuffer(int rdmaBufferId){
+    return service.getSendBuffer(rdmaBufferId);
   }
 
-  public HpnlBuffer getRecvBuffer(int bufferId) {
-    return service.getRecvBuffer(bufferId);
+  public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
+    return service.getRecvBuffer(rdmaBufferId);
   }
 
   public ByteBuffer getRmaBuffer(int rmaBufferId) {
@@ -140,29 +140,29 @@ public class Connection {
     return this.srcPort; 
   }
 
-  public void handleCallback(int eventType, int bufferId, int blockBufferSize) {
+  public void handleCallback(int eventType, int rdmaBufferId, int blockBufferSize) {
     Exception e = null;
     if (eventType == EventType.CONNECTED_EVENT) {
-      e = executeCallback(connectedCallback, bufferId, 0);
+      e = executeCallback(connectedCallback, rdmaBufferId, 0);
     } else if (eventType == EventType.RECV_EVENT) {
-      e = executeCallback(recvCallback, bufferId, blockBufferSize);
+      e = executeCallback(recvCallback, rdmaBufferId, blockBufferSize);
     } else if (eventType == EventType.SEND_EVENT) {
-      e = executeCallback(sendCallback, bufferId, blockBufferSize);
-      putSendBuffer(service.getSendBuffer(bufferId));
+      e = executeCallback(sendCallback, rdmaBufferId, blockBufferSize);
+      putSendBuffer(service.getSendBuffer(rdmaBufferId));
     } else if (eventType == EventType.READ_EVENT) {
-      e = executeCallback(readCallback, bufferId, blockBufferSize);
+      e = executeCallback(readCallback, rdmaBufferId, blockBufferSize);
     }
     if(e != null){
       e.printStackTrace();
     }
   }
 
-  private Exception executeCallback(Handler handler, int bufferId, int blockBufferSize){
+  private Exception executeCallback(Handler handler, int rdmaBufferId, int blockBufferSize){
     if(handler == null){
       return null;
     }
     try{
-      handler.handle(this, bufferId, blockBufferSize);
+      handler.handle(this, rdmaBufferId, blockBufferSize);
     }catch(Exception e){
       return e;
     }
@@ -171,7 +171,7 @@ public class Connection {
 
   private EqService service;
  
-  private LinkedBlockingQueue<HpnlBuffer> sendBufferList;
+  private LinkedBlockingQueue<RdmaBuffer> sendBufferList;
 
   private String destAddr;
   private int destPort;
