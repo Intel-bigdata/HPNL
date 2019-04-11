@@ -18,6 +18,7 @@ public class EqService {
     this.worker_num = worker_num;
     this.buffer_num = buffer_num;
     this.is_server = is_server;
+    this.curCon = null;
     this.rmaBufferId = new AtomicInteger(0);
 
     this.conMap = new HashMap<Long, Connection>();
@@ -34,30 +35,36 @@ public class EqService {
     return this;
   }
 
-  public int start(String ip, String port, long timeout) {
+  public Connection connect(String ip, String port, long timeout) {
     synchronized (EqService.class) {
-      localEq = connect(ip, port, nativeHandle);
+      localEq = native_connect(ip, port, nativeHandle);
       if (localEq == -1) {
-        return -1;
+        return null;
       }
-      if (!is_server) {
-        connectLatch.put(localEq, new CountDownLatch(1));
-      }
+      connectLatch.put(localEq, new CountDownLatch(1));
       add_eq_event(localEq, nativeHandle);
-      if (!is_server) {
-        try {
-          if (timeout == 0) {
-            this.connectLatch.get(localEq).await();
-          } else {
-            if (!this.connectLatch.get(localEq).await(timeout, TimeUnit.MILLISECONDS)) {
-              return -1;
-            }
+      try {
+        if (timeout == 0) {
+          this.connectLatch.get(localEq).await();
+          return curCon;
+        } else {
+          if (!this.connectLatch.get(localEq).await(timeout, TimeUnit.MILLISECONDS)) {
+            return null;
           }
-        } catch (InterruptedException e) {
-          e.printStackTrace();
         }
+      } catch (InterruptedException e) {
+        e.printStackTrace();
       }
     }
+    return null;
+  }
+
+  public int listen(String ip, String port) {
+    localEq = native_connect(ip, port, nativeHandle);
+    if (localEq == -1) {
+      return -1;
+    }
+    add_eq_event(localEq, nativeHandle);
     return 0;
   }
 
@@ -106,6 +113,7 @@ public class EqService {
     }
     connection.handleCallback(eventType, 0, 0);
     if (!is_server && eventType == EventType.CONNECTED_EVENT) {
+      curCon = connection;
       this.connectLatch.get(eq).countDown();
       this.connectLatch.remove(eq);
     }
@@ -228,7 +236,7 @@ public class EqService {
   }
 
   public native void shutdown(long eq, long nativeHandle);
-  private native long connect(String ip, String port, long nativeHandle);
+  private native long native_connect(String ip, String port, long nativeHandle);
   public native int wait_eq_event(long nativeHandle);
   public native int add_eq_event(long eq, long nativeHandle);
   public native int delete_eq_event(long eq, long nativeHandle);
@@ -257,6 +265,7 @@ public class EqService {
   private int worker_num;
   private int buffer_num;
   public boolean is_server;
+  private Connection curCon;
   private ConcurrentHashMap<Long, CountDownLatch> connectLatch;
   private HashMap<Long, Connection> conMap;
   private LinkedBlockingQueue<Connection> reapCons;

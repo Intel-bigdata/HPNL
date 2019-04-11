@@ -12,7 +12,7 @@ extern "C" {
  * Method:    connect
  * Signature: ()J
  */
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_native_1connect
   (JNIEnv *, jobject, jstring, jstring, jlong);
 
 /*

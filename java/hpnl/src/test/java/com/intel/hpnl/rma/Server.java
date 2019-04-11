@@ -25,7 +25,7 @@ public class Server {
     eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
     cqService.start();
-    eqService.start("172.168.2.106", "123456", 0);
+    eqService.listen("172.168.2.106", "123456");
 
     cqService.join();
     eqService.shutdown();

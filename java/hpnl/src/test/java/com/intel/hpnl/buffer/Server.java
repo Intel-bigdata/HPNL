@@ -26,7 +26,7 @@ public class Server {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.start(addr, "123456", 0);
+    eqService.listen(addr, "123456");
     cqService.start();
     
     cqService.join();

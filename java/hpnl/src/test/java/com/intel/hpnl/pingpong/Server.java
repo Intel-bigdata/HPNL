@@ -53,7 +53,7 @@ public class Server implements Runnable {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.start(addr, port, 0);
+    eqService.listen(addr, port);
     cqService.start();
     
     cqService.join();
