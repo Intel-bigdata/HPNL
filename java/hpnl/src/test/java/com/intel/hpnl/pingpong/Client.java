@@ -11,7 +11,7 @@ import picocli.CommandLine.Command;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.RdmaBuffer;
+import com.intel.hpnl.core.HpnlBuffer;
 
 @Command(mixinStandardHelpOptions = true, version = "auto help demo - picocli 3.0")
 public class Client implements Runnable {
@@ -52,12 +52,8 @@ public class Client implements Runnable {
 
     cqService.setAffinities(affinities);
 
-    List<Connection> conList = new CopyOnWriteArrayList<Connection>();
-
-    ConnectedCallback connectedCallback = new ConnectedCallback(conList, false);
     RecvCallback recvCallback = new RecvCallback(false, interval, msgSize);
     ShutdownCallback shutdownCallback = new ShutdownCallback();
-    eqService.setConnectedCallback(connectedCallback);
     eqService.setRecvCallback(recvCallback);
     eqService.setSendCallback(null);
     eqService.setShutdownCallback(shutdownCallback);
@@ -65,15 +61,14 @@ public class Client implements Runnable {
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
     cqService.start();
-    eqService.connect(addr, port, 0);
+    
+    Connection con = eqService.connect(addr, port, 0);
 
     System.out.println("connected, start to pingpong.");
     
-    for (Connection con: conList) {
-      RdmaBuffer buffer = con.takeSendBuffer(true);
-      buffer.put(byteBufferTmp, (byte)0, 10);
-      con.send(buffer.remaining(), buffer.getRdmaBufferId());
-    }
+    HpnlBuffer buffer = con.takeSendBuffer(true);
+    buffer.put(byteBufferTmp, (byte)0, 10);
+    con.send(buffer.remaining(), buffer.getBufferId());
 
     cqService.join();
     eqService.shutdown();

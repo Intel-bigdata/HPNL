@@ -1,11 +1,7 @@
 package com.intel.hpnl.buffer;
 
-import com.intel.hpnl.core.Connection;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.EqService;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class Server {
   public static void main(String args[]) {
@@ -17,13 +13,6 @@ public class Server {
     EqService eqService = new EqService(workNbr, bufferNbr, true).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     
-    List<Connection> conList = new ArrayList<Connection>();
-
-    ServerConnectedCallback connectedCallback = new ServerConnectedCallback(conList, true);
-//    ReadCallback readCallback = new ReadCallback(true, eqService);
-    eqService.setConnectedCallback(connectedCallback);
-//    eqService.setRecvCallback(readCallback);
-
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
     eqService.listen(addr, "123456");

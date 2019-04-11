@@ -3,7 +3,7 @@ package com.intel.hpnl.pingpong;
 import java.nio.ByteBuffer;
 
 import com.intel.hpnl.core.Handler;
-import com.intel.hpnl.core.RdmaBuffer;
+import com.intel.hpnl.core.HpnlBuffer;
 import com.intel.hpnl.core.Connection;
 
 public class RecvCallback implements Handler {
@@ -12,7 +12,7 @@ public class RecvCallback implements Handler {
     this.interval = interval;
     this.msgSize = msgSize;
   }
-  public void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public void handle(Connection con, int bufferId, int blockBufferSize) {
     if (!is_server) {
       count++;
       if (count == 1) {
@@ -30,13 +30,13 @@ public class RecvCallback implements Handler {
         }
       }
     }
-    RdmaBuffer sendBuffer = con.takeSendBuffer(true);
-    RdmaBuffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
+    HpnlBuffer sendBuffer = con.takeSendBuffer(true);
+    HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
 
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
     sendBuffer.put(recvByteBuffer, (byte)0, 10);
-    con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
+    con.send(sendBuffer.remaining(), sendBuffer.getBufferId());
   }
   private float count = 0;
   private long startTime;

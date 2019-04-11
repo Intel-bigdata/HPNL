@@ -4,8 +4,35 @@
 #include "HPNL/Callback.h"
 #include "HPNL/Common.h"
 #include "PingPongBufMgr.h"
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+#include <stdint.h>
+#include <string.h>
+#include <libpmemobj.h>
+
+#include <iostream>
+
+/* size of the pmemobj pool -- 1 GB */
+#define POOL_SIZE (1024*1024*1024L)
+#define MAX_BUF_LEN 20
+
+/* name of our layout in the pool */
+#define LAYOUT_NAME "pmem_spark_shuffle"
 
 #define SIZE 4096
+
+int count = 0;
+std::string local_addr, local_rkey, local_len;
+
+struct my_root {
+  size_t len;
+  char buf[MAX_BUF_LEN];
+};
 
 class ShutdownCallback : public Callback {
   public:
@@ -18,16 +45,56 @@ class ShutdownCallback : public Callback {
 
 class RecvCallback : public Callback {
   public:
-    RecvCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
-    virtual ~RecvCallback() {}
+    RecvCallback(BufMgr *bufMgr_, Server *server_) : bufMgr(bufMgr_), server(server_) {
+      const char path[] = "/dev/dax0.0";
+      /* create the pmemobj pool or open it if it already exists */
+      pop = pmemobj_open(path, LAYOUT_NAME);
+      if (pop == NULL) {
+	pop = pmemobj_create(path, LAYOUT_NAME, POOL_SIZE, S_IRUSR | S_IWUSR);
+      }
+
+      if (pop == NULL) {
+	exit(1);
+      }
+
+      PMEMoid root = pmemobj_root(pop, sizeof(struct my_root));
+      rootp = (struct my_root*)pmemobj_direct(root);
+
+      struct my_root *data_tmp = (struct my_root*)((uintptr_t)pop+root.off);
+
+      char buf[MAX_BUF_LEN] = "hello world";
+      rootp->len = strlen(buf);
+
+      pmemobj_persist(pop, &rootp->len, sizeof(rootp->len));
+      pmemobj_memcpy_persist(pop, rootp->buf, buf, rootp->len);
+    }
+    virtual ~RecvCallback() {
+      pmemobj_close(pop);
+    }
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->index(mid);
       Connection *con = (Connection*)ck->con;
-      con->send((char*)ck->buffer, SIZE, 0);
+
+      if (count == 0) {
+	local_addr = std::to_string((long)rootp->buf);
+	con->send(local_addr.c_str(), local_addr.length(), 0);
+      } else if (count == 1){
+	rkey = server->reg_rma_buffer((char*)pop, POOL_SIZE, 0);
+	local_rkey = std::to_string(rkey);
+	con->send(local_rkey.c_str(), local_rkey.length(), 0);
+      } else {
+	local_len = std::to_string(rootp->len);
+	con->send(local_len.c_str(), local_len.length(), 0);
+      }
+      count++;
     }
   private:
     BufMgr *bufMgr;
+    Server *server;
+    PMEMobjpool *pop;
+    struct my_root *rootp;
+    uint64_t rkey;
 };
 
 class SendCallback : public Callback {
@@ -67,7 +134,7 @@ int main(int argc, char *argv[]) {
   server->set_recv_buf_mgr(recvBufMgr);
   server->set_send_buf_mgr(sendBufMgr);
 
-  RecvCallback *recvCallback = new RecvCallback(recvBufMgr);
+  RecvCallback *recvCallback = new RecvCallback(recvBufMgr, server);
   SendCallback *sendCallback = new SendCallback(sendBufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback();
 
@@ -76,7 +143,7 @@ int main(int argc, char *argv[]) {
   server->set_connected_callback(NULL);
   server->set_shutdown_callback(shutdownCallback);
 
-  server->run("172.168.2.106", "123456", 1, 16);
+  server->run("172.168.0.40", "123456", 1, 16);
 
   server->wait();
 

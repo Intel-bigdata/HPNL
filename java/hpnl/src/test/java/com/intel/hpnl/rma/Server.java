@@ -1,11 +1,7 @@
 package com.intel.hpnl.rma;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
-import com.intel.hpnl.core.Connection;
 
 public class Server {
   public static void main(String args[]) {
@@ -15,11 +11,7 @@ public class Server {
     EqService eqService = new EqService(1, BUFFER_NUM, true).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
 
-    List<Connection> conList = new ArrayList<Connection>();
-    
-    ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
     ServerRecvCallback recvCallback = new ServerRecvCallback(eqService, true);
-    eqService.setConnectedCallback(connectedCallback);
     eqService.setRecvCallback(recvCallback);
 
     eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
