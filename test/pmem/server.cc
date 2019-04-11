@@ -3,7 +3,7 @@
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
 #include "HPNL/Common.h"
-#include "PingPongBufMgr.h"
+#include "PmemBufMgr.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -73,7 +73,7 @@ class RecvCallback : public Callback {
     }
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->index(mid);
+      Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
 
       if (count == 0) {
@@ -103,7 +103,7 @@ class SendCallback : public Callback {
     virtual ~SendCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->index(mid);
+      Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
       con->take_back_chunk(ck);
     }
@@ -112,22 +112,22 @@ class SendCallback : public Callback {
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *recvBufMgr = new PingPongBufMgr();
+  BufMgr *recvBufMgr = new PmemBufMgr();
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();
     ck->buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->add(ck->buffer_id, ck);
+    recvBufMgr->put(ck->buffer_id, ck);
   }
-  BufMgr *sendBufMgr = new PingPongBufMgr();
+  BufMgr *sendBufMgr = new PmemBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
     ck = new Chunk();
     ck->buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    sendBufMgr->add(ck->buffer_id, ck);
+    sendBufMgr->put(ck->buffer_id, ck);
   }
 
   Server *server = new Server();
@@ -154,12 +154,12 @@ int main(int argc, char *argv[]) {
   int recv_chunk_size = recvBufMgr->get_id();
   assert(recv_chunk_size == MEM_SIZE*2);
   for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = recvBufMgr->index(i);
+    Chunk *ck = recvBufMgr->get(i);
     free(ck->buffer);
   }
   int send_chunk_size = sendBufMgr->get_id();
   for (int i = 0; i < send_chunk_size; i++) {
-    Chunk *ck = sendBufMgr->index(i);
+    Chunk *ck = sendBufMgr->get(i);
     free(ck->buffer);
   }
 

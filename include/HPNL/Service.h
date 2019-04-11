@@ -5,13 +5,13 @@
 
 #include "HPNL/Common.h"
 #include "HPNL/Callback.h"
-#include "HPNL/FIStack.h"
-#include "HPNL/FIConnection.h"
+#include "HPNL/FiStack.h"
+#include "HPNL/FiConnection.h"
 #include "HPNL/ConMgr.h"
-#include "HPNL/Reactor.h"
-#include "HPNL/EQHandler.h"
-#include "HPNL/EQEventDemultiplexer.h"
-#include "HPNL/CQEventDemultiplexer.h"
+#include "HPNL/Proactor.h"
+#include "HPNL/EqHandler.h"
+#include "HPNL/EqDemultiplexer.h"
+#include "HPNL/CqDemultiplexer.h"
 
 class AcceptRequestCallback;
 
@@ -50,11 +50,11 @@ class Service {
     int worker_num;
     bool is_server;
 
-    FIStack *stack;
+    FiStack *stack;
     ConMgr *conMgr;
-    EQEventDemultiplexer *eq_demulti_plexer;
-    CQEventDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
-    Reactor *reactor;
+    EqDemultiplexer *eq_demulti_plexer;
+    CqDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
+    Proactor *proactor;
 
     EQThread *eqThread;
     CQThread *cqThread[MAX_WORKERS];

@@ -6,20 +6,20 @@
 
 #include <unordered_map>
 
-#include "HPNL/FIStack.h"
-#include "HPNL/FIConnection.h"
+#include "HPNL/FiStack.h"
+#include "HPNL/FiConnection.h"
 #include "HPNL/Common.h"
 
-class EQExternalDemultiplexer {
+class ExternalEqDemultiplexer {
   public:
-    EQExternalDemultiplexer(FIStack*);
-    ~EQExternalDemultiplexer();
+    ExternalEqDemultiplexer(FiStack*);
+    ~ExternalEqDemultiplexer();
     int init();
-    int wait_event(fi_info**, fid_eq**, FIConnection**);
+    int wait_event(fi_info**, fid_eq**, FiConnection**);
     int add_event(fid_eq*);
     int delete_event(fid_eq*);
   private:
-    FIStack *stack;
+    FiStack *stack;
     fid_fabric *fabric;
     struct epoll_event event;
     int epfd;

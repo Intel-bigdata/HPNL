@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class CqService {
-  public CqService(EqService service, long serviceNativeHandle) {
+  public CqService(EqService service) {
     this.eqService = service;
-    this.serviceNativeHandle = serviceNativeHandle;
+    this.serviceNativeHandle = eqService.getNativeHandle();
 
     //Runtime.getRuntime().addShutdownHook(new CqShutdownThread(eqService, this));
     this.cqThreads = new ArrayList<CqThread>();
@@ -54,10 +54,10 @@ public class CqService {
     this.affinities = affinities; 
   }
 
-  private void handleCqCallback(long eq, int eventType, int rdmaBufferId, int block_buffer_size) {
+  private void handleCqCallback(long eq, int eventType, int bufferId, int block_buffer_size) {
     Connection connection = eqService.getCon(eq);
     if (connection != null) {
-      connection.handleCallback(eventType, rdmaBufferId, block_buffer_size);
+      connection.handleCallback(eventType, bufferId, block_buffer_size);
     }
   }
 

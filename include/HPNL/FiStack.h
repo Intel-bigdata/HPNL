@@ -9,28 +9,28 @@
 #include <map>
 
 #include "HPNL/BufMgr.h"
-#include "HPNL/FIConnection.h"
+#include "HPNL/FiConnection.h"
 #include "HPNL/ConMgr.h"
 #include "HPNL/Handle.h"
 #include "HPNL/Common.h"
 
 #define MAX_WORKER_NUM 10
 
-class FIStack {
+class FiStack {
   public:
-    FIStack(uint64_t, int, int, bool);
-    ~FIStack();
+    FiStack(uint64_t, int, int, bool);
+    ~FiStack();
     int init();
     HandlePtr bind(const char*, const char*);
     int listen();
     HandlePtr connect(const char*, const char*, BufMgr*, BufMgr*);
     HandlePtr accept(void*, BufMgr*, BufMgr*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);
-    void unreg_rma_buffer(int rdma_buffer_id);
+    void unreg_rma_buffer(int);
     Chunk* get_rma_chunk(int);
     void shutdown();
     void reap(void*);
-    FIConnection* get_connection(fid* id);
+    FiConnection* get_connection(fid* id);
     fid_fabric* get_fabric();
     fid_cq** get_cqs();
 
@@ -48,7 +48,7 @@ class FIStack {
     fid_eq *peq;
     fid_pep *pep;
 
-    std::map<fid*, FIConnection*> conMap;
+    std::map<fid*, FiConnection*> conMap;
     HandlePtr peqHandle;
 
     fid_cq *cqs[MAX_WORKER_NUM];

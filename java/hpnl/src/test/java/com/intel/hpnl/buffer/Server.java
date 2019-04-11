@@ -11,7 +11,7 @@ public class Server {
     int workNbr = args.length >=4 ? Integer.valueOf(args[3]) : 3;
 
     EqService eqService = new EqService(workNbr, bufferNbr, true).init();
-    CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
+    CqService cqService = new CqService(eqService).init();
     
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 

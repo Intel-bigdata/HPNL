@@ -1,12 +1,12 @@
-#include "HPNL/CQExternalDemultiplexer.h"
+#include "HPNL/ExternalCqDemultiplexer.h"
 
-CQExternalDemultiplexer::CQExternalDemultiplexer(FIStack *stack_, fid_cq *cq_) : stack(stack_), cq(cq_), start(0), end(0) {}
+ExternalCqDemultiplexer::ExternalCqDemultiplexer(FiStack *stack_, fid_cq *cq_) : stack(stack_), cq(cq_), start(0), end(0) {}
 
-CQExternalDemultiplexer::~CQExternalDemultiplexer() {
+ExternalCqDemultiplexer::~ExternalCqDemultiplexer() {
   close(epfd);
 }
 
-int CQExternalDemultiplexer::init() {
+int ExternalCqDemultiplexer::init() {
   fabric = stack->get_fabric();
   if ((epfd = epoll_create1(0)) == -1) {
     perror("epoll_create1");
@@ -26,7 +26,7 @@ int CQExternalDemultiplexer::init() {
   return 0;
 }
 
-int CQExternalDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* rdma_buffer_id, int* block_buffer_size) {
+int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id, int* block_buffer_size) {
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
@@ -65,8 +65,8 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* rdma_buffe
     } else {
       end = start;
       *ck = (Chunk*)entry.op_context;
-      *rdma_buffer_id = (*ck)->buffer_id;
-      FIConnection *con = (FIConnection*)(*ck)->con;
+      *buffer_id = (*ck)->buffer_id;
+      FiConnection *con = (FiConnection*)(*ck)->con;
       if (!con) {
         return 0;
       }

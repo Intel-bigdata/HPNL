@@ -1,12 +1,12 @@
-#include "HPNL/EQEventDemultiplexer.h"
+#include "HPNL/EqDemultiplexer.h"
 
 #include <iostream>
 
-EQEventDemultiplexer::EQEventDemultiplexer() {}
+EqDemultiplexer::EqDemultiplexer() {}
 
-EQEventDemultiplexer::~EQEventDemultiplexer() {}
+EqDemultiplexer::~EqDemultiplexer() {}
 
-int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &eventMap) {
+int EqDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &eventMap) {
   void *cq_context[MAX_POLL_CNT];
   int ret = 0;
   std::map<HandlePtr, EventHandlerPtr> wait_map;
@@ -46,14 +46,14 @@ int EQEventDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &event
   return 0;
 }
 
-int EQEventDemultiplexer::register_event(HandlePtr handle) {
+int EqDemultiplexer::register_event(HandlePtr handle) {
   return 0;
 }
 
-int EQEventDemultiplexer::remove_event(HandlePtr handle) {
+int EqDemultiplexer::remove_event(HandlePtr handle) {
   return 0;
 }
 
-void EQEventDemultiplexer::shutdown() {
+void EqDemultiplexer::shutdown() {
   done.store(true);
 }

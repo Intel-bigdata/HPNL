@@ -8,13 +8,13 @@
 
 #include <thread>
 
-#include "HPNL/FIConnection.h"
-#include "HPNL/FIStack.h"
+#include "HPNL/FiConnection.h"
+#include "HPNL/FiStack.h"
 
-class CQEventDemultiplexer {
+class CqDemultiplexer {
   public:
-    CQEventDemultiplexer(FIStack*, int);
-    ~CQEventDemultiplexer();
+    CqDemultiplexer(FiStack*, int);
+    ~CqDemultiplexer();
     int wait_event();
   private:
     int epfd;

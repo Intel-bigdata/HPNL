@@ -10,12 +10,12 @@
 #include "HPNL/EventHandler.h"
 #include "HPNL/Ptr.h"
 #include "HPNL/ThreadWrapper.h"
-#include "HPNL/CQEventDemultiplexer.h"
+#include "HPNL/CqDemultiplexer.h"
 
-class Reactor {
+class Proactor {
   public:
-    Reactor(EventDemultiplexer*, CQEventDemultiplexer**, int);
-    ~Reactor();
+    Proactor(EventDemultiplexer*, CqDemultiplexer**, int);
+    ~Proactor();
     int eq_service();
     int cq_service(int);
     int register_handler(EventHandlerPtr);
@@ -25,31 +25,31 @@ class Reactor {
   private:
     std::map<HandlePtr, EventHandlerPtr> eventMap;
     EventDemultiplexer *eqDemultiplexer;
-    CQEventDemultiplexer *cqDemultiplexer[MAX_WORKERS];
+    CqDemultiplexer *cqDemultiplexer[MAX_WORKERS];
 };
 
 class EQThread : public ThreadWrapper {
   public:
-    EQThread(Reactor *reactor_) : reactor(reactor_) {}
+    EQThread(Proactor *proactor_) : proactor(proactor_) {}
     virtual ~EQThread() {}
     virtual int entry() override {
-      return reactor->eq_service();
+      return proactor->eq_service();
     }
     virtual void abort() override {}
   private:
-    Reactor *reactor;
+    Proactor *proactor;
 };
 
 class CQThread : public ThreadWrapper {
   public:
-    CQThread(Reactor *reactor_, int index_) : reactor(reactor_), index(index_) {}
+    CQThread(Proactor *proactor_, int index_) : proactor(proactor_), index(index_) {}
     virtual ~CQThread() {}
     virtual int entry() override {
-      return reactor->cq_service(index);
+      return proactor->cq_service(index);
     } 
     virtual void abort() override {}
   private:
-    Reactor *reactor;
+    Proactor *proactor;
     int index;
 };
 

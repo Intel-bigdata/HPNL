@@ -1,8 +1,8 @@
-#include "HPNL/EQHandler.h"
+#include "HPNL/EqHandler.h"
 
 #include <iostream>
 
-int EQHandler::handle_event(EventType et, void *context) {
+int EqHandler::handle_event(EventType et, void *context) {
   fi_eq_cm_entry *entry = (fi_eq_cm_entry*)context;
   if (et == ACCEPT_EVENT) {
     assert(acceptRequestCallback);
@@ -11,7 +11,7 @@ int EQHandler::handle_event(EventType et, void *context) {
     (*acceptRequestCallback)(&recv_buf_mgr, &send_buf_mgr);
 
     HandlePtr handle = stack->accept(entry->info, recv_buf_mgr, send_buf_mgr);
-    std::shared_ptr<EventHandler> eqHandler(new EQHandler(stack, reactor, handle));
+    std::shared_ptr<EventHandler> eqHandler(new EqHandler(stack, proactor, handle));
     if (connectedCallback) {
       eqHandler->set_connected_callback(connectedCallback); 
     }
@@ -27,7 +27,7 @@ int EQHandler::handle_event(EventType et, void *context) {
     if (shutdownCallback) {
       eqHandler->set_shutdown_callback(shutdownCallback);
     }
-    reactor->register_handler(eqHandler);
+    proactor->register_handler(eqHandler);
   } else if (et == CONNECTED_EVENT) {
     auto con = stack->get_connection(entry->fid);
     if (recvCallback) {
@@ -60,7 +60,7 @@ int EQHandler::handle_event(EventType et, void *context) {
     if (con->get_shutdown_callback()) {
       (*(con->get_shutdown_callback()))(NULL, NULL);
     }
-    reactor->remove_handler(get_handle());
+    proactor->remove_handler(get_handle());
     con->status = DOWN;
     stack->reap(entry->fid);
   } else {
@@ -69,31 +69,31 @@ int EQHandler::handle_event(EventType et, void *context) {
   return 0;
 }
 
-HandlePtr EQHandler::get_handle() const {
+HandlePtr EqHandler::get_handle() const {
   return eqHandle;
 }
 
-void EQHandler::set_accept_request_callback(Callback *callback) {
+void EqHandler::set_accept_request_callback(Callback *callback) {
   acceptRequestCallback = callback;
 }
 
-void EQHandler::set_connected_callback(Callback *callback) {
+void EqHandler::set_connected_callback(Callback *callback) {
   connectedCallback = callback;
 }
 
-void EQHandler::set_shutdown_callback(Callback *callback) {
+void EqHandler::set_shutdown_callback(Callback *callback) {
   shutdownCallback = callback;
 }
 
-void EQHandler::set_send_callback(Callback *callback) {
+void EqHandler::set_send_callback(Callback *callback) {
   sendCallback = callback;
 }
 
-void EQHandler::set_recv_callback(Callback *callback) {
+void EqHandler::set_recv_callback(Callback *callback) {
   recvCallback = callback;
 }
 
-void EQHandler::set_read_callback(Callback *callback) {
+void EqHandler::set_read_callback(Callback *callback) {
   readCallback = callback;
 }
 

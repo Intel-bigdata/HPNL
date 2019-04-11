@@ -9,9 +9,9 @@ public class Server {
     final int BUFFER_NUM = 128;
 
     EqService eqService = new EqService(1, BUFFER_NUM, true).init();
-    CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
+    CqService cqService = new CqService(eqService).init();
 
-    ServerRecvCallback recvCallback = new ServerRecvCallback(eqService, true);
+    ServerRecvCallback recvCallback = new ServerRecvCallback(eqService);
     eqService.setRecvCallback(recvCallback);
 
     eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);

@@ -3,11 +3,11 @@
 
 #include <rdma/fi_domain.h>
 
-#include "HPNL/FIStack.h"
+#include "HPNL/FiStack.h"
 #include "HPNL/Connection.h"
 #include "HPNL/ExternalEqServiceBufMgr.h"
-#include "HPNL/EQExternalDemultiplexer.h"
-#include "HPNL/CQExternalDemultiplexer.h"
+#include "HPNL/ExternalEqDemultiplexer.h"
+#include "HPNL/ExternalCqDemultiplexer.h"
 
 class ExternalEqService {
   public:
@@ -19,20 +19,20 @@ class ExternalEqService {
     uint64_t reg_rma_buffer(char*, uint64_t, int);
     void unreg_rma_buffer(int);
     Chunk* get_rma_buffer(int);
-    void set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
-    void set_send_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
+    void set_recv_buffer(char*, uint64_t, int);
+    void set_send_buffer(char*, uint64_t, int);
 
-    int wait_eq_event(fi_info**, fid_eq**, FIConnection**);
+    int wait_eq_event(fi_info**, fid_eq**, FiConnection**);
     int add_eq_event(fid_eq*);
     int delete_eq_event(fid_eq*);
 
     Connection* get_connection(fid_eq*);
     void reap(fid*);
-    FIStack* get_stack();
+    FiStack* get_stack();
     Chunk* get_chunk(int, int);
     int get_worker_num();
   private:
-    FIStack *stack;
+    FiStack *stack;
 
     int worker_num;
     int buffer_num;
@@ -46,7 +46,7 @@ class ExternalEqService {
     ExternalEqServiceBufMgr *sendBufMgr;
     std::map<int, Chunk*> chunkMap;
 
-    EQExternalDemultiplexer *eq_demulti_plexer;
+    ExternalEqDemultiplexer *eq_demulti_plexer;
 };
 
 #endif

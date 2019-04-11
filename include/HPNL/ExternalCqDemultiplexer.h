@@ -4,18 +4,18 @@
 #include <sys/epoll.h>
 #include <unistd.h>
 
-#include "HPNL/FIStack.h"
-#include "HPNL/FIConnection.h"
+#include "HPNL/FiStack.h"
+#include "HPNL/FiConnection.h"
 #include "HPNL/Common.h"
 
-class CQExternalDemultiplexer {
+class ExternalCqDemultiplexer {
   public:
-    CQExternalDemultiplexer(FIStack*, fid_cq*);
-    ~CQExternalDemultiplexer();
+    ExternalCqDemultiplexer(FiStack*, fid_cq*);
+    ~ExternalCqDemultiplexer();
     int init();
     int wait_event(fid_eq**, Chunk**, int*, int*);
   private:
-    FIStack *stack;
+    FiStack *stack;
     fid_cq *cq;
     fid_fabric *fabric;
     struct epoll_event event;

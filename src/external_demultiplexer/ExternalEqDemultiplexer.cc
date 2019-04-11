@@ -1,15 +1,15 @@
-#include "HPNL/EQExternalDemultiplexer.h"
+#include "HPNL/ExternalEqDemultiplexer.h"
 
 #include "rdma/fi_errno.h"
 
-EQExternalDemultiplexer::EQExternalDemultiplexer(FIStack *stack_) : stack(stack_) {}
+ExternalEqDemultiplexer::ExternalEqDemultiplexer(FiStack *stack_) : stack(stack_) {}
 
-EQExternalDemultiplexer::~EQExternalDemultiplexer() {
+ExternalEqDemultiplexer::~ExternalEqDemultiplexer() {
   fid_map.clear();
   close(epfd);
 }
 
-int EQExternalDemultiplexer::init() {
+int ExternalEqDemultiplexer::init() {
   fabric = stack->get_fabric();
   epfd = epoll_create1(0);
   if (epfd == -1) {
@@ -20,7 +20,7 @@ int EQExternalDemultiplexer::init() {
   return 0;
 }
 
-int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FIConnection** con) {
+int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FiConnection** con) {
   if (fid_map.empty()) return 0;
   struct fid *fids[fid_map.size()];
   int i = 0;
@@ -78,7 +78,7 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FIConnectio
   return 0;
 }
 
-int EQExternalDemultiplexer::add_event(fid_eq *eq) {
+int ExternalEqDemultiplexer::add_event(fid_eq *eq) {
   std::lock_guard<std::mutex> lk(mtx);
   if (fid_map.count(&eq->fid) != 0) {
     std::cerr << "got unknown eq fd" << std::endl;
@@ -102,7 +102,7 @@ quit_add_event:
   return -1;
 }
 
-int EQExternalDemultiplexer::delete_event(fid_eq *eq) {
+int ExternalEqDemultiplexer::delete_event(fid_eq *eq) {
   std::lock_guard<std::mutex> lk(mtx);
   if (fid_map.count(&eq->fid) == 0) return -1;
   int fd;

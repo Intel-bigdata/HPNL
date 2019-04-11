@@ -26,8 +26,8 @@ class BufMgr {
     virtual ~BufMgr() {}
 
     // not thread safe
-    virtual Chunk* index(int id) = 0;
-    virtual void add(int, Chunk*) = 0;
+    virtual Chunk* get(int id) = 0;
+    virtual void put(int, Chunk*) = 0;
     virtual Chunk* get() = 0;
     virtual int free_size() = 0;
 

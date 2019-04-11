@@ -1,12 +1,12 @@
-#include "HPNL/FIStack.h"
+#include "HPNL/FiStack.h"
 
-FIStack::FIStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_) : 
+FiStack::FiStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_) : 
   flags(flags_), 
   worker_num(worker_num_), seq_num(0), buffer_num(buffer_num_), is_server(is_server_),
   fabric(NULL), domain(NULL), hints(NULL), info(NULL), hints_tmp(NULL), info_tmp(NULL), 
   peq(NULL), pep(NULL), waitset(NULL) {}
 
-FIStack::~FIStack() {
+FiStack::~FiStack() {
   for (auto iter : conMap) {
     delete iter.second; 
   }
@@ -47,7 +47,7 @@ FIStack::~FIStack() {
   }
 }
 
-int FIStack::init() {
+int FiStack::init() {
   struct fi_eq_attr eq_attr = {
     .size = 0,
     .flags = 0,
@@ -138,7 +138,7 @@ free_hints:
   return -1;
 }
 
-HandlePtr FIStack::bind(const char *ip_, const char *port_) {
+HandlePtr FiStack::bind(const char *ip_, const char *port_) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
   }
@@ -166,7 +166,7 @@ HandlePtr FIStack::bind(const char *ip_, const char *port_) {
   return peqHandle;
 }
 
-int FIStack::listen() {
+int FiStack::listen() {
   if (fi_listen(pep)) {
     perror("fi_listen");
     return -1; 
@@ -174,7 +174,7 @@ int FIStack::listen() {
   return 0;
 }
 
-HandlePtr FIStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+HandlePtr FiStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
   }
@@ -190,7 +190,7 @@ HandlePtr FIStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_
     perror("fi_getinfo");
   }
 
-  FIConnection *con = new FIConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num);
+  FiConnection *con = new FiConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num);
   if (con->init())
     return NULL;
   if (int res = con->connect()) {
@@ -202,23 +202,23 @@ HandlePtr FIStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_
   }
   con->status = CONNECT_REQ;
   seq_num++;
-  conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
+  conMap.insert(std::pair<fid*, FiConnection*>(con->get_fid(), con));
   return con->get_eqhandle();
 }
 
-HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num);
+HandlePtr FiStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+  FiConnection *con = new FiConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num);
   if (con->init())
     return NULL; 
   con->status = ACCEPT_REQ;
   seq_num++;
-  conMap.insert(std::pair<fid*, FIConnection*>(con->get_fid(), con));
+  conMap.insert(std::pair<fid*, FiConnection*>(con->get_fid(), con));
   if (con->accept())
     return NULL;
   return con->get_eqhandle();
 }
 
-uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+uint64_t FiStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
   ck->capacity = buffer_size;
@@ -234,23 +234,23 @@ uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_
   return ((fid_mr*)ck->mr)->key;
 }
 
-void FIStack::unreg_rma_buffer(int buffer_id) {
+void FiStack::unreg_rma_buffer(int buffer_id) {
   Chunk *ck = get_rma_chunk(buffer_id);
   fi_close(&((fid_mr*)ck->mr)->fid);
 }
 
-Chunk* FIStack::get_rma_chunk(int buffer_id) {
+Chunk* FiStack::get_rma_chunk(int buffer_id) {
   std::lock_guard<std::mutex> lk(mtx);
   return chunkMap[buffer_id];
 }
 
-void FIStack::shutdown() {
+void FiStack::shutdown() {
   //TODO: shutdown
 }
 
-void FIStack::reap(void *con_id) {
+void FiStack::reap(void *con_id) {
   fid *id = (fid*)con_id;
-  FIConnection *con = reinterpret_cast<FIConnection*>(get_connection(id));
+  FiConnection *con = reinterpret_cast<FiConnection*>(get_connection(id));
   delete con;
   con = NULL;
   auto iter = conMap.find(id);
@@ -260,18 +260,18 @@ void FIStack::reap(void *con_id) {
   conMap.erase(iter);
 }
 
-FIConnection* FIStack::get_connection(fid* id) {
+FiConnection* FiStack::get_connection(fid* id) {
   if (conMap.find(id) != conMap.end()) {
     return conMap[id]; 
   }
   return NULL;
 }
 
-fid_fabric* FIStack::get_fabric() {
+fid_fabric* FiStack::get_fabric() {
   return fabric;
 }
 
-fid_cq** FIStack::get_cqs() {
+fid_cq** FiStack::get_cqs() {
   return cqs;
 }
 

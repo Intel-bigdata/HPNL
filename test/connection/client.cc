@@ -44,7 +44,7 @@ void connect() {
     ck->buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->add(ck->buffer_id, ck);
+    recvBufMgr->put(ck->buffer_id, ck);
   }
   BufMgr *sendBufMgr = new ConBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
@@ -52,7 +52,7 @@ void connect() {
     ck->buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    sendBufMgr->add(ck->buffer_id, ck);
+    sendBufMgr->put(ck->buffer_id, ck);
   }
   Client *client = new Client();
   client->set_recv_buf_mgr(recvBufMgr);
@@ -77,12 +77,12 @@ void connect() {
   int recv_chunk_size = recvBufMgr->get_id();
   assert(recv_chunk_size == MEM_SIZE);
   for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = recvBufMgr->index(i);
+    Chunk *ck = recvBufMgr->get(i);
     free(ck->buffer);
   }
   int send_chunk_size = sendBufMgr->get_id();
   for (int i = 0; i < send_chunk_size; i++) {
-    Chunk *ck = sendBufMgr->index(i);
+    Chunk *ck = sendBufMgr->get(i);
     free(ck->buffer);
   }
 

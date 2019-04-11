@@ -30,12 +30,12 @@ enum ConStatus {
   DOWN
 };
 
-class FIStack;
+class FiStack;
 
-class FIConnection : public Connection {
+class FiConnection : public Connection {
   public:
-    FIConnection(FIStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int buffer_num);
-    ~FIConnection();
+    FiConnection(FiStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int buffer_num);
+    ~FiConnection();
 
     virtual int init() override;
     virtual void recv(char*, int) override;
@@ -73,7 +73,7 @@ class FIConnection : public Connection {
     std::condition_variable con_cv;
     
   private:
-    FIStack *stack;
+    FiStack *stack;
     fid_fabric *fabric;
     fi_info *info;
     fid_domain *domain;

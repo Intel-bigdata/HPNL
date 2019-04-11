@@ -1,15 +1,11 @@
 package com.intel.hpnl.pingpong;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
 
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
-import com.intel.hpnl.core.Connection;
 
 @Command(mixinStandardHelpOptions = true, version = "auto help demo - picocli 3.0")
 public class Server implements Runnable {
@@ -40,7 +36,7 @@ public class Server implements Runnable {
 
   public void run() {
     EqService eqService = new EqService(workNbr, bufferNbr, true).init();
-    CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
+    CqService cqService = new CqService(eqService).init();
     
     cqService.setAffinities(affinities);
 

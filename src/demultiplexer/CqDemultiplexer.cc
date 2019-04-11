@@ -1,6 +1,6 @@
-#include "HPNL/CQEventDemultiplexer.h"
+#include "HPNL/CqDemultiplexer.h"
 
-CQEventDemultiplexer::CQEventDemultiplexer(FIStack *stack, int num) {
+CqDemultiplexer::CqDemultiplexer(FiStack *stack, int num) {
   fabric = stack->get_fabric();
   cq = stack->get_cqs()[num];
   epfd = epoll_create1(0);
@@ -17,11 +17,11 @@ CQEventDemultiplexer::CQEventDemultiplexer(FIStack *stack, int num) {
   }
 }
 
-CQEventDemultiplexer::~CQEventDemultiplexer() {
+CqDemultiplexer::~CqDemultiplexer() {
   close(epfd);
 }
 
-int CQEventDemultiplexer::wait_event() {
+int CqDemultiplexer::wait_event() {
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
@@ -49,7 +49,7 @@ int CQEventDemultiplexer::wait_event() {
       } else if (ret == -FI_EAGAIN) {
       } else {
         Chunk *ck = (Chunk*)entry.op_context;
-        FIConnection *con = (FIConnection*)ck->con;
+        FiConnection *con = (FiConnection*)ck->con;
         if (entry.flags & FI_RECV) {
           con->recv((char*)ck->buffer, entry.len);
           std::unique_lock<std::mutex> l(con->con_mtx);

@@ -19,9 +19,9 @@ public class Client {
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
 
     EqService eqService = new EqService(1, bufferNbr, false).init();
-    CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
+    CqService cqService = new CqService(eqService).init();
 
-    ReadCallback readCallback = new ReadCallback(false, eqService);
+    ReadCallback readCallback = new ReadCallback();
     ShutdownCallback shutdownCallback = new ShutdownCallback();
     eqService.setRecvCallback(readCallback);
     eqService.setSendCallback(null);

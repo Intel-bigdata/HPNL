@@ -25,11 +25,11 @@ ExternalEqService::~ExternalEqService() {
 }
 
 int ExternalEqService::init() {
-  stack = new FIStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
+  stack = new FiStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
   if (stack->init() == -1)
     goto free_stack;
 
-  eq_demulti_plexer = new EQExternalDemultiplexer(stack);
+  eq_demulti_plexer = new ExternalEqDemultiplexer(stack);
   if (eq_demulti_plexer->init() == -1)
     goto free_eq_demulti_plexer;
 
@@ -95,7 +95,7 @@ void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size, int buffer_
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
-  recvBufMgr->add(ck->buffer_id, ck);
+  recvBufMgr->put(ck->buffer_id, ck);
 }
 
 void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int buffer_id) {
@@ -103,16 +103,16 @@ void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int buffer_
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
-  sendBufMgr->add(ck->buffer_id, ck);
+  sendBufMgr->put(ck->buffer_id, ck);
 }
 
-int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, FIConnection** con) {
+int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, FiConnection** con) {
   int ret = eq_demulti_plexer->wait_event(info, eq, con);
   return ret;
 }
 
 Connection* ExternalEqService::get_connection(fid_eq* eq) {
-  FIConnection *con = stack->get_connection(&eq->fid);
+  FiConnection *con = stack->get_connection(&eq->fid);
   return con;
 }
 
@@ -120,16 +120,16 @@ void ExternalEqService::reap(fid *con_id) {
   stack->reap(con_id);
 }
 
-FIStack* ExternalEqService::get_stack() {
+FiStack* ExternalEqService::get_stack() {
   return stack;
 }
 
 Chunk* ExternalEqService::get_chunk(int id, int type) {
   Chunk *ck = NULL;
   if (type == RECV_CHUNK)
-    ck = recvBufMgr->index(id);
+    ck = recvBufMgr->get(id);
   else
-    ck = sendBufMgr->index(id);
+    ck = sendBufMgr->get(id);
   return ck;
 }
 

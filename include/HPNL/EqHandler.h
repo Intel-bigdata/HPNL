@@ -4,15 +4,15 @@
 #include <rdma/fi_cm.h>
 
 #include "HPNL/Callback.h"
-#include "HPNL/FIStack.h"
-#include "HPNL/FIConnection.h"
-#include "HPNL/Reactor.h"
+#include "HPNL/FiStack.h"
+#include "HPNL/FiConnection.h"
+#include "HPNL/Proactor.h"
 #include "HPNL/EventHandler.h"
 
-class EQHandler : public EventHandler {
+class EqHandler : public EventHandler {
   public:
-    EQHandler(FIStack *stack_, Reactor *reactor_, HandlePtr handle_) : stack(stack_), reactor(reactor_), eqHandle(handle_), recvCallback(NULL), sendCallback(NULL), acceptRequestCallback(NULL), connectedCallback(NULL), shutdownCallback(NULL) {}
-    virtual ~EQHandler() {}
+    EqHandler(FiStack *stack_, Proactor *proactor_, HandlePtr handle_) : stack(stack_), proactor(proactor_), eqHandle(handle_), recvCallback(NULL), sendCallback(NULL), acceptRequestCallback(NULL), connectedCallback(NULL), shutdownCallback(NULL) {}
+    virtual ~EqHandler() {}
     virtual int handle_event(EventType, void*) override;
     virtual HandlePtr get_handle(void) const override;
 
@@ -24,8 +24,8 @@ class EQHandler : public EventHandler {
     virtual void set_read_callback(Callback*) override;
     
   private:
-    FIStack *stack;
-    Reactor *reactor;
+    FiStack *stack;
+    Proactor *proactor;
     HandlePtr eqHandle;
     Callback *recvCallback;
     Callback *sendCallback;

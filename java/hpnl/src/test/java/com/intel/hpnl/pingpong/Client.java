@@ -11,7 +11,7 @@ import picocli.CommandLine.Command;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
 import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.RdmaBuffer;
+import com.intel.hpnl.core.HpnlBuffer;
 
 @Command(mixinStandardHelpOptions = true, version = "auto help demo - picocli 3.0")
 public class Client implements Runnable {
@@ -48,7 +48,7 @@ public class Client implements Runnable {
     byteBufferTmp.flip();
 
     EqService eqService = new EqService(workNbr, bufferNbr, false).init();
-    CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
+    CqService cqService = new CqService(eqService).init();
 
     cqService.setAffinities(affinities);
 
@@ -66,9 +66,9 @@ public class Client implements Runnable {
 
     System.out.println("connected, start to pingpong.");
     
-    RdmaBuffer buffer = con.takeSendBuffer(true);
+    HpnlBuffer buffer = con.takeSendBuffer(true);
     buffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(buffer.remaining(), buffer.getRdmaBufferId());
+    con.send(buffer.remaining(), buffer.getBufferId());
 
     cqService.join();
     eqService.shutdown();

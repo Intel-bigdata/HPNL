@@ -112,7 +112,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fi_info *info = NULL;
   fid_eq *eq;
-  FIConnection *con = NULL;
+  FiConnection *con = NULL;
   int ret = service->wait_eq_event(&info, &eq, &con);
   if (ret < 0) return ret;
   if (ret == ACCEPT_EVENT) {
@@ -189,7 +189,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event(JNIE
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, jobject thisObj, jlong eqPtr, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fid_eq *eq = *(fid_eq**)&eqPtr;
-  FIConnection *con = (FIConnection*)service->get_connection(eq);
+  FiConnection *con = (FiConnection*)service->get_connection(eq);
 
   if (con->status < DOWN) {
     con->shutdown();
@@ -203,11 +203,11 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, 
  * Method:    set_recv_buffer
  * Signature: (Ljava/nio/ByteBuffer;J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIEnv *env, jobject thisObj, jobject recv_buffer, jlong size, jint rdmaBufferId, jlong eqServicePtr) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIEnv *env, jobject thisObj, jobject recv_buffer, jlong size, jint bufferId, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(recv_buffer);
   assert(buffer != NULL);
-  service->set_recv_buffer((char*)buffer, size, rdmaBufferId);
+  service->set_recv_buffer((char*)buffer, size, bufferId);
 }
 
 /*
@@ -215,10 +215,10 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIE
  * Method:    set_send_buffer
  * Signature: (Ljava/nio/ByteBuffer;J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size, jint rdmaBufferId, jlong eqServicePtr) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size, jint bufferId, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(send_buffer);
-  service->set_send_buffer((char*)buffer, size, rdmaBufferId);
+  service->set_send_buffer((char*)buffer, size, bufferId);
 }
 
 /*
@@ -226,20 +226,20 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer(JNIE
  * Method:    reg_rma_buffer
  * Signature: (Ljava/nio/ByteBuffer;J)V
  */
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size, jint rdmaBufferId, jlong eqServicePtr) {
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size, jint bufferId, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(send_buffer);
-  return service->reg_rma_buffer((char*)buffer, size, rdmaBufferId);
+  return service->reg_rma_buffer((char*)buffer, size, bufferId);
 }
 
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer_1by_1address(JNIEnv *env, jobject thisObj, jlong address, jlong size, jint rdmaBufferId, jlong eqServicePtr) {
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer_1by_1address(JNIEnv *env, jobject thisObj, jlong address, jlong size, jint bufferId, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
-  return service->reg_rma_buffer(*(char**)&address, size, rdmaBufferId);
+  return service->reg_rma_buffer(*(char**)&address, size, bufferId);
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_unreg_1rma_1buffer(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jlong eqServicePtr) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_unreg_1rma_1buffer(JNIEnv *env, jobject thisObj, jint bufferId, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
-  service->unreg_rma_buffer(rdmaBufferId);
+  service->unreg_rma_buffer(bufferId);
 }
 
 /*
