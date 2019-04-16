@@ -1,13 +1,16 @@
 #ifndef EXTERNALSERVICE_H
 #define EXTERNALSERVICE_H
 
+#include <map>
+
 #include <rdma/fi_domain.h>
 
-#include "HPNL/FiStack.h"
 #include "HPNL/Connection.h"
-#include "HPNL/ExternalEqServiceBufMgr.h"
-#include "HPNL/ExternalEqDemultiplexer.h"
-#include "HPNL/ExternalCqDemultiplexer.h"
+
+class FiStack;
+class FiConnection;
+class ExternalEqServiceBufMgr;
+class ExternalEqDemultiplexer;
 
 class ExternalEqService {
   public:

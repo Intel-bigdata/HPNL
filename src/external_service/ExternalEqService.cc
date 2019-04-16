@@ -1,4 +1,9 @@
-#include "HPNL/ExternalEqService.h"
+#include "external_service/ExternalEqService.h"
+#include "external_demultiplexer/ExternalEqDemultiplexer.h"
+#include "external_service/ExternalEqServiceBufMgr.h"
+#include "core/FiStack.h"
+#include "core/FiConnection.h"
+#include "demultiplexer/Handle.h"
 
 ExternalEqService::ExternalEqService(int worker_num_, int buffer_num_, bool is_server_) : worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
   recvBufMgr = new ExternalEqServiceBufMgr();
@@ -52,7 +57,7 @@ free_stack:
 fid_eq* ExternalEqService::accept(fi_info* info) {
   if (sendBufMgr->free_size() < buffer_num || recvBufMgr->free_size() < buffer_num*2)
     return NULL;
-  HandlePtr eqHandle;
+  std::shared_ptr<Handle> eqHandle;
   eqHandle = stack->accept(info, recvBufMgr, sendBufMgr);
   if (!eqHandle)
     return NULL;
@@ -60,7 +65,7 @@ fid_eq* ExternalEqService::accept(fi_info* info) {
 }
 
 fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
-  HandlePtr eqHandle;
+  std::shared_ptr<Handle> eqHandle;
   if (is_server) {
     eqHandle = stack->bind(ip, port);
     if (!eqHandle)

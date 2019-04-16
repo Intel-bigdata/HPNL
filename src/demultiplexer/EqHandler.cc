@@ -1,6 +1,8 @@
-#include "HPNL/EqHandler.h"
-
-#include <iostream>
+#include "core/FiStack.h"
+#include "core/FiConnection.h"
+#include "demultiplexer/EqHandler.h"
+#include "demultiplexer/Handle.h"
+#include "demultiplexer/Proactor.h"
 
 int EqHandler::handle_event(EventType et, void *context) {
   fi_eq_cm_entry *entry = (fi_eq_cm_entry*)context;
@@ -10,8 +12,8 @@ int EqHandler::handle_event(EventType et, void *context) {
     BufMgr *send_buf_mgr;
     (*acceptRequestCallback)(&recv_buf_mgr, &send_buf_mgr);
 
-    HandlePtr handle = stack->accept(entry->info, recv_buf_mgr, send_buf_mgr);
-    std::shared_ptr<EventHandler> eqHandler(new EqHandler(stack, proactor, handle));
+    std::shared_ptr<Handle> handle = stack->accept(entry->info, recv_buf_mgr, send_buf_mgr);
+    std::shared_ptr<EqHandler> eqHandler = std::make_shared<EqHandler>(stack, proactor, handle);
     if (connectedCallback) {
       eqHandler->set_connected_callback(connectedCallback); 
     }
@@ -69,7 +71,7 @@ int EqHandler::handle_event(EventType et, void *context) {
   return 0;
 }
 
-HandlePtr EqHandler::get_handle() const {
+std::shared_ptr<Handle> EqHandler::get_handle() const {
   return eqHandle;
 }
 

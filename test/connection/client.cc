@@ -2,10 +2,12 @@
 #include "HPNL/Client.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/Common.h"
 #include "ConBufMgr.h"
 
 #define SIZE 4096
+#define BUFFER_SIZE 65536
+#define MEM_SIZE 65536
+#define MAX_WORKERS 10
 
 uint64_t start, end = 0;
 

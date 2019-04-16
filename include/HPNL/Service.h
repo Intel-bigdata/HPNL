@@ -1,19 +1,20 @@
 #ifndef SERVICE
 #define SERVICE
 
-#include <string>
+#include <assert.h>
 
-#include "HPNL/Common.h"
 #include "HPNL/Callback.h"
-#include "HPNL/FiStack.h"
-#include "HPNL/FiConnection.h"
-#include "HPNL/ConMgr.h"
-#include "HPNL/Proactor.h"
-#include "HPNL/EqHandler.h"
-#include "HPNL/EqDemultiplexer.h"
-#include "HPNL/CqDemultiplexer.h"
+#include "HPNL/BufMgr.h"
+#include "HPNL/Common.h"
 
 class AcceptRequestCallback;
+class FiStack;
+class Proactor;
+class EqDemultiplexer;
+class CqDemultiplexer;
+class EqHandler;
+class EqThread;
+class CqThread;
 
 class Service {
   public:
@@ -51,14 +52,12 @@ class Service {
     bool is_server;
 
     FiStack *stack;
-    ConMgr *conMgr;
     EqDemultiplexer *eq_demulti_plexer;
     CqDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
     Proactor *proactor;
 
-    EQThread *eqThread;
-    CQThread *cqThread[MAX_WORKERS];
-    EventThread *eventThread;
+    EqThread *eqThread;
+    CqThread *cqThread[MAX_WORKERS];
 };
 
 class AcceptRequestCallback : public Callback {

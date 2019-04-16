@@ -1,4 +1,6 @@
-#include "HPNL/FiStack.h"
+#include "core/FiStack.h"
+#include "core/FiConnection.h"
+#include "demultiplexer/Handle.h"
 
 FiStack::FiStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_) : 
   flags(flags_), 
@@ -138,7 +140,7 @@ free_hints:
   return -1;
 }
 
-HandlePtr FiStack::bind(const char *ip_, const char *port_) {
+std::shared_ptr<Handle> FiStack::bind(const char *ip_, const char *port_) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
   }
@@ -174,7 +176,7 @@ int FiStack::listen() {
   return 0;
 }
 
-HandlePtr FiStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+std::shared_ptr<Handle> FiStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
   }
@@ -206,7 +208,7 @@ HandlePtr FiStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_
   return con->get_eqhandle();
 }
 
-HandlePtr FiStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+std::shared_ptr<Handle> FiStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   FiConnection *con = new FiConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num);
   if (con->init())
     return NULL; 

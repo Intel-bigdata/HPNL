@@ -1,4 +1,10 @@
-#include "HPNL/CqDemultiplexer.h"
+#include <assert.h>
+
+#include <iostream>
+
+#include "demultiplexer/CqDemultiplexer.h"
+#include "core/FiStack.h"
+#include "core/FiConnection.h"
 
 CqDemultiplexer::CqDemultiplexer(FiStack *stack, int num) {
   fabric = stack->get_fabric();

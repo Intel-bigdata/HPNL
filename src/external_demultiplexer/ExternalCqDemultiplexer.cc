@@ -1,4 +1,8 @@
-#include "HPNL/ExternalCqDemultiplexer.h"
+#include "external_demultiplexer/ExternalCqDemultiplexer.h"
+#include "core/FiStack.h"
+#include "core/FiConnection.h"
+#include "demultiplexer/EventType.h"
+#include "demultiplexer/Handle.h"
 
 ExternalCqDemultiplexer::ExternalCqDemultiplexer(FiStack *stack_, fid_cq *cq_) : stack(stack_), cq(cq_), start(0), end(0) {}
 

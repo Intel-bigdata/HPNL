@@ -1,7 +1,9 @@
-#include "HPNL/FiConnection.h"
-#include "HPNL/FiStack.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>
+
+#include "core/FiStack.h"
+#include "core/FiConnection.h"
+#include "demultiplexer/Handle.h"
 
 FiConnection::FiConnection(FiStack *stack_, fid_fabric *fabric_, 
     fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
@@ -264,6 +266,6 @@ int FiConnection::activate_chunk(Chunk *ck) {
   return 0;
 }
 
-HandlePtr FiConnection::get_eqhandle() {
+std::shared_ptr<Handle> FiConnection::get_eqhandle() {
   return eqHandle;
 }

@@ -7,12 +7,13 @@
 #include <rdma/fi_cm.h>
 
 #include <map>
+#include <assert.h>
+#include <mutex>
 
 #include "HPNL/BufMgr.h"
-#include "HPNL/FiConnection.h"
-#include "HPNL/ConMgr.h"
-#include "HPNL/Handle.h"
-#include "HPNL/Common.h"
+
+class FiConnection;
+class Handle;
 
 #define MAX_WORKER_NUM 10
 
@@ -21,10 +22,10 @@ class FiStack {
     FiStack(uint64_t, int, int, bool);
     ~FiStack();
     int init();
-    HandlePtr bind(const char*, const char*);
+    std::shared_ptr<Handle> bind(const char*, const char*);
     int listen();
-    HandlePtr connect(const char*, const char*, BufMgr*, BufMgr*);
-    HandlePtr accept(void*, BufMgr*, BufMgr*);
+    std::shared_ptr<Handle> connect(const char*, const char*, BufMgr*, BufMgr*);
+    std::shared_ptr<Handle> accept(void*, BufMgr*, BufMgr*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);
     void unreg_rma_buffer(int);
     Chunk* get_rma_chunk(int);
@@ -49,7 +50,7 @@ class FiStack {
     fid_pep *pep;
 
     std::map<fid*, FiConnection*> conMap;
-    HandlePtr peqHandle;
+    std::shared_ptr<Handle> peqHandle;
 
     fid_cq *cqs[MAX_WORKER_NUM];
     Handle *cqHandle[MAX_WORKER_NUM];

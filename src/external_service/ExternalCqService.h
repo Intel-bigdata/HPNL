@@ -4,11 +4,11 @@
 #include <rdma/fi_domain.h>
 
 #include "HPNL/Common.h"
-#include "HPNL/ExternalEqService.h"
 #include "HPNL/Connection.h"
-#include "HPNL/FiConnection.h"
-#include "HPNL/FiStack.h"
-#include "HPNL/ExternalCqDemultiplexer.h"
+#include "core/FiStack.h"
+#include "core/FiConnection.h"
+#include "external_service/ExternalEqService.h"
+#include "external_demultiplexer/ExternalCqDemultiplexer.h"
 
 class ExternalCqService {
   public:

@@ -3,12 +3,14 @@
 
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <rdma/fi_cm.h>
+
+#include <mutex>
 
 #include <unordered_map>
 
-#include "HPNL/FiStack.h"
-#include "HPNL/FiConnection.h"
-#include "HPNL/Common.h"
+class FiStack;
+class FiConnection;
 
 class ExternalEqDemultiplexer {
   public:

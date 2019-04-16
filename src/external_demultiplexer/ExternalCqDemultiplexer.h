@@ -3,10 +3,11 @@
 
 #include <sys/epoll.h>
 #include <unistd.h>
+#include <rdma/fi_cm.h>
 
-#include "HPNL/FiStack.h"
-#include "HPNL/FiConnection.h"
-#include "HPNL/Common.h"
+#include "HPNL/BufMgr.h"
+
+class FiStack;
 
 class ExternalCqDemultiplexer {
   public:
