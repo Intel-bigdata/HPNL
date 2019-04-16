@@ -1,4 +1,6 @@
-#include "HPNL/EqDemultiplexer.h"
+#include "demultiplexer/EqDemultiplexer.h"
+#include "demultiplexer/Handle.h"
+#include "demultiplexer/EventHandler.h"
 
 #include <iostream>
 
@@ -6,15 +8,15 @@ EqDemultiplexer::EqDemultiplexer() {}
 
 EqDemultiplexer::~EqDemultiplexer() {}
 
-int EqDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &eventMap) {
+int EqDemultiplexer::wait_event(std::map<std::shared_ptr<Handle>, std::shared_ptr<EventHandler>> eventMap) {
   void *cq_context[MAX_POLL_CNT];
   int ret = 0;
-  std::map<HandlePtr, EventHandlerPtr> wait_map;
+  std::map<std::shared_ptr<Handle>, std::shared_ptr<EventHandler>> wait_map;
   for (auto var : eventMap) {
     wait_map.insert(std::make_pair(var.first, var.second));  
   }
   for (auto var : wait_map) {
-    HandlePtr handlePtr = var.first;
+    std::shared_ptr<Handle> handlePtr = var.first;
     uint32_t event;
     fi_eq_cm_entry entry;
     ret = fi_eq_read((fid_eq*)handlePtr->get_ctx(), &event, &entry, sizeof(entry), 2000);
@@ -46,11 +48,11 @@ int EqDemultiplexer::wait_event(std::map<HandlePtr, EventHandlerPtr> &eventMap) 
   return 0;
 }
 
-int EqDemultiplexer::register_event(HandlePtr handle) {
+int EqDemultiplexer::register_event(std::shared_ptr<Handle> handlePtr) {
   return 0;
 }
 
-int EqDemultiplexer::remove_event(HandlePtr handle) {
+int EqDemultiplexer::remove_event(std::shared_ptr<Handle> handlePtr) {
   return 0;
 }
 

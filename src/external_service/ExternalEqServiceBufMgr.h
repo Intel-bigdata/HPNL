@@ -1,9 +1,9 @@
-#include "HPNL/BufMgr.h"
-
 #include <vector>
 #include <map>
 #include <iostream>
 #include <mutex>
+
+#include "HPNL/BufMgr.h"
 
 class ExternalEqServiceBufMgr : public BufMgr {
   public:

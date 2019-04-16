@@ -2,10 +2,12 @@
 #include "HPNL/Server.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/Common.h"
 #include "ConBufMgr.h"
 
 #define SIZE 3
+#define BUFFER_SIZE 65536
+#define MEM_SIZE 65536
+#define MAX_WORKERS 10
 
 class ShutdownCallback : public Callback {
   public:

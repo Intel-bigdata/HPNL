@@ -1,4 +1,9 @@
 #include "HPNL/Service.h"
+#include "core/FiStack.h"
+#include "demultiplexer/EqDemultiplexer.h"
+#include "demultiplexer/CqDemultiplexer.h"
+#include "demultiplexer/Proactor.h"
+#include "demultiplexer/EqHandler.h"
 
 Service::Service(bool is_server_) 
   : is_server(is_server_) {
@@ -39,11 +44,11 @@ void Service::run(const char* ip_, const char* port_, int worker_num, int buffer
   assert(recvBufMgr);
   if (is_server) {
     proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, worker_num);
-    HandlePtr eqHandle;
+    std::shared_ptr<Handle> eqHandle;
     eqHandle = stack->bind(ip_, port_);
     stack->listen();
 
-    EventHandlerPtr handler(new EqHandler(stack, proactor, eqHandle));
+    std::shared_ptr<EqHandler> handler(new EqHandler(stack, proactor, eqHandle));
     acceptRequestCallback = new AcceptRequestCallback(this);
     handler->set_recv_callback(recvCallback);
     handler->set_send_callback(sendCallback);
@@ -54,11 +59,10 @@ void Service::run(const char* ip_, const char* port_, int worker_num, int buffer
     proactor->register_handler(handler);
   } else {
     proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, 1);
-    HandlePtr eqHandle[worker_num];
+    std::shared_ptr<Handle> eqHandle[worker_num];
     for (int i = 0; i< worker_num; i++) {
       eqHandle[i] = stack->connect(ip_, port_, recvBufMgr, sendBufMgr);
-
-      EventHandlerPtr handler(new EqHandler(stack, proactor, eqHandle[i]));
+      std::shared_ptr<EventHandler> handler(new EqHandler(stack, proactor, eqHandle[i]));
       acceptRequestCallback = new AcceptRequestCallback(this);
       handler->set_recv_callback(recvCallback);
       handler->set_send_callback(sendCallback);
@@ -70,9 +74,9 @@ void Service::run(const char* ip_, const char* port_, int worker_num, int buffer
     }
   }
     
-  eqThread = new EQThread(proactor);
+  eqThread = new EqThread(proactor);
   for (int i = 0; i < worker_num; i++) {
-    cqThread[i] = new CQThread(proactor, i);
+    cqThread[i] = new CqThread(proactor, i);
     if (!is_server) break;
   }
   eqThread->start(); 

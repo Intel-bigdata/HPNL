@@ -2,7 +2,6 @@
 #include "HPNL/Server.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/Common.h"
 #include "PmemBufMgr.h"
 #include <stdio.h>
 #include <fcntl.h>
@@ -25,6 +24,9 @@
 #define LAYOUT_NAME "pmem_spark_shuffle"
 
 #define SIZE 4096
+#define BUFFER_SIZE 65536
+#define MEM_SIZE 65536
+#define MAX_WORKERS 10
 
 int count = 0;
 std::string local_addr, local_rkey, local_len;

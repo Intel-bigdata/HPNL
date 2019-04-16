@@ -1,11 +1,15 @@
+#include <string.h>
+
 #include "HPNL/Connection.h"
 #include "HPNL/Client.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/Common.h"
 #include "PingPongBufMgr.h"
 
 #define SIZE 4096
+#define BUFFER_SIZE 65536
+#define MEM_SIZE 65536
+#define MAX_WORKERS 10
 
 int count = 0;
 uint64_t start, end = 0;

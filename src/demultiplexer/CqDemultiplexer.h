@@ -6,10 +6,7 @@
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
 
-#include <thread>
-
-#include "HPNL/FiConnection.h"
-#include "HPNL/FiStack.h"
+class FiStack;
 
 class CqDemultiplexer {
   public:

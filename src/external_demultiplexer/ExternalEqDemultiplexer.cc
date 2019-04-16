@@ -1,6 +1,12 @@
-#include "HPNL/ExternalEqDemultiplexer.h"
-
 #include "rdma/fi_errno.h"
+
+#include <iostream>
+
+#include "demultiplexer/EventType.h"
+#include "external_demultiplexer/ExternalEqDemultiplexer.h"
+#include "core/FiStack.h"
+#include "core/FiConnection.h"
+
 
 ExternalEqDemultiplexer::ExternalEqDemultiplexer(FiStack *stack_) : stack(stack_) {}
 

@@ -1,5 +1,6 @@
-#include "HPNL/ExternalCqService.h"
-#include "HPNL/ExternalEqService.h"
+#include "demultiplexer/EventType.h"
+#include "external_service/ExternalCqService.h"
+#include "external_service/ExternalEqService.h"
 
 #include "com_intel_hpnl_core_CqService.h"
 

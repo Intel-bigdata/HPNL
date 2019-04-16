@@ -1,9 +1,13 @@
 #include <rdma/fi_domain.h>
 
-#include "HPNL/ExternalEqService.h"
-#include "HPNL/Connection.h"
-
 #include "com_intel_hpnl_core_EqService.h"
+
+#include <assert.h>
+
+#include "HPNL/Connection.h"
+#include "demultiplexer/EventType.h"
+#include "core/FiConnection.h"
+#include "external_service/ExternalEqService.h"
 
 static jclass eqServiceObj;
 static jlong selfPtr;
