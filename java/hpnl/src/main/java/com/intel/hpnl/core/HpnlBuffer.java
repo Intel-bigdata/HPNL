@@ -45,7 +45,7 @@ public class HpnlBuffer {
     return address;
   }
 
-  public int remaining() {
+  public int size() {
     return this.byteBuffer.remaining();
   }
 

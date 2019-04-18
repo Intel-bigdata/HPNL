@@ -20,7 +20,7 @@ public class ServerConnectedCallback implements Handler {
       buffer.putInt(5);
       buffer.flip();
       hpnlBuffer.put(buffer, (byte)0, i);
-      con.send(hpnlBuffer.remaining(), hpnlBuffer.getBufferId());
+      con.send(hpnlBuffer);
     }
   }
   List<Connection> conList;

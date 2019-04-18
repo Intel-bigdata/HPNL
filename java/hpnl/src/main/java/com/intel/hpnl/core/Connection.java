@@ -34,8 +34,8 @@ public class Connection {
     recv(buffer, id, this.nativeHandle);
   }
 
-  public int send(int blockBufferSize, int bufferId) {
-    return send(blockBufferSize, bufferId, this.nativeHandle); 
+  public int send(HpnlBuffer buffer) {
+    return send(buffer.size(), buffer.getBufferId(), this.nativeHandle); 
   }
 
   public int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr) {

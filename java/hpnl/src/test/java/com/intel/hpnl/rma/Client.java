@@ -37,7 +37,7 @@ public class Client {
     
     HpnlBuffer sendBuffer = con.takeSendBuffer(true);
     sendBuffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(sendBuffer.remaining(), sendBuffer.getBufferId());
+    con.send(sendBuffer);
     //cqService.shutdown();
     cqService.join();
     eqService.shutdown();
