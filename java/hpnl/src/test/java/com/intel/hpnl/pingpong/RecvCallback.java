@@ -36,7 +36,7 @@ public class RecvCallback implements Handler {
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
     sendBuffer.put(recvByteBuffer, (byte)0, 10);
-    con.send(sendBuffer.remaining(), sendBuffer.getBufferId());
+    con.send(sendBuffer);
   }
   private float count = 0;
   private long startTime;

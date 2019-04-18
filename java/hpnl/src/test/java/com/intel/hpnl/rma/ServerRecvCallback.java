@@ -36,7 +36,7 @@ public class ServerRecvCallback implements Handler {
 
     byteBufferTmp.flip();
     sendBuffer.put(byteBufferTmp, (byte)0, 0);
-    con.send(sendBuffer.getRawBuffer().remaining(), sendBuffer.getBufferId());
+    con.send(sendBuffer);
   }
   private EqService eqService;
   private HpnlBuffer rmaBuffer;

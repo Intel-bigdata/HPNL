@@ -68,7 +68,7 @@ public class Client implements Runnable {
     
     HpnlBuffer buffer = con.takeSendBuffer(true);
     buffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(buffer.remaining(), buffer.getBufferId());
+    con.send(buffer);
 
     cqService.join();
     eqService.shutdown();
