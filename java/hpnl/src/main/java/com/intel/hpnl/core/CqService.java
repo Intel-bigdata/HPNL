@@ -2,15 +2,19 @@ package com.intel.hpnl.core;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.Map;
+import java.util.HashMap;
 
 public class CqService {
   public CqService(EqService service) {
     this.eqService = service;
     this.serviceNativeHandle = eqService.getNativeHandle();
-
-    //Runtime.getRuntime().addShutdownHook(new CqShutdownThread(eqService, this));
     this.cqThreads = new ArrayList<CqThread>();
-    this.externalHandlers = new ArrayList<ExternalHandler>();
+    this.indexMap = new HashMap<>();
+    this.externalHandlers = new ArrayList<LinkedBlockingDeque<ExternalHandler>>();
+
+    this.eqService.setCqService(this);
   }
 
   public CqService init() {
@@ -24,6 +28,9 @@ public class CqService {
     for (int i = 0; i < workerNum; i++) {
       CqThread cqThread = new CqThread(this, i, affinities==null ? -1 : 1L<<affinities[i]);
       cqThreads.add(cqThread);
+
+      this.indexMap.put(i, cqThread.getId());
+      this.externalHandlers.add(new LinkedBlockingDeque<ExternalHandler>());
     }
     for (CqThread cqThread : cqThreads) {
       cqThread.start();
@@ -61,13 +68,19 @@ public class CqService {
     }
   }
 
-  public void addExternalEvent(ExternalHandler externalHandler) {
-    externalHandlers.add(externalHandler); 
+  public long getThreadId(int index) {
+    return this.indexMap.get(index);
+  }
+
+  public void addExternalEvent(int index, ExternalHandler externalHandler) {
+    this.externalHandlers.get(index).add(externalHandler);
   }
 
   private int waitExternalEvent(int index) {
-    for (ExternalHandler handler: externalHandlers) {
-      handler.handle();
+    LinkedBlockingDeque<ExternalHandler> externalHandlerQueue = this.externalHandlers.get(index);
+    if (!externalHandlerQueue.isEmpty()) {
+      ExternalHandler externalHandler = externalHandlerQueue.poll();
+      externalHandler.handle();
     }
     return 0;
   }
@@ -88,6 +101,7 @@ public class CqService {
   private EqService eqService;
   private long serviceNativeHandle;
   private List<CqThread> cqThreads;
-  private List<ExternalHandler> externalHandlers;
+  private ArrayList<LinkedBlockingDeque<ExternalHandler>> externalHandlers;
   private int[] affinities = null;
+  private Map<Integer, Long> indexMap;
 }

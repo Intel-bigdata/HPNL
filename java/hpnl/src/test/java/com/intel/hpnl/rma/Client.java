@@ -35,9 +35,7 @@ public class Client {
 
     System.out.println("connected, start to remote read.");
     
-    HpnlBuffer sendBuffer = con.takeSendBuffer(true);
-    sendBuffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(sendBuffer);
+    con.send(byteBufferTmp, (byte)0, 10);
     //cqService.shutdown();
     cqService.join();
     eqService.shutdown();

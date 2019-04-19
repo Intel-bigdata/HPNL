@@ -29,14 +29,12 @@ public class ServerRecvCallback implements Handler {
     for (int i = 0; i < 4096*1024; i++) {
       rmaBuffer.getRawBuffer().put((byte)i); 
     }
-    HpnlBuffer sendBuffer = con.takeSendBuffer(true);
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(16);
     byteBufferTmp.putLong(this.buf.getAddress());
     byteBufferTmp.putLong(this.buf.getRKey());
 
     byteBufferTmp.flip();
-    sendBuffer.put(byteBufferTmp, (byte)0, 0);
-    con.send(sendBuffer);
+    con.send(byteBufferTmp, (byte)0, 0);
   }
   private EqService eqService;
   private HpnlBuffer rmaBuffer;

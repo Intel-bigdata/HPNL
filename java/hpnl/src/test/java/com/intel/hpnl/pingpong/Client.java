@@ -64,11 +64,9 @@ public class Client implements Runnable {
     
     Connection con = eqService.connect(addr, port, 0);
 
-    System.out.println("connected, start to pingpong.");
+    System.out.println("connected, start to pingpong");
     
-    HpnlBuffer buffer = con.takeSendBuffer(true);
-    buffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(buffer);
+    con.send(byteBufferTmp, (byte)0, 10);
 
     cqService.join();
     eqService.shutdown();

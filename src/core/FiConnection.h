@@ -34,7 +34,7 @@ class FiStack;
 
 class FiConnection : public Connection {
   public:
-    FiConnection(FiStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int buffer_num);
+    FiConnection(FiStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int, int);
     ~FiConnection();
 
     virtual int init() override;
@@ -51,6 +51,7 @@ class FiConnection : public Connection {
 
     void init_addr();
     void get_addr(char**, size_t*, char**, size_t*);
+    int get_cq_index();
 
     std::shared_ptr<Handle> get_eqhandle();
     fid* get_fid();
@@ -96,6 +97,7 @@ class FiConnection : public Connection {
     bool is_server;
 
     int buffer_num;
+    int cq_index;
 
     size_t dest_port;
     char dest_addr[20];
