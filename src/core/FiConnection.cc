@@ -8,10 +8,10 @@
 FiConnection::FiConnection(FiStack *stack_, fid_fabric *fabric_, 
     fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
     fid_wait *waitset_, BufMgr *recv_buf_mgr_, 
-    BufMgr *send_buf_mgr_, bool is_server_, int buffer_num_) : 
+    BufMgr *send_buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
   stack(stack_), fabric(fabric_), info(info_), domain(domain_), ep(NULL),
   conCq(cq_), conEq(NULL), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), 
-  waitset(waitset_), is_server(is_server_), buffer_num(buffer_num_), 
+  waitset(waitset_), is_server(is_server_), buffer_num(buffer_num_), cq_index(cq_index_),
   recv_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {}
 
 FiConnection::~FiConnection() {
@@ -211,6 +211,10 @@ void FiConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_ad
 
   *src_addr_ = src_addr;
   *src_port_ = src_port;
+}
+
+int FiConnection::get_cq_index() {
+  return cq_index;
 }
 
 void FiConnection::take_back_chunk(Chunk *ck) {

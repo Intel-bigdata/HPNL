@@ -5,10 +5,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class Connection {
 
-  public Connection(long nativeEq, long nativeCon, EqService service) {
-    this.service = service;
+  public Connection(long nativeEq, long nativeCon, int index, long threadId,  EqService eqService, CqService cqService) {
+    this.eqService = eqService;
+    this.cqService = cqService;
     this.sendBufferList = new LinkedBlockingQueue<HpnlBuffer>();
     this.nativeEq = nativeEq;
+    this.index = index;
+    this.threadId = threadId;
     init(nativeCon);
     connected = true;
   }
@@ -21,8 +24,8 @@ public class Connection {
       if(!connected){
         return;
       }
-      this.service.unregCon(nativeEq);
-      this.service.shutdown(nativeEq, service.getNativeHandle());
+      this.eqService.unregCon(nativeEq);
+      this.eqService.shutdown(nativeEq, eqService.getNativeHandle());
       if (shutdownCallback != null) {
         shutdownCallback.handle(null, 0, 0);
       }
@@ -34,12 +37,40 @@ public class Connection {
     recv(buffer, id, this.nativeHandle);
   }
 
-  public int send(HpnlBuffer buffer) {
-    return send(buffer.size(), buffer.getBufferId(), this.nativeHandle); 
+  public int send(ByteBuffer buffer, byte b, long seq) {
+    if (Thread.currentThread().getId() != this.threadId) {
+      this.cqService.addExternalEvent(this.index, new ExternalHandler() {
+        public void handle() {
+          send(buffer, b, seq);
+        } 
+      });
+      return 0;
+    } else {
+      HpnlBuffer hpnlBuffer = takeSendBuffer();
+      if (hpnlBuffer == null) {
+        this.cqService.addExternalEvent(this.index, new ExternalHandler() {
+          public void handle() {
+            send(buffer, b, seq);
+          } 
+        });
+      } else {
+        hpnlBuffer.put(buffer, b, seq);
+        send(hpnlBuffer.size(), hpnlBuffer.getBufferId(), this.nativeHandle);
+      }
+    }
+    return 0; 
   }
 
   public int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr) {
-    return read(bufferId, localOffset, len, remoteAddr, remoteMr, this.nativeHandle); 
+    int res = read(bufferId, localOffset, len, remoteAddr, remoteMr, this.nativeHandle);
+    if (res == -11) {
+      this.cqService.addExternalEvent(this.index, new ExternalHandler() {
+        public void handle() {
+          read(bufferId, localOffset, len, remoteAddr, remoteMr);
+        } 
+      });
+    }
+    return 0;
   }
 
   public native void recv(ByteBuffer buffer, int id, long nativeHandle);
@@ -92,29 +123,20 @@ public class Connection {
     }
   }
 
-  public HpnlBuffer takeSendBuffer(boolean wait) {
-    if (wait) {
-      try {
-        return sendBufferList.take();
-      } catch (InterruptedException e) {
-        e.printStackTrace(); 
-      }
-      return null;
-    } else {
-      return sendBufferList.poll();
-    }
+  private HpnlBuffer takeSendBuffer() {
+    return sendBufferList.poll();
   }
 
   public HpnlBuffer getSendBuffer(int bufferId){
-    return service.getSendBuffer(bufferId);
+    return eqService.getSendBuffer(bufferId);
   }
 
   public HpnlBuffer getRecvBuffer(int bufferId) {
-    return service.getRecvBuffer(bufferId);
+    return eqService.getRecvBuffer(bufferId);
   }
 
   public ByteBuffer getRmaBuffer(int rmaBufferId) {
-    return service.getRmaBufferByBufferId(rmaBufferId);
+    return eqService.getRmaBufferByBufferId(rmaBufferId);
   }
 
   public void setAddrInfo(String destAddr, int destPort, String srcAddr, int srcPort) {
@@ -148,7 +170,7 @@ public class Connection {
       e = executeCallback(recvCallback, bufferId, blockBufferSize);
     } else if (eventType == EventType.SEND_EVENT) {
       e = executeCallback(sendCallback, bufferId, blockBufferSize);
-      putSendBuffer(service.getSendBuffer(bufferId));
+      putSendBuffer(eqService.getSendBuffer(bufferId));
     } else if (eventType == EventType.READ_EVENT) {
       e = executeCallback(readCallback, bufferId, blockBufferSize);
     }
@@ -169,7 +191,8 @@ public class Connection {
     return null;
   }
 
-  private EqService service;
+  private EqService eqService;
+  private CqService cqService;
  
   private LinkedBlockingQueue<HpnlBuffer> sendBufferList;
 
@@ -188,4 +211,6 @@ public class Connection {
 
   private long nativeHandle;
   private final long nativeEq;
+  private int index;
+  private long threadId;
 }

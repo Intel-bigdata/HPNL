@@ -30,13 +30,10 @@ public class RecvCallback implements Handler {
         }
       }
     }
-    HpnlBuffer sendBuffer = con.takeSendBuffer(true);
     HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
-
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
-    sendBuffer.put(recvByteBuffer, (byte)0, 10);
-    con.send(sendBuffer);
+    con.send(recvByteBuffer, (byte)0, 10);
   }
   private float count = 0;
   private long startTime;

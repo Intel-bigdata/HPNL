@@ -192,7 +192,7 @@ std::shared_ptr<Handle> FiStack::connect(const char *ip_, const char *port_, Buf
     perror("fi_getinfo");
   }
 
-  FiConnection *con = new FiConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num);
+  FiConnection *con = new FiConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num, seq_num%worker_num);
   if (con->init())
     return NULL;
   if (int res = con->connect()) {
@@ -209,7 +209,7 @@ std::shared_ptr<Handle> FiStack::connect(const char *ip_, const char *port_, Buf
 }
 
 std::shared_ptr<Handle> FiStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FiConnection *con = new FiConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num);
+  FiConnection *con = new FiConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num, seq_num%worker_num);
   if (con->init())
     return NULL; 
   con->status = ACCEPT_REQ;

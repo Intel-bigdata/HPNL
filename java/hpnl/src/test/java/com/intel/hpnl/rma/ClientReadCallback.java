@@ -5,8 +5,6 @@ import com.intel.hpnl.core.Connection;
 
 import java.nio.ByteBuffer;
 
-import com.intel.hpnl.core.HpnlBuffer;
-
 public class ClientReadCallback implements Handler {
   public ClientReadCallback() {
   }
@@ -29,9 +27,7 @@ public class ClientReadCallback implements Handler {
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(4096);
     byteBufferTmp.putChar('a');
     byteBufferTmp.flip();
-    HpnlBuffer sendBuffer = con.takeSendBuffer(true);
-    sendBuffer.put(byteBufferTmp, (byte)0, 10);
-    con.send(sendBuffer);
+    con.send(byteBufferTmp, (byte)0, 10);
     count++;
   }
   private int count = 0;

@@ -30,7 +30,7 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 
     handleEqCallback = (*env).GetMethodID(eqServiceObj, "handleEqCallback", "(JII)V");
     reallocBufferPool = (*env).GetMethodID(eqServiceObj, "reallocBufferPool", "()V");
-    regCon = (*env).GetMethodID(eqServiceObj, "regCon", "(JJLjava/lang/String;ILjava/lang/String;I)V");
+    regCon = (*env).GetMethodID(eqServiceObj, "regCon", "(JJILjava/lang/String;ILjava/lang/String;I)V");
     unregCon = (*env).GetMethodID(eqServiceObj, "unregCon", "(J)V");
     putSendBuffer = (*env).GetMethodID(eqServiceObj, "putSendBuffer", "(JI)V");
 
@@ -143,7 +143,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     //register connection  
     jlong jEq = *(jlong*)&eq;
     jlong jCon = *(jlong*)&con;
-    (*env).CallVoidMethod(thisObj, regCon, jEq, jCon, dest_addr_str, dest_port, src_addr_str, src_port);
+    (*env).CallVoidMethod(thisObj, regCon, jEq, jCon, con->get_cq_index(), dest_addr_str, dest_port, src_addr_str, src_port);
 
     //set send buffer;
     std::vector<Chunk*> send_buffer = con->get_send_buffer();

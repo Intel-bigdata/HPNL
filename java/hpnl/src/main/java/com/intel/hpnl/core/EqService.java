@@ -87,8 +87,12 @@ public class EqService {
     delete_eq_event(localEq, nativeHandle);
   }
 
-  private void regCon(long eq, long con, String dest_addr, int dest_port, String src_addr, int src_port) {
-    Connection connection = new Connection(eq, con, this);
+  public void setCqService() {
+  
+  }
+
+  private void regCon(long eq, long con, int index, String dest_addr, int dest_port, String src_addr, int src_port) {
+    Connection connection = new Connection(eq, con, index, cqService.getThreadId(index), this, this.cqService);
     connection.setAddrInfo(dest_addr, dest_port, src_addr, src_port);
     conMap.put(eq, connection);
   }
@@ -257,6 +261,12 @@ public class EqService {
   public String getPort() {
     return port;
   }
+
+  public void setCqService(CqService cqService) {
+    this.cqService = cqService; 
+  }
+
+  private CqService cqService;
 
   private long nativeHandle;
   private long localEq;
