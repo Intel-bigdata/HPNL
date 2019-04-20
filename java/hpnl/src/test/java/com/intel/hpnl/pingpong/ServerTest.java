@@ -4,11 +4,10 @@ import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
 
-import com.intel.hpnl.core.EqService;
-import com.intel.hpnl.core.CqService;
+import com.intel.hpnl.service.Server;
 
 @Command(mixinStandardHelpOptions = true, version = "auto help demo - picocli 3.0")
-public class Server implements Runnable {
+public class ServerTest implements Runnable {
 
   @Option(names = {"-a", "--address"}, required = false, description = "server address")
   String addr = "localhost";
@@ -35,25 +34,21 @@ public class Server implements Runnable {
   int[] affinities = null;
 
   public void run() {
-    EqService eqService = new EqService(workNbr, bufferNbr, true).init();
-    CqService cqService = new CqService(eqService).init();
+    Server server = new Server(workNbr, bufferNbr);
     
-    cqService.setAffinities(affinities);
+    server.setAffinities(affinities);
 
     RecvCallback recvCallback = new RecvCallback(true, interval, msgSize);
-    eqService.setRecvCallback(recvCallback);
+    server.setRecvCallback(recvCallback);
 
-    eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
+    server.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    eqService.listen(addr, port);
-    cqService.start();
+    server.listen(addr, port);
     
-    cqService.join();
-    eqService.shutdown();
-    eqService.join();
+    server.join();
   }
 
   public static void main(String... args) {
-    CommandLine.run(new Server(), args);
+    CommandLine.run(new ServerTest(), args);
   }
 }
