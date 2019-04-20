@@ -52,47 +52,45 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
     start = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
   }
   fi_cq_msg_entry entry;
-  do {
-    ret = fi_cq_read(cq, &entry, 1);
-    if (ret == -FI_EAVAIL) {
-      fi_cq_err_entry err_entry;
-      fi_cq_readerr(cq, &err_entry, entry.flags);
-      end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-      perror("fi_cq_read");
-      if (err_entry.err == FI_EOVERRUN) {
-        return -1;
-      }
-      return 0;
-    } else if (ret == -FI_EAGAIN) {
-      end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-      return 0;
-    } else {
-      end = start;
-      *ck = (Chunk*)entry.op_context;
-      *buffer_id = (*ck)->buffer_id;
-      FiConnection *con = (FiConnection*)(*ck)->con;
-      if (!con) {
-        return 0;
-      }
-      fid_eq *eq_tmp = (fid_eq*)con->get_eqhandle()->get_ctx();
-      *eq = eq_tmp;
-      if (entry.flags & FI_RECV) {
-        std::unique_lock<std::mutex> l(con->con_mtx);
-        con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
-        l.unlock();
-        con->recv((char*)(*ck)->buffer, entry.len);
-        *block_buffer_size = entry.len;
-        return RECV_EVENT;
-      } else if (entry.flags & FI_SEND) {
-        return SEND_EVENT;
-      } else if (entry.flags & FI_READ) {
-        return READ_EVENT;
-      } else if (entry.flags & FI_WRITE) {
-        return WRITE_EVENT;
-      } else {
-        return 0;
-      }
+  ret = fi_cq_read(cq, &entry, 1);
+  if (ret == -FI_EAVAIL) {
+    fi_cq_err_entry err_entry;
+    fi_cq_readerr(cq, &err_entry, entry.flags);
+    end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
+    perror("fi_cq_read");
+    if (err_entry.err == FI_EOVERRUN) {
+      return -1;
     }
-  } while (ret > 0);
+    return 0;
+  } else if (ret == -FI_EAGAIN) {
+    end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
+    return 0;
+  } else {
+    end = start;
+    *ck = (Chunk*)entry.op_context;
+    *buffer_id = (*ck)->buffer_id;
+    FiConnection *con = (FiConnection*)(*ck)->con;
+    if (!con) {
+      return 0;
+    }
+    fid_eq *eq_tmp = (fid_eq*)con->get_eqhandle()->get_ctx();
+    *eq = eq_tmp;
+    if (entry.flags & FI_RECV) {
+      std::unique_lock<std::mutex> l(con->con_mtx);
+      con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
+      l.unlock();
+      con->recv((char*)(*ck)->buffer, entry.len);
+      *block_buffer_size = entry.len;
+      return RECV_EVENT;
+    } else if (entry.flags & FI_SEND) {
+      return SEND_EVENT;
+    } else if (entry.flags & FI_READ) {
+      return READ_EVENT;
+    } else if (entry.flags & FI_WRITE) {
+      return WRITE_EVENT;
+    } else {
+      return 0;
+    }
+  }
   return 0;
 }
