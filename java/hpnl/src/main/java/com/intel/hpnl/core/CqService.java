@@ -79,8 +79,7 @@ public class CqService {
   private int waitExternalEvent(int index) {
     LinkedBlockingDeque<ExternalHandler> externalHandlerQueue = this.externalHandlers.get(index);
     if (!externalHandlerQueue.isEmpty()) {
-      ExternalHandler externalHandler = externalHandlerQueue.poll();
-      externalHandler.handle();
+      externalHandlerQueue.poll().handle();
     }
     return 0;
   }
