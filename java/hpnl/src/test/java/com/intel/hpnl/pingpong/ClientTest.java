@@ -1,20 +1,16 @@
 package com.intel.hpnl.pingpong;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.List;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
 
-import com.intel.hpnl.core.EqService;
-import com.intel.hpnl.core.CqService;
+import com.intel.hpnl.service.Client;
 import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.HpnlBuffer;
 
 @Command(mixinStandardHelpOptions = true, version = "auto help demo - picocli 3.0")
-public class Client implements Runnable {
+public class ClientTest implements Runnable {
 
   @Option(names = {"-a", "--address"}, required = true, description = "server address")
   String addr = "localhost";
@@ -47,33 +43,24 @@ public class Client implements Runnable {
     }
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService(workNbr, bufferNbr, false).init();
-    CqService cqService = new CqService(eqService).init();
-
-    cqService.setAffinities(affinities);
+    Client client = new Client(workNbr, bufferNbr);
+    client.setAffinities(affinities);
 
     RecvCallback recvCallback = new RecvCallback(false, interval, msgSize);
     ShutdownCallback shutdownCallback = new ShutdownCallback();
-    eqService.setRecvCallback(recvCallback);
-    eqService.setSendCallback(null);
-    eqService.setShutdownCallback(shutdownCallback);
+    client.setRecvCallback(recvCallback);
+    client.setShutdownCallback(shutdownCallback);
 
-    eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
+    client.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    cqService.start();
-    
-    Connection con = eqService.connect(addr, port, 0);
-
+    Connection con = client.connect(addr, port, 0);
     System.out.println("connected, start to pingpong");
-    
     con.send(byteBufferTmp, (byte)0, 10);
-
-    cqService.join();
-    eqService.shutdown();
-    eqService.join();
+    
+    client.join();
   }
 
   public static void main(String... args) {
-    CommandLine.run(new Client(), args);
+    CommandLine.run(new ClientTest(), args);
   }
 }
