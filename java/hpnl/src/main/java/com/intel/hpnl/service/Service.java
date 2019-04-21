@@ -1,7 +1,9 @@
 package com.intel.hpnl.service;
 
+import java.nio.ByteBuffer;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.CqService;
+import com.intel.hpnl.core.HpnlBuffer;
 import com.intel.hpnl.core.Handler;
 
 public abstract class Service {
@@ -42,6 +44,26 @@ public abstract class Service {
 
   public void setShutdownCallback(Handler callback) {
     this.eqService.setShutdownCallback(callback);
+  }
+
+  public HpnlBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
+    return this.eqService.regRmaBuffer(byteBuffer, bufferSize);
+  }
+
+  public HpnlBuffer regRmaBufferByAddress(ByteBuffer byteBuffer, long address, long bufferSize) {
+    return this.eqService.regRmaBufferByAddress(byteBuffer, address, bufferSize);
+  }
+
+  public void unregRmaBuffer(int bufferId) {
+    this.eqService.unregRmaBuffer(bufferId);
+  }
+
+  public HpnlBuffer getRmaBuffer(int bufferSize) {
+    return this.eqService.getRmaBuffer(bufferSize);
+  }
+
+  public ByteBuffer getRmaBufferByBufferId(int rmaBufferId) {
+    return this.eqService.getRmaBufferByBufferId(rmaBufferId);
   }
 
   protected EqService eqService;
