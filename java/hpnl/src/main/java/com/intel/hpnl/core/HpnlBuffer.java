@@ -51,7 +51,7 @@ public class HpnlBuffer {
 
   private void putMetadata(int srcSize, byte type, long seq) {
     byteBuffer.rewind();
-    byteBuffer.limit(getMetadataSize()+srcSize);
+    byteBuffer.limit(METADATA_SIZE+srcSize);
     byteBuffer.put(type);
     byteBuffer.putLong(seq);
   }
@@ -71,11 +71,7 @@ public class HpnlBuffer {
   }
 
   public int getWritableBytes(){
-    return this.byteBuffer.capacity() - getMetadataSize();
-  }
-
-  public static int getMetadataSize(){
-    return 9;
+    return this.byteBuffer.capacity() - METADATA_SIZE;
   }
 
   private int bufferId;
@@ -84,4 +80,6 @@ public class HpnlBuffer {
   private ByteBuffer byteBuffer;
   private long rkey;
   private long address;
+
+  private static int METADATA_SIZE = 9;
 }

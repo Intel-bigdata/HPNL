@@ -25,12 +25,15 @@ public class CqService {
 
   public int start() {
     int workerNum = this.eqService.getWorkerNum();
-    for (int i = 0; i < workerNum; i++) {
-      CqThread cqThread = new CqThread(this, i, affinities==null ? -1 : 1L<<affinities[i]);
-      cqThreads.add(cqThread);
-
-      this.indexMap.put(i, cqThread.getId());
-      this.externalHandlers.add(new LinkedBlockingDeque<ExternalHandler>());
+    try {
+      for (int i = 0; i < workerNum; i++) {
+          CqThread cqThread = new CqThread(this, i, affinities==null ? -1 : 1L<<affinities[i]);
+          cqThreads.add(cqThread);
+          this.indexMap.put(i, cqThread.getId());
+        this.externalHandlers.add(new LinkedBlockingDeque<ExternalHandler>());
+      }
+    } catch (ArrayIndexOutOfBoundsException ex) {
+      System.out.println("try to set thread affinity.");
     }
     for (CqThread cqThread : cqThreads) {
       cqThread.start();
