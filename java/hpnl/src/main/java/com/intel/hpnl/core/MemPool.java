@@ -17,37 +17,43 @@ public class MemPool {
     this.type = type;
     this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
     this.seqId = new AtomicInteger(0);
-    for (int i = 0; i < this.initBufferNum; i++) {
-      alloc();
-    }
+
+    alloc(this.initBufferNum);
   }
 
   public void realloc() {
-    for (int i = 0; i < this.nextBufferNum; i++) {
-      alloc();
-    }
+    alloc(this.nextBufferNum);
+  }
+  
+  private void alloc(int bufferNum) {
+    ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize*bufferNum);
+    int start = 0;
+    int end = start;
+    for (int i = 0; i < bufferNum; i++) {
+      int seq = seqId.getAndIncrement();
+      end = (i+1)*bufferSize;
+      byteBuffer.position(start);
+      byteBuffer.limit(end);
+      HpnlBuffer buffer = new HpnlBuffer(seq, byteBuffer.slice());
+      start = end;
+      bufferMap.put(seq, buffer);
+      if (type == Type.SEND) {
+        eqService.set_send_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
+      } else {
+        eqService.set_recv_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
+      }
+    } 
   }
 
   public HpnlBuffer getBuffer(int bufferId) {
     return bufferMap.get(bufferId); 
   }
 
-  private void alloc() {
-    ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
-    int seq = seqId.getAndIncrement();
-    HpnlBuffer buffer = new HpnlBuffer(seq, byteBuffer);
-    bufferMap.put(seq, buffer);
-    if (type == Type.SEND)
-      eqService.set_send_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
-    else
-      eqService.set_recv_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
-  }
-
-  private EqService eqService;
   private int initBufferNum;
   private int bufferSize;
   private int nextBufferNum;
   private Type type;
+  private EqService eqService;
   private ConcurrentHashMap<Integer, HpnlBuffer> bufferMap;
   private AtomicInteger seqId;
 }
