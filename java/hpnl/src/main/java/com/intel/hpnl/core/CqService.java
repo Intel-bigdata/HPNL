@@ -47,6 +47,7 @@ public class CqService {
         cqThread.shutdown();
       }
     }
+    free(nativeHandle);
   }
 
   public void join() {

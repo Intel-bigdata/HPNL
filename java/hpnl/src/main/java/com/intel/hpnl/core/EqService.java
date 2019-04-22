@@ -85,6 +85,7 @@ public class EqService {
       eqThread.shutdown();
     }
     delete_eq_event(localEq, nativeHandle);
+    free(nativeHandle);
   }
 
   public void setCqService() {

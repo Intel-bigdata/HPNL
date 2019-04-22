@@ -9,7 +9,8 @@
 #include "core/FiConnection.h"
 #include "external_service/ExternalEqService.h"
 
-static jclass eqServiceObj;
+#include <iostream>
+
 static jlong selfPtr;
 static jmethodID handleEqCallback;
 static jmethodID reallocBufferPool;
@@ -25,16 +26,14 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   {
     jclass eqServiceClassTmp;
     eqServiceClassTmp = env->FindClass("com/intel/hpnl/core/EqService");
-    eqServiceObj = (jclass)env->NewGlobalRef(eqServiceClassTmp);
-    env->DeleteLocalRef(eqServiceClassTmp);
 
-    handleEqCallback = (*env).GetMethodID(eqServiceObj, "handleEqCallback", "(JII)V");
-    reallocBufferPool = (*env).GetMethodID(eqServiceObj, "reallocBufferPool", "()V");
-    regCon = (*env).GetMethodID(eqServiceObj, "regCon", "(JJILjava/lang/String;ILjava/lang/String;I)V");
-    unregCon = (*env).GetMethodID(eqServiceObj, "unregCon", "(J)V");
-    putSendBuffer = (*env).GetMethodID(eqServiceObj, "putSendBuffer", "(JI)V");
+    handleEqCallback = (*env).GetMethodID(eqServiceClassTmp, "handleEqCallback", "(JII)V");
+    reallocBufferPool = (*env).GetMethodID(eqServiceClassTmp, "reallocBufferPool", "()V");
+    regCon = (*env).GetMethodID(eqServiceClassTmp, "regCon", "(JJILjava/lang/String;ILjava/lang/String;I)V");
+    unregCon = (*env).GetMethodID(eqServiceClassTmp, "unregCon", "(J)V");
+    putSendBuffer = (*env).GetMethodID(eqServiceClassTmp, "putSendBuffer", "(JI)V");
 
-    fidSelfPtr = env->GetFieldID(eqServiceObj, "nativeHandle", "J");
+    fidSelfPtr = env->GetFieldID(eqServiceClassTmp, "nativeHandle", "J");
     init = 1;
   }
   return fidSelfPtr;
@@ -66,13 +65,6 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init(JNIEnv *env, jobj
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_finalize(JNIEnv *env, jobject thisObj) {
-  ExternalEqService *service = _get_self(env, thisObj);
-  if (service != NULL) {
-    delete service;
-    service = NULL;
-    _set_self(env, thisObj, NULL);
-    env->DeleteGlobalRef(eqServiceObj);
-  }
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free(JNIEnv *env, jobject thisObj, jlong eqServicePtr) {
