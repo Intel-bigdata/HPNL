@@ -9,11 +9,19 @@ extern "C" {
 #endif
 /*
  * Class:     com_intel_hpnl_core_EqService
- * Method:    connect
- * Signature: ()J
+ * Method:    shutdown
+ * Signature: (J)V
  */
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect
-  (JNIEnv *, jobject);
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown
+  (JNIEnv *, jobject, jlong, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    connect
+ * Signature: (Ljava/lang/String;Ljava/lang/String;I)J
+ */
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_internal_connect
+  (JNIEnv *, jobject, jstring, jstring, jint, jlong, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
@@ -21,32 +29,23 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_connect
  * Signature: ()I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    add_eq_event
- * Signature: (j)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_add_1eq_1event
-  (JNIEnv *, jobject, jlong);
+  (JNIEnv *, jobject, jlong, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    delete_eq_event
- * Signature: (j)I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     com_intel_hpnl_core_EqService
- * Method:    shutdown
- * Signature: (J)V
- */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown
-  (JNIEnv *, jobject, jlong);
-
+  (JNIEnv *, jobject, jlong, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
@@ -54,7 +53,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown
  * Signature: (Ljava/nio/ByteBuffer;JI)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer
-  (JNIEnv *, jobject, jobject, jlong, jint);
+  (JNIEnv *, jobject, jobject, jlong, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
@@ -62,37 +61,55 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer
  * Signature: (Ljava/nio/ByteBuffer;JI)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer
-  (JNIEnv *, jobject, jobject, jlong, jint);
+  (JNIEnv *, jobject, jobject, jlong, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    reg_rma_buffer
- * Signature: (Ljava/nio/ByteBuffer;JI)V
+ * Signature: (Ljava/nio/ByteBuffer;JI)J
  */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer
-  (JNIEnv *, jobject, jobject, jlong, jint);
+  (JNIEnv *, jobject, jobject, jlong, jint, jlong);
 
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    reg_rma_buffer_by_address
+ * Signature: (JJI)J
+ */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer_1by_1address
-  (JNIEnv *, jobject, jlong, jlong, jint);
+  (JNIEnv *, jobject, jlong, jlong, jint, jlong);
 
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    unreg_rma_buffer
+ * Signature: (I)V
+ */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_unreg_1rma_1buffer
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *, jobject, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    get_buffer_address
- * Signature: (Ljava/nio/ByteBuffer)J
+ * Signature: (Ljava/nio/ByteBuffer;)J
  */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_get_1buffer_1address
-  (JNIEnv *, jobject, jobject);
+  (JNIEnv *, jobject, jobject, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    init
- * Signature: (Ljava/lang/String;Ljava/lang/String;Z)V
+ * Signature: (IIZ)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init
-  (JNIEnv *, jobject, jstring, jstring, jint, jint, jboolean);
+  (JNIEnv *, jobject, jint, jint, jboolean);
+
+/*
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    free
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_EqService
@@ -101,15 +118,6 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_finalize
   (JNIEnv *, jobject);
-
-/*
- * Class:     com_intel_hpnl_core_EqService
- * Method:    free
- * Signature: ()V
- */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free
-  (JNIEnv *, jobject);
-
 
 #ifdef __cplusplus
 }

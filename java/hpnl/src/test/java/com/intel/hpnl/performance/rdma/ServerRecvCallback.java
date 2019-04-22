@@ -29,7 +29,7 @@ public class ServerRecvCallback implements Handler {
     this.buffer = eqService.getRmaBuffer(4096 * 1024);
   }
 
-  public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public synchronized int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     ByteBuffer buf = con.getRecvBuffer(rdmaBufferId).get(blockBufferSize);
     long length = buf.getLong();
     if(length == 0){
@@ -45,6 +45,7 @@ public class ServerRecvCallback implements Handler {
     byteBufferTmp.flip();
     sendBuffer.put(byteBufferTmp, (byte)0, 0);
     con.send(sendBuffer.getRawBuffer().remaining(), sendBuffer.getRdmaBufferId());
+    return Handler.RESULT_DEFAULT;
   }
 
   private void readFile(long length){

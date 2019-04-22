@@ -13,6 +13,10 @@ class Connection {
     virtual void shutdown() { }
     virtual void take_back_chunk(Chunk*) {}
     virtual int activate_chunk(Chunk*) { return 0; }
+    virtual int activate_chunk(int) {return 0;}
+    virtual int get_cq_index() { return 0; }
+    virtual void set_cq_index(int) {}
+    virtual long get_id() {return 0;}
 };
 
 #endif

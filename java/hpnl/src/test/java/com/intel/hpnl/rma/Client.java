@@ -3,14 +3,13 @@ package com.intel.hpnl.rma;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-import com.intel.hpnl.core.EqService;
-import com.intel.hpnl.core.CqService;
-import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.RdmaBuffer;
+import com.intel.hpnl.core.*;
 
 public class Client {
-  public static void main(String args[]) {
+  public static void main(String args[]) throws InterruptedException {
     final int BUFFER_SIZE = 65536;
     final int BUFFER_NUM = 32;
 
@@ -18,7 +17,7 @@ public class Client {
     byteBufferTmp.putChar('a');
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService("172.168.2.106", "123456", 1, BUFFER_NUM, false).init();
+    EqService eqService = new EqService(1, BUFFER_NUM, false).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
@@ -29,17 +28,20 @@ public class Client {
     ClientReadCallback readCallback = new ClientReadCallback();
     ShutdownCallback shutdownCallback = new ShutdownCallback();
     eqService.setConnectedCallback(connectedCallback);
-    eqService.setRecvCallback(recvCallback);
-    eqService.setSendCallback(null);
-    eqService.setReadCallback(readCallback);
-    eqService.setShutdownCallback(shutdownCallback);
+//    eqService.setRecvCallback(recvCallback);
+//    eqService.setSendCallback(null);
+//    eqService.setReadCallback(readCallback);
+//    eqService.setShutdownCallback(shutdownCallback);
 
     eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
-    cqService.start();
-    eqService.start();
+    ExecutorService executor = Executors.newFixedThreadPool(1);
+    eqService.connect("localhost", "123456", 0, 5000);
+    executor.submit(eqService.getEventTask());
+    for(EventTask task : cqService.getEventTasks()){
+      executor.submit(task);
+    }
 
-    eqService.waitToConnected();
     System.out.println("connected, start to remote read.");
     
     for (Connection con: conList) {
@@ -48,9 +50,12 @@ public class Client {
       con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
       System.out.println("finished sending.");
     }
-    //cqService.shutdown();
-    cqService.join();
-    eqService.shutdown();
-    eqService.join();
+
+    Thread.sleep(1000);
+
+    cqService.stop();
+    eqService.stop();
+
+    executor.shutdown();
   }
 }

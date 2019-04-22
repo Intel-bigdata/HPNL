@@ -11,10 +11,10 @@
 
 class ExternalEqService {
   public:
-    ExternalEqService(const char*, const char*, int, int, bool is_server_ = false);
+	ExternalEqService(int, int, bool is_server_ = false);
     ~ExternalEqService();
     int init();
-    fid_eq* connect();
+    fid_eq* connect(const char*, const char*, int cq_index, long connect_id);
     fid_eq* accept(fi_info*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);
     void unreg_rma_buffer(int);
@@ -22,7 +22,7 @@ class ExternalEqService {
     void set_recv_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
     void set_send_buffer(char* buffer, uint64_t size, int rdma_buffer_id);
 
-    int wait_eq_event(fi_info**, fid_eq**);
+    int wait_eq_event(fi_info**, fid_eq**, FIConnection**);
     int add_eq_event(fid_eq*);
     int delete_eq_event(fid_eq*);
 
@@ -34,8 +34,6 @@ class ExternalEqService {
   private:
     FIStack *stack;
 
-    const char* ip;
-    const char* port;
     int worker_num;
     int buffer_num;
     bool is_server;

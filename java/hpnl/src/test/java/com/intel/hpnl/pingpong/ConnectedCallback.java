@@ -10,8 +10,9 @@ public class ConnectedCallback implements Handler {
     this.conList = conList;
     this.isServer = isServer;
   }
-  public void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     this.conList.add(con);
+    return Handler.RESULT_DEFAULT;
   }
   List<Connection> conList;
   boolean isServer;

@@ -4,6 +4,12 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class CqService {
+  private long nativeHandle;
+  private EqService eqService;
+  private long serviceNativeHandle;
+  private List<EventTask> cqTasks;
+  private List<ExternalHandler> externalHandlers;
+
   static {
     System.loadLibrary("hpnl");
   }
@@ -12,9 +18,14 @@ public class CqService {
     this.eqService = service;
     this.serviceNativeHandle = serviceNativeHandle;
 
-    //Runtime.getRuntime().addShutdownHook(new CqShutdownThread(eqService, this));
-    this.cqThreads = new ArrayList<CqThread>();
-    this.externalHandlers = new ArrayList<ExternalHandler>();
+    this.cqTasks = new ArrayList();
+    int workerNum = this.eqService.getWorkerNum();
+    for (int i = 0; i < workerNum; i++) {
+      EventTask task = new CqTask(i);
+      cqTasks.add(task);
+    }
+
+    this.externalHandlers = new ArrayList();
   }
 
   public CqService init() {
@@ -23,41 +34,26 @@ public class CqService {
     return this;
   }
 
-  public int start() {
-    int workerNum = this.eqService.getWorkerNum();
-    for (int i = 0; i < workerNum; i++) {
-      CqThread cqThread = new CqThread(this, i);
-      cqThreads.add(cqThread);
-    }
-    for (CqThread cqThread : cqThreads) {
-      cqThread.start();
-    }
-    return 0;
+  public List<EventTask> getEventTasks() {
+    return cqTasks;
   }
 
-  public void shutdown() {
-    for (CqThread cqThread : cqThreads) {
-      synchronized(this) {
-        cqThread.shutdown();
+  public void stop() {
+    synchronized (this) {
+      for (EventTask task : cqTasks) {
+        task.stop();
       }
+      waitToComplete();
     }
   }
 
-  public void join() {
+  private void waitToComplete() {
     try {
-      for (CqThread cqThread : cqThreads) {
-        cqThread.join();
+      for (EventTask task : cqTasks) {
+        task.waitToComplete();
       }
     } catch (InterruptedException e) {
       e.printStackTrace();
-    } finally {
-    }
-  }
-
-  private void handleCqCallback(long eq, int eventType, int rdmaBufferId, int block_buffer_size) {
-    Connection connection = eqService.getCon(eq);
-    if (connection != null) {
-      connection.handleCallback(eventType, rdmaBufferId, block_buffer_size);
     }
   }
 
@@ -73,20 +69,34 @@ public class CqService {
   }
 
   public int wait_event(int index) {
-    if (wait_cq_event(index) < 0) {
+    if (wait_cq_event(index, nativeHandle) < 0) {
       return -1;
     }
     waitExternalEvent(index);
     return 0;
   }
 
-  public native int wait_cq_event(int index);
+  public native int wait_cq_event(int index, long nativeHandle);
   private native int init(long Service);
   public native void finalize();
-  private native void free();
-  private long nativeHandle;
-  private EqService eqService;
-  private long serviceNativeHandle;
-  private List<CqThread> cqThreads;
-  private List<ExternalHandler> externalHandlers;
+  private native void free(long nativeHandle);
+
+
+  public class CqTask extends EventTask {
+    private int index;
+
+    public CqTask(int index) {
+      super();
+      this.index = index;
+    }
+
+    @Override
+    public void loopEvent() {
+      while (running.get()) {
+        if (wait_event(index) == -1) {
+          stop();
+        }
+      }
+    }
+  }
 }

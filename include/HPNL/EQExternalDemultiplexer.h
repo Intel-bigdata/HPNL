@@ -15,7 +15,7 @@ class EQExternalDemultiplexer {
     EQExternalDemultiplexer(FIStack*);
     ~EQExternalDemultiplexer();
     int init();
-    int wait_event(fi_info**, fid_eq**);
+    int wait_event(fi_info**, fid_eq**, FIConnection**);
     int add_event(fid_eq*);
     int delete_event(fid_eq*);
   private:

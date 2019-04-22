@@ -13,7 +13,7 @@ extern "C" {
  * Signature: (I)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *, jobject, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_CqService
@@ -37,7 +37,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_finalize
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_free
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 
 #ifdef __cplusplus

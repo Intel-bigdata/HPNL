@@ -9,12 +9,13 @@ import java.util.List;
 
 public class ClientConnectedCallback implements Handler {
 
-  public void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     RdmaBuffer rdmaBuffer = con.takeSendBuffer(true);
     ByteBuffer buffer = ByteBuffer.allocate(8);
     buffer.putLong(0);
     buffer.flip();
     rdmaBuffer.put(buffer, (byte)0, 0);
     con.send(rdmaBuffer.remaining(), rdmaBuffer.getRdmaBufferId());
+    return Handler.RESULT_DEFAULT;
   }
 }

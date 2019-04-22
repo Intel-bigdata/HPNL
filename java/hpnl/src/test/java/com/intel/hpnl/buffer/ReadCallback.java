@@ -12,12 +12,13 @@ public class ReadCallback implements Handler {
     this.is_server = is_server;
     this.eqService = eqService;
   }
-  public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public synchronized int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     RdmaBuffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
 
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
     System.out.println(recvByteBuffer.getInt());
+    return Handler.RESULT_DEFAULT;
   }
   private int count = 0;
   private long startTime;

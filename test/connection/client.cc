@@ -54,7 +54,7 @@ void connect() {
     ck->capacity = BUFFER_SIZE;
     sendBufMgr->add(ck->rdma_buffer_id, ck);
   }
-  Client *client = new Client("172.168.2.106", "123456");
+  Client *client = new Client();
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 
@@ -66,7 +66,7 @@ void connect() {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run(50, 16);
+  client->run("172.168.2.106", "123456", 0, 50, 16);
 
   client->wait();
 

@@ -2,83 +2,136 @@ package com.intel.hpnl.core;
 
 import java.util.HashMap;
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class EqService {
+  private long nativeHandle;
+  private long localEq;
+  private int worker_num;
+  private int buffer_num;
+  public boolean is_server;
+  protected Map<Long, Connection> conMap;
+  private LinkedBlockingQueue<Connection> reapCons;
+
+  private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
+
+  private MemPool sendBufferPool;
+  private MemPool recvBufferPool;
+
+  AtomicInteger rmaBufferId;
+
+  private Handler connectedCallback;
+  private Handler recvCallback;
+  private Handler sendCallback;
+  private Handler readCallback;
+  private Handler shutdownCallback;
+
+  private volatile CountDownLatch connectLatch;
+
+  private EventTask eqTask;
+
+  private Map<Long, Handler> connectedHandlers = new ConcurrentHashMap<>();
+
   static {
     System.loadLibrary("hpnl");
   }
 
-  public EqService(String ip, String port, int worker_num, int buffer_num, boolean is_server) {
-    this.ip = ip;
-    this.port = port;
+  public EqService(int worker_num, int buffer_num, boolean is_server) {
     this.worker_num = worker_num;
     this.buffer_num = buffer_num;
     this.is_server = is_server;
     this.rmaBufferId = new AtomicInteger(0);
 
-    this.conMap = new HashMap<Long, Connection>();
-    this.reapCons = new LinkedBlockingQueue<Connection>();
-    this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
-    this.eqThread = new EqThread(this);
+    this.conMap = new ConcurrentHashMap();
+    this.reapCons = new LinkedBlockingQueue();
+    this.rmaBufferMap = new ConcurrentHashMap();
+    this.eqTask = new EqTask();
   }
 
   public EqService init() {
-    if (init(ip, port, worker_num, buffer_num, is_server) == -1)
+    if (init(worker_num, buffer_num, is_server) == -1)
       return null;
     return this; 
   }
 
-  public int start() {
-    if (!is_server) {
-      connectLatch = new CountDownLatch(worker_num);
+  public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
+    if(connectedCallback == null){
+      throw new RuntimeException("connected callback cannot be null");
     }
-    for (int i = 0; i < worker_num; i++) {
-      localEq = connect();
-      if (localEq == -1) {
-        return -1;
-      }
-      add_eq_event(localEq);
-      if (is_server)
-        break;
+    long id = sequenceId();
+    localEq = internal_connect(ip, port, cqIndex, id, nativeHandle);
+    if (localEq == -1) {
+      return -1;
     }
-    eqThread.start();
+    add_eq_event(localEq, nativeHandle);
+    Handler prv = connectedHandlers.putIfAbsent(id, connectedCallback);
+    if(prv != null){
+      throw new RuntimeException("non-unique id found, "+id);
+    }
     return 0;
   }
 
-  public void waitToConnected() {
+  public int connect(String ip, String port, int cqIndex, long timeoutMill) {
+    if (!is_server) {
+      synchronized (connectLatch) {
+        if(connectLatch != null){
+          throw new RuntimeException("the last connection is still under going");
+        }
+        connectLatch = new CountDownLatch(1);
+      }
+    }
+    int rt = connect(ip, port, cqIndex, null);
+    if(rt < 0){
+      if (!is_server) {
+        connectLatch.countDown();
+      }
+      return rt;
+    }
+    if (!is_server) {
+      waitToConnected(timeoutMill);
+    }
+    return 0;
+  }
+
+  private void waitToConnected(long timeoutMill) {
     try {
-      this.connectLatch.await();
+      this.connectLatch.await(timeoutMill, TimeUnit.MILLISECONDS);
     } catch (InterruptedException e) {
       e.printStackTrace();
     }
   }
 
-  public void join() {
+  private void waitToComplete() {
     try {
-      eqThread.join();
+      eqTask.waitToComplete();
     } catch (InterruptedException e) {
       e.printStackTrace();
     } finally {
     }
   }
 
-  public void shutdown() {
+  public void stop() {
     for (Connection con : reapCons) {
       addReapCon(con);
     }
     synchronized(this) {
-      eqThread.shutdown();
+      eqTask.stop();
     }
-    delete_eq_event(localEq);
+    delete_eq_event(localEq, nativeHandle);
+    waitToComplete();
   }
 
-  private void regCon(long eq, long con, String dest_addr, int dest_port, String src_addr, int src_port) {
-    Connection connection = new Connection(eq, con, this);
+  private void regCon(long eq, long con,
+                      String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
+    Connection connection = new Connection(eq, con, this, connectId);
     connection.setAddrInfo(dest_addr, dest_port, src_addr, src_port);
     conMap.put(eq, connection);
   }
@@ -88,44 +141,52 @@ public class EqService {
       conMap.remove(eq);
     }
     if (!is_server) {
-      eqThread.shutdown(); 
+      eqTask.stop();
     }
   }
 
-  private void handleEqCallback(long eq, int eventType, int blockId) {
+  private static long sequenceId() {
+    return Math.abs(UUID.randomUUID().getLeastSignificantBits());
+  }
+
+  protected void handleEqCallback(long eq, int eventType, int blockId) {
     Connection connection = conMap.get(eq);
     if (eventType == EventType.CONNECTED_EVENT) {
-      connection.setConnectedCallback(connectedCallback);
-      connection.setRecvCallback(recvCallback);
-      connection.setSendCallback(sendCallback);
-      connection.setReadCallback(readCallback);
-      connection.setShutdownCallback(shutdownCallback);
+      long id = connection.getConnectId();
+      Handler connectedHandler = connectedHandlers.remove(id);
+      if(connectedHandler != null){
+        connectedHandler.handle(connection, 0, 0);
+      }
     }
-    connection.handleCallback(eventType, 0, 0);
-    if (!is_server && eventType == EventType.CONNECTED_EVENT) {
-      this.connectLatch.countDown();
+    if (this.connectLatch != null && eventType == EventType.CONNECTED_EVENT) {
+      synchronized (connectLatch) {
+        if(connectLatch != null) {
+          this.connectLatch.countDown();
+          this.connectLatch = null;
+        }
+      }
     }
   }
 
   public void setConnectedCallback(Handler callback) {
-    connectedCallback = callback;
+    throw new UnsupportedOperationException();
   }
 
-  public void setRecvCallback(Handler callback) {
-    recvCallback = callback;
-  }
+//  public void setRecvCallback(Handler callback) {
+//    recvCallback = callback;
+//  }
+//
+//  public void setSendCallback(Handler callback) {
+//    sendCallback = callback;
+//  }
+//
+//  public void setReadCallback(Handler callback) {
+//    readCallback = callback;
+//  }
 
-  public void setSendCallback(Handler callback) {
-    sendCallback = callback;
-  }
-
-  public void setReadCallback(Handler callback) {
-    readCallback = callback; 
-  }
-
-  public void setShutdownCallback(Handler callback) {
-    shutdownCallback = callback;
-  }
+//  public void setShutdownCallback(Handler callback) {
+//    shutdownCallback = callback;
+//  }
 
   public Connection getCon(long eq) {
     return conMap.get(eq);
@@ -161,7 +222,7 @@ public class EqService {
   public RdmaBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     rmaBufferMap.put(bufferId, byteBuffer);
-    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId);
+    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId, nativeHandle);
     if (rkey < 0) {
       return null;
     }
@@ -174,7 +235,7 @@ public class EqService {
     if (byteBuffer != null) {
       rmaBufferMap.put(bufferId, byteBuffer);
     }
-    long rkey = reg_rma_buffer_by_address(address, bufferSize, bufferId);
+    long rkey = reg_rma_buffer_by_address(address, bufferSize, bufferId, nativeHandle);
     if (rkey < 0) {
       return null;
     }
@@ -183,16 +244,16 @@ public class EqService {
   }
 
   public void unregRmaBuffer(int rdmaBufferId) {
-    unreg_rma_buffer(rdmaBufferId);
+    unreg_rma_buffer(rdmaBufferId, nativeHandle);
   }
 
   public RdmaBuffer getRmaBuffer(int bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     // allocate memory from on-heap, off-heap or AEP.
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
-    long address = get_buffer_address(byteBuffer);
+    long address = get_buffer_address(byteBuffer, nativeHandle);
     rmaBufferMap.put(bufferId, byteBuffer);
-    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId);
+    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId, nativeHandle);
     if (rkey < 0) {
       return null;
     }
@@ -220,60 +281,38 @@ public class EqService {
   }
 
   public int getWorkerNum() {
-    if (is_server)
-      return this.worker_num;
-    else
-      return 1; 
+    return this.worker_num;
   }
 
-  public native void shutdown(long eq);
-  private native long connect();
-  public native int wait_eq_event();
-  public native int add_eq_event(long eq);
-  public native int delete_eq_event(long eq);
-  public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
-  public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
-  private native long reg_rma_buffer(ByteBuffer buffer, long size, int rdmaBufferId);
-  private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId);
-  private native void unreg_rma_buffer(int rdmaBufferId);
-  private native long get_buffer_address(ByteBuffer buffer);
-  private native int init(String ip_, String port_, int worker_num_, int buffer_num_, boolean is_server_);
-  private native void free();
+  public EventTask getEventTask(){
+    return eqTask;
+  }
+
+  public native void shutdown(long eq, long nativeHandle);
+  private native long internal_connect(String ip, String port, int cqIndex, long connectId, long nativeHandle);
+  public native int wait_eq_event(long nativeHandle);
+  public native int add_eq_event(long eq, long nativeHandle);
+  public native int delete_eq_event(long eq, long nativeHandle);
+  public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  private native long reg_rma_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
+  private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId, long nativeHandle);
+  private native void unreg_rma_buffer(int rdmaBufferId, long nativeHandle);
+  private native long get_buffer_address(ByteBuffer buffer, long nativeHandle);
+  private native int init(int worker_num_, int buffer_num_, boolean is_server_);
+  private native void free(long nativeHandle);
   public native void finalize();
 
-  public String getIp() {
-    return ip;
+  protected class EqTask extends EventTask {
+
+    @Override
+    public void loopEvent() {
+      while (running.get() || needReap()) {
+        if (wait_eq_event(getNativeHandle()) == -1) {
+          stop();
+        }
+        externalEvent();
+      }
+    }
   }
-
-  public String getPort() {
-    return port;
-  }
-
-  private long nativeHandle;
-  private long localEq;
-  private String ip;
-  private String port;
-  private int worker_num;
-  private int buffer_num;
-  public boolean is_server;
-  private HashMap<Long, Connection> conMap;
-  private LinkedBlockingQueue<Connection> reapCons;
-
-  private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
-
-  private MemPool sendBufferPool;
-  private MemPool recvBufferPool;
-
-  AtomicInteger rmaBufferId;
-
-  private Handler connectedCallback;
-  private Handler recvCallback;
-  private Handler sendCallback;
-  private Handler readCallback;
-  private Handler shutdownCallback;
-
-  private EqThread eqThread;
-  private final AtomicBoolean needReap = new AtomicBoolean(false);
-  private boolean needStop = false;
-  private CountDownLatch connectLatch;
 }

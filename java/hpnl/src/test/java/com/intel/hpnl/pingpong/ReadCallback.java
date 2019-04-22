@@ -12,7 +12,7 @@ public class ReadCallback implements Handler {
     this.is_server = is_server;
     this.eqService = eqService;
   }
-  public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public synchronized int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     if (!is_server) {
       if (count == 0) {
         startTime = System.currentTimeMillis();
@@ -21,7 +21,7 @@ public class ReadCallback implements Handler {
         endTime = System.currentTimeMillis();
         totally_time = (float)(endTime-startTime)/1000;
         System.out.println("finished, total time is " + totally_time + " s");
-        return;
+        return Handler.RESULT_DEFAULT;
       }
     }
     RdmaBuffer sendBuffer = con.takeSendBuffer(true);
@@ -31,6 +31,7 @@ public class ReadCallback implements Handler {
 
     sendBuffer.put(recvByteBuffer, (byte)0, 10);
     con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
+    return Handler.RESULT_DEFAULT;
   }
   private int count = 0;
   private long startTime;

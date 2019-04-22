@@ -36,7 +36,7 @@ public class ClientReadCallback implements Handler {
     }
   }
 
-  public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public synchronized int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     ByteBuffer byteBuffer = con.getRmaBuffer(rdmaBufferId);
     if (count == 0) {
       startTime = System.currentTimeMillis();
@@ -66,6 +66,7 @@ public class ClientReadCallback implements Handler {
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+    return Handler.RESULT_DEFAULT;
   }
   private int count = 0;
   private volatile long startTime;

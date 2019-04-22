@@ -20,7 +20,7 @@ public class ServerRecvCallback implements Handler {
     }
     buf.getRawBuffer().flip();
   }
-  public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public synchronized int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     this.cur_buf = PooledByteBufAllocator.DEFAULT.directBuffer(4096*1024, 4096*1024);
     if (last_buf != null) {
       last_buf.release(); 
@@ -38,6 +38,7 @@ public class ServerRecvCallback implements Handler {
     byteBufferTmp.flip();
     sendBuffer.put(byteBufferTmp, (byte)0, 0);
     con.send(sendBuffer.getRawBuffer().remaining(), sendBuffer.getRdmaBufferId());
+    return Handler.RESULT_DEFAULT;
   }
   private boolean is_server = false;
   private EqService eqService;

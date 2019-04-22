@@ -26,7 +26,7 @@ int CQExternalDemultiplexer::init() {
   return 0;
 }
 
-int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* block_buffer_size) {
+int CQExternalDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* rdma_buffer_id, int* block_buffer_size) {
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
@@ -64,19 +64,19 @@ int CQExternalDemultiplexer::wait_event(fid_eq** eq, int* rdma_buffer_id, int* b
       return 0;
     } else {
       end = start;
-      Chunk *ck = (Chunk*)entry.op_context;
-      *rdma_buffer_id = ck->rdma_buffer_id;
-      FIConnection *con = (FIConnection*)ck->con;
-      if (!con) {
+      *ck = (Chunk*)entry.op_context;
+	  *rdma_buffer_id = (*ck)->rdma_buffer_id;
+	  FIConnection *conn = (FIConnection*)(*ck)->con;
+      if (!conn) {
         return 0;
       }
-      fid_eq *eq_tmp = (fid_eq*)con->get_eqhandle()->get_ctx();
+      fid_eq *eq_tmp = (fid_eq*)conn->get_eqhandle()->get_ctx();
       *eq = eq_tmp;
       if (entry.flags & FI_RECV) {
-        std::unique_lock<std::mutex> l(con->con_mtx);
-        con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
+        std::unique_lock<std::mutex> l(conn->con_mtx);
+        conn->con_cv.wait(l, [conn] { return conn->status >= CONNECTED; });
         l.unlock();
-        con->recv((char*)ck->buffer, entry.len);
+        conn->recv((char*)(*ck)->buffer, entry.len);
         *block_buffer_size = entry.len;
         return RECV_EVENT;
       } else if (entry.flags & FI_SEND) {

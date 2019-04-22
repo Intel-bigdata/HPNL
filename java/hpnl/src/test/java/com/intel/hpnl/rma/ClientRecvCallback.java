@@ -12,7 +12,7 @@ public class ClientRecvCallback implements Handler {
     this.buffer = buffer;
   }
   
-  public synchronized void handle(final Connection con, int rdmaBufferId, int blockBufferSize) {
+  public synchronized int handle(final Connection con, int rdmaBufferId, int blockBufferSize) {
     RdmaBuffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
     if (count++ == 0) {
@@ -21,6 +21,7 @@ public class ClientRecvCallback implements Handler {
     long address = recvByteBuffer.getLong();
     long rkey = recvByteBuffer.getLong();
     con.read(buffer.getRdmaBufferId(), 0, 4096*1024, address, rkey);
+    return Handler.RESULT_DEFAULT;
   }
   boolean is_server = false;
   private RdmaBuffer buffer;

@@ -10,26 +10,26 @@ extern "C" {
 /*
  * Class:     com_intel_hpnl_core_Connection
  * Method:    recv
- * Signature: (Ljava/nio/ByteBuffer;I)V
+ * Signature: (Ljava/nio/ByteBuffer;IJ)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv
-  (JNIEnv *, jobject, jobject, jint);
+  (JNIEnv *, jobject, jobject, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_Connection
  * Method:    send
- * Signature: (Ljava/nio/ByteBuffer;II)V
+ * Signature: (IIJ)I
  */
-JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_send
-  (JNIEnv *, jobject, jint, jint);
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_Connection_send
+  (JNIEnv *, jobject, jint, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_Connection
  * Method:    read
- * Signature: (Ljava/nio/ByteBuffer;IIJJJ)V
+ * Signature: (IIJJJJ)I
  */
-JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read
-  (JNIEnv *, jobject, jint, jint, jlong, jlong, jlong);
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_Connection_read
+  (JNIEnv *, jobject, jint, jint, jlong, jlong, jlong, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_Connection
@@ -41,11 +41,27 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init
 
 /*
  * Class:     com_intel_hpnl_core_Connection
+ * Method:    get_cq_index
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_Connection_get_1cq_1index
+  (JNIEnv *, jobject);
+
+/*
+ * Class:     com_intel_hpnl_core_Connection
  * Method:    finalize
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize
   (JNIEnv *, jobject);
+
+/*
+ * Class:     com_intel_hpnl_core_Connection
+ * Method:    releaseRecvBuffer
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_releaseRecvBuffer
+  (JNIEnv *, jobject, jint);
 
 #ifdef __cplusplus
 }

@@ -38,9 +38,9 @@ public class MemPool {
     RdmaBuffer rdmaBuffer = new RdmaBuffer(seq, byteBuffer);
     bufferMap.put(seq, rdmaBuffer);
     if (type == Type.SEND)
-      eqService.set_send_buffer(byteBuffer, bufferSize, seq);
+      eqService.set_send_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
     else
-      eqService.set_recv_buffer(byteBuffer, bufferSize, seq);
+      eqService.set_recv_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
   }
 
   private EqService eqService;

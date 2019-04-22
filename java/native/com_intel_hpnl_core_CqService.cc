@@ -3,6 +3,8 @@
 
 #include "com_intel_hpnl_core_CqService.h"
 
+static jmethodID handleCallback;
+
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {
   static int init = 0;
@@ -11,6 +13,9 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   {
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
+    jclass connClass = env->FindClass("com/intel/hpnl/core/Connection");
+    handleCallback = (*env).GetMethodID(connClass, "handleCallback", "(III)I");
+
     init = 1;
   }
   return fidSelfPtr;
@@ -33,30 +38,26 @@ static void _set_self(JNIEnv *env, jobject thisObj, ExternalCqService *self)
  * Method:    wait_cq_event
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv *env, jobject thisObj, jint index) {
-  ExternalCqService *externalCqService = _get_self(env, thisObj);
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv *env, jobject thisObj, jint index, jlong cqServicePtr) {
+  ExternalCqService *externalCqService = *(ExternalCqService **)&cqServicePtr;
   fid_eq *eq;
+  Chunk *chunk;
   int block_buffer_size = 0;
   int rdma_buffer_id = 0;
-  int ret = externalCqService->wait_cq_event(index, &eq, &rdma_buffer_id, &block_buffer_size);
+  int ret = externalCqService->wait_cq_event(index, &eq, &chunk, &rdma_buffer_id, &block_buffer_size);
   if (ret <= 0) {
     return ret; 
   }
-  Connection *con = externalCqService->get_connection(eq);
-  if (!con)
+  FIConnection* conn = (FIConnection*)chunk->con;
+  if (!conn)
     return -1;
-  assert(thisObj);
-  jclass thisClass = (*env).GetObjectClass(thisObj);
-  jmethodID handleCqCallback = (*env).GetMethodID(thisClass, "handleCqCallback", "(JIII)V");
-  jlong jEq = *(jlong*)&eq;
-  (*env).CallVoidMethod(thisObj, handleCqCallback, jEq, ret, rdma_buffer_id, block_buffer_size);
-  if (ret == RECV_EVENT) {
-    Chunk *ck = externalCqService->get_chunk(rdma_buffer_id, RECV_CHUNK);
-    if (con->activate_chunk(ck)) {
-      // TODO: error handler 
-    }
-  } else if (ret == SEND_EVENT) {
-    Chunk *ck = externalCqService->get_chunk(rdma_buffer_id, SEND_CHUNK); 
+
+  jint rst = (*env).CallIntMethod(thisObj, handleCallback, ret, rdma_buffer_id, block_buffer_size);
+  if (ret == RECV_EVENT && rst) {
+	Chunk *ck = externalCqService->get_chunk(rdma_buffer_id, RECV_CHUNK);
+	if (conn->activate_chunk(ck)) {
+		perror("failed to return receive chunk/buffer");
+	}
   }
   return ret;
 }
@@ -66,8 +67,8 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
  * Method:    init
  * Signature: (J)V
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_init(JNIEnv *env, jobject thisObj, jlong service) {
-  ExternalEqService *externalEqService = *(ExternalEqService**)&service;
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_init(JNIEnv *env, jobject thisObj, jlong eqServicePtr) {
+  ExternalEqService *externalEqService = *(ExternalEqService **)&eqServicePtr;
   ExternalCqService *externalCqService = new ExternalCqService(externalEqService, externalEqService->get_stack());
   _set_self(env, thisObj, externalCqService);
   return externalCqService->init();
@@ -92,9 +93,8 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_finalize(JNIEnv *env, 
  * Method:    free
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_free(JNIEnv *env, jobject thisObj) {
-  ExternalCqService *externalCqService = _get_self(env, thisObj);
-
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_free(JNIEnv *env, jobject thisObj, jlong cqServicePtr) {
+  ExternalCqService *externalCqService = *(ExternalCqService **)&cqServicePtr;
   if (externalCqService != NULL) {
     delete externalCqService;
     externalCqService = NULL;

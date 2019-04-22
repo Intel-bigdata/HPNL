@@ -10,7 +10,7 @@ import com.intel.hpnl.core.RdmaBuffer;
 public class ClientReadCallback implements Handler {
   public ClientReadCallback() {
   }
-  public synchronized void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public synchronized int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     ByteBuffer byteBuffer = con.getRmaBuffer(rdmaBufferId);
     if (count == 0) {
       startTime = System.currentTimeMillis();
@@ -24,7 +24,7 @@ public class ClientReadCallback implements Handler {
       endTime = System.currentTimeMillis();
       totally_time = (float)(endTime-startTime)/1000;
       System.out.println("finished, total time is " + totally_time + " s");
-      return; 
+      return Handler.RESULT_DEFAULT;
     }
 
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(4096);
@@ -34,6 +34,7 @@ public class ClientReadCallback implements Handler {
     sendBuffer.put(byteBufferTmp, (byte)0, 10);
     con.send(sendBuffer.remaining(), sendBuffer.getRdmaBufferId());
     count++;
+    return Handler.RESULT_DEFAULT;
   }
   private int count = 0;
   private long startTime;

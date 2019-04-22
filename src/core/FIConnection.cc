@@ -6,11 +6,11 @@
 FIConnection::FIConnection(FIStack *stack_, fid_fabric *fabric_, 
     fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
     fid_wait *waitset_, BufMgr *recv_buf_mgr_, 
-    BufMgr *send_buf_mgr_, bool is_server_, int buffer_num_) : 
+    BufMgr *send_buf_mgr_, bool is_server_, int buffer_num_, int cq_index_, long connect_id_) :
   stack(stack_), fabric(fabric_), info(info_), domain(domain_), ep(NULL),
   conCq(cq_), conEq(NULL), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), 
-  waitset(waitset_), is_server(is_server_), buffer_num(buffer_num_), 
-  read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {}
+  waitset(waitset_), is_server(is_server_), buffer_num(buffer_num_), cq_index(cq_index_),
+  connect_id(connect_id_), read_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {}
 
 FIConnection::~FIConnection() {
   for (auto buffer: send_buffers_map) {
@@ -33,7 +33,7 @@ FIConnection::~FIConnection() {
     fi_close(&conEq->fid);
     conEq = nullptr;
   }
-  if (is_server) {
+  if (info) {
     fi_freeinfo(info);
     info = nullptr;
   }
@@ -247,6 +247,18 @@ fid* FIConnection::get_fid() {
   return &conEq->fid;
 }
 
+int FIConnection::get_cq_index(){
+  return cq_index;
+}
+
+void FIConnection::set_cq_index(int index){
+  cq_index = index;
+}
+
+long FIConnection::get_id(){
+  return connect_id;
+}
+
 int FIConnection::activate_chunk(Chunk *ck) {
   ck->con = this;
   if (fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
@@ -254,6 +266,11 @@ int FIConnection::activate_chunk(Chunk *ck) {
     return -1; 
   }
   return 0;
+}
+
+int FIConnection::activate_chunk(int rdmaBufferId) {
+  Chunk *ck = recv_buf_mgr->index(rdmaBufferId);
+  return activate_chunk(ck);
 }
 
 HandlePtr FIConnection::get_eqhandle() {

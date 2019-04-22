@@ -1,9 +1,9 @@
 #include "HPNL/FIStack.h"
 
-FIStack::FIStack(const char *ip_, const char *port_, uint64_t flags_, int worker_num_, int buffer_num_) : 
-  ip(ip_), port(port_), flags(flags_), 
-  worker_num(worker_num_), buffer_num(buffer_num_), 
-  fabric(NULL), domain(NULL), hints(NULL), info(NULL), 
+FIStack::FIStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_) :
+  flags(flags_),
+  worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_),
+  fabric(NULL), domain(NULL), hints(NULL), info(NULL), hints_tmp(NULL), info_tmp(NULL),
   peq(NULL), pep(NULL), waitset(NULL) {}
 
 FIStack::~FIStack() {
@@ -37,6 +37,14 @@ FIStack::~FIStack() {
     fi_freeinfo(info);
     info = nullptr;
   }
+  if (hints_tmp) {
+    fi_freeinfo(hints_tmp);
+    hints_tmp = nullptr;
+  }
+  if (is_server && info_tmp) {
+    fi_freeinfo(info_tmp);
+    info_tmp = nullptr;
+  }
 }
 
 int FIStack::init() {
@@ -49,29 +57,29 @@ int FIStack::init() {
   };
 
   if ((hints = fi_allocinfo()) == NULL) {
-    perror("fi_allocinfo");
-    goto free_hints;
+	perror("fi_allocinfo");
+	goto free_hints;
   }
   hints->addr_format = FI_SOCKADDR_IN;
   hints->ep_attr->type = FI_EP_MSG;
   hints->domain_attr->mr_mode = FI_MR_BASIC;
   hints->caps = FI_MSG;
   hints->mode = FI_CONTEXT | FI_LOCAL_MR;
+  hints->tx_attr->msg_order = FI_ORDER_SAS;
+  hints->rx_attr->msg_order = FI_ORDER_SAS;
 
-  if (fi_getinfo(FI_VERSION(1, 5), ip, port, flags, hints, &info)) {
+  if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, flags, hints, &info)) {
     perror("fi_getinfo");
     goto free_info;
   }
   if (fi_fabric(info->fabric_attr, &fabric, NULL)) {
-    perror("fi_fabric");
+	perror("fi_fabric");
     goto free_fabric;
   }
-
   if (fi_eq_open(fabric, &eq_attr, &peq, &peqHandle)) {
     perror("fi_eq_open");
     goto free_eq;
   }
-
   if (fi_domain(fabric, info, &domain, NULL)) {
     perror("fi_domain");
     goto free_domain;
@@ -128,8 +136,23 @@ free_hints:
   return -1;
 }
 
-HandlePtr FIStack::bind() {
-  if (fi_passive_ep(fabric, info, &pep, NULL)) {
+HandlePtr FIStack::bind(const char *ip_, const char *port_) {
+  if ((hints_tmp = fi_allocinfo()) == NULL) {
+	perror("fi_allocinfo");
+  }
+  hints_tmp->addr_format = FI_SOCKADDR_IN;
+  hints_tmp->ep_attr->type = FI_EP_MSG;
+  hints_tmp->domain_attr->mr_mode = FI_MR_BASIC;
+  hints_tmp->caps = FI_MSG;
+  hints_tmp->mode = FI_CONTEXT | FI_LOCAL_MR;
+  hints_tmp->tx_attr->msg_order = FI_ORDER_SAS;
+  hints_tmp->rx_attr->msg_order = FI_ORDER_SAS;
+
+  if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
+	perror("fi_getinfo");
+  }
+
+  if (fi_passive_ep(fabric, info_tmp, &pep, NULL)) {
     perror("fi_passive_ep");
     return NULL;
   }
@@ -149,8 +172,27 @@ int FIStack::listen() {
   return 0;
 }
 
-HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(this, fabric, info, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num);
+HandlePtr FIStack::connect(const char *ip_, const char *port_, int cq_index, long connect_id, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+  if ((hints_tmp = fi_allocinfo()) == NULL) {
+    perror("fi_allocinfo");
+  }
+  hints_tmp->addr_format = FI_SOCKADDR_IN;
+  hints_tmp->ep_attr->type = FI_EP_MSG;
+  hints_tmp->domain_attr->mr_mode = FI_MR_BASIC;
+  hints_tmp->caps = FI_MSG;
+  hints_tmp->mode = FI_CONTEXT | FI_LOCAL_MR;
+  hints_tmp->tx_attr->msg_order = FI_ORDER_SAS;
+  hints_tmp->rx_attr->msg_order = FI_ORDER_SAS;
+
+  if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
+    perror("fi_getinfo");
+  }
+
+  if(cq_index >= worker_num){
+	perror("cq_index exceeds worker_num. "+cq_index);
+	return NULL;
+  }
+  FIConnection *con = new FIConnection(this, fabric, info_tmp, domain, cqs[cq_index], waitset, recv_buf_mgr, send_buf_mgr, false, buffer_num, cq_index, connect_id);
   if (con->init())
     return NULL;
   if (int res = con->connect()) {
@@ -167,7 +209,8 @@ HandlePtr FIStack::connect(BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
 }
 
 HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
-  FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num);
+  int cq_index = seq_num%worker_num;
+  FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[cq_index], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num, cq_index, 0);
   if (con->init())
     return NULL; 
   con->status = ACCEPT_REQ;

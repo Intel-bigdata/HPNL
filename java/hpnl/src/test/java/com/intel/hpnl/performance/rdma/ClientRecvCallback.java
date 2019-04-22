@@ -16,7 +16,7 @@ public class ClientRecvCallback implements Handler {
     this.clientReadCallback = clientReadCallback;
   }
   
-  public synchronized void handle(final Connection con, int rdmaBufferId, int blockBufferSize) {
+  public synchronized int handle(final Connection con, int rdmaBufferId, int blockBufferSize) {
     RdmaBuffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
@@ -30,10 +30,11 @@ public class ClientRecvCallback implements Handler {
     }
 
     if(fileLen <= 0){
-      return;
+      return Handler.RESULT_DEFAULT;
     }
 
     con.read(buffer.getRdmaBufferId(), 0, fileLen, address, rkey);
+    return Handler.RESULT_DEFAULT;
   }
   boolean is_server = false;
   private RdmaBuffer buffer;

@@ -12,7 +12,7 @@ public class ServerConnectedCallback implements Handler {
     this.conList = conList;
     this.isServer = isServer;
   }
-  public void handle(Connection con, int rdmaBufferId, int blockBufferSize) {
+  public int handle(Connection con, int rdmaBufferId, int blockBufferSize) {
     this.conList.add(con);
     for(int i=0; i<50; i++){
       RdmaBuffer rdmaBuffer = con.takeSendBuffer(true);
@@ -22,6 +22,7 @@ public class ServerConnectedCallback implements Handler {
       rdmaBuffer.put(buffer, (byte)0, i);
       con.send(rdmaBuffer.remaining(), rdmaBuffer.getRdmaBufferId());
     }
+    return Handler.RESULT_DEFAULT;
   }
   List<Connection> conList;
   boolean isServer;

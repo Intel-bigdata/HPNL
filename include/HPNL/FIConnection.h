@@ -34,7 +34,7 @@ class FIStack;
 
 class FIConnection : public Connection {
   public:
-    FIConnection(FIStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int buffer_num);
+    FIConnection(FIStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int buffer_num, int cq_index, long connect_id);
     ~FIConnection();
 
     virtual int init() override;
@@ -45,6 +45,10 @@ class FIConnection : public Connection {
     virtual void shutdown() override;
     virtual void take_back_chunk(Chunk*) override;
     virtual int activate_chunk(Chunk*) override;
+    virtual int activate_chunk(int rdmaBufferId) override;
+    virtual int get_cq_index() override;
+    virtual void set_cq_index(int index) override;
+    virtual long get_id() override;
     
     int connect();
     int accept();
@@ -94,6 +98,9 @@ class FIConnection : public Connection {
     bool is_server;
 
     int buffer_num;
+
+    int cq_index;
+    long connect_id;
 
     size_t dest_port;
     char dest_addr[20];
