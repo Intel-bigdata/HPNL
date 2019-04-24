@@ -56,7 +56,7 @@ public class ClientTest implements Runnable {
     Connection con = client.connect(addr, port, 0);
     System.out.println("connected, start to pingpong");
     con.send(byteBufferTmp, (byte)0, 10);
-    
+
     client.join();
   }
 

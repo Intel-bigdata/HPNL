@@ -16,8 +16,8 @@ public class EqThread extends Thread {
       }
       this.eqService.externalEvent();
     }
+    this.eqService.free();
   }
-
   
   public void shutdown() {
     running.set(false); 

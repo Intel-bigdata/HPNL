@@ -44,7 +44,7 @@ public class ServerTest implements Runnable {
     server.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
     server.listen(addr, port);
-    
+
     server.join();
   }
 

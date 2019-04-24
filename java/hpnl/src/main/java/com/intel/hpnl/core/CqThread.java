@@ -19,6 +19,7 @@ public class CqThread extends Thread {
         shutdown();
       }
     }
+    this.cqService.free();
   }
 
   public void shutdown() {

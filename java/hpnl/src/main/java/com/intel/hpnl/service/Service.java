@@ -20,6 +20,10 @@ public abstract class Service {
     this.cqService.setAffinities(affinities);
   }
 
+  public void shutdown() {
+    this.cqService.shutdown();
+  }
+
   public void join() {
     this.cqService.join();
     this.eqService.shutdown();

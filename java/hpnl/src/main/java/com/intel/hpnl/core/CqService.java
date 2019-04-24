@@ -47,7 +47,6 @@ public class CqService {
         cqThread.shutdown();
       }
     }
-    free(nativeHandle);
   }
 
   public void join() {
@@ -94,6 +93,12 @@ public class CqService {
     }
     waitExternalEvent(index);
     return 0;
+  }
+
+  public void free() {
+    synchronized(CqService.class) {
+      free(this.nativeHandle);
+    }
   }
 
   public native int wait_cq_event(int index, long nativeHandle);

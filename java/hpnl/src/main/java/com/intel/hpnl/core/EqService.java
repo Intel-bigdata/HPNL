@@ -78,18 +78,13 @@ public class EqService {
   }
 
   public void shutdown() {
-    for (Connection con : reapCons) {
-      addReapCon(con);
+    for (long key : conMap.keySet()) {
+      addReapCon(conMap.get(key));
     }
     synchronized(EqService.class) {
       eqThread.shutdown();
     }
     delete_eq_event(localEq, nativeHandle);
-    free(nativeHandle);
-  }
-
-  public void setCqService() {
-  
   }
 
   private void regCon(long eq, long con, int index, String dest_addr, int dest_port, String src_addr, int src_port) {
@@ -238,6 +233,10 @@ public class EqService {
 
   public long getNativeHandle() {
     return nativeHandle; 
+  }
+
+  public void free() {
+    free(this.nativeHandle);
   }
 
   public native void shutdown(long eq, long nativeHandle);
