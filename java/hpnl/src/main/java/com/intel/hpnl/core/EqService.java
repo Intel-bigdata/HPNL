@@ -97,9 +97,6 @@ public class EqService {
     if (conMap.containsKey(eq)) {
       conMap.remove(eq);
     }
-    if (!is_server) {
-      eqThread.shutdown(); 
-    }
   }
 
   private void handleEqCallback(long eq, int eventType, int blockId) {

@@ -8,7 +8,6 @@ public class Client extends Service {
   }
 
   public Connection connect(String ip, String port, int timeout) {
-    this.cqService.start();
     return this.eqService.connect(ip, port, timeout);
   }
 }
