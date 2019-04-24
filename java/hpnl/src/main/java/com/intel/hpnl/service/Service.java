@@ -20,6 +20,10 @@ public abstract class Service {
     this.cqService.setAffinities(affinities);
   }
 
+  public void start() {
+    this.cqService.start();
+  }
+
   public void shutdown() {
     this.cqService.shutdown();
   }

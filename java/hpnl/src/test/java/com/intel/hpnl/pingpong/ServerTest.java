@@ -42,6 +42,7 @@ public class ServerTest implements Runnable {
     server.setRecvCallback(recvCallback);
 
     server.initBufferPool(bufferNbr, bufferSize, bufferNbr);
+    server.start();
 
     server.listen(addr, port);
 

@@ -6,7 +6,6 @@ public class Server extends Service {
   }
 
   public void listen(String ip, String port) {
-    this.cqService.start();
     this.eqService.listen(ip, port);
   }
 }
