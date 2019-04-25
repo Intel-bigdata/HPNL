@@ -47,6 +47,9 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize
   (JNIEnv *, jobject);
 
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_free
+  (JNIEnv *, jobject, jlong);
+
 #ifdef __cplusplus
 }
 #endif

@@ -15,12 +15,6 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   return fidSelfPtr;
 }
 
-static Connection*_get_self(JNIEnv *env, jobject thisObj)
-{
-  jlong selfPtr = env->GetLongField(thisObj, _get_self_id(env, thisObj));
-  return *(Connection**)&selfPtr;
-}
-
 static void _set_self(JNIEnv *env, jobject thisObj, long nativeCon)
 {
   env->SetLongField(thisObj, _get_self_id(env, thisObj), nativeCon);
@@ -57,5 +51,11 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init(JNIEnv *env, job
  * Signature: ()V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize(JNIEnv *env, jobject thisObj) {
-  _set_self(env, thisObj, 0);
+}
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_free(JNIEnv *env, jobject thisObj, jlong conPtr) {
+  Connection *con = *(Connection**)&conPtr;
+  if (con != NULL) {
+    delete con;
+    con = NULL;
+  }
 }
