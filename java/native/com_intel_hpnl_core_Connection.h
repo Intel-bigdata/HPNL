@@ -42,10 +42,10 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init
 /*
  * Class:     com_intel_hpnl_core_Connection
  * Method:    get_cq_index
- * Signature: ()I
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_Connection_get_1cq_1index
-  (JNIEnv *, jobject);
+  (JNIEnv *, jobject, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_Connection
@@ -57,11 +57,27 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize
 
 /*
  * Class:     com_intel_hpnl_core_Connection
+ * Method:    deleteGlobalRef
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_deleteGlobalRef
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_Connection
  * Method:    releaseRecvBuffer
- * Signature: (I)V
+ * Signature: (IJ)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_releaseRecvBuffer
-  (JNIEnv *, jobject, jint);
+  (JNIEnv *, jobject, jint, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_Connection
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_free
+  (JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
 }

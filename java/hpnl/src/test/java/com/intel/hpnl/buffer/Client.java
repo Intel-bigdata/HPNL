@@ -36,7 +36,7 @@ public class Client {
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    ExecutorService executor = Executors.newFixedThreadPool(1);
+    ExecutorService executor = Executors.newFixedThreadPool(2);
     eqService.connect(addr, "123456", 0, 5000);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
@@ -46,6 +46,7 @@ public class Client {
     System.out.println("connected.");
 
     Thread.sleep(1000);
+
 
     cqService.stop();
     eqService.stop();

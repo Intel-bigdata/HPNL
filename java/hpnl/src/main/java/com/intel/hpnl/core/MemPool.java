@@ -15,7 +15,7 @@ public class MemPool {
     this.bufferSize = bufferSize;
     this.nextBufferNum = nextBufferNum;
     this.type = type;
-    this.bufferMap = new ConcurrentHashMap<Integer, RdmaBuffer>();
+    this.bufferMap = new ConcurrentHashMap<>();
     this.seqId = new AtomicInteger(0);
     for (int i = 0; i < this.initBufferNum; i++) {
       alloc();

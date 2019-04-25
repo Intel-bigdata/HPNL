@@ -4,8 +4,8 @@ public class EqServerService extends EqService {
 
   private Handler connectedCallback;
 
-  public EqServerService(int worker_num, int buffer_num, boolean is_server) {
-    super(worker_num, buffer_num, is_server);
+  public EqServerService(int worker_num, int buffer_num) {
+    super(worker_num, buffer_num, true);
   }
 
   @Override

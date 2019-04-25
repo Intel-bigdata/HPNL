@@ -6,6 +6,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Connection {
 
   private EqService service;
+  private CqService cqService;
 
   private LinkedBlockingQueue<RdmaBuffer> sendBufferList;
 
@@ -29,12 +30,13 @@ public class Connection {
   private int cqIndex;
   private final long connectId;
 
-  public Connection(long nativeEq, long nativeCon, EqService service, long connectId) {
+  public Connection(long nativeEq, long nativeCon, EqService service, CqService cqService, long connectId) {
     this.service = service;
+    this.cqService = cqService;
     this.sendBufferList = new LinkedBlockingQueue<>();
     this.nativeEq = nativeEq;
     init(nativeCon);
-    cqIndex = get_cq_index();
+    cqIndex = get_cq_index(this.nativeHandle);
     connected = true;
     this.connectId = connectId;
   }
@@ -49,6 +51,7 @@ public class Connection {
       }
       this.service.unregCon(nativeEq);
       this.service.shutdown(nativeEq, service.getNativeHandle());
+      deleteGlobalRef(this.nativeHandle);
       if (shutdownCallback != null) {
         shutdownCallback.handle(null, 0, 0);
       }
@@ -68,14 +71,24 @@ public class Connection {
     return read(rdmaBufferId, localOffset, len, remoteAddr, remoteMr, this.nativeHandle);
   }
 
-  public native void recv(ByteBuffer buffer, int id, long nativeHandle);
-  public native int send(int blockBufferSize, int rdmaBufferId, long nativeHandle);
-  public native int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr, long nativeHandle);
+  public void releaseRecvBuffer(int rdmaBufferId){
+    releaseRecvBuffer(rdmaBufferId, nativeHandle);
+  }
+
+  public void deleteConnection(){
+    this.cqService.addExternalEvent(cqIndex, () -> free(nativeHandle));
+  }
+
+  private native void recv(ByteBuffer buffer, int id, long nativeHandle);
+  private native int send(int blockBufferSize, int rdmaBufferId, long nativeHandle);
+  private native int read(int rdmaBufferId, int localOffset, long len, long remoteAddr, long remoteMr, long nativeHandle);
 
   private native void init(long eq);
-  private native int get_cq_index();
+  private native int get_cq_index(long nativeHandle);
   public native void finalize();
-  public native void releaseRecvBuffer(int rdmaBufferId);
+  private native void releaseRecvBuffer(int rdmaBufferId, long nativeHandle);
+  private native void deleteGlobalRef(long nativeHandle);
+  private native void free(long nativeHandle);
 
   public Handler getConnectedCallback() {
     return connectedCallback;

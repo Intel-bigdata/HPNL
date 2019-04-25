@@ -5,10 +5,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.intel.hpnl.core.EqService;
-import com.intel.hpnl.core.CqService;
-import com.intel.hpnl.core.Connection;
-import com.intel.hpnl.core.EventTask;
+import com.intel.hpnl.core.*;
 
 public class Server {
   public static void main(String args[]) throws InterruptedException {
@@ -17,7 +14,7 @@ public class Server {
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
     int workNbr = args.length >=4 ? Integer.valueOf(args[3]) : 3;
 
-    EqService eqService = new EqService(workNbr, bufferNbr, true).init();
+    EqService eqService = new EqServerService(workNbr, bufferNbr).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     
     List<Connection> conList = new ArrayList<Connection>();

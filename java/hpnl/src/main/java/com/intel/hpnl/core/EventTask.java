@@ -13,18 +13,29 @@ public abstract class EventTask implements Runnable {
 
   @Override
   public void run(){
-    loopEvent();
-    if(completed != null){
-      completed.countDown();
+    while(running.get()) {
+      waitEvent();
+    }
+    cleanUp();
+    synchronized (this) {
+      if (completed != null) {
+        completed.countDown();
+      }
     }
   }
 
-  protected abstract void loopEvent();
+  protected abstract void waitEvent();
+
+  protected void cleanUp(){}
 
   public void stop() {
     if(running.get()) {
-      running.set(false);
-      completed = new CountDownLatch(1);
+      synchronized (this) {
+        if(running.get()) {
+          running.set(false);
+          completed = new CountDownLatch(1);
+        }
+      }
     }
   }
 

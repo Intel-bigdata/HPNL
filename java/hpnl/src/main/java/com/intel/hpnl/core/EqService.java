@@ -1,14 +1,15 @@
 package com.intel.hpnl.core;
 
-import java.util.HashMap;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -19,7 +20,6 @@ public class EqService {
   private int buffer_num;
   public boolean is_server;
   protected Map<Long, Connection> conMap;
-  private LinkedBlockingQueue<Connection> reapCons;
 
   private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
 
@@ -28,20 +28,21 @@ public class EqService {
 
   AtomicInteger rmaBufferId;
 
-  private Handler connectedCallback;
-  private Handler recvCallback;
-  private Handler sendCallback;
-  private Handler readCallback;
-  private Handler shutdownCallback;
-
   private volatile CountDownLatch connectLatch;
 
   private EventTask eqTask;
 
   private Map<Long, Handler> connectedHandlers = new ConcurrentHashMap<>();
 
+  private CqService cqService;
+
   static {
-    System.loadLibrary("hpnl");
+    try {
+      System.loadLibrary("hpnl");
+    }catch (UnsatisfiedLinkError error){
+      System.out.println("loading from jar");
+      loadFromJar();
+    }
   }
 
   public EqService(int worker_num, int buffer_num, boolean is_server) {
@@ -51,7 +52,6 @@ public class EqService {
     this.rmaBufferId = new AtomicInteger(0);
 
     this.conMap = new ConcurrentHashMap();
-    this.reapCons = new LinkedBlockingQueue();
     this.rmaBufferMap = new ConcurrentHashMap();
     this.eqTask = new EqTask();
   }
@@ -63,30 +63,28 @@ public class EqService {
   }
 
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    if(connectedCallback == null){
-      throw new RuntimeException("connected callback cannot be null");
-    }
     long id = sequenceId();
     localEq = internal_connect(ip, port, cqIndex, id, nativeHandle);
     if (localEq == -1) {
       return -1;
     }
     add_eq_event(localEq, nativeHandle);
-    Handler prv = connectedHandlers.putIfAbsent(id, connectedCallback);
-    if(prv != null){
-      throw new RuntimeException("non-unique id found, "+id);
+    if(connectedCallback != null) {
+      Handler prv = connectedHandlers.putIfAbsent(id, connectedCallback);
+      if(prv != null){
+        throw new RuntimeException("non-unique id found, "+id);
+      }
     }
+
     return 0;
   }
 
   public int connect(String ip, String port, int cqIndex, long timeoutMill) {
     if (!is_server) {
-      synchronized (connectLatch) {
-        if(connectLatch != null){
-          throw new RuntimeException("the last connection is still under going");
-        }
-        connectLatch = new CountDownLatch(1);
+      if(connectLatch != null){
+        throw new RuntimeException("the last connection is still under going");
       }
+      connectLatch = new CountDownLatch(1);
     }
     int rt = connect(ip, port, cqIndex, null);
     if(rt < 0){
@@ -119,30 +117,24 @@ public class EqService {
   }
 
   public void stop() {
-    for (Connection con : reapCons) {
-      addReapCon(con);
-    }
-    synchronized(this) {
-      eqTask.stop();
-    }
+    eqTask.stop();
     delete_eq_event(localEq, nativeHandle);
     waitToComplete();
   }
 
   private void regCon(long eq, long con,
                       String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
-    Connection connection = new Connection(eq, con, this, connectId);
+    Connection connection = new Connection(eq, con, this, this.cqService, connectId);
     connection.setAddrInfo(dest_addr, dest_port, src_addr, src_port);
     conMap.put(eq, connection);
   }
 
   public void unregCon(long eq) {
-    if (conMap.containsKey(eq)) {
-      conMap.remove(eq);
+    Connection connection = conMap.remove(eq);
+    if(connection == null){
+      throw new RuntimeException("connection should be in the connection map, eq is "+eq);
     }
-    if (!is_server) {
-      eqTask.stop();
-    }
+    connection.deleteConnection();
   }
 
   private static long sequenceId() {
@@ -171,22 +163,6 @@ public class EqService {
   public void setConnectedCallback(Handler callback) {
     throw new UnsupportedOperationException();
   }
-
-//  public void setRecvCallback(Handler callback) {
-//    recvCallback = callback;
-//  }
-//
-//  public void setSendCallback(Handler callback) {
-//    sendCallback = callback;
-//  }
-//
-//  public void setReadCallback(Handler callback) {
-//    readCallback = callback;
-//  }
-
-//  public void setShutdownCallback(Handler callback) {
-//    shutdownCallback = callback;
-//  }
 
   public Connection getCon(long eq) {
     return conMap.get(eq);
@@ -261,23 +237,12 @@ public class EqService {
     return buffer; 
   }
 
+  public void setCqService(CqService cqService){
+    this.cqService = cqService;
+  }
+
   public ByteBuffer getRmaBufferByBufferId(int rmaBufferId) {
     return rmaBufferMap.get(rmaBufferId); 
-  }
-
-  public void addReapCon(Connection con) {
-    reapCons.offer(con);
-  }
-
-  public boolean needReap() {
-    return reapCons.size() > 0; 
-  }
-
-  public void externalEvent() {
-    while (needReap()) {
-      Connection con = reapCons.poll();
-      con.shutdown();
-    }
   }
 
   public int getWorkerNum() {
@@ -286,6 +251,38 @@ public class EqService {
 
   public EventTask getEventTask(){
     return eqTask;
+  }
+
+  private static void loadFromJar(){
+    File tempDir = null;
+    try {
+      tempDir = Files.createTempDirectory("hpnl").toFile();
+      tempDir.deleteOnExit();
+      loadByPath("/hpnl/libfabric.so", tempDir);
+      loadByPath("/hpnl/libhpnl.so", tempDir);
+    }catch (IOException e){
+      if(tempDir != null){
+        tempDir.delete();
+      }
+      throw new RuntimeException("failed to load libfabric and libhpnl from jar", e);
+    }
+  }
+
+  private static void loadByPath(String path, File tempDir)throws IOException{
+    File tempFile = null;
+    String fields[] = path.split("/");
+    String name = fields[fields.length-1];
+    try(InputStream is = EqService.class.getResourceAsStream(path)){
+      tempFile = new File(tempDir, name);
+      tempFile.deleteOnExit();
+      Files.copy(is, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      System.load(tempFile.getAbsolutePath());
+    }catch (IOException e){
+      if(tempFile != null){
+        tempFile.delete();
+      }
+      throw e;
+    }
   }
 
   public native void shutdown(long eq, long nativeHandle);
@@ -306,13 +303,18 @@ public class EqService {
   protected class EqTask extends EventTask {
 
     @Override
-    public void loopEvent() {
-      while (running.get() || needReap()) {
-        if (wait_eq_event(getNativeHandle()) == -1) {
-          stop();
-        }
-        externalEvent();
+    public void waitEvent() {
+      if (wait_eq_event(getNativeHandle()) == -1) {
+        stop();
       }
+    }
+
+    @Override
+    protected void cleanUp(){
+      for(Connection connection : conMap.values()){
+        connection.shutdown();
+      }
+      free(nativeHandle);
     }
   }
 }

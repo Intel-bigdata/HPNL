@@ -21,6 +21,8 @@
 #include "HPNL/Ptr.h"
 #include "HPNL/Handle.h"
 
+#include <jni.h>
+
 enum ConStatus {
   IDLE = 0,
   CONNECT_REQ,
@@ -69,6 +71,22 @@ class FIConnection : public Connection {
     Callback* get_send_callback();
     Callback* get_shutdown_callback();
 
+    jobject get_java_conn(){
+    	return java_conn;
+    }
+
+    void set_java_conn(jobject java_conn_ ){
+    	java_conn = java_conn_;
+    }
+
+    jmethodID get_callback_methodID(){
+    	return callback_methodID;
+    }
+
+    void set_callback_methodID(jmethodID method){
+    	callback_methodID = method;
+    }
+
   public:
     ConStatus status;
     std::mutex con_mtx;
@@ -110,6 +128,9 @@ class FIConnection : public Connection {
     Callback* read_callback;
     Callback* send_callback;
     Callback* shutdown_callback;
+
+    jobject java_conn;
+    jmethodID callback_methodID;
 };
 
 #endif

@@ -3,8 +3,6 @@
 
 #include "com_intel_hpnl_core_CqService.h"
 
-static jmethodID handleCallback;
-
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {
   static int init = 0;
@@ -13,9 +11,6 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   {
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
-    jclass connClass = env->FindClass("com/intel/hpnl/core/Connection");
-    handleCallback = (*env).GetMethodID(connClass, "handleCallback", "(III)I");
-
     init = 1;
   }
   return fidSelfPtr;
@@ -51,11 +46,14 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
   FIConnection* conn = (FIConnection*)chunk->con;
   if (!conn)
     return -1;
-
-  jint rst = (*env).CallIntMethod(thisObj, handleCallback, ret, rdma_buffer_id, block_buffer_size);
+  jobject javaConn = conn->get_java_conn();
+  if(!javaConn){
+	return -1;
+  }
+  jmethodID handleCallback = conn->get_callback_methodID();
+  jint rst = (*env).CallIntMethod(javaConn, handleCallback, ret, rdma_buffer_id, block_buffer_size);
   if (ret == RECV_EVENT && rst) {
-	Chunk *ck = externalCqService->get_chunk(rdma_buffer_id, RECV_CHUNK);
-	if (conn->activate_chunk(ck)) {
+	if (conn->activate_chunk(chunk)) {
 		perror("failed to return receive chunk/buffer");
 	}
   }

@@ -2,17 +2,14 @@ package com.intel.hpnl.core;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class CqService {
   private long nativeHandle;
   private EqService eqService;
   private long serviceNativeHandle;
   private List<EventTask> cqTasks;
-  private List<ExternalHandler> externalHandlers;
-
-  static {
-    System.loadLibrary("hpnl");
-  }
 
   public CqService(EqService service, long serviceNativeHandle) {
     this.eqService = service;
@@ -24,8 +21,7 @@ public class CqService {
       EventTask task = new CqTask(i);
       cqTasks.add(task);
     }
-
-    this.externalHandlers = new ArrayList();
+    this.eqService.setCqService(this);
   }
 
   public CqService init() {
@@ -39,12 +35,12 @@ public class CqService {
   }
 
   public void stop() {
-    synchronized (this) {
-      for (EventTask task : cqTasks) {
-        task.stop();
-      }
-      waitToComplete();
+    for (EventTask task : cqTasks) {
+      task.stop();
     }
+    waitToComplete();
+    //delete service after all tasks completed
+    free(nativeHandle);
   }
 
   private void waitToComplete() {
@@ -57,23 +53,8 @@ public class CqService {
     }
   }
 
-  public void addExternalEvent(ExternalHandler externalHandler) {
-    externalHandlers.add(externalHandler); 
-  }
-
-  private int waitExternalEvent(int index) {
-    for (ExternalHandler handler: externalHandlers) {
-      handler.handle();
-    }
-    return 0;
-  }
-
-  public int wait_event(int index) {
-    if (wait_cq_event(index, nativeHandle) < 0) {
-      return -1;
-    }
-    waitExternalEvent(index);
-    return 0;
+  public void addExternalEvent(int cqIndex, ExternalHandler externalHandler) {
+    ((CqTask)cqTasks.get(cqIndex)).externalHandlers.add(externalHandler);
   }
 
   public native int wait_cq_event(int index, long nativeHandle);
@@ -84,6 +65,7 @@ public class CqService {
 
   public class CqTask extends EventTask {
     private int index;
+    private BlockingQueue<ExternalHandler> externalHandlers = new LinkedBlockingQueue<>();
 
     public CqTask(int index) {
       super();
@@ -91,12 +73,42 @@ public class CqService {
     }
 
     @Override
-    public void loopEvent() {
-      while (running.get()) {
-        if (wait_event(index) == -1) {
-          stop();
-        }
+    public void waitEvent() {
+      if (processEvent(index) == -1) {
+        stop();
       }
+    }
+
+    private int processEvent(int index) {
+      int ret = 0;
+      if (wait_cq_event(index, nativeHandle) < 0) {
+        ret = -1;
+      }
+      int extRet = 0;
+      if(!externalHandlers.isEmpty()) {
+        extRet = processExternalEvent();
+      }
+      return ret == -1 ? ret : extRet;
+    }
+
+    @Override
+    protected void cleanUp(){
+      processExternalEvent();
+    }
+
+    private int processExternalEvent(){
+      int ret = 0;
+      ExternalHandler handler = externalHandlers.poll();
+      while(handler != null){
+        try {
+          handler.handle();
+        }catch (Throwable throwable){
+          throwable.printStackTrace();
+          ret = -1;
+        }
+        handler = externalHandlers.poll();
+      }
+      return ret;
     }
   }
 }

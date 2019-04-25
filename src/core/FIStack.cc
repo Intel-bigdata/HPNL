@@ -253,9 +253,6 @@ void FIStack::shutdown() {
 
 void FIStack::reap(void *con_id) {
   fid *id = (fid*)con_id;
-  FIConnection *con = reinterpret_cast<FIConnection*>(get_connection(id));
-  delete con;
-  con = NULL;
   auto iter = conMap.find(id);
   if (iter == conMap.end()) {
     assert("connection reap failure." == 0);

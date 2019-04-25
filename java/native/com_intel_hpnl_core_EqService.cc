@@ -75,11 +75,11 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_free(JNIEnv *env, jobj
 
 
 /*
- * Class:     com_intel_hpnl_EqService
- * Method:    connect
- * Signature: (I)J
+ * Class:     com_intel_hpnl_core_EqService
+ * Method:    internal_connect
+ * Signature: (Ljava/lang/String;Ljava/lang/String;IJJ)J
  */
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_internal_connect(JNIEnv *env, jobject thisObj, jstring ip_, jstring port_, jint cq_index, jlong connect_id, jlong eqServicePtr) {
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_internal_1connect(JNIEnv *env, jobject thisObj, jstring ip_, jstring port_, jint cq_index, jlong connect_id, jlong eqServicePtr) {
   const char *ip = (*env).GetStringUTFChars(ip_, 0);
   const char *port = (*env).GetStringUTFChars(port_, 0);
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;

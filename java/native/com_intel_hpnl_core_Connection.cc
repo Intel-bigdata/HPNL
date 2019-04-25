@@ -15,12 +15,6 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   return fidSelfPtr;
 }
 
-static Connection*_get_self(JNIEnv *env, jobject thisObj)
-{
-  jlong selfPtr = env->GetLongField(thisObj, _get_self_id(env, thisObj));
-  return *(Connection**)&selfPtr;
-}
-
 static void _set_self(JNIEnv *env, jobject thisObj, long nativeCon)
 {
   env->SetLongField(thisObj, _get_self_id(env, thisObj), nativeCon);
@@ -48,17 +42,24 @@ JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobj
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init(JNIEnv *env, jobject thisObj, jlong nativeCon) {
+  FIConnection *fiConn = *(FIConnection**)&nativeCon;
+  jobject javaConn = env->NewGlobalRef(thisObj);
+  fiConn->set_java_conn(javaConn);
+
+  jclass connClass = env->FindClass("com/intel/hpnl/core/Connection");
+  jmethodID handleCallback = (*env).GetMethodID(connClass, "handleCallback", "(III)I");
+  fiConn->set_callback_methodID(handleCallback);
   _set_self(env, thisObj, nativeCon);
 }
 
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_Connection_get_1cq_1index
-  (JNIEnv *env, jobject thisObj){
-  Connection *con = _get_self(env, thisObj);
+  (JNIEnv *env, jobject thisObj, jlong conPtr){
+  Connection *con = *(Connection**)&conPtr;
   return con->get_cq_index();
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_releaseRecvBuffer(JNIEnv *env, jobject thisObj, jint rdmaBufferId){
-	Connection *con = _get_self(env, thisObj);
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_releaseRecvBuffer(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jlong conPtr){
+	Connection *con = *(Connection**)&conPtr;
 	con->activate_chunk(rdmaBufferId);
 }
 
@@ -67,6 +68,30 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_releaseRecvBuffer(JNI
  * Method:    finalize
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize(JNIEnv *env, jobject thisObj) {
-  _set_self(env, thisObj, 0);
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize(JNIEnv *env, jobject thisObj) {}
+
+/*
+ * Class:     com_intel_hpnl_core_Connection
+ * Method:    deleteGlobalRef
+ * Signature: ()V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_deleteGlobalRef
+  (JNIEnv *env, jobject thisObj, jlong conPtr){
+	FIConnection *con = *(FIConnection**)&conPtr;
+	env->DeleteGlobalRef(con->get_java_conn());
+	con->set_java_conn(NULL);
+}
+
+/*
+ * Class:     com_intel_hpnl_core_Connection
+ * Method:    free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_free
+  (JNIEnv *env, jobject thisObj, jlong conPtr){
+	FIConnection *con = *(FIConnection**)&conPtr;
+	if(con != NULL){
+		delete con;
+		con = NULL;
+	}
 }

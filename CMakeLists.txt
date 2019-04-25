@@ -7,9 +7,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
 set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} "-std=c++11 -g -pthread -fPIC")
 
+FIND_PACKAGE(JNI REQUIRED)
+
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(/usr/local/include)
+include_directories(${JNI_INCLUDE_DIRS})
 
 set(LOG ${PROJECT_SOURCE_DIR}/src/log)
 set(UTIL ${PROJECT_SOURCE_DIR}/src/util)
