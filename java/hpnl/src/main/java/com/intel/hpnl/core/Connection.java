@@ -73,11 +73,20 @@ public class Connection {
     return 0;
   }
 
+  public void delCon() {
+    this.cqService.addExternalEvent(this.index, new ExternalHandler() {
+      public void handle() {
+        free(nativeHandle);
+      }
+    });
+  }
+
   public native void recv(ByteBuffer buffer, int id, long nativeHandle);
   public native int send(int blockBufferSize, int bufferId, long nativeHandle);
   public native int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr, long nativeHandle);
   private native void init(long eq);
   public native void finalize();
+  public native void free(long nativeHandle);
 
   public Handler getConnectedCallback() {
     return connectedCallback;

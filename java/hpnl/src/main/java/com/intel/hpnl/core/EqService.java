@@ -94,6 +94,8 @@ public class EqService {
   }
 
   public void unregCon(long eq) {
+    Connection connection = conMap.get(eq);
+    connection.delCon();
     if (conMap.containsKey(eq)) {
       conMap.remove(eq);
     }
