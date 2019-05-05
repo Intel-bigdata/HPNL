@@ -1,9 +1,17 @@
 #include "HPNL/Client.h"
 
-Client::Client() : Service(false) {} 
+Client::Client(int worker_num, int buffer_num) : Service(worker_num, buffer_num, false) {} 
 
-void Client::run(const char* ip_, const char* port_, int worker_num, int buffer_num) {
-  Service::run(ip_, port_, worker_num, buffer_num);
+int Client::init() {
+  return Service::init();
+}
+
+void Client::start() {
+  return Service::start();
+}
+
+int Client::connect(const char* ip_, const char* port_) {
+  return Service::connect(ip_, port_);
 }
 
 void Client::shutdown() {

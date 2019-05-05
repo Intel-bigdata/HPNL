@@ -106,7 +106,8 @@ int main(int argc, char *argv[]) {
     ck->capacity = BUFFER_SIZE;
     sendBufMgr->put(ck->buffer_id, ck);
   }
-  Client *client = new Client();
+  Client *client = new Client(2, 16);
+  client->init();
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 
@@ -120,7 +121,8 @@ int main(int argc, char *argv[]) {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run("172.168.2.106", "123456", 1, 16);
+  client->start();
+  client->connect("172.168.2.106", "123456");
 
   client->wait();
 
