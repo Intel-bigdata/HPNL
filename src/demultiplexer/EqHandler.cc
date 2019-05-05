@@ -1,7 +1,6 @@
 #include "core/FiStack.h"
 #include "core/FiConnection.h"
 #include "demultiplexer/EqHandler.h"
-#include "demultiplexer/Handle.h"
 #include "demultiplexer/Proactor.h"
 
 int EqHandler::handle_event(EventType et, void *context) {
@@ -12,8 +11,8 @@ int EqHandler::handle_event(EventType et, void *context) {
     BufMgr *send_buf_mgr;
     (*acceptRequestCallback)(&recv_buf_mgr, &send_buf_mgr);
 
-    std::shared_ptr<Handle> handle = stack->accept(entry->info, recv_buf_mgr, send_buf_mgr);
-    std::shared_ptr<EqHandler> eqHandler = std::make_shared<EqHandler>(stack, proactor, handle);
+    fid_eq *eq = stack->accept(entry->info, recv_buf_mgr, send_buf_mgr);
+    std::shared_ptr<EqHandler> eqHandler = std::make_shared<EqHandler>(stack, proactor, eq);
     if (connectedCallback) {
       eqHandler->set_connected_callback(connectedCallback); 
     }
@@ -32,6 +31,7 @@ int EqHandler::handle_event(EventType et, void *context) {
     proactor->register_handler(eqHandler);
   } else if (et == CONNECTED_EVENT) {
     auto con = stack->get_connection(entry->fid);
+    assert(con);
     if (recvCallback) {
       con->set_recv_callback(recvCallback);
     }
@@ -62,7 +62,7 @@ int EqHandler::handle_event(EventType et, void *context) {
     if (con->get_shutdown_callback()) {
       (*(con->get_shutdown_callback()))(NULL, NULL);
     }
-    proactor->remove_handler(get_handle());
+    proactor->remove_handler(&get_handle()->fid);
     con->status = DOWN;
     stack->reap(entry->fid);
   } else {
@@ -71,8 +71,8 @@ int EqHandler::handle_event(EventType et, void *context) {
   return 0;
 }
 
-std::shared_ptr<Handle> EqHandler::get_handle() const {
-  return eqHandle;
+fid_eq* EqHandler::get_handle() const {
+  return eq;
 }
 
 void EqHandler::set_accept_request_callback(Callback *callback) {

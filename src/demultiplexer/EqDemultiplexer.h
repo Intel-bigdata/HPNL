@@ -8,13 +8,11 @@
 #include <map>
 #include <memory>
 #include <unordered_map>
-#include <mutex>
 #include <string.h>
 
 #include <rdma/fabric.h>
 #include <rdma/fi_cm.h>
 
-class Handle;
 class EventHandler;
 class FiStack;
 
@@ -25,18 +23,15 @@ class EqDemultiplexer {
     EqDemultiplexer(FiStack*);
     ~EqDemultiplexer();
     int init();
-    int wait_event(std::map<std::shared_ptr<Handle>, std::shared_ptr<EventHandler>> eventMap);
-    int register_event(std::shared_ptr<Handle>);
-    int remove_event(std::shared_ptr<Handle>);
+    int wait_event(std::map<fid*, std::shared_ptr<EventHandler>> eventMap);
+    int register_event(fid*);
+    int remove_event(fid*);
     void shutdown();
   private:
     FiStack *stack;
     fid_fabric *fabric;
     struct epoll_event event;
     int epfd;
-    std::mutex mtx;
-
-    std::unordered_map<fid*, std::shared_ptr<Handle>> fid_map;
 };
 
 #endif

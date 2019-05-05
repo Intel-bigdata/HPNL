@@ -45,12 +45,12 @@ void Service::run(const char* ip_, const char* port_, int worker_num, int buffer
 
   assert(recvBufMgr);
   if (is_server) {
+    fid_eq *eq = NULL;
     proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, worker_num);
-    std::shared_ptr<Handle> eqHandle;
-    eqHandle = stack->bind(ip_, port_);
+    eq = stack->bind(ip_, port_);
     stack->listen();
 
-    std::shared_ptr<EqHandler> handler(new EqHandler(stack, proactor, eqHandle));
+    std::shared_ptr<EqHandler> handler(new EqHandler(stack, proactor, eq));
     acceptRequestCallback = new AcceptRequestCallback(this);
     handler->set_recv_callback(recvCallback);
     handler->set_send_callback(sendCallback);
@@ -61,10 +61,10 @@ void Service::run(const char* ip_, const char* port_, int worker_num, int buffer
     proactor->register_handler(handler);
   } else {
     proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, 1);
-    std::shared_ptr<Handle> eqHandle[worker_num];
+    fid_eq *eq[worker_num];
     for (int i = 0; i< worker_num; i++) {
-      eqHandle[i] = stack->connect(ip_, port_, recvBufMgr, sendBufMgr);
-      std::shared_ptr<EventHandler> handler(new EqHandler(stack, proactor, eqHandle[i]));
+      eq[i] = stack->connect(ip_, port_, recvBufMgr, sendBufMgr);
+      std::shared_ptr<EventHandler> handler(new EqHandler(stack, proactor, eq[i]));
       acceptRequestCallback = new AcceptRequestCallback(this);
       handler->set_recv_callback(recvCallback);
       handler->set_send_callback(sendCallback);

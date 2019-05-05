@@ -3,7 +3,6 @@
 #include "external_service/ExternalEqServiceBufMgr.h"
 #include "core/FiStack.h"
 #include "core/FiConnection.h"
-#include "demultiplexer/Handle.h"
 
 ExternalEqService::ExternalEqService(int worker_num_, int buffer_num_, bool is_server_) : worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
   recvBufMgr = new ExternalEqServiceBufMgr();
@@ -55,20 +54,20 @@ free_stack:
 }
 
 fid_eq* ExternalEqService::accept(fi_info* info) {
+  fid_eq *eq = NULL;
   if (sendBufMgr->free_size() < buffer_num || recvBufMgr->free_size() < buffer_num*2)
     return NULL;
-  std::shared_ptr<Handle> eqHandle;
-  eqHandle = stack->accept(info, recvBufMgr, sendBufMgr);
-  if (!eqHandle)
+  eq = stack->accept(info, recvBufMgr, sendBufMgr);
+  if (!eq)
     return NULL;
-  return (fid_eq*)eqHandle->get_ctx();
+  return eq;
 }
 
 fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
-  std::shared_ptr<Handle> eqHandle;
+  fid_eq *eq = NULL;
   if (is_server) {
-    eqHandle = stack->bind(ip, port);
-    if (!eqHandle)
+    eq = stack->bind(ip, port);
+    if (!eq)
       return NULL;
     if (stack->listen()) {
       return NULL; 
@@ -76,11 +75,11 @@ fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
   } else {
     if (sendBufMgr->free_size() < buffer_num || recvBufMgr->free_size() < buffer_num*2)
       return NULL;
-    eqHandle = stack->connect(ip, port, recvBufMgr, sendBufMgr);
-    if (!eqHandle)
+    eq = stack->connect(ip, port, recvBufMgr, sendBufMgr);
+    if (!eq)
       return NULL;
   }
-  return (fid_eq*)eqHandle->get_ctx();
+  return eq;
 }
 
 uint64_t ExternalEqService::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {

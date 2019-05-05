@@ -11,10 +11,10 @@ class FiStack;
 
 class EqHandler : public EventHandler {
   public:
-    EqHandler(FiStack *stack_, Proactor *proactor_, std::shared_ptr<Handle> handle_) : stack(stack_), proactor(proactor_), eqHandle(handle_), recvCallback(NULL), sendCallback(NULL), acceptRequestCallback(NULL), connectedCallback(NULL), shutdownCallback(NULL) {}
+    EqHandler(FiStack *stack_, Proactor *proactor_, fid_eq* eq_) : stack(stack_), proactor(proactor_), eq(eq_), recvCallback(NULL), sendCallback(NULL), acceptRequestCallback(NULL), connectedCallback(NULL), shutdownCallback(NULL) {}
     virtual ~EqHandler() {}
     virtual int handle_event(EventType, void*) override;
-    virtual std::shared_ptr<Handle> get_handle(void) const override;
+    virtual fid_eq* get_handle(void) const override;
 
     virtual void set_accept_request_callback(Callback*) override;
     virtual void set_connected_callback(Callback*) override;
@@ -26,7 +26,7 @@ class EqHandler : public EventHandler {
   private:
     FiStack *stack;
     Proactor *proactor;
-    std::shared_ptr<Handle> eqHandle;
+    fid_eq *eq;
     Callback *recvCallback;
     Callback *sendCallback;
     Callback *readCallback;

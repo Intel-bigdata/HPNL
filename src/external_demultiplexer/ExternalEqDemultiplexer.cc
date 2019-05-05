@@ -1,11 +1,11 @@
 #include "rdma/fi_errno.h"
 
+#include <iostream>
+
 #include "demultiplexer/EventType.h"
 #include "external_demultiplexer/ExternalEqDemultiplexer.h"
 #include "core/FiStack.h"
 #include "core/FiConnection.h"
-
-#include <iostream>
 
 ExternalEqDemultiplexer::ExternalEqDemultiplexer(FiStack *stack_) : stack(stack_) {}
 
@@ -60,6 +60,7 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FiConnectio
     }
     return 0;
   } else {
+    assert(*eq != NULL);
     entry.fid = &(*eq)->fid;
     if (event == FI_CONNREQ) {
       *info = entry.info;

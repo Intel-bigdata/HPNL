@@ -1,6 +1,5 @@
 #include "core/FiStack.h"
 #include "core/FiConnection.h"
-#include "demultiplexer/Handle.h"
 
 FiStack::FiStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_) : 
   flags(flags_), 
@@ -81,7 +80,7 @@ int FiStack::init() {
     goto free_fabric;
   }
 
-  if (fi_eq_open(fabric, &eq_attr, &peq, &peqHandle)) {
+  if (fi_eq_open(fabric, &eq_attr, &peq, NULL)) {
     perror("fi_eq_open");
     goto free_eq;
   }
@@ -142,7 +141,7 @@ free_hints:
   return -1;
 }
 
-std::shared_ptr<Handle> FiStack::bind(const char *ip_, const char *port_) {
+fid_eq* FiStack::bind(const char *ip_, const char *port_) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
   }
@@ -166,8 +165,7 @@ std::shared_ptr<Handle> FiStack::bind(const char *ip_, const char *port_) {
     perror("fi_pep_bind");
     return NULL;
   }
-  peqHandle.reset(new Handle(&peq->fid, EQ_EVENT, peq));
-  return peqHandle;
+  return peq;
 }
 
 int FiStack::listen() {
@@ -178,7 +176,7 @@ int FiStack::listen() {
   return 0;
 }
 
-std::shared_ptr<Handle> FiStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+fid_eq* FiStack::connect(const char *ip_, const char *port_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
   }
@@ -207,10 +205,10 @@ std::shared_ptr<Handle> FiStack::connect(const char *ip_, const char *port_, Buf
   con->status = CONNECT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, FiConnection*>(con->get_fid(), con));
-  return con->get_eqhandle();
+  return con->get_eq();
 }
 
-std::shared_ptr<Handle> FiStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+fid_eq* FiStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   FiConnection *con = new FiConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num, seq_num%worker_num);
   if (con->init())
     return NULL; 
@@ -219,7 +217,7 @@ std::shared_ptr<Handle> FiStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMg
   conMap.insert(std::pair<fid*, FiConnection*>(con->get_fid(), con));
   if (con->accept())
     return NULL;
-  return con->get_eqhandle();
+  return con->get_eq();
 }
 
 uint64_t FiStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {

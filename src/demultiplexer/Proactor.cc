@@ -3,9 +3,6 @@
 #include "demultiplexer/EqDemultiplexer.h"
 #include "demultiplexer/CqDemultiplexer.h"
 #include "demultiplexer/EventHandler.h"
-#include "demultiplexer/Handle.h"
-
-#include <iostream>
 
 Proactor::Proactor(EqDemultiplexer *eqDemultiplexer_, CqDemultiplexer **cqDemultiplexer_, int worker_num) : eqDemultiplexer(eqDemultiplexer_) {
   for (int i = 0; i < worker_num; i++) {
@@ -26,24 +23,26 @@ int Proactor::cq_service(int index) {
 }
 
 int Proactor::register_handler(std::shared_ptr<EventHandler> eh) {
-  std::shared_ptr<Handle> handle = eh->get_handle();
-  if (eventMap.find(handle) == eventMap.end()) {
-    eventMap.insert(std::make_pair(handle, eh)); 
+  fid_eq *eq = eh->get_handle();
+  if (eventMap.find(&eq->fid) == eventMap.end()) {
+    eventMap.insert(std::make_pair(&eq->fid, eh)); 
   }
-  return eqDemultiplexer->register_event(handle);
+  return eqDemultiplexer->register_event(&eq->fid);
 }
 
 int Proactor::remove_handler(std::shared_ptr<EventHandler> eh) {
-  std::shared_ptr<Handle> handle = eh->get_handle();
-  return remove_handler(handle);
+  fid_eq *eq = eh->get_handle();
+  return remove_handler(&eq->fid);
 }
 
-int Proactor::remove_handler(std::shared_ptr<Handle> handle) {
-  std::map<std::shared_ptr<Handle>, std::shared_ptr<EventHandler>>::iterator iter = eventMap.find(handle);
-  if (iter != eventMap.end())
+int Proactor::remove_handler(fid* id) {
+  std::map<fid*, std::shared_ptr<EventHandler>>::iterator iter = eventMap.find(id);
+  if (iter != eventMap.end()) {
     eventMap.erase(iter);
-  else
+    return eqDemultiplexer->remove_event(id);
+  }
+  else {
     return -1;
-  return eqDemultiplexer->remove_event(handle);
+  }
 }
 

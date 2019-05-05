@@ -2,7 +2,6 @@
 #include "core/FiStack.h"
 #include "core/FiConnection.h"
 #include "demultiplexer/EventType.h"
-#include "demultiplexer/Handle.h"
 
 ExternalCqDemultiplexer::ExternalCqDemultiplexer(FiStack *stack_, fid_cq *cq_) : stack(stack_), cq(cq_), start(0), end(0) {}
 
@@ -73,7 +72,7 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
     if (!con) {
       return 0;
     }
-    fid_eq *eq_tmp = (fid_eq*)con->get_eqhandle()->get_ctx();
+    fid_eq *eq_tmp = (fid_eq*)con->get_eq();
     *eq = eq_tmp;
     if (entry.flags & FI_RECV) {
       if (con->status < CONNECTED) {
