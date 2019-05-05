@@ -19,8 +19,6 @@
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
 
-class Handle;
-
 enum ConStatus {
   IDLE = 0,
   CONNECT_REQ,
@@ -52,8 +50,8 @@ class FiConnection : public Connection {
     void init_addr();
     void get_addr(char**, size_t*, char**, size_t*);
     int get_cq_index();
+    fid_eq* get_eq();
 
-    std::shared_ptr<Handle> get_eqhandle();
     fid* get_fid();
 
     void set_recv_callback(Callback*);
@@ -88,9 +86,6 @@ class FiConnection : public Connection {
     std::vector<Chunk*> recv_buffers;
     std::vector<Chunk*> send_buffers;
     std::unordered_map<int, Chunk*> send_buffers_map;
-
-    std::shared_ptr<Handle> cqHandle;
-    std::shared_ptr<Handle> eqHandle;
 
     fid_wait *waitset;
 

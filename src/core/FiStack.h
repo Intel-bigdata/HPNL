@@ -13,7 +13,6 @@
 #include "HPNL/BufMgr.h"
 
 class FiConnection;
-class Handle;
 
 #define MAX_WORKER_NUM 10
 
@@ -22,10 +21,10 @@ class FiStack {
     FiStack(uint64_t, int, int, bool);
     ~FiStack();
     int init();
-    std::shared_ptr<Handle> bind(const char*, const char*);
+    fid_eq* bind(const char*, const char*);
     int listen();
-    std::shared_ptr<Handle> connect(const char*, const char*, BufMgr*, BufMgr*);
-    std::shared_ptr<Handle> accept(void*, BufMgr*, BufMgr*);
+    fid_eq* connect(const char*, const char*, BufMgr*, BufMgr*);
+    fid_eq* accept(void*, BufMgr*, BufMgr*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);
     void unreg_rma_buffer(int);
     Chunk* get_rma_chunk(int);
@@ -50,10 +49,8 @@ class FiStack {
     fid_pep *pep;
 
     std::map<fid*, FiConnection*> conMap;
-    std::shared_ptr<Handle> peqHandle;
 
     fid_cq *cqs[MAX_WORKER_NUM];
-    Handle *cqHandle[MAX_WORKER_NUM];
     fid_wait *waitset;
 
     std::map<int, Chunk*> chunkMap;

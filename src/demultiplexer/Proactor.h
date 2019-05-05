@@ -10,7 +10,7 @@
 class EqDemultiplexer;
 class CqDemultiplexer;
 class EventHandler;
-class Handle;
+class fid;
 
 class Proactor {
   public:
@@ -20,10 +20,10 @@ class Proactor {
     int cq_service(int);
     int register_handler(std::shared_ptr<EventHandler>);
     int remove_handler(std::shared_ptr<EventHandler>);
-    int remove_handler(std::shared_ptr<Handle>);
+    int remove_handler(fid*);
     int handle_events(int timeout = 0);
   private:
-    std::map<std::shared_ptr<Handle>, std::shared_ptr<EventHandler>> eventMap;
+    std::map<fid*, std::shared_ptr<EventHandler>> eventMap;
     EqDemultiplexer *eqDemultiplexer;
     CqDemultiplexer *cqDemultiplexer[MAX_WORKERS];
 };

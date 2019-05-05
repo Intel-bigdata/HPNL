@@ -1,6 +1,5 @@
 #include <vector>
 #include <map>
-#include <iostream>
 #include <mutex>
 
 #include "HPNL/BufMgr.h"

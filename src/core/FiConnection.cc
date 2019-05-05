@@ -3,7 +3,6 @@
 
 #include "core/FiStack.h"
 #include "core/FiConnection.h"
-#include "demultiplexer/Handle.h"
 
 FiConnection::FiConnection(FiStack *stack_, fid_fabric *fabric_, 
     fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
@@ -56,10 +55,11 @@ int FiConnection::init() {
     goto free_ep;
   }
 
-  if (fi_eq_open(fabric, &eq_attr, &conEq, &eqHandle)) {
+  if (fi_eq_open(fabric, &eq_attr, &conEq, NULL)) {
     perror("fi_eq_open");
     goto free_eq;
   }
+
   if (fi_ep_bind(ep, &conEq->fid, 0)) {
     perror("fi_ep_bind");
     goto free_eq;
@@ -104,7 +104,6 @@ int FiConnection::init() {
     size++;
   }
 
-  eqHandle.reset(new Handle(&conEq->fid, EQ_EVENT, conEq));
   return 0;
 
 free_send_buf:
@@ -270,6 +269,6 @@ int FiConnection::activate_chunk(Chunk *ck) {
   return 0;
 }
 
-std::shared_ptr<Handle> FiConnection::get_eqhandle() {
-  return eqHandle;
+fid_eq* FiConnection::get_eq() {
+  return conEq;
 }

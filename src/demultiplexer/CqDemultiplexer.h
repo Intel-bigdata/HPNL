@@ -12,8 +12,11 @@ class CqDemultiplexer {
   public:
     CqDemultiplexer(FiStack*, int);
     ~CqDemultiplexer();
+    int init();
     int wait_event();
   private:
+    FiStack *stack;
+    int work_num;
     int epfd;
     int fd;
     struct epoll_event event;
