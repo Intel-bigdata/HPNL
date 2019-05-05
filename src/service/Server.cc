@@ -1,9 +1,17 @@
 #include "HPNL/Server.h"
 
-Server::Server() : Service(true) {}
+Server::Server(int worker_num, int buffer_num) : Service(worker_num, buffer_num, true) {}
 
-void Server::run(const char* ip_, const char* port_, int worker_num, int buffer_num) {
-  Service::run(ip_, port_, worker_num, buffer_num);
+int Server::init() {
+  return Service::init(); 
+}
+
+void Server::start() {
+  Service::start();
+}
+
+int Server::listen(const char* ip_, const char* port_) {
+  return Service::listen(ip_, port_);
 }
 
 void Server::shutdown() {

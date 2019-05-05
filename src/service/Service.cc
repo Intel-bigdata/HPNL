@@ -5,14 +5,16 @@
 #include "demultiplexer/Proactor.h"
 #include "demultiplexer/EqHandler.h"
 
-Service::Service(bool is_server_) 
-  : is_server(is_server_) {
+Service::Service(int worker_num_, int buffer_num, bool is_server_) 
+  : worker_num(worker_num_), is_server(is_server_) {
   recvCallback = NULL;
   sendCallback = NULL;
   readCallback = NULL;
   acceptRequestCallback = NULL;
   connectedCallback = NULL;
   shutdownCallback = NULL;
+
+  stack = new FiStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
 }
 
 Service::~Service() {
@@ -32,60 +34,62 @@ Service::~Service() {
   }
 }
 
-void Service::run(const char* ip_, const char* port_, int worker_num, int buffer_num) {
-  stack = new FiStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
-  stack->init();
+int Service::init() {
+  int res = 0;
+  if ((res = stack->init())) {
+    return res;
+  }
   eq_demulti_plexer = new EqDemultiplexer(stack);
   eq_demulti_plexer->init();
   for (int i = 0; i < worker_num; i++) {
     cq_demulti_plexer[i] = new CqDemultiplexer(stack, i);
     cq_demulti_plexer[i]->init();
-    if (!is_server) break;
   }
 
-  assert(recvBufMgr);
-  if (is_server) {
-    fid_eq *eq = NULL;
-    proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, worker_num);
-    eq = stack->bind(ip_, port_);
-    stack->listen();
+  proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, worker_num);
+  return 0;
+}
 
-    std::shared_ptr<EqHandler> handler(new EqHandler(stack, proactor, eq));
-    acceptRequestCallback = new AcceptRequestCallback(this);
-    handler->set_recv_callback(recvCallback);
-    handler->set_send_callback(sendCallback);
-    handler->set_read_callback(readCallback);
-    handler->set_accept_request_callback(acceptRequestCallback);
-    handler->set_connected_callback(connectedCallback);
-    handler->set_shutdown_callback(shutdownCallback);
-    proactor->register_handler(handler);
-  } else {
-    proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, 1);
-    fid_eq *eq[worker_num];
-    for (int i = 0; i< worker_num; i++) {
-      eq[i] = stack->connect(ip_, port_, recvBufMgr, sendBufMgr);
-      std::shared_ptr<EventHandler> handler(new EqHandler(stack, proactor, eq[i]));
-      acceptRequestCallback = new AcceptRequestCallback(this);
-      handler->set_recv_callback(recvCallback);
-      handler->set_send_callback(sendCallback);
-      handler->set_read_callback(readCallback);
-      handler->set_accept_request_callback(acceptRequestCallback);
-      handler->set_connected_callback(connectedCallback);
-      handler->set_shutdown_callback(shutdownCallback);
-      proactor->register_handler(handler);
-    }
-  }
-    
+void Service::start() {
   eqThread = new EqThread(proactor);
-  for (int i = 0; i < worker_num; i++) {
-    cqThread[i] = new CqThread(proactor, i);
-    if (!is_server) break;
-  }
   eqThread->start(); 
   for (int i = 0; i < worker_num; i++) {
+    cqThread[i] = new CqThread(proactor, i);
     cqThread[i]->start(); 
-    if (!is_server) break;
   }
+}
+
+int Service::listen(const char* addr, const char* port) {
+  fid_eq* eq = stack->bind(addr, port);
+  stack->listen();
+
+  std::shared_ptr<EqHandler> handler(new EqHandler(stack, proactor, eq));
+  acceptRequestCallback = new AcceptRequestCallback(this);
+  handler->set_recv_callback(recvCallback);
+  handler->set_send_callback(sendCallback);
+  handler->set_read_callback(readCallback);
+  handler->set_accept_request_callback(acceptRequestCallback);
+  handler->set_connected_callback(connectedCallback);
+  handler->set_shutdown_callback(shutdownCallback);
+  proactor->register_handler(handler);
+
+  return 0;
+}
+
+int Service::connect(const char* addr, const char* port) {
+  fid_eq *eq = stack->connect(addr, port, recvBufMgr, sendBufMgr);
+
+  std::shared_ptr<EventHandler> handler(new EqHandler(stack, proactor, eq));
+  acceptRequestCallback = new AcceptRequestCallback(this);
+  handler->set_recv_callback(recvCallback);
+  handler->set_send_callback(sendCallback);
+  handler->set_read_callback(readCallback);
+  handler->set_accept_request_callback(acceptRequestCallback);
+  handler->set_connected_callback(connectedCallback);
+  handler->set_shutdown_callback(shutdownCallback);
+  proactor->register_handler(handler);
+
+  return 0;
 }
 
 void Service::shutdown() {

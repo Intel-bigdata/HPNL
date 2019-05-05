@@ -18,7 +18,10 @@ class CqThread;
 
 class Service {
   public:
-    void run(const char*, const char*, int, int);
+    int init();
+    int listen(const char*, const char*);
+    int connect(const char*, const char*);
+    void start();
     void shutdown();
     void wait();
     void set_recv_buf_mgr(BufMgr*);
@@ -34,7 +37,7 @@ class Service {
     void unreg_rma_buffer(int);
     Chunk* get_rma_buffer(int);
   protected:
-    Service(bool is_server_ = false);
+    Service(int, int, bool is_server_ = false);
     ~Service();
   private:
     friend class AcceptRequestCallback;
