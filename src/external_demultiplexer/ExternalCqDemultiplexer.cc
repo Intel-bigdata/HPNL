@@ -76,9 +76,11 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
     fid_eq *eq_tmp = (fid_eq*)con->get_eqhandle()->get_ctx();
     *eq = eq_tmp;
     if (entry.flags & FI_RECV) {
-      std::unique_lock<std::mutex> l(con->con_mtx);
-      con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
-      l.unlock();
+      if (con->status < CONNECTED) {
+        std::unique_lock<std::mutex> l(con->con_mtx);
+        con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
+        l.unlock();
+      }
       con->recv((char*)(*ck)->buffer, entry.len);
       *block_buffer_size = entry.len;
       return RECV_EVENT;

@@ -35,9 +35,11 @@ Service::~Service() {
 void Service::run(const char* ip_, const char* port_, int worker_num, int buffer_num) {
   stack = new FiStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
   stack->init();
-  eq_demulti_plexer = new EqDemultiplexer();
+  eq_demulti_plexer = new EqDemultiplexer(stack);
+  eq_demulti_plexer->init();
   for (int i = 0; i < worker_num; i++) {
     cq_demulti_plexer[i] = new CqDemultiplexer(stack, i);
+    cq_demulti_plexer[i]->init();
     if (!is_server) break;
   }
 

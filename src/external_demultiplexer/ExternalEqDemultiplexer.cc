@@ -1,12 +1,11 @@
 #include "rdma/fi_errno.h"
 
-#include <iostream>
-
 #include "demultiplexer/EventType.h"
 #include "external_demultiplexer/ExternalEqDemultiplexer.h"
 #include "core/FiStack.h"
 #include "core/FiConnection.h"
 
+#include <iostream>
 
 ExternalEqDemultiplexer::ExternalEqDemultiplexer(FiStack *stack_) : stack(stack_) {}
 
@@ -87,7 +86,7 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FiConnectio
 int ExternalEqDemultiplexer::add_event(fid_eq *eq) {
   std::lock_guard<std::mutex> lk(mtx);
   if (fid_map.count(&eq->fid) != 0) {
-    std::cerr << "got unknown eq fd" << std::endl;
+    std::cerr << __func__ << "got unknown eq fd" << std::endl;
     return -1;
   }
   int fd;
@@ -110,7 +109,10 @@ quit_add_event:
 
 int ExternalEqDemultiplexer::delete_event(fid_eq *eq) {
   std::lock_guard<std::mutex> lk(mtx);
-  if (fid_map.count(&eq->fid) == 0) return -1;
+  if (fid_map.count(&eq->fid) == 0) {
+    std::cerr << __func__ << "got unknown eq fd" << std::endl;
+    return -1;
+  }
   int fd;
   if (fi_control(&eq->fid, FI_GETWAIT, (void*)&fd)) {
     perror("fi_control");

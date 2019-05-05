@@ -62,6 +62,7 @@ int FiStack::init() {
     perror("fi_allocinfo");
     goto free_hints;
   }
+
   hints->addr_format = FI_SOCKADDR_IN;
   hints->ep_attr->type = FI_EP_MSG;
   hints->domain_attr->mr_mode = FI_MR_BASIC;
@@ -74,6 +75,7 @@ int FiStack::init() {
     perror("fi_getinfo");
     goto free_info;
   }
+
   if (fi_fabric(info->fabric_attr, &fabric, NULL)) {
     perror("fi_fabric");
     goto free_fabric;
