@@ -33,7 +33,7 @@ public class Server {
       executor.submit(task);
     }
 
-    Thread.sleep(1000);
+//    Thread.sleep(1000);
 
     cqService.stop();
     eqService.stop();
