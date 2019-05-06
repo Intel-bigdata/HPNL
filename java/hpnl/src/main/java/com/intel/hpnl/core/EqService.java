@@ -117,9 +117,10 @@ public class EqService {
   }
 
   public void stop() {
-    delete_eq_event(localEq, nativeHandle);
     eqTask.stop();
+    delete_eq_event(localEq, nativeHandle);
     waitToComplete();
+    free(nativeHandle);
   }
 
   private void regCon(long eq, long con,
@@ -304,7 +305,7 @@ public class EqService {
 
     @Override
     public void waitEvent() {
-      if (wait_eq_event(getNativeHandle()) == -1) {
+      if (wait_eq_event(nativeHandle) == -1) {
         stop();
       }
     }
@@ -314,7 +315,6 @@ public class EqService {
       for(Connection connection : conMap.values()){
         connection.shutdown();
       }
-      free(nativeHandle);
     }
   }
 }
