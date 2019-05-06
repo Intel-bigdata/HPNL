@@ -117,8 +117,8 @@ public class EqService {
   }
 
   public void stop() {
-    eqTask.stop();
     delete_eq_event(localEq, nativeHandle);
+    eqTask.stop();
     waitToComplete();
   }
 
