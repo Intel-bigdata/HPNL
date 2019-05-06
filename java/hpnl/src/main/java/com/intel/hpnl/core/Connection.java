@@ -24,8 +24,9 @@ public class Connection {
       if(!connected){
         return;
       }
-      this.eqService.unregCon(nativeEq);
       this.eqService.shutdown(nativeEq, eqService.getNativeHandle());
+      this.eqService.delete_eq_event(nativeEq, eqService.getNativeHandle());
+      this.eqService.unregCon(nativeEq);
       if (shutdownCallback != null) {
         shutdownCallback.handle(null, 0, 0);
       }

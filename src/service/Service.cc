@@ -1,5 +1,6 @@
 #include "HPNL/Service.h"
 #include "core/FiStack.h"
+#include "core/FiConnection.h"
 #include "demultiplexer/EqDemultiplexer.h"
 #include "demultiplexer/CqDemultiplexer.h"
 #include "demultiplexer/Proactor.h"
@@ -96,9 +97,19 @@ void Service::shutdown() {
   for (int i = 0; i < worker_num; i++) {
     cqThread[i]->stop(); 
     cqThread[i]->join();
-    if (!is_server) break;
   }
-  eq_demulti_plexer->shutdown();
+  eqThread->stop();
+  eqThread->join();
+}
+
+void Service::shutdown(Connection *con) {
+  proactor->remove_handler(((FiConnection*)con)->get_fid());
+  ((FiConnection*)con)->shutdown();
+  stack->reap(((FiConnection*)con)->get_fid());
+  if (shutdownCallback) {
+    shutdownCallback->operator()(NULL, NULL);
+  }
+  delete con;
 }
 
 void Service::wait() {

@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     sendBufMgr->put(ck->buffer_id, ck);
   }
 
-  Server *server = new Server(3, 16);
+  Server *server = new Server(1, 16);
   server->init();
   server->set_recv_buf_mgr(recvBufMgr);
   server->set_send_buf_mgr(sendBufMgr);

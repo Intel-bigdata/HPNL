@@ -14,7 +14,7 @@ public class EqThread extends Thread {
       if (this.eqService.wait_eq_event(eqService.getNativeHandle()) == -1) {
         shutdown();
       }
-      this.eqService.externalEvent();
+      this.eqService.pendingReap();
     }
     this.eqService.free();
   }

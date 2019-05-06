@@ -26,11 +26,13 @@ public abstract class Service {
 
   public void shutdown() {
     this.cqService.shutdown();
+    this.cqService.join();
+    this.eqService.shutdown();
+    this.eqService.join();
   }
 
   public void join() {
     this.cqService.join();
-    this.eqService.shutdown();
     this.eqService.join();
   }
 

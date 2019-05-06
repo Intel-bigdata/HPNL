@@ -1,6 +1,8 @@
 #include "core/FiStack.h"
 #include "core/FiConnection.h"
 
+#include <iostream>
+
 FiStack::FiStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_) : 
   flags(flags_), 
   worker_num(worker_num_), seq_num(0), buffer_num(buffer_num_), is_server(is_server_),
