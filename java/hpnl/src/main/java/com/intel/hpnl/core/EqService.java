@@ -94,9 +94,9 @@ public class EqService {
   }
 
   public void unregCon(long eq) {
-    Connection connection = conMap.get(eq);
-    connection.delCon();
-    if (conMap.containsKey(eq)) {
+    Connection con = conMap.get(eq);
+    if (con != null) {
+      con.delCon();
       conMap.remove(eq);
     }
   }
@@ -219,7 +219,7 @@ public class EqService {
     return reapCons.size() > 0; 
   }
 
-  public void externalEvent() {
+  public void pendingReap() {
     while (needReap()) {
       Connection con = reapCons.poll();
       con.shutdown();

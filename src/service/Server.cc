@@ -18,6 +18,10 @@ void Server::shutdown() {
   Service::shutdown();
 }
 
+void Server::shutdown(Connection *con) {
+  Service::shutdown(con);
+}
+
 void Server::wait() {
   Service::wait();
 }

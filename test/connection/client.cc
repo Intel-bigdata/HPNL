@@ -28,13 +28,14 @@ class ShutdownCallback : public Callback {
 
 class ConnectedCallback : public Callback {
   public:
-    ConnectedCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    ConnectedCallback(Client *client_, BufMgr *bufMgr_) : client(client_), bufMgr(bufMgr_) {}
     virtual ~ConnectedCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       Connection *con = (Connection*)param_1;
-      con->shutdown();
+      client->shutdown(con);
     }
   private:
+    Client *client;
     BufMgr *bufMgr;
 };
 
@@ -61,7 +62,7 @@ void connect() {
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 
-  ConnectedCallback *connectedCallback = new ConnectedCallback(sendBufMgr);
+  ConnectedCallback *connectedCallback = new ConnectedCallback(client, sendBufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback(client);
 
   client->set_recv_callback(NULL);
@@ -70,7 +71,9 @@ void connect() {
   client->set_shutdown_callback(shutdownCallback);
 
   client->start();
-  client->connect("172.168.2.106", "123456");
+  for (int i = 0; i < 1; i++) {
+    client->connect("172.168.2.106", "123456");
+  }
 
   client->wait();
 

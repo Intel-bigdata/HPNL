@@ -15,6 +15,7 @@ class CqDemultiplexer;
 class EqHandler;
 class EqThread;
 class CqThread;
+class Connection;
 
 class Service {
   public:
@@ -23,6 +24,7 @@ class Service {
     int connect(const char*, const char*);
     void start();
     void shutdown();
+    void shutdown(Connection *con);
     void wait();
     void set_recv_buf_mgr(BufMgr*);
     void set_send_buf_mgr(BufMgr*);

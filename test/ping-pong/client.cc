@@ -48,7 +48,7 @@ class ConnectedCallback : public Callback {
 
 class RecvCallback : public Callback {
   public:
-    RecvCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    RecvCallback(Client *client_, BufMgr *bufMgr_) : client(client_), bufMgr(bufMgr_) {}
     virtual ~RecvCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       std::lock_guard<std::mutex> lk(mtx);
@@ -57,7 +57,6 @@ class RecvCallback : public Callback {
       Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
       if (count >= 1000000) {
-        con->shutdown();
         end = timestamp_now();
         printf("finished, totally consumes %f s, message round trip time is %f us.\n", (end-start)/1000.0, (end-start)*1000/1000000.0);
         return;
@@ -71,6 +70,7 @@ class RecvCallback : public Callback {
       con->send((char*)ck->buffer, SIZE, 0);
     }
   private:
+    Client *client;
     BufMgr *bufMgr; 
 };
 
@@ -106,12 +106,12 @@ int main(int argc, char *argv[]) {
     ck->capacity = BUFFER_SIZE;
     sendBufMgr->put(ck->buffer_id, ck);
   }
-  Client *client = new Client(2, 16);
+  Client *client = new Client(1, 16);
   client->init();
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 
-  RecvCallback *recvCallback = new RecvCallback(recvBufMgr);
+  RecvCallback *recvCallback = new RecvCallback(client, recvBufMgr);
   SendCallback *sendCallback = new SendCallback(sendBufMgr);
   ConnectedCallback *connectedCallback = new ConnectedCallback(sendBufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback(client);

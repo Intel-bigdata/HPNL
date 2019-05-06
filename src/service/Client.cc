@@ -18,6 +18,10 @@ void Client::shutdown() {
   Service::shutdown();
 }
 
+void Client::shutdown(Connection* con) {
+  Service::shutdown(con);
+}
+
 void Client::wait() {
   Service::wait();
 }

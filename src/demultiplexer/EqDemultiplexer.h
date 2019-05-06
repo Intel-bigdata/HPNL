@@ -26,7 +26,6 @@ class EqDemultiplexer {
     int wait_event(std::map<fid*, std::shared_ptr<EventHandler>> eventMap);
     int register_event(fid*);
     int remove_event(fid*);
-    void shutdown();
   private:
     FiStack *stack;
     fid_fabric *fabric;

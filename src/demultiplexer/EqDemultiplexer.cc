@@ -44,7 +44,7 @@ int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> ev
 
   uint32_t event;
   fi_eq_cm_entry entry;
-  int ret = fi_eq_read(eq, &event, &entry, sizeof(entry), 2000);
+  int ret = fi_eq_read(eq, &event, &entry, sizeof(entry), 0);
   if (ret == -FI_EAGAIN) {
     return 0; 
   } else if (ret < 0) {
@@ -101,5 +101,3 @@ quit_delete_event:
   return -1;
 }
 
-void EqDemultiplexer::shutdown() {
-}

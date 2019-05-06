@@ -10,6 +10,7 @@ class Client : public Service {
     void start();
     int connect(const char*, const char*);
     void shutdown();
+    void shutdown(Connection*);
     void wait();
     void set_recv_buf_mgr(BufMgr*);
     void set_send_buf_mgr(BufMgr*);

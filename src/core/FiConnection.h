@@ -40,10 +40,10 @@ class FiConnection : public Connection {
     virtual int send(const char*, int, long) override;
     virtual int send(int, int) override;
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) override;
-    virtual void shutdown() override;
     virtual void take_back_chunk(Chunk*) override;
     virtual int activate_chunk(Chunk*) override;
     
+    void shutdown();
     int connect();
     int accept();
 
