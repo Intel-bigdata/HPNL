@@ -29,7 +29,7 @@ public class Client {
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, false);
     ReadCallback readCallback = new ReadCallback(false, eqService);
     ShutdownCallback shutdownCallback = new ShutdownCallback();
-    eqService.setConnectedCallback(connectedCallback);
+//    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(readCallback);
 //    eqService.setSendCallback(null);
 //    eqService.setShutdownCallback(shutdownCallback);

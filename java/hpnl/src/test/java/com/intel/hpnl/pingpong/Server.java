@@ -21,13 +21,13 @@ public class Server {
 
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
     ReadCallback readCallback = new ReadCallback(true, eqService);
-    eqService.setConnectedCallback(connectedCallback);
+//    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(readCallback);
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
     ExecutorService executor = Executors.newFixedThreadPool(workNbr);
-    eqService.connect(addr, "123456", 0, 5000);
+    eqService.connect(addr, "123456", 0, connectedCallback);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);

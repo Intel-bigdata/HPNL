@@ -13,7 +13,7 @@ class ExternalEqService {
   public:
 	ExternalEqService(int, int, bool is_server_ = false);
     ~ExternalEqService();
-    int init();
+    int init(const char*);
     fid_eq* connect(const char*, const char*, int cq_index, long connect_id);
     fid_eq* accept(fi_info*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);

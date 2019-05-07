@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +37,28 @@ public class EqService {
 
   private CqService cqService;
 
+  private static String prov_name;
+  private static String fabricFilename;
+
   static {
+    prov_name = null;
+    fabricFilename = "libfabric.so";
+    String path = "/hpnl/hpnl.conf";
+    try(InputStream is = EqService.class.getResourceAsStream(path)){
+      Properties properties = new Properties();
+      properties.load(is);
+      prov_name = properties.getProperty("provider_name");
+      if(prov_name != null && prov_name.length() == 0){
+        prov_name = null;
+      }
+      fabricFilename = properties.getProperty("libfabric_file_name");
+      if(fabricFilename != null && fabricFilename.length() == 0){
+        fabricFilename = "libfabric.so";
+      }
+    }catch (IOException e){
+      System.out.println("no hpnl/hpnl.conf found");
+    }
+
     try {
       System.loadLibrary("hpnl");
     }catch (UnsatisfiedLinkError error){
@@ -57,7 +79,7 @@ public class EqService {
   }
 
   public EqService init() {
-    if (init(worker_num, buffer_num, is_server) == -1)
+    if (init(worker_num, buffer_num, is_server, prov_name) == -1)
       return null;
     return this; 
   }
@@ -259,7 +281,7 @@ public class EqService {
     try {
       tempDir = Files.createTempDirectory("hpnl").toFile();
       tempDir.deleteOnExit();
-      loadByPath("/hpnl/libfabric.so", tempDir);
+      loadByPath("/hpnl/"+fabricFilename, tempDir);
       loadByPath("/hpnl/libhpnl.so", tempDir);
     }catch (IOException e){
       if(tempDir != null){
@@ -297,7 +319,7 @@ public class EqService {
   private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId, long nativeHandle);
   private native void unreg_rma_buffer(int rdmaBufferId, long nativeHandle);
   private native long get_buffer_address(ByteBuffer buffer, long nativeHandle);
-  private native int init(int worker_num_, int buffer_num_, boolean is_server_);
+  private native int init(int worker_num_, int buffer_num_, boolean is_server_, String prov_name);
   private native void free(long nativeHandle);
   public native void finalize();
 

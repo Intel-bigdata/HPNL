@@ -98,10 +98,10 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_get_1buffer_1address
 /*
  * Class:     com_intel_hpnl_core_EqService
  * Method:    init
- * Signature: (IIZ)I
+ * Signature: (IIZLjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init
-  (JNIEnv *, jobject, jint, jint, jboolean);
+  (JNIEnv *, jobject, jint, jint, jboolean, jstring);
 
 /*
  * Class:     com_intel_hpnl_core_EqService

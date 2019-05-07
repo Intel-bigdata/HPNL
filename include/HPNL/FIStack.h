@@ -18,7 +18,7 @@
 
 class FIStack {
   public:
-	FIStack(uint64_t, int, int, bool);
+	FIStack(uint64_t, int, int, bool, const char*);
     ~FIStack();
     int init();
     HandlePtr bind(const char*, const char*);
@@ -39,6 +39,7 @@ class FIStack {
     int worker_num;
     int buffer_num;
     bool is_server;
+    const char* prov_name;
     uint64_t seq_num;
     int total_buffer_num;
     fid_fabric *fabric;

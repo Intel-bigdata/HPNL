@@ -27,7 +27,7 @@ Service::~Service() {
 }
 
 void Service::run(const char* ip_, const char* port_, int cq_index, int worker_num, int buffer_num) {
-  stack = new FIStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
+  stack = new FIStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server, nullptr);
   stack->init();
   eq_demulti_plexer = new EQEventDemultiplexer();
   for (int i = 0; i < worker_num; i++) {

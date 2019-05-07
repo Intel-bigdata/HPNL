@@ -43,11 +43,15 @@ static void _set_self(JNIEnv *env, jobject thisObj, ExternalEqService *self)
   env->SetLongField(thisObj, _get_self_id(env, thisObj), selfPtr);
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init(JNIEnv *env, jobject thisObj, jint worker_num_, jint buffer_num_, jboolean is_server_) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_init(JNIEnv *env, jobject thisObj, jint worker_num_, jint buffer_num_, jboolean is_server_, jstring prov_name) {
   const bool is_server = (bool)is_server_;
+  const char* pname = nullptr;
+  if(prov_name != NULL){
+	pname = (*env).GetStringUTFChars(prov_name, 0);
+  }
   ExternalEqService *service = new ExternalEqService(worker_num_, buffer_num_, is_server);
   _set_self(env, thisObj, service);
-  return service->init();
+  return service->init(pname);
 }
 
 /*

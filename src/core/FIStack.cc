@@ -1,8 +1,9 @@
 #include "HPNL/FIStack.h"
+#include <iostream>
 
-FIStack::FIStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_) :
+FIStack::FIStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_, const char* prov_name_) :
   flags(flags_),
-  worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_),
+  worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_), prov_name(prov_name_),
   fabric(NULL), domain(NULL), hints(NULL), info(NULL), hints_tmp(NULL), info_tmp(NULL),
   peq(NULL), pep(NULL), waitset(NULL) {}
 
@@ -45,6 +46,7 @@ FIStack::~FIStack() {
     fi_freeinfo(info_tmp);
     info_tmp = nullptr;
   }
+  prov_name = nullptr;
 }
 
 int FIStack::init() {
@@ -67,11 +69,15 @@ int FIStack::init() {
   hints->mode = FI_CONTEXT | FI_LOCAL_MR;
   hints->tx_attr->msg_order = FI_ORDER_SAS;
   hints->rx_attr->msg_order = FI_ORDER_SAS;
+  if (prov_name != nullptr){
+    hints->fabric_attr->prov_name = strdup(prov_name);
+  }
 
   if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, flags, hints, &info)) {
     perror("fi_getinfo");
     goto free_info;
   }
+  std::cout<<info->fabric_attr->prov_name<<"...."<<std::endl;
   if (fi_fabric(info->fabric_attr, &fabric, NULL)) {
 	perror("fi_fabric");
     goto free_fabric;
@@ -147,6 +153,9 @@ HandlePtr FIStack::bind(const char *ip_, const char *port_) {
   hints_tmp->mode = FI_CONTEXT | FI_LOCAL_MR;
   hints_tmp->tx_attr->msg_order = FI_ORDER_SAS;
   hints_tmp->rx_attr->msg_order = FI_ORDER_SAS;
+  if (prov_name != nullptr){
+    hints_tmp->fabric_attr->prov_name = strdup(prov_name);
+  }
 
   if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
 	perror("fi_getinfo");
@@ -183,6 +192,9 @@ HandlePtr FIStack::connect(const char *ip_, const char *port_, int cq_index, lon
   hints_tmp->mode = FI_CONTEXT | FI_LOCAL_MR;
   hints_tmp->tx_attr->msg_order = FI_ORDER_SAS;
   hints_tmp->rx_attr->msg_order = FI_ORDER_SAS;
+  if (prov_name != nullptr){
+    hints_tmp->fabric_attr->prov_name = strdup(prov_name);
+  }
 
   if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
     perror("fi_getinfo");

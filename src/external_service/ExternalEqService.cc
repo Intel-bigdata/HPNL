@@ -24,8 +24,8 @@ ExternalEqService::~ExternalEqService() {
   }
 }
 
-int ExternalEqService::init() {
-  stack = new FIStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
+int ExternalEqService::init(const char* prov_name) {
+  stack = new FIStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server, prov_name);
   if (stack->init() == -1)
     goto free_stack;
 
