@@ -51,10 +51,12 @@ public class Connection {
       }
       this.service.unregCon(nativeEq);
       this.service.shutdown(nativeEq, service.getNativeHandle());
+      this.service.delete_eq_event(nativeEq, service.getNativeHandle());
       deleteGlobalRef(this.nativeHandle);
       if (shutdownCallback != null) {
         shutdownCallback.handle(null, 0, 0);
       }
+      free(nativeHandle);
       connected = false;
     }
   }
@@ -73,10 +75,6 @@ public class Connection {
 
   public void releaseRecvBuffer(int rdmaBufferId){
     releaseRecvBuffer(rdmaBufferId, nativeHandle);
-  }
-
-  public void deleteConnection(){
-    this.cqService.addExternalEvent(cqIndex, () -> free(nativeHandle));
   }
 
   private native void recv(ByteBuffer buffer, int id, long nativeHandle);

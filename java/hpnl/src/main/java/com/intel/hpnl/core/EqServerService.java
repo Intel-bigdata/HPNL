@@ -16,6 +16,8 @@ public class EqServerService extends EqService {
   @Override
   protected void handleEqCallback(long eq, int eventType, int blockId) {
     Connection connection = conMap.get(eq);
-    connectedCallback.handle(connection, 0, 0);
+    if(connectedCallback != null) {
+      connectedCallback.handle(connection, 0, 0);
+    }
   }
 }

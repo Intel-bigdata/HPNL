@@ -13,10 +13,20 @@ public abstract class EventTask implements Runnable {
 
   @Override
   public void run(){
-    while(running.get()) {
-      waitEvent();
+    try {
+      while (running.get()) {
+        waitEvent();
+      }
+    }catch (Throwable throwable){
+      System.err.println("error occurred in event task "+this.getClass().getName());
+      throwable.printStackTrace();
     }
-    cleanUp();
+    try {
+      cleanUp();
+    }catch (Throwable throwable){
+      System.err.println("error occurred during clean-up in task "+this.getClass().getName());
+      throwable.printStackTrace();
+    }
     synchronized (this) {
       if (completed != null) {
         completed.countDown();

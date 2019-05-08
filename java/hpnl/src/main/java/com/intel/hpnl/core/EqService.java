@@ -157,7 +157,6 @@ public class EqService {
     if(connection == null){
       throw new RuntimeException("connection should be in the connection map, eq is "+eq);
     }
-    connection.deleteConnection();
   }
 
   private static long sequenceId() {
@@ -328,12 +327,13 @@ public class EqService {
     @Override
     public void waitEvent() {
       if (wait_eq_event(nativeHandle) == -1) {
-        stop();
+        System.out.println("wait or process EQ event error");
       }
     }
 
     @Override
     protected void cleanUp(){
+      System.out.println("close all connections");
       for(Connection connection : conMap.values()){
         connection.shutdown();
       }

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.intel.hpnl.core.*;
 
@@ -21,21 +23,22 @@ public class Server {
 
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
     ReadCallback readCallback = new ReadCallback(true, eqService);
-//    eqService.setConnectedCallback(connectedCallback);
+    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(readCallback);
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
-    ExecutorService executor = Executors.newFixedThreadPool(workNbr);
+    ExecutorService executor = Executors.newFixedThreadPool(workNbr + 2);
     eqService.connect(addr, "123456", 0, connectedCallback);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);
     }
 
-    Thread.sleep(30000);
+    Thread.sleep(10000);
 
     cqService.stop();
+    System.out.println("eq stop");
     eqService.stop();
 
     executor.shutdown();

@@ -75,7 +75,7 @@ public class CqService {
     @Override
     public void waitEvent() {
       if (processEvent(index) == -1) {
-        stop();
+        System.out.println("wait or process CQ event error");
       }
     }
 
@@ -93,6 +93,7 @@ public class CqService {
 
     @Override
     protected void cleanUp(){
+      System.out.println("process remaining external events");
       processExternalEvent();
     }
 
