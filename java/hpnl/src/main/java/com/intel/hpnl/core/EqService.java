@@ -84,17 +84,25 @@ public class EqService {
     return this; 
   }
 
-  public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
+  protected long setupConnection(String ip, String port, int cqIndex, Handler connectedCallback){
     long id = sequenceId();
     localEq = internal_connect(ip, port, cqIndex, id, nativeHandle);
     if (localEq == -1) {
-      return -1;
+      return -1L;
     }
     add_eq_event(localEq, nativeHandle);
+    return id;
+  }
+
+  public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
+    long seqId = setupConnection(ip, port, cqIndex, connectedCallback);
+    if(seqId < 0){
+      return -1;
+    }
     if(connectedCallback != null) {
-      Handler prv = connectedHandlers.putIfAbsent(id, connectedCallback);
+      Handler prv = connectedHandlers.putIfAbsent(seqId, connectedCallback);
       if(prv != null){
-        throw new RuntimeException("non-unique id found, "+id);
+        throw new RuntimeException("non-unique id found, "+seqId);
       }
     }
 
@@ -102,22 +110,16 @@ public class EqService {
   }
 
   public int connect(String ip, String port, int cqIndex, long timeoutMill) {
-    if (!is_server) {
-      if(connectLatch != null){
-        throw new RuntimeException("the last connection is still under going");
-      }
-      connectLatch = new CountDownLatch(1);
+    if(connectLatch != null){
+      throw new RuntimeException("the last connection is still under going");
     }
+    connectLatch = new CountDownLatch(1);
     int rt = connect(ip, port, cqIndex, null);
     if(rt < 0){
-      if (!is_server) {
-        connectLatch.countDown();
-      }
+      connectLatch.countDown();
       return rt;
     }
-    if (!is_server) {
-      waitToConnected(timeoutMill);
-    }
+    waitToConnected(timeoutMill);
     return 0;
   }
 
@@ -155,7 +157,7 @@ public class EqService {
   public void unregCon(long eq) {
     Connection connection = conMap.remove(eq);
     if(connection == null){
-      throw new RuntimeException("connection should be in the connection map, eq is "+eq);
+      System.out.println("connection should be in the connection map, eq is "+eq);
     }
   }
 
@@ -167,7 +169,7 @@ public class EqService {
     Connection connection = conMap.get(eq);
     if (eventType == EventType.CONNECTED_EVENT) {
       long id = connection.getConnectId();
-      Handler connectedHandler = connectedHandlers.remove(id);
+      Handler connectedHandler =  connectedHandlers.remove(id);
       if(connectedHandler != null){
         connectedHandler.handle(connection, 0, 0);
       }
@@ -261,6 +263,10 @@ public class EqService {
 
   public void setCqService(CqService cqService){
     this.cqService = cqService;
+  }
+
+  public CqService getCqService() {
+    return cqService;
   }
 
   public ByteBuffer getRmaBufferByBufferId(int rmaBufferId) {

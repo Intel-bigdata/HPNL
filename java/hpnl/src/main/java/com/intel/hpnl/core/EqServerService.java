@@ -9,8 +9,16 @@ public class EqServerService extends EqService {
   }
 
   @Override
-  public void setConnectedCallback(Handler callback) {
-    connectedCallback = callback;
+  public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
+    long ret = setupConnection(ip, port, cqIndex, connectedCallback);
+    this.connectedCallback = connectedCallback;
+    return ret<0 ? -1:0;
+  }
+
+  @Override
+  public int connect(String ip, String port, int cqIndex, long timeoutMill) {
+    long ret = setupConnection(ip, port, cqIndex, null);
+    return ret<0 ? -1:0;
   }
 
   @Override
