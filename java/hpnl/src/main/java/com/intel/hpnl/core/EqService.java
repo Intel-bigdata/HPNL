@@ -154,6 +154,10 @@ public class EqService {
     conMap.put(eq, connection);
   }
 
+  /**
+   * Be invoked from JNI
+   * @param eq
+   */
   public void unregCon(long eq) {
     Connection connection = conMap.remove(eq);
     if(connection == null){

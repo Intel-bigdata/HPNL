@@ -186,11 +186,12 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, 
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fid_eq *eq = *(fid_eq**)&eqPtr;
   FIConnection *con = (FIConnection*)service->get_connection(eq);
-
-  if (con->status < DOWN) {
-    con->shutdown();
-    con->status = DOWN;
-    service->reap(&eq->fid);
+  if(con){
+	if (con->status < DOWN) {
+	  con->shutdown();
+	  con->status = DOWN;
+	  service->reap(&eq->fid);
+	}
   }
 }
 

@@ -49,7 +49,6 @@ public class Connection {
       if(!connected){
         return;
       }
-      this.service.unregCon(nativeEq);
       this.service.shutdown(nativeEq, service.getNativeHandle());
       this.service.delete_eq_event(nativeEq, service.getNativeHandle());
       deleteGlobalRef(this.nativeHandle);

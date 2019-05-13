@@ -23,7 +23,7 @@ public class Server {
 
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
     ReadCallback readCallback = new ReadCallback(true, eqService);
-    eqService.setConnectedCallback(connectedCallback);
+//    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(readCallback);
 
     eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
