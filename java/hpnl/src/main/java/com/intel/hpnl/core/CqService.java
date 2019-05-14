@@ -65,11 +65,18 @@ public class CqService {
 
   public class CqTask extends EventTask {
     private int index;
+    private String name;
     private BlockingQueue<ExternalHandler> externalHandlers = new LinkedBlockingQueue<>();
 
     public CqTask(int index) {
       super();
       this.index = index;
+      this.name = "CqTask "+index;
+    }
+
+    @Override
+    public String toString(){
+      return name;
     }
 
     @Override

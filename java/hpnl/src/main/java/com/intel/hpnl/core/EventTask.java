@@ -41,12 +41,12 @@ public abstract class EventTask implements Runnable {
 
   public void pause(){
     pause.set(true);
-    System.out.println(this.getClass().getName()+this+" paused");
+    System.out.println(this+" paused");
   }
 
   public void resume(){
     pause.set(false);
-    System.out.println(this.getClass().getName()+this+" resumed");
+    System.out.println(this+" resumed");
   }
 
   protected abstract void waitEvent();
