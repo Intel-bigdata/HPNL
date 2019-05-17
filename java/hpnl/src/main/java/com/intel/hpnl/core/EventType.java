@@ -1,5 +1,8 @@
 package com.intel.hpnl.core;
 
+/**
+ * event type with same values as libfabric's event
+ */
 public class EventType {
   public final static int ACCEPT_EVENT = 1;
   public final static int CONNECTED_EVENT = 2;

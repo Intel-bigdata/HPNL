@@ -222,6 +222,7 @@ HandlePtr FIStack::connect(const char *ip_, const char *port_, int cq_index, lon
 
 HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   int cq_index = seq_num%worker_num;
+  std::cout<<"cq index for accept "<<cq_index<<std::endl;
   FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[cq_index], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num, cq_index, 0);
   if (con->init())
     return NULL; 

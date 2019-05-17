@@ -21,29 +21,27 @@ public class Client {
     int bufferSize = args.length >=2 ? Integer.valueOf(args[1]) : 65536;
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
 
-    EqService eqService = new EqService(1, bufferNbr, false).init();
+    EqService eqService = new EqService(1, bufferNbr, bufferSize).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
 
     List<Connection> conList = new CopyOnWriteArrayList<Connection>();
 
-    ConnectedCallback connectedCallback = new ConnectedCallback(conList, false);
-    ReadCallback readCallback = new ReadCallback(false, eqService);
-    ShutdownCallback shutdownCallback = new ShutdownCallback();
+    ConnectedCallback connectedCallback = new ConnectedCallback(conList, eqService,false);
+//    ReadCallback readCallback = new ReadCallback(false, eqService);
+//    ShutdownCallback shutdownCallback = new ShutdownCallback();
 //    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(readCallback);
 //    eqService.setSendCallback(null);
 //    eqService.setShutdownCallback(shutdownCallback);
 
-    eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
-
-    ExecutorService executor = Executors.newFixedThreadPool(2);
-    eqService.connect(addr, "123456", 0, 5000);
+    ExecutorService executor = Executors.newFixedThreadPool(5);
+    eqService.connect(addr, "8077", 0, connectedCallback);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);
     }
-    System.out.println("connected, start to pingpong.");
-    
+
+      Thread.sleep(2000);
     for (Connection con: conList) {
       RdmaBuffer buffer = con.takeSendBuffer(true);
       buffer.put(byteBufferTmp, (byte)0, 10);

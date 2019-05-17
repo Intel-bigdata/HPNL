@@ -14,20 +14,18 @@ public class Server {
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
     int workNbr = args.length >=4 ? Integer.valueOf(args[3]) : 3;
 
-    EqService eqService = new EqServerService(workNbr, bufferNbr).init();
+    EqService eqService = new EqServerService(workNbr, bufferNbr, bufferSize).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     
     List<Connection> conList = new ArrayList<Connection>();
 
     ServerConnectedCallback connectedCallback = new ServerConnectedCallback(conList, true);
 //    ReadCallback readCallback = new ReadCallback(true, eqService);
-    eqService.setConnectedCallback(connectedCallback);
+
 //    eqService.setRecvCallback(readCallback);
 
-    eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
-
     ExecutorService executor = Executors.newFixedThreadPool(workNbr+1);
-    eqService.connect(addr, "123456", 0, 5000);
+    eqService.connect(addr, "123456", 0, connectedCallback);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);

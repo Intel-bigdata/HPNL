@@ -1,11 +1,15 @@
 package com.intel.hpnl.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
@@ -14,16 +18,23 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * A client service for libfabric's event queue
+ */
 public class EqService {
   private long nativeHandle;
   private long localEq;
-  private int worker_num;
-  private int buffer_num;
-  public boolean is_server;
+  private int workerNum;//number of threads/tasks of CQ service
+  private int bufferNbr;//number of buffer per connection
+  private int bufferSize;
+  public boolean server;
+  //TODO: tuning concurrency
   protected Map<Long, Connection> conMap;
 
+  //TODO: tuning concurrency
   private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
 
+  //global buffer pools
   private MemPool sendBufferPool;
   private MemPool recvBufferPool;
 
@@ -37,40 +48,45 @@ public class EqService {
 
   private CqService cqService;
 
-  private static String prov_name;
-  private static String fabricFilename;
+  private static String providerName; //libfabric's provider name
+  private static String fabricFilename;//name of libfabric file reference by libhpnl.so
 
+  private static final Logger log = LoggerFactory.getLogger("com.intel.hpnl.core.EqService");
+
+  //load hpnl configuration and dynamic libraries
   static {
-    prov_name = null;
+    providerName = null;
     fabricFilename = "libfabric.so";
     String path = "/hpnl/hpnl.conf";
     try(InputStream is = EqService.class.getResourceAsStream(path)){
       Properties properties = new Properties();
       properties.load(is);
-      prov_name = properties.getProperty("provider_name");
-      if(prov_name != null && prov_name.length() == 0){
-        prov_name = null;
+      providerName = properties.getProperty("provider_name");
+      if(providerName != null && providerName.length() == 0){
+        providerName = null;
       }
       fabricFilename = properties.getProperty("libfabric_file_name");
       if(fabricFilename != null && fabricFilename.length() == 0){
         fabricFilename = "libfabric.so";
       }
     }catch (IOException e){
-      System.out.println("no hpnl/hpnl.conf found");
+      log.error("no hpnl/hpnl.conf found", e);
     }
 
     try {
+      log.info("loading libhpnl.so");
       System.loadLibrary("hpnl");
     }catch (UnsatisfiedLinkError error){
-      System.out.println("loading from jar");
+      log.info("failed to load from lib directory. loading from jar instead");
       loadFromJar();
     }
   }
 
-  public EqService(int worker_num, int buffer_num, boolean is_server) {
-    this.worker_num = worker_num;
-    this.buffer_num = buffer_num;
-    this.is_server = is_server;
+  protected EqService(int workerNum, int bufferNbr, int bufferSize, boolean server) {
+    this.workerNum = workerNum;
+    this.bufferNbr = bufferNbr;
+    this.bufferSize = bufferSize;
+    this.server = server;
     this.rmaBufferId = new AtomicInteger(0);
 
     this.conMap = new ConcurrentHashMap();
@@ -78,13 +94,30 @@ public class EqService {
     this.eqTask = new EqTask();
   }
 
+  public EqService(int workerNum, int bufferNbr, int bufferSize) {
+    this(workerNum, bufferNbr, bufferSize, false);
+  }
+
+  /**
+   * Initialize native resources and buffers
+   * @return
+   */
   public EqService init() {
-    if (init(worker_num, buffer_num, is_server, prov_name) == -1)
+    if (init(workerNum, bufferNbr, server, providerName) == -1)
       return null;
+    initBufferPool(bufferNbr, bufferSize, bufferNbr);
     return this; 
   }
 
-  protected long setupConnection(String ip, String port, int cqIndex, Handler connectedCallback){
+  /**
+   * try to bind or connect to given <code>ip</code>:<code>port</code> and listen
+   * CQ event on <code>cqIndex</code>
+   * @param ip
+   * @param port
+   * @param cqIndex
+   * @return
+   */
+  protected long tryConnect(String ip, String port, int cqIndex){
     long id = sequenceId();
     localEq = internal_connect(ip, port, cqIndex, id, nativeHandle);
     if (localEq == -1) {
@@ -94,8 +127,17 @@ public class EqService {
     return id;
   }
 
+  /**
+   * asynchronously bind or connect to given <code>ip</code>:<code>port</code> with given
+   * <code>connectedCallback</code>, and listen CQ event on <code>cqIndex</code>
+   * @param ip
+   * @param port
+   * @param cqIndex
+   * @param connectedCallback
+   * @return
+   */
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    long seqId = setupConnection(ip, port, cqIndex, connectedCallback);
+    long seqId = tryConnect(ip, port, cqIndex);
     if(seqId < 0){
       return -1;
     }
@@ -109,44 +151,16 @@ public class EqService {
     return 0;
   }
 
-  public int connect(String ip, String port, int cqIndex, long timeoutMill) {
-    if(connectLatch != null){
-      throw new RuntimeException("the last connection is still under going");
-    }
-    connectLatch = new CountDownLatch(1);
-    int rt = connect(ip, port, cqIndex, null);
-    if(rt < 0){
-      connectLatch.countDown();
-      return rt;
-    }
-    waitToConnected(timeoutMill);
-    return 0;
-  }
-
-  private void waitToConnected(long timeoutMill) {
-    try {
-      this.connectLatch.await(timeoutMill, TimeUnit.MILLISECONDS);
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
-  }
-
-  private void waitToComplete() {
-    try {
-      eqTask.waitToComplete();
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    } finally {
-    }
-  }
-
-  public void stop() {
-    eqTask.stop();
-    delete_eq_event(localEq, nativeHandle);
-    waitToComplete();
-    free(nativeHandle);
-  }
-
+  /**
+   * register newly established connection with connection ID and addresses from JNI
+   * @param eq
+   * @param con
+   * @param dest_addr
+   * @param dest_port
+   * @param src_addr
+   * @param src_port
+   * @param connectId
+   */
   private void regCon(long eq, long con,
                       String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
     Connection connection = new Connection(eq, con, this, this.cqService, connectId);
@@ -155,20 +169,25 @@ public class EqService {
   }
 
   /**
-   * Be invoked from JNI
+   * should be invoked from JNI when there is a connection SHUTDOWN event.
+   * Java method may call it too to make sure connection is removed.
    * @param eq
    */
   public void unregCon(long eq) {
-    Connection connection = conMap.remove(eq);
-    if(connection == null){
-      System.out.println("connection should be in the connection map, eq is "+eq);
-    }
+    conMap.remove(eq);
   }
 
   private static long sequenceId() {
     return Math.abs(UUID.randomUUID().getLeastSignificantBits());
   }
 
+  /**
+   * handle EQ callback. invoked from JNI.
+   * connectedCallback is invoked here if it's registered.
+   * @param eq
+   * @param eventType
+   * @param blockId
+   */
   protected void handleEqCallback(long eq, int eventType, int blockId) {
     Connection connection = conMap.get(eq);
     if (eventType == EventType.CONNECTED_EVENT) {
@@ -178,18 +197,6 @@ public class EqService {
         connectedHandler.handle(connection, 0, 0);
       }
     }
-    if (this.connectLatch != null && eventType == EventType.CONNECTED_EVENT) {
-      synchronized (connectLatch) {
-        if(connectLatch != null) {
-          this.connectLatch.countDown();
-          this.connectLatch = null;
-        }
-      }
-    }
-  }
-
-  public void setConnectedCallback(Handler callback) {
-    throw new UnsupportedOperationException();
   }
 
   public Connection getCon(long eq) {
@@ -200,16 +207,31 @@ public class EqService {
     return nativeHandle;
   }
 
-  public void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
+  /**
+   * initialize buffers
+   * @param initBufferNum
+   * @param bufferSize
+   * @param nextBufferNum
+   */
+  private void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
     this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, MemPool.Type.SEND);
     this.recvBufferPool = new MemPool(this, initBufferNum*2, bufferSize, nextBufferNum*2, MemPool.Type.RECV);
   }
 
+  /**
+   * allocate more buffers when more connections are established
+   */
   public void reallocBufferPool() {
     this.sendBufferPool.realloc();
     this.recvBufferPool.realloc();
   }
 
+  /**
+   * invoked from JNI after buffers are assigned to connection and connection is registered.
+   * Java method can then take send buffer from connection.
+   * @param eq
+   * @param rdmaBufferId
+   */
   public void putSendBuffer(long eq, int rdmaBufferId) {
     Connection connection = conMap.get(eq);
     connection.putSendBuffer(sendBufferPool.getBuffer(rdmaBufferId));
@@ -223,6 +245,12 @@ public class EqService {
     return recvBufferPool.getBuffer(rdmaBufferId);
   }
 
+  /**
+   * register buffer for RDMA
+   * @param byteBuffer
+   * @param bufferSize
+   * @return
+   */
   public RdmaBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     rmaBufferMap.put(bufferId, byteBuffer);
@@ -234,6 +262,13 @@ public class EqService {
     return buffer;
   }
 
+  /**
+   * register RDMA buffer by address
+   * @param byteBuffer
+   * @param address
+   * @param bufferSize
+   * @return
+   */
   public RdmaBuffer regRmaBufferByAddress(ByteBuffer byteBuffer, long address, long bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     if (byteBuffer != null) {
@@ -247,10 +282,19 @@ public class EqService {
     return buffer;
   }
 
+  /**
+   * un-register RDMA buffer by <code>rdmaBufferId</code>
+   * @param rdmaBufferId
+   */
   public void unregRmaBuffer(int rdmaBufferId) {
     unreg_rma_buffer(rdmaBufferId, nativeHandle);
   }
 
+  /**
+   * allocate and register new RDMA buffer
+   * @param bufferSize
+   * @return
+   */
   public RdmaBuffer getRmaBuffer(int bufferSize) {
     int bufferId = this.rmaBufferId.getAndIncrement();
     // allocate memory from on-heap, off-heap or AEP.
@@ -278,13 +322,16 @@ public class EqService {
   }
 
   public int getWorkerNum() {
-    return this.worker_num;
+    return this.workerNum;
   }
 
   public EventTask getEventTask(){
     return eqTask;
   }
 
+  /**
+   * load libfabric.so and libhpnl.so from jar
+   */
   private static void loadFromJar(){
     File tempDir = null;
     try {
@@ -317,6 +364,7 @@ public class EqService {
     }
   }
 
+  //native methods
   public native void shutdown(long eq, long nativeHandle);
   private native long internal_connect(String ip, String port, int cqIndex, long connectId, long nativeHandle);
   public native int wait_eq_event(long nativeHandle);
@@ -332,20 +380,50 @@ public class EqService {
   private native void free(long nativeHandle);
   public native void finalize();
 
+  /**
+   * stop EQ service by,
+   * - stop EQ task and wait its completion
+   * - delete EQ event
+   * - free JNI resources
+   */
+  public void stop() {
+    eqTask.stop();
+    delete_eq_event(localEq, nativeHandle);
+    waitToComplete();
+    free(nativeHandle);
+  }
+
+  private void waitToComplete() {
+    try {
+      eqTask.waitToComplete();
+    } catch (InterruptedException e) {
+      log.error("EQ task interrupted when wait its completion", e);
+    } finally {
+      log.info("EQ task stopped? {}", eqTask.isStopped());
+    }
+  }
+
   protected class EqTask extends EventTask {
 
     @Override
     public void waitEvent() {
       if (wait_eq_event(nativeHandle) == -1) {
-        System.out.println("wait or process EQ event error");
+        log.warn("wait or process EQ event error, ignoring");
       }
     }
 
     @Override
+    protected Logger getLogger(){
+      return log;
+    }
+
+    @Override
     protected void cleanUp(){
-      System.out.println("close all connections");
-      for(Connection connection : conMap.values()){
-        connection.shutdown();
+      log.info("close and remove all connections");
+      Iterator<Connection> it = conMap.values().iterator();
+      while(it.hasNext()){
+        it.next().shutdown();
+        it.remove();
       }
     }
   }

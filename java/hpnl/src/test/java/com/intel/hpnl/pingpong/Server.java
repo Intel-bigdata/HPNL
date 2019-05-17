@@ -14,22 +14,21 @@ public class Server {
     String addr = args.length >=1 ? args[0] : "localhost";
     int bufferSize = args.length >=2 ? Integer.valueOf(args[1]) : 65536;
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
-    int workNbr = args.length >=4 ? Integer.valueOf(args[3]) : 3;
+    int workNbr = args.length >=4 ? Integer.valueOf(args[3]) : 4;
 
-    EqService eqService = new EqServerService(workNbr, bufferNbr).init();
+    EqService eqService = new EqServerService(workNbr, bufferNbr, bufferSize).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     
     List<Connection> conList = new ArrayList<Connection>();
 
-    ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
-    ReadCallback readCallback = new ReadCallback(true, eqService);
+    ConnectedCallback connectedCallback = new ConnectedCallback(conList, eqService,true);
+//    ReadCallback readCallback = new ReadCallback(true, eqService);
 //    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(readCallback);
 
-    eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
-
+    System.out.println(addr);
     ExecutorService executor = Executors.newFixedThreadPool(workNbr + 2);
-    eqService.connect(addr, "123456", 0, connectedCallback);
+    eqService.connect(addr, "8077", 0, connectedCallback);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);
@@ -37,10 +36,10 @@ public class Server {
 
     Thread.sleep(10000);
 
-    cqService.stop();
-    System.out.println("eq stop");
-    eqService.stop();
+//    cqService.stop();
+//    System.out.println("eq stop");
+//    eqService.stop();
 
-    executor.shutdown();
+//    executor.shutdown();
   }
 }

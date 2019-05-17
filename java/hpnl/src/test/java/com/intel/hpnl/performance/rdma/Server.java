@@ -1,6 +1,7 @@
 package com.intel.hpnl.performance.rdma;
 
 import com.intel.hpnl.core.CqService;
+import com.intel.hpnl.core.EqServerService;
 import com.intel.hpnl.core.EqService;
 import com.intel.hpnl.core.EventTask;
 
@@ -16,16 +17,13 @@ public class Server {
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
     String filePath = args.length >=4 ? args[3] : "/home/jiafu/test.jar";
 
-    EqService eqService = new EqService(1, bufferNbr, true).init();
+    EqService eqService = new EqServerService(1, bufferNbr, bufferSize).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
 
     ServerRecvCallback recvCallback = new ServerRecvCallback(eqService, new File(filePath));
-//    eqService.setRecvCallback(recvCallback);
-
-    eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
     ExecutorService executor = Executors.newFixedThreadPool(1);
-    eqService.connect(addr, "123456", 0, 5000);
+    eqService.connect(addr, "123456", 0, null);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);

@@ -15,7 +15,7 @@ public class Client {
     int bufferSize = args.length >=2 ? Integer.valueOf(args[1]) : 65536;
     int bufferNbr = args.length >=3 ? Integer.valueOf(args[2]) : 32;
 
-    EqService eqService = new EqService(1, bufferNbr, false).init();
+    EqService eqService = new EqService(1, bufferNbr, bufferSize).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
@@ -23,15 +23,12 @@ public class Client {
 
     ClientReadCallback readCallback = new ClientReadCallback(new File("received_test.jar"));
     ClientRecvCallback recvCallback = new ClientRecvCallback(false, buffer, readCallback);
-    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(recvCallback);
 //    eqService.setSendCallback(null);
 //    eqService.setReadCallback(readCallback);
 
-    eqService.initBufferPool(bufferNbr, bufferSize, bufferNbr);
-
     ExecutorService executor = Executors.newFixedThreadPool(1);
-    eqService.connect(addr, "123456", 0, 5000);
+    eqService.connect(addr, "123456", 0, connectedCallback);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);

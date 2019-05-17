@@ -17,13 +17,14 @@ public class ReadCallback implements Handler {
       if (count == 0) {
         startTime = System.currentTimeMillis();
       }
-      if (++count >= 1000000) {
+      if (++count >= 1000) {
         endTime = System.currentTimeMillis();
         totally_time = (float)(endTime-startTime)/1000;
         System.out.println("finished, total time is " + totally_time + " s");
         return Handler.RESULT_DEFAULT;
       }
     }
+    System.out.println("here");
     RdmaBuffer sendBuffer = con.takeSendBuffer(true);
     RdmaBuffer recvBuffer = con.getRecvBuffer(rdmaBufferId);
 

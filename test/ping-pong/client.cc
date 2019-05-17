@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run("172.168.2.106", "123456", 0, 1, 16);
+  client->run("10.100.0.35", "123456", 0, 1, 16);
 
   client->wait();
 

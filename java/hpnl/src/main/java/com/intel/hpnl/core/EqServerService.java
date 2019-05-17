@@ -1,23 +1,20 @@
 package com.intel.hpnl.core;
 
+/**
+ * A server service for libfabric's event queue
+ */
 public class EqServerService extends EqService {
 
   private Handler connectedCallback;
 
-  public EqServerService(int worker_num, int buffer_num) {
-    super(worker_num, buffer_num, true);
+  public EqServerService(int workerNum, int bufferNum, int bufferSize) {
+    super(workerNum, bufferNum, bufferSize,true);
   }
 
   @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    long ret = setupConnection(ip, port, cqIndex, connectedCallback);
+    long ret = tryConnect(ip, port, cqIndex);
     this.connectedCallback = connectedCallback;
-    return ret<0 ? -1:0;
-  }
-
-  @Override
-  public int connect(String ip, String port, int cqIndex, long timeoutMill) {
-    long ret = setupConnection(ip, port, cqIndex, null);
     return ret<0 ? -1:0;
   }
 

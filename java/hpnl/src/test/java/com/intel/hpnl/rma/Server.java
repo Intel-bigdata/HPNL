@@ -15,20 +15,18 @@ public class Server {
     final int BUFFER_SIZE = 65536;
     final int BUFFER_NUM = 128;
 
-    EqService eqService = new EqService(1, BUFFER_NUM, true).init();
+    EqService eqService = new EqService(1, BUFFER_NUM, BUFFER_SIZE).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
 
     List<Connection> conList = new ArrayList<Connection>();
     
     ConnectedCallback connectedCallback = new ConnectedCallback(conList, true);
     ServerRecvCallback recvCallback = new ServerRecvCallback(eqService, true);
-    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(recvCallback);
 
-    eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
 
     ExecutorService executor = Executors.newFixedThreadPool(1);
-    eqService.connect("localhost", "123456", 0, 5000);
+    eqService.connect("localhost", "123456", 0, connectedCallback);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);

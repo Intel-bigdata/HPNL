@@ -1,16 +1,31 @@
 package com.intel.hpnl.core;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * A service for completion queue
+ */
 public class CqService {
   private long nativeHandle;
   private EqService eqService;
   private long serviceNativeHandle;
   private List<EventTask> cqTasks;
 
+  private static final Logger log = LoggerFactory.getLogger(CqService.class);
+
+  /**
+   * construct CQ service with EqService.
+   * One {@link CqTask} per completion queue
+   * Number of completion queue is determined by number of worker
+   * @param service
+   * @param serviceNativeHandle
+   */
   public CqService(EqService service, long serviceNativeHandle) {
     this.eqService = service;
     this.serviceNativeHandle = serviceNativeHandle;
@@ -24,6 +39,10 @@ public class CqService {
     this.eqService.setCqService(this);
   }
 
+  /**
+   * initialize native resources
+   * @return
+   */
   public CqService init() {
     if (init(serviceNativeHandle) == -1)
       return null;
@@ -34,6 +53,21 @@ public class CqService {
     return cqTasks;
   }
 
+  public void addExternalEvent(int cqIndex, ExternalHandler externalHandler) {
+    ((CqTask)cqTasks.get(cqIndex)).externalHandlers.add(externalHandler);
+  }
+
+  //native methods
+  public native int wait_cq_event(int index, long nativeHandle);
+  private native int init(long Service);
+  public native void finalize();
+  private native void free(long nativeHandle);
+
+  /**
+   * stop CQ service by,
+   * - stop all CQ tasks and wait their completion
+   * - free native resources
+   */
   public void stop() {
     for (EventTask task : cqTasks) {
       task.stop();
@@ -49,19 +83,9 @@ public class CqService {
         task.waitToComplete();
       }
     } catch (InterruptedException e) {
-      e.printStackTrace();
+      log.error("CQ task is interrupted when wait its completion", e);
     }
   }
-
-  public void addExternalEvent(int cqIndex, ExternalHandler externalHandler) {
-    ((CqTask)cqTasks.get(cqIndex)).externalHandlers.add(externalHandler);
-  }
-
-  public native int wait_cq_event(int index, long nativeHandle);
-  private native int init(long Service);
-  public native void finalize();
-  private native void free(long nativeHandle);
-
 
   public class CqTask extends EventTask {
     private int index;
@@ -82,7 +106,7 @@ public class CqService {
     @Override
     public void waitEvent() {
       if (processEvent(index) == -1) {
-        System.out.println("wait or process CQ event error");
+        log.warn("wait or process CQ event error in CQ task {}. ignoring", index);
       }
     }
 
@@ -100,8 +124,13 @@ public class CqService {
 
     @Override
     protected void cleanUp(){
-      System.out.println("process remaining external events");
+      log.info("process remaining external events");
       processExternalEvent();
+    }
+
+    @Override
+    protected Logger getLogger(){
+      return log;
     }
 
     private int processExternalEvent(){

@@ -17,7 +17,7 @@ public class Client {
     byteBufferTmp.putChar('a');
     byteBufferTmp.flip();
 
-    EqService eqService = new EqService(1, BUFFER_NUM, false).init();
+    EqService eqService = new EqService(1, BUFFER_NUM, BUFFER_SIZE).init();
     CqService cqService = new CqService(eqService, eqService.getNativeHandle()).init();
     RdmaBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
@@ -27,16 +27,13 @@ public class Client {
     ClientRecvCallback recvCallback = new ClientRecvCallback(false, buffer);
     ClientReadCallback readCallback = new ClientReadCallback();
     ShutdownCallback shutdownCallback = new ShutdownCallback();
-    eqService.setConnectedCallback(connectedCallback);
 //    eqService.setRecvCallback(recvCallback);
 //    eqService.setSendCallback(null);
 //    eqService.setReadCallback(readCallback);
 //    eqService.setShutdownCallback(shutdownCallback);
 
-    eqService.initBufferPool(BUFFER_NUM, BUFFER_SIZE, BUFFER_NUM);
-
     ExecutorService executor = Executors.newFixedThreadPool(1);
-    eqService.connect("localhost", "123456", 0, 5000);
+    eqService.connect("localhost", "123456", 0, connectedCallback);
     executor.submit(eqService.getEventTask());
     for(EventTask task : cqService.getEventTasks()){
       executor.submit(task);

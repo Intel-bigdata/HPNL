@@ -23,13 +23,14 @@ int EQExternalDemultiplexer::init() {
 int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FIConnection** con) {
   struct fid *fids[fid_map.size()];
   int i = 0;
+ 
   for (auto iter: fid_map) {
     fids[i++] = iter.first;
-  }
+  } 
   if (fi_trywait(fabric, fids, fid_map.size()) == FI_SUCCESS) {
     int epoll_ret = epoll_wait(epfd, &event, 1, 200);
-    if (epoll_ret > 0) {
-      *eq = fid_map[(fid*)event.data.ptr];
+    if (epoll_ret > 0) { 
+      *eq = fid_map[(fid*)event.data.ptr]; 
     } else if (epoll_ret == -1) {
       if (errno != EINTR) {
         perror("epoll_wait");
@@ -39,7 +40,8 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FIConnectio
     } else {
       return 0; 
     }
-  }
+  } 
+
   uint32_t event;
   fi_eq_cm_entry entry;
   int ret = fi_eq_read(*eq, &event, &entry, sizeof(entry), 0);

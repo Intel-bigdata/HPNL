@@ -4,6 +4,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.nio.ByteBuffer;
 
+/**
+ * buffer pool for send and receive
+ */
 public class MemPool {
   public enum Type {
     SEND, RECV 
@@ -15,6 +18,7 @@ public class MemPool {
     this.bufferSize = bufferSize;
     this.nextBufferNum = nextBufferNum;
     this.type = type;
+    //TODO: tuning concurrency
     this.bufferMap = new ConcurrentHashMap<>();
     this.seqId = new AtomicInteger(0);
     for (int i = 0; i < this.initBufferNum; i++) {
