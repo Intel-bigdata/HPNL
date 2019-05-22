@@ -63,7 +63,7 @@ public class Connection {
       this.connectId = connectId;
     }
     shutdownCallbacks.add(new InternalShutdownCallback());
-    log.info("connection {} with CQ index {} established.", connectId, cqIndex);
+    log.info("connection {} with CQ index {} established.", this.connectId, cqIndex);
   }
 
   /**
