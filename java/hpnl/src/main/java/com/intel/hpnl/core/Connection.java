@@ -57,7 +57,11 @@ public class Connection {
     init(nativeCon);
     cqIndex = get_cq_index(this.nativeHandle);
     connected = true;
-    this.connectId = connectId;
+    if(connectId == 0){
+      this.connectId = service.getNewConnectionId();
+    }else {
+      this.connectId = connectId;
+    }
     shutdownCallbacks.add(new InternalShutdownCallback());
     log.info("connection {} with CQ index {} established.", connectId, cqIndex);
   }
@@ -277,7 +281,7 @@ public class Connection {
     return cqIndex;
   }
 
-  public long getConnectId() {
+  public long getConnectionId() {
     return connectId;
   }
 

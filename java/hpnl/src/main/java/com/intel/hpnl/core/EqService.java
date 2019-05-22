@@ -9,14 +9,12 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A client service for libfabric's event queue
@@ -47,6 +45,8 @@ public class EqService {
   private Map<Long, Handler> connectedHandlers = new ConcurrentHashMap<>();
 
   private CqService cqService;
+
+  private AtomicLong nextConnectId = new AtomicLong();
 
   private static String providerName; //libfabric's provider name
   private static String fabricFilename;//name of libfabric file reference by libhpnl.so
@@ -92,6 +92,7 @@ public class EqService {
     this.conMap = new ConcurrentHashMap();
     this.rmaBufferMap = new ConcurrentHashMap();
     this.eqTask = new EqTask();
+    nextConnectId.set(new Random().nextLong());
   }
 
   public EqService(int workerNum, int bufferNbr, int bufferSize) {
@@ -191,7 +192,7 @@ public class EqService {
   protected void handleEqCallback(long eq, int eventType, int blockId) {
     Connection connection = conMap.get(eq);
     if (eventType == EventType.CONNECTED_EVENT) {
-      long id = connection.getConnectId();
+      long id = connection.getConnectionId();
       Handler connectedHandler =  connectedHandlers.remove(id);
       if(connectedHandler != null){
         connectedHandler.handle(connection, 0, 0);
@@ -401,6 +402,10 @@ public class EqService {
     } finally {
       log.info("EQ task stopped? {}", eqTask.isStopped());
     }
+  }
+
+  public long getNewConnectionId() {
+    return nextConnectId.incrementAndGet();
   }
 
   protected class EqTask extends EventTask {
