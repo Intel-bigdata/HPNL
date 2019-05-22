@@ -7,16 +7,16 @@
 
 #include "HPNL/BufMgr.h"
 
-class FiStack;
+class MsgStack;
 
 class ExternalCqDemultiplexer {
   public:
-    ExternalCqDemultiplexer(FiStack*, fid_cq*);
+    ExternalCqDemultiplexer(MsgStack*, fid_cq*);
     ~ExternalCqDemultiplexer();
     int init();
     int wait_event(fid_eq**, Chunk**, int*, int*);
   private:
-    FiStack *stack;
+    MsgStack *stack;
     fid_cq *cq;
     fid_fabric *fabric;
     struct epoll_event event;

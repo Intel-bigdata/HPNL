@@ -44,13 +44,13 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
   fid_eq *eq;
   int block_buffer_size = 0;
   int buffer_id = 0;
-  FiConnection *con = NULL;
+  MsgConnection *con = NULL;
   Chunk *ck = NULL;
   int ret = service->wait_cq_event(index, &eq, &ck, &buffer_id, &block_buffer_size);
   if (ret <= 0) {
     return ret; 
   }
-  con = (FiConnection*)ck->con;
+  con = (MsgConnection*)ck->con;
   if (!con)
     return -1;
   jlong jEq = *(jlong*)&eq;

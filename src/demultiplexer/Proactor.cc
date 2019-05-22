@@ -2,6 +2,7 @@
 #include "demultiplexer/EventType.h"
 #include "demultiplexer/EqDemultiplexer.h"
 #include "demultiplexer/CqDemultiplexer.h"
+#include "demultiplexer/RdmCqDemultiplexer.h"
 #include "demultiplexer/EventHandler.h"
 
 Proactor::Proactor(EqDemultiplexer *eqDemultiplexer_, CqDemultiplexer **cqDemultiplexer_, int worker_num) : eqDemultiplexer(eqDemultiplexer_) {
@@ -10,16 +11,28 @@ Proactor::Proactor(EqDemultiplexer *eqDemultiplexer_, CqDemultiplexer **cqDemult
   }
 }
 
+Proactor::Proactor(RdmCqDemultiplexer *rdmCqDemultiplexer_) : rdmCqDemultiplexer(rdmCqDemultiplexer_) {}
+
 Proactor::~Proactor() {
   eventMap.erase(eventMap.begin(), eventMap.end()); 
 }
 
 int Proactor::eq_service() {
-  return eqDemultiplexer->wait_event(eventMap);
+  if (eqDemultiplexer != NULL) {
+    return eqDemultiplexer->wait_event(eventMap);
+  }
+  return 0;
 }
 
 int Proactor::cq_service(int index) {
-  return cqDemultiplexer[index]->wait_event();
+  if (cqDemultiplexer[index] != NULL) {
+    return cqDemultiplexer[index]->wait_event();
+  }
+  return 0;
+}
+
+int Proactor::rdm_cq_service() {
+  return rdmCqDemultiplexer->wait_event();
 }
 
 int Proactor::register_handler(std::shared_ptr<EventHandler> eh) {

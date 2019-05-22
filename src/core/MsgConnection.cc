@@ -1,10 +1,10 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-#include "core/FiStack.h"
-#include "core/FiConnection.h"
+#include "core/MsgStack.h"
+#include "core/MsgConnection.h"
 
-FiConnection::FiConnection(FiStack *stack_, fid_fabric *fabric_, 
+MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_, 
     fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
     fid_wait *waitset_, BufMgr *recv_buf_mgr_, 
     BufMgr *send_buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
@@ -13,7 +13,7 @@ FiConnection::FiConnection(FiStack *stack_, fid_fabric *fabric_,
   waitset(waitset_), is_server(is_server_), buffer_num(buffer_num_), cq_index(cq_index_),
   recv_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {}
 
-FiConnection::~FiConnection() {
+MsgConnection::~MsgConnection() {
   for (auto buffer: send_buffers_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
@@ -40,7 +40,7 @@ FiConnection::~FiConnection() {
   }
 }
 
-int FiConnection::init() {
+int MsgConnection::init() {
   int size = 0;
   struct fi_eq_attr eq_attr = {
     .size = 0,
@@ -133,7 +133,7 @@ free_ep:
   return -1;
 }
 
-int FiConnection::send(const char *buffer, int buffer_size, long seq) {
+int MsgConnection::send(const char *buffer, int buffer_size, long seq) {
   Chunk *ck = send_buffers.back();
   send_buffers.pop_back();
   memcpy(ck->buffer, buffer, buffer_size);
@@ -144,7 +144,7 @@ int FiConnection::send(const char *buffer, int buffer_size, long seq) {
   return 0;
 }
 
-int FiConnection::send(int buffer_size, int buffer_id) {
+int MsgConnection::send(int buffer_size, int buffer_id) {
   Chunk *ck = send_buffers_map[buffer_id];
   if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
@@ -153,17 +153,13 @@ int FiConnection::send(int buffer_size, int buffer_id) {
   return 0;
 }
 
-void FiConnection::recv(char *buffer, int buffer_size) {
-  // TODO: buffer filter
-}
-
-int FiConnection::read(int buffer_id, int local_offset, uint64_t len, uint64_t remote_addr, uint64_t remote_key) {
+int MsgConnection::read(int buffer_id, int local_offset, uint64_t len, uint64_t remote_addr, uint64_t remote_key) {
   Chunk *ck = stack->get_rma_chunk(buffer_id);
   ck->con = this;
   return fi_read(ep, (char*)ck->buffer+local_offset, len, fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
 }
 
-int FiConnection::connect() {
+int MsgConnection::connect() {
   int res = fi_connect(ep, info->dest_addr, NULL, 0);
   if (res) {
     if (res == EAGAIN) {
@@ -176,7 +172,7 @@ int FiConnection::connect() {
   return 0;
 }
 
-int FiConnection::accept() {
+int MsgConnection::accept() {
   if (fi_accept(ep, NULL, 0)) {
     perror("fi_accept");
     return -1;
@@ -184,11 +180,11 @@ int FiConnection::accept() {
   return 0;
 }
 
-void FiConnection::shutdown() {
+void MsgConnection::shutdown() {
   fi_shutdown(ep, 0);
 }
 
-void FiConnection::init_addr() {
+void MsgConnection::init_addr() {
   if (info->dest_addr != NULL) {
     struct sockaddr_in *dest_addr_in = (struct sockaddr_in*)info->dest_addr;
     dest_port = dest_addr_in->sin_port;
@@ -204,7 +200,7 @@ void FiConnection::init_addr() {
   }
 }
 
-void FiConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_addr_, size_t* src_port_) {
+void MsgConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_addr_, size_t* src_port_) {
   *dest_addr_ = dest_addr;
   *dest_port_ = dest_port;
 
@@ -212,55 +208,55 @@ void FiConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_ad
   *src_port_ = src_port;
 }
 
-int FiConnection::get_cq_index() {
+int MsgConnection::get_cq_index() {
   return cq_index;
 }
 
-void FiConnection::take_back_chunk(Chunk *ck) {
+void MsgConnection::reclaim_chunk(Chunk *ck) {
   send_buffers.push_back(ck);
 }
 
-std::vector<Chunk*> FiConnection::get_send_buffer() {
+std::vector<Chunk*> MsgConnection::get_send_buffer() {
   return send_buffers;
 }
 
-void FiConnection::set_recv_callback(Callback *callback) {
+void MsgConnection::set_recv_callback(Callback *callback) {
   recv_callback = callback;
 }
 
-void FiConnection::set_send_callback(Callback *callback) {
+void MsgConnection::set_send_callback(Callback *callback) {
   send_callback = callback;
 }
 
-void FiConnection::set_read_callback(Callback *callback) {
+void MsgConnection::set_read_callback(Callback *callback) {
   read_callback = callback;
 }
 
-void FiConnection::set_shutdown_callback(Callback *callback) {
+void MsgConnection::set_shutdown_callback(Callback *callback) {
   shutdown_callback = callback;
 }
 
-Callback* FiConnection::get_recv_callback() {
+Callback* MsgConnection::get_recv_callback() {
   return recv_callback;
 }
 
-Callback* FiConnection::get_send_callback() {
+Callback* MsgConnection::get_send_callback() {
   return send_callback;
 }
 
-Callback* FiConnection::get_read_callback() {
+Callback* MsgConnection::get_read_callback() {
   return read_callback;
 }
 
-Callback* FiConnection::get_shutdown_callback() {
+Callback* MsgConnection::get_shutdown_callback() {
   return shutdown_callback;
 }
 
-fid* FiConnection::get_fid() {
+fid* MsgConnection::get_fid() {
   return &conEq->fid;
 }
 
-int FiConnection::activate_chunk(Chunk *ck) {
+int MsgConnection::activate_chunk(Chunk *ck) {
   ck->con = this;
   if (fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_recv");
@@ -269,6 +265,6 @@ int FiConnection::activate_chunk(Chunk *ck) {
   return 0;
 }
 
-fid_eq* FiConnection::get_eq() {
+fid_eq* MsgConnection::get_eq() {
   return conEq;
 }

@@ -1,5 +1,5 @@
-#include "core/FiStack.h"
-#include "core/FiConnection.h"
+#include "core/MsgStack.h"
+#include "core/MsgConnection.h"
 #include "demultiplexer/EqHandler.h"
 #include "demultiplexer/Proactor.h"
 

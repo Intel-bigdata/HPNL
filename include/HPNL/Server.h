@@ -6,7 +6,7 @@
 class Server : public Service {
   public:
     Server(int, int);
-    int init();
+    int init(bool msg = true);
     void start();
     int listen(const char*, const char*);
     void shutdown();

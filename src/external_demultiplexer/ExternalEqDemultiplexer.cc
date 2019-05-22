@@ -4,10 +4,10 @@
 
 #include "demultiplexer/EventType.h"
 #include "external_demultiplexer/ExternalEqDemultiplexer.h"
-#include "core/FiStack.h"
-#include "core/FiConnection.h"
+#include "core/MsgStack.h"
+#include "core/MsgConnection.h"
 
-ExternalEqDemultiplexer::ExternalEqDemultiplexer(FiStack *stack_) : stack(stack_) {}
+ExternalEqDemultiplexer::ExternalEqDemultiplexer(MsgStack *stack_) : stack(stack_) {}
 
 ExternalEqDemultiplexer::~ExternalEqDemultiplexer() {
   fid_map.clear();
@@ -25,7 +25,7 @@ int ExternalEqDemultiplexer::init() {
   return 0;
 }
 
-int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FiConnection** con) {
+int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnection** con) {
   if (fid_map.empty()) return 0;
   struct fid *fids[fid_map.size()];
   int i = 0;

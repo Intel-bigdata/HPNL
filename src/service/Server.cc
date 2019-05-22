@@ -2,8 +2,8 @@
 
 Server::Server(int worker_num, int buffer_num) : Service(worker_num, buffer_num, true) {}
 
-int Server::init() {
-  return Service::init(); 
+int Server::init(bool msg) {
+  return Service::init(msg); 
 }
 
 void Server::start() {

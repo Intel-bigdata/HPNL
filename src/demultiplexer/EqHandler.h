@@ -7,11 +7,11 @@
 #include "demultiplexer/EventHandler.h"
 
 class Proactor;
-class FiStack;
+class MsgStack;
 
 class EqHandler : public EventHandler {
   public:
-    EqHandler(FiStack *stack_, Proactor *proactor_, fid_eq* eq_) : stack(stack_), proactor(proactor_), eq(eq_), recvCallback(NULL), sendCallback(NULL), acceptRequestCallback(NULL), connectedCallback(NULL), shutdownCallback(NULL) {}
+    EqHandler(MsgStack *stack_, Proactor *proactor_, fid_eq* eq_) : stack(stack_), proactor(proactor_), eq(eq_), recvCallback(NULL), sendCallback(NULL), acceptRequestCallback(NULL), connectedCallback(NULL), shutdownCallback(NULL) {}
     virtual ~EqHandler() {}
     virtual int handle_event(EventType, void*) override;
     virtual fid_eq* get_handle(void) const override;
@@ -24,7 +24,7 @@ class EqHandler : public EventHandler {
     virtual void set_read_callback(Callback*) override;
     
   private:
-    FiStack *stack;
+    MsgStack *stack;
     Proactor *proactor;
     fid_eq *eq;
     Callback *recvCallback;

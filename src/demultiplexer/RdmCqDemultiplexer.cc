@@ -1,20 +1,21 @@
 #include <assert.h>
 
 #include <iostream>
+#include <chrono>
 
-#include "demultiplexer/CqDemultiplexer.h"
-#include "core/MsgStack.h"
-#include "core/MsgConnection.h"
+#include "demultiplexer/RdmCqDemultiplexer.h"
+#include "core/RdmStack.h"
+#include "core/RdmConnection.h"
 
-CqDemultiplexer::CqDemultiplexer(MsgStack *stack_, int work_num_) : stack(stack_), work_num(work_num_) {}
+RdmCqDemultiplexer::RdmCqDemultiplexer(RdmStack *stack_) : stack(stack_) {}
 
-CqDemultiplexer::~CqDemultiplexer() {
+RdmCqDemultiplexer::~RdmCqDemultiplexer() {
   close(epfd);
 }
 
-int CqDemultiplexer::init() {
+int RdmCqDemultiplexer::init() {
   fabric = stack->get_fabric();
-  cq = stack->get_cqs()[work_num];
+  cq = stack->get_cq();
   epfd = epoll_create1(0);
   memset((void*)&event, 0, sizeof event);
   int ret = fi_control(&cq->fid, FI_GETWAIT, (void*)&fd);
@@ -32,7 +33,7 @@ int CqDemultiplexer::init() {
   return 0;
 }
 
-int CqDemultiplexer::wait_event() {
+int RdmCqDemultiplexer::wait_event() {
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
@@ -58,32 +59,26 @@ int CqDemultiplexer::wait_event() {
       break;
     } else if (ret == -FI_EAGAIN) {
     } else {
-      Chunk *ck = (Chunk*)entry.op_context;
-      MsgConnection *con = (MsgConnection*)ck->con;
       if (entry.flags & FI_RECV) {
-        if (con->status < CONNECTED) {
-          std::unique_lock<std::mutex> l(con->con_mtx);
-          con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
-          l.unlock();
-        }
-        con->recv((char*)ck->buffer, entry.len);
+        fi_context2 *ctx = (fi_context2*)entry.op_context;
+        Chunk *ck = (Chunk*)ctx->internal[4];
+        RdmConnection *con = (RdmConnection*)ck->con;
         if (con->get_recv_callback()) {
           (*con->get_recv_callback())(&ck->buffer_id, &entry.len);
-          con->activate_chunk(ck);
         }
+        con->activate_chunk(ck);
       } else if (entry.flags & FI_SEND) {
-        assert(con->get_send_callback());
-        (*con->get_send_callback())(&ck->buffer_id, NULL); 
+        fi_context2 *ctx = (fi_context2*)entry.op_context;
+        Chunk *ck = (Chunk*)ctx->internal[4];
+        RdmConnection *con = (RdmConnection*)ck->con;
+        con->reclaim_chunk(ck);
       } else if (entry.flags & FI_READ) {
-        if (con->get_read_callback()) {
-          (*con->get_read_callback())(&ck->buffer_id, &entry.len);
-        }
       } else if (entry.flags & FI_WRITE) {
       } else {
       }
       start = end;
     }
     end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-  } while (end-start <= 25);
+  } while (end-start <= 100000);
   return 0;
 }

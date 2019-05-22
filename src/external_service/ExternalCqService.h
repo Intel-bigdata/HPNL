@@ -5,14 +5,14 @@
 
 #include "HPNL/Common.h"
 #include "HPNL/Connection.h"
-#include "core/FiStack.h"
-#include "core/FiConnection.h"
+#include "core/MsgStack.h"
+#include "core/MsgConnection.h"
 #include "external_service/ExternalEqService.h"
 #include "external_demultiplexer/ExternalCqDemultiplexer.h"
 
 class ExternalCqService {
   public:
-    ExternalCqService(ExternalEqService *service_, FiStack *stack_) : service(service_), stack(stack_) {}
+    ExternalCqService(ExternalEqService *service_, MsgStack *stack_) : service(service_), stack(stack_) {}
     ~ExternalCqService() {
       for (int i = 0; i < service->get_worker_num(); i++) {
         delete cq_demulti_plexer[i];
@@ -45,7 +45,7 @@ class ExternalCqService {
     }
   private:
     ExternalEqService *service;
-    FiStack *stack;
+    MsgStack *stack;
     ExternalCqDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
 };
 

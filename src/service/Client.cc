@@ -2,8 +2,8 @@
 
 Client::Client(int worker_num, int buffer_num) : Service(worker_num, buffer_num, false) {} 
 
-int Client::init() {
-  return Service::init();
+int Client::init(bool msg) {
+  return Service::init(msg);
 }
 
 void Client::start() {

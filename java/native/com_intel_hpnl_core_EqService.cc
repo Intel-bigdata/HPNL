@@ -6,7 +6,7 @@
 
 #include "HPNL/Connection.h"
 #include "demultiplexer/EventType.h"
-#include "core/FiConnection.h"
+#include "core/MsgConnection.h"
 #include "external_service/ExternalEqService.h"
 
 #include <iostream>
@@ -108,7 +108,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fi_info *info = NULL;
   fid_eq *eq;
-  FiConnection *con = NULL;
+  MsgConnection *con = NULL;
   int ret = service->wait_eq_event(&info, &eq, &con);
   if (ret < 0) return ret;
   if (ret == ACCEPT_EVENT) {
@@ -185,7 +185,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event(JNIE
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, jobject thisObj, jlong eqPtr, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fid_eq *eq = *(fid_eq**)&eqPtr;
-  FiConnection *con = (FiConnection*)service->get_connection(eq);
+  MsgConnection *con = (MsgConnection*)service->get_connection(eq);
 
   if (con->status < DOWN) {
     con->shutdown();
