@@ -55,7 +55,10 @@ public abstract class EventTask implements Runnable {
    */
   public void pause(){
     pause.set(true);
-    getLogger().info(this+" paused");
+    Logger log = getLogger();
+    if(log.isDebugEnabled()) {
+      log.debug(this + " paused");
+    }
   }
 
   /**
@@ -63,7 +66,10 @@ public abstract class EventTask implements Runnable {
    */
   public void resume(){
     pause.set(false);
-    getLogger().info(this+" resumed");
+    Logger log = getLogger();
+    if(log.isDebugEnabled()) {
+      log.debug(this + " resumed");
+    }
   }
 
   protected abstract void waitEvent();
