@@ -305,6 +305,7 @@ public class Connection {
       case EventType.SEND_EVENT:
         e = executeCallback(sendCallback, rdmaBufferId, blockBufferSize);
         if(e == Handler.RESULT_DEFAULT) {
+          //TODO: get buffer from connection's pool
           putSendBuffer(service.getSendBuffer(rdmaBufferId));
         }
         break;
