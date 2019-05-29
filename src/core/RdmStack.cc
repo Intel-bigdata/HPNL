@@ -12,7 +12,13 @@ int RdmStack::init() {
   hints->ep_attr->type = FI_EP_RDM;
   hints->caps = FI_MSG;
   hints->mode = FI_CONTEXT;
+#ifdef PSM2
+  hints->fabric_attr->prov_name = strdup("psm2");
+#elif VERBS
+  hints->fabric_attr->prov_name = strdup("verbs");
+#else
   hints->fabric_attr->prov_name = strdup("sockets");
+#endif
 
   if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, is_server ? FI_SOURCE : 0, hints, &info))
     perror("fi_getinfo");
@@ -45,7 +51,13 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
   hints->ep_attr->type = FI_EP_RDM;
   hints->caps = FI_MSG;
   hints->mode = FI_CONTEXT;
+#ifdef PSM2
+  hints->fabric_attr->prov_name = strdup("psm2");
+#elif VERBS
+  hints->fabric_attr->prov_name = strdup("verbs");
+#else
   hints->fabric_attr->prov_name = strdup("sockets");
+#endif
 
   if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &server_info))
     perror("fi_getinfo");

@@ -24,5 +24,15 @@ set(CORE_FILE ${CORE}/MsgConnection.cc ${CORE}/MsgStack.cc ${CORE}/RdmConnection
 set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc)
 set(EXTERNAL_SERVICE_FILE ${EXTERNAL_SERVICE}/ExternalEqService.cc)
 
+option(WITH_PSM2 "enable PSM2 provider" OFF)
+if(WITH_PSM2)
+  add_definitions(-DPSM2)
+endif(WITH_PSM2)
+
+option(WITH_VERBS "enable VERBS provider" OFF)
+if(WITH_VERBS)
+  add_definitions(-DVERBS)
+endif(WITH_VERBS)
+
 add_subdirectory(test)
 add_subdirectory(java)

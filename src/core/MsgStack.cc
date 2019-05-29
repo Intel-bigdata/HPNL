@@ -71,6 +71,12 @@ int MsgStack::init() {
   hints->mode = FI_CONTEXT | FI_LOCAL_MR;
   hints->tx_attr->msg_order = FI_ORDER_SAS;
   hints->rx_attr->msg_order = FI_ORDER_SAS;
+#ifdef VERBS
+  hints->fabric_attr->prov_name = strdup("verbs");
+#else
+  hints->fabric_attr->prov_name = strdup("sockets");
+#endif
+
 
   if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, flags, hints, &info)) {
     perror("fi_getinfo");
@@ -155,6 +161,11 @@ void* MsgStack::bind(const char *ip_, const char *port_, BufMgr* rbuf, BufMgr* s
   hints_tmp->mode = FI_CONTEXT | FI_LOCAL_MR;
   hints_tmp->tx_attr->msg_order = FI_ORDER_SAS;
   hints_tmp->rx_attr->msg_order = FI_ORDER_SAS;
+#ifdef VERBS
+  hints->fabric_attr->prov_name = strdup("verbs");
+#else
+  hints->fabric_attr->prov_name = strdup("sockets");
+#endif
 
   if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
     perror("fi_getinfo");
@@ -191,6 +202,11 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* rbuf_mgr, 
   hints_tmp->mode = FI_CONTEXT | FI_LOCAL_MR;
   hints_tmp->tx_attr->msg_order = FI_ORDER_SAS;
   hints_tmp->rx_attr->msg_order = FI_ORDER_SAS;
+#ifdef VERBS
+  hints->fabric_attr->prov_name = strdup("verbs");
+#else
+  hints->fabric_attr->prov_name = strdup("sockets");
+#endif
 
   if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
     perror("fi_getinfo");
