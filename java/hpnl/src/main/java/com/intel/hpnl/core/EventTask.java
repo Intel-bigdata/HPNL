@@ -2,16 +2,20 @@ package com.intel.hpnl.core;
 
 import org.slf4j.Logger;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Base class of CQ task and EQ task
+ * Base class of CQ task and EQ task. Bound to only one thread
  */
 public abstract class EventTask implements Runnable {
-  protected volatile CountDownLatch completed;
-  protected final AtomicBoolean running = new AtomicBoolean(false);
-  protected final AtomicBoolean pause = new AtomicBoolean(false);
+  private volatile CountDownLatch completed;
+  private final AtomicBoolean running = new AtomicBoolean(false);
+
+  private final Queue<TrackedTask> pendingTasks = new ConcurrentLinkedQueue<>();
+  private volatile boolean lackSendBuffer = false;
 
   public EventTask() {
     running.set(true);
@@ -21,8 +25,9 @@ public abstract class EventTask implements Runnable {
   public void run(){
     boolean failed = false;
     try {
-      while (running.get() && !pause.get()) {
+      while (running.get()) {
         waitEvent();
+        runPendingTasks();
       }
     }catch (Throwable throwable){
       getLogger().error("error occurred in event task "+this, throwable);
@@ -46,30 +51,48 @@ public abstract class EventTask implements Runnable {
     }
   }
 
+  protected void runPendingTasks(){
+    lackSendBuffer = false; // assume buffer is available at beginning
+    TrackedTask task = pendingTasks.peek();
+    long tasks = 0L;
+    while(task != null) {
+      task.run();
+      tasks++;
+      if (lackSendBuffer) {
+        //lack buffer, this tracked task will be reset with new runnable to send remaining data
+        // the new task should be the first to run.
+        break;
+      }
+      pendingTasks.remove();
+      if((tasks & 0x3F) == 0) {
+        break;
+      }
+      task = pendingTasks.peek();
+    }
+  }
+
+  public void addPendingTask(Runnable task){
+    addPendingTask(task, false, false);
+  }
+
+  public void addPendingTask(Runnable task, boolean keepOrder, boolean lackSendBuffer){
+    this.lackSendBuffer = lackSendBuffer;//stop task running if lack of buffer
+    if(keepOrder){//replace current task with new task
+      TrackedTask runningTask = TrackedTask.Tracker.getRunningTask();
+      if(runningTask == null){
+        throw new IllegalStateException("current running task should exist");
+      }
+      runningTask.setTask(task);
+      return;
+    }
+
+    TrackedTask trackedTask = TrackedTask.newInstance();
+    trackedTask.setTask(task);
+    pendingTasks.offer(trackedTask);
+  }
+
   public boolean isStopped(){
     return !running.get();
-  }
-
-  /**
-   * pause this event task so that other task can be run in the same thread executor.
-   */
-  public void pause(){
-    pause.set(true);
-    Logger log = getLogger();
-    if(log.isDebugEnabled()) {
-      log.debug(this + " paused");
-    }
-  }
-
-  /**
-   * resume this event task whe other tasks are done
-   */
-  public void resume(){
-    pause.set(false);
-    Logger log = getLogger();
-    if(log.isDebugEnabled()) {
-      log.debug(this + " resumed");
-    }
   }
 
   protected abstract void waitEvent();
