@@ -13,6 +13,8 @@ public class TrackedTask implements Runnable {
 
     private Recycler.Handle<TrackedTask> handler;
 
+    private int nbrOfInnerTasks;
+
     private final static Recycler<TrackedTask> RECYCLER = new Recycler<TrackedTask>() {
         @Override
         protected TrackedTask newObject(Handle<TrackedTask> handle) {
@@ -36,10 +38,13 @@ public class TrackedTask implements Runnable {
     protected void setTask(Runnable task){
         synchronized (this) {//could be set by other threads, thus sync
             if (this.preTask != null) {
-                throw new IllegalStateException("preTask should be null when set new task");
+                nbrOfInnerTasks++;
             }
             this.preTask = this.task;
             this.task = task;
+            if(log.isDebugEnabled()){
+                log.debug("number of inner tasks "+nbrOfInnerTasks);
+            }
         }
     }
 
@@ -66,6 +71,7 @@ public class TrackedTask implements Runnable {
             synchronized (this) {// preTask and task could be set by other threads during execution, thus sync
                 if (preTask == null) {//task is done, to be recycled
                     task = null;
+                    nbrOfInnerTasks = 0;
                     handler.recycle(this);
                 } else { // will continue task
                     preTask = null;
