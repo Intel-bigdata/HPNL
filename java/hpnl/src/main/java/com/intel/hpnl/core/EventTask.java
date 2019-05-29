@@ -79,11 +79,10 @@ public abstract class EventTask implements Runnable {
     this.lackSendBuffer = lackSendBuffer;//stop task running if lack of buffer
     if(keepOrder){//replace current task with new task
       TrackedTask runningTask = TrackedTask.Tracker.getRunningTask();
-      if(runningTask == null){
-        throw new IllegalStateException("current running task should exist");
+      if(runningTask != null){
+        runningTask.setTask(task);
+        return;
       }
-      runningTask.setTask(task);
-      return;
     }
 
     TrackedTask trackedTask = TrackedTask.newInstance();
