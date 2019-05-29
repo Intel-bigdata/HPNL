@@ -76,7 +76,9 @@ public abstract class EventTask implements Runnable {
   }
 
   public void addPendingTask(Runnable task, boolean keepOrder, boolean lackSendBuffer){
-    this.lackSendBuffer = lackSendBuffer;//stop task running if lack of buffer
+    if(lackSendBuffer) {
+      this.lackSendBuffer = true;//stop task running if lack of buffer
+    }
     if(keepOrder){//replace current task with new task
       TrackedTask runningTask = TrackedTask.Tracker.getRunningTask();
       if(runningTask != null){
