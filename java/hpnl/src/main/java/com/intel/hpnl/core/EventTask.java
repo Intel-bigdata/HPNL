@@ -63,7 +63,10 @@ public abstract class EventTask implements Runnable {
         // the new task should be the first to run.
         break;
       }
-      pendingTasks.remove();
+      TrackedTask tt = pendingTasks.remove();
+      if(tt != task){
+        throw new IllegalStateException("task to be removed should be the same task");
+      }
       if((tasks & 0x3F) == 0) {
         break;
       }
