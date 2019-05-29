@@ -20,7 +20,13 @@ int RdmConnection::init() {
     hints->ep_attr->type = FI_EP_RDM;
     hints->caps = FI_MSG;
     hints->mode = FI_CONTEXT;
-    hints->fabric_attr->prov_name = strdup("sockets");
+#ifdef PSM2
+  hints->fabric_attr->prov_name = strdup("psm2");
+#elif VERBS
+  hints->fabric_attr->prov_name = strdup("verbs");
+#else
+  hints->fabric_attr->prov_name = strdup("sockets");
+#endif
 
     assert(info == NULL);
     if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &info))
