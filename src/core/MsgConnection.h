@@ -1,5 +1,5 @@
-#ifndef FICONNECTION_H
-#define FICONNECTION_H
+#ifndef MSGCONNECTION_H
+#define MSGCONNECTION_H
 
 #include <string.h>
 
@@ -28,19 +28,18 @@ enum ConStatus {
   DOWN
 };
 
-class FiStack;
+class MsgStack;
 
-class FiConnection : public Connection {
+class MsgConnection : public Connection {
   public:
-    FiConnection(FiStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int, int);
-    ~FiConnection();
+    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int, int);
+    ~MsgConnection();
 
     virtual int init() override;
-    virtual void recv(char*, int) override;
     virtual int send(const char*, int, long) override;
     virtual int send(int, int) override;
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) override;
-    virtual void take_back_chunk(Chunk*) override;
+    virtual void reclaim_chunk(Chunk*) override;
     virtual int activate_chunk(Chunk*) override;
     
     void shutdown();
@@ -54,15 +53,15 @@ class FiConnection : public Connection {
 
     fid* get_fid();
 
-    void set_recv_callback(Callback*);
-    void set_send_callback(Callback*);
+    virtual void set_recv_callback(Callback*) override;
+    virtual void set_send_callback(Callback*) override;
     void set_read_callback(Callback*);
     void set_shutdown_callback(Callback*);
 
     std::vector<Chunk*> get_send_buffer();
 
-    Callback* get_recv_callback();
-    Callback* get_send_callback();
+    virtual Callback* get_recv_callback() override;
+    virtual Callback* get_send_callback() override;
     Callback* get_read_callback();
     Callback* get_shutdown_callback();
 
@@ -72,7 +71,7 @@ class FiConnection : public Connection {
     std::condition_variable con_cv;
     
   private:
-    FiStack *stack;
+    MsgStack *stack;
     fid_fabric *fabric;
     fi_info *info;
     fid_domain *domain;

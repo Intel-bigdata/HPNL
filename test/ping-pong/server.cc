@@ -40,7 +40,7 @@ class SendCallback : public Callback {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
-      con->take_back_chunk(ck);
+      con->reclaim_chunk(ck);
     }
   private:
     BufMgr *bufMgr;
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   server->set_shutdown_callback(shutdownCallback);
 
   server->start();
-  server->listen("172.168.2.106", "123456");
+  server->listen("192.168.2.106", "12345");
 
   server->wait();
 

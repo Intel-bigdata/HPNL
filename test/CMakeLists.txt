@@ -26,6 +26,20 @@ set_target_properties(connection_client
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/connection")
 
+set(RDM_TEST ${PROJECT_SOURCE_DIR}/test/rdm)
+
+add_executable(rdm_server ${RDM_TEST}/server.cc ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
+target_link_libraries(rdm_server fabric)
+set_target_properties(rdm_server
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rdm")
+
+add_executable(rdm_client ${RDM_TEST}/client.cc ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
+target_link_libraries(rdm_client fabric)
+set_target_properties(rdm_client
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rdm")
+
 option(WITH_PMEM "enable PMoF code" OFF)
 if(WITH_PMEM)
   set(PMEM_TEST ${PROJECT_SOURCE_DIR}/test/pmem)

@@ -88,7 +88,7 @@ class SendCallback : public Callback {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
-      con->take_back_chunk(ck);
+      con->reclaim_chunk(ck);
     }
   private:
     BufMgr *bufMgr;

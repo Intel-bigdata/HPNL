@@ -2,9 +2,9 @@
 
 #include "demultiplexer/EqDemultiplexer.h"
 #include "demultiplexer/EventHandler.h"
-#include "core/FiStack.h"
+#include "core/MsgStack.h"
 
-EqDemultiplexer::EqDemultiplexer(FiStack *stack_) : stack(stack_) {}
+EqDemultiplexer::EqDemultiplexer(MsgStack *stack_) : stack(stack_) {}
 
 EqDemultiplexer::~EqDemultiplexer() {}
 

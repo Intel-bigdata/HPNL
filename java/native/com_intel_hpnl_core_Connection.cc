@@ -1,7 +1,7 @@
 #include "com_intel_hpnl_core_Connection.h"
 
 #include "HPNL/Connection.h"
-#include "core/FiStack.h"
+#include "core/MsgStack.h"
 
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {

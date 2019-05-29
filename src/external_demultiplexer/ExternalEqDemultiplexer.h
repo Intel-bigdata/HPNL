@@ -9,19 +9,19 @@
 
 #include <unordered_map>
 
-class FiStack;
-class FiConnection;
+class MsgStack;
+class MsgConnection;
 
 class ExternalEqDemultiplexer {
   public:
-    ExternalEqDemultiplexer(FiStack*);
+    ExternalEqDemultiplexer(MsgStack*);
     ~ExternalEqDemultiplexer();
     int init();
-    int wait_event(fi_info**, fid_eq**, FiConnection**);
+    int wait_event(fi_info**, fid_eq**, MsgConnection**);
     int add_event(fid_eq*);
     int delete_event(fid_eq*);
   private:
-    FiStack *stack;
+    MsgStack *stack;
     fid_fabric *fabric;
     struct epoll_event event;
     int epfd;

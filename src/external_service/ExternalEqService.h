@@ -7,8 +7,8 @@
 
 #include "HPNL/Connection.h"
 
-class FiStack;
-class FiConnection;
+class MsgStack;
+class MsgConnection;
 class ExternalEqServiceBufMgr;
 class ExternalEqDemultiplexer;
 
@@ -25,17 +25,17 @@ class ExternalEqService {
     void set_recv_buffer(char*, uint64_t, int);
     void set_send_buffer(char*, uint64_t, int);
 
-    int wait_eq_event(fi_info**, fid_eq**, FiConnection**);
+    int wait_eq_event(fi_info**, fid_eq**, MsgConnection**);
     int add_eq_event(fid_eq*);
     int delete_eq_event(fid_eq*);
 
     Connection* get_connection(fid_eq*);
     void reap(fid*);
-    FiStack* get_stack();
+    MsgStack* get_stack();
     Chunk* get_chunk(int, int);
     int get_worker_num();
   private:
-    FiStack *stack;
+    MsgStack *stack;
 
     int worker_num;
     int buffer_num;

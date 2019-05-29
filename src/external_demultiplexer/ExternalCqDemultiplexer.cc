@@ -1,9 +1,9 @@
 #include "external_demultiplexer/ExternalCqDemultiplexer.h"
-#include "core/FiStack.h"
-#include "core/FiConnection.h"
+#include "core/MsgStack.h"
+#include "core/MsgConnection.h"
 #include "demultiplexer/EventType.h"
 
-ExternalCqDemultiplexer::ExternalCqDemultiplexer(FiStack *stack_, fid_cq *cq_) : stack(stack_), cq(cq_), start(0), end(0) {}
+ExternalCqDemultiplexer::ExternalCqDemultiplexer(MsgStack *stack_, fid_cq *cq_) : stack(stack_), cq(cq_), start(0), end(0) {}
 
 ExternalCqDemultiplexer::~ExternalCqDemultiplexer() {
   close(epfd);
@@ -68,7 +68,7 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
     end = start;
     *ck = (Chunk*)entry.op_context;
     *buffer_id = (*ck)->buffer_id;
-    FiConnection *con = (FiConnection*)(*ck)->con;
+    MsgConnection *con = (MsgConnection*)(*ck)->con;
     if (!con) {
       return 0;
     }

@@ -18,9 +18,9 @@ set(SERVICE ${PROJECT_SOURCE_DIR}/src/service)
 set(EXTERNAL_SERVICE ${PROJECT_SOURCE_DIR}/src/external_service)
 set(EXTERNAL_DEMULTIPLEXER ${PROJECT_SOURCE_DIR}/src/external_demultiplexer)
 
-set(DEMULTIPLEXER_FILE ${DEMULTIPLEXER}/Proactor.cc ${DEMULTIPLEXER}/EqDemultiplexer.cc ${DEMULTIPLEXER}/EqHandler.cc ${DEMULTIPLEXER}/CqDemultiplexer.cc)
+set(DEMULTIPLEXER_FILE ${DEMULTIPLEXER}/Proactor.cc ${DEMULTIPLEXER}/EqDemultiplexer.cc ${DEMULTIPLEXER}/EqHandler.cc ${DEMULTIPLEXER}/CqDemultiplexer.cc ${DEMULTIPLEXER}/RdmCqDemultiplexer.cc)
 set(EXTERNAL_DEMULTIPLEXER_FILE ${EXTERNAL_DEMULTIPLEXER}/ExternalEqDemultiplexer.cc ${EXTERNAL_DEMULTIPLEXER}/ExternalCqDemultiplexer.cc)
-set(CORE_FILE ${CORE}/FiConnection.cc ${CORE}/FiStack.cc)
+set(CORE_FILE ${CORE}/MsgConnection.cc ${CORE}/MsgStack.cc ${CORE}/RdmConnection.cc ${CORE}/RdmStack.cc)
 set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc)
 set(EXTERNAL_SERVICE_FILE ${EXTERNAL_SERVICE}/ExternalEqService.cc)
 

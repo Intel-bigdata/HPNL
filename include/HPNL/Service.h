@@ -8,20 +8,24 @@
 #include "HPNL/Common.h"
 
 class AcceptRequestCallback;
-class FiStack;
+class Stack;
+class MsgStack;
 class Proactor;
 class EqDemultiplexer;
 class CqDemultiplexer;
+class RdmCqDemultiplexer;
 class EqHandler;
 class EqThread;
 class CqThread;
+class RdmCqThread;
 class Connection;
 
 class Service {
   public:
-    int init();
+    int init(bool msg_ = true);
     int listen(const char*, const char*);
     int connect(const char*, const char*);
+    Connection* get_con(const char*, const char*);
     void start();
     void shutdown();
     void shutdown(Connection *con);
@@ -54,15 +58,19 @@ class Service {
     Callback *shutdownCallback;
 
     int worker_num;
+    int buffer_num;
     bool is_server;
+    bool msg;
 
-    FiStack *stack;
+    Stack *stack;
     EqDemultiplexer *eq_demulti_plexer;
     CqDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
+    RdmCqDemultiplexer *rdm_cq_demulti_plexer;
     Proactor *proactor;
 
     EqThread *eqThread;
     CqThread *cqThread[MAX_WORKERS];
+    RdmCqThread *rdmCqThread;
 };
 
 class AcceptRequestCallback : public Callback {

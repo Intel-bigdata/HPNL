@@ -1,8 +1,8 @@
 #include "external_service/ExternalEqService.h"
 #include "external_demultiplexer/ExternalEqDemultiplexer.h"
 #include "external_service/ExternalEqServiceBufMgr.h"
-#include "core/FiStack.h"
-#include "core/FiConnection.h"
+#include "core/MsgStack.h"
+#include "core/MsgConnection.h"
 
 ExternalEqService::ExternalEqService(int worker_num_, int buffer_num_, bool is_server_) : worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
   recvBufMgr = new ExternalEqServiceBufMgr();
@@ -29,7 +29,7 @@ ExternalEqService::~ExternalEqService() {
 }
 
 int ExternalEqService::init() {
-  stack = new FiStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
+  stack = new MsgStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
   if (stack->init() == -1)
     goto free_stack;
 
@@ -66,7 +66,7 @@ fid_eq* ExternalEqService::accept(fi_info* info) {
 fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
   fid_eq *eq = NULL;
   if (is_server) {
-    eq = stack->bind(ip, port);
+    eq = (fid_eq*)stack->bind(ip, port, NULL, NULL);
     if (!eq)
       return NULL;
     if (stack->listen()) {
@@ -110,13 +110,13 @@ void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int buffer_
   sendBufMgr->put(ck->buffer_id, ck);
 }
 
-int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, FiConnection** con) {
+int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, MsgConnection** con) {
   int ret = eq_demulti_plexer->wait_event(info, eq, con);
   return ret;
 }
 
 Connection* ExternalEqService::get_connection(fid_eq* eq) {
-  FiConnection *con = stack->get_connection(&eq->fid);
+  MsgConnection *con = stack->get_connection(&eq->fid);
   return con;
 }
 
@@ -124,7 +124,7 @@ void ExternalEqService::reap(fid *con_id) {
   stack->reap(con_id);
 }
 
-FiStack* ExternalEqService::get_stack() {
+MsgStack* ExternalEqService::get_stack() {
   return stack;
 }
 
