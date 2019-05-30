@@ -101,7 +101,9 @@ public class Connection {
       this.service.unregCon(nativeEq);
       free(nativeHandle);
       connected = false;
-      log.info("connection {} with CQ index {} closed.", connectId, cqIndex);
+      if(log.isDebugEnabled()) {
+        log.debug("connection {} with CQ index {} closed.", connectId, cqIndex);
+      }
     }
   }
 

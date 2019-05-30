@@ -14,7 +14,7 @@ public abstract class EventTask implements Runnable {
   private volatile CountDownLatch completed;
   private final AtomicBoolean running = new AtomicBoolean(false);
 
-  private final Queue<TrackedTask> pendingTasks = new ConcurrentLinkedQueue<>();
+  private final Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue<>();
 
   public EventTask() {
     running.set(true);
@@ -34,7 +34,9 @@ public abstract class EventTask implements Runnable {
     }
     if(!running.get() || failed) {
       try {
-        getLogger().info("cleaning up before exiting event task");
+        if(getLogger().isDebugEnabled()){
+          getLogger().info("cleaning up before exiting event task");
+        }
         cleanUp();
       } catch (Throwable throwable) {
         getLogger().error("error occurred during clean-up in task " + this, throwable);
@@ -51,7 +53,7 @@ public abstract class EventTask implements Runnable {
   }
 
   protected void runPendingTasks(){
-    TrackedTask task = pendingTasks.poll();
+    Runnable task = pendingTasks.poll();
     long tasks = 0L;
     while(task != null) {
       task.run();
@@ -64,9 +66,9 @@ public abstract class EventTask implements Runnable {
   }
 
   public void addPendingTask(Runnable task){
-    TrackedTask trackedTask = TrackedTask.newInstance();
-    trackedTask.setTask(task);
-    pendingTasks.offer(trackedTask);
+//    TrackedTask trackedTask = TrackedTask.newInstance();
+//    trackedTask.setTask(task);
+    pendingTasks.offer(task);
   }
 
   public boolean isStopped(){
