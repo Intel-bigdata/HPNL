@@ -59,7 +59,7 @@ public abstract class EventTask implements Runnable {
       if((tasks & 0x3F) == 0) {
         break;
       }
-      task = pendingTasks.peek();
+      task = pendingTasks.poll();
     }
   }
 
