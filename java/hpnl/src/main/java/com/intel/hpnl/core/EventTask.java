@@ -15,7 +15,6 @@ public abstract class EventTask implements Runnable {
   private final AtomicBoolean running = new AtomicBoolean(false);
 
   private final Queue<TrackedTask> pendingTasks = new ConcurrentLinkedQueue<>();
-  private volatile boolean lackSendBuffer = false;
 
   public EventTask() {
     running.set(true);
@@ -52,21 +51,11 @@ public abstract class EventTask implements Runnable {
   }
 
   protected void runPendingTasks(){
-    lackSendBuffer = false; // assume buffer is available at beginning
-    TrackedTask task = pendingTasks.peek();
+    TrackedTask task = pendingTasks.poll();
     long tasks = 0L;
     while(task != null) {
       task.run();
       tasks++;
-      if (lackSendBuffer) {
-        //lack buffer, this tracked task will be reset with new runnable to send remaining data
-        // the new task should be the first to run.
-        break;
-      }
-      TrackedTask tt = pendingTasks.remove();
-      if(tt != task){
-        throw new IllegalStateException("task to be removed should be the same task");
-      }
       if((tasks & 0x3F) == 0) {
         break;
       }
@@ -75,21 +64,6 @@ public abstract class EventTask implements Runnable {
   }
 
   public void addPendingTask(Runnable task){
-    addPendingTask(task, false, false);
-  }
-
-  public void addPendingTask(Runnable task, boolean keepOrder, boolean lackSendBuffer){
-    if(lackSendBuffer) {
-      this.lackSendBuffer = true;//stop task running if lack of buffer
-    }
-    if(keepOrder){//replace current task with new task
-      TrackedTask runningTask = TrackedTask.Tracker.getRunningTask();
-      if(runningTask != null){
-        runningTask.setTask(task);
-        return;
-      }
-    }
-
     TrackedTask trackedTask = TrackedTask.newInstance();
     trackedTask.setTask(task);
     pendingTasks.offer(trackedTask);
