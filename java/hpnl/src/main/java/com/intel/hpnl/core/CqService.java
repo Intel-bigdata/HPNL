@@ -53,8 +53,8 @@ public class CqService {
     return cqTasks;
   }
 
-  public void addExternalEvent(int cqIndex, ExternalHandler externalHandler) {
-    ((CqTask)cqTasks.get(cqIndex)).externalHandlers.add(externalHandler);
+  public void addExternalEvent(int cqIndex, Runnable task) {
+    cqTasks.get(cqIndex).addPendingTask(task);
   }
 
   //native methods
@@ -90,10 +90,8 @@ public class CqService {
   public class CqTask extends EventTask {
     private int index;
     private String name;
-    private BlockingQueue<ExternalHandler> externalHandlers = new LinkedBlockingQueue<>();
 
     public CqTask(int index) {
-      super();
       this.index = index;
       this.name = "CqTask "+index;
     }
@@ -105,47 +103,17 @@ public class CqService {
 
     @Override
     public void waitEvent() {
-      if (processEvent(index) == -1) {
+      if (wait_cq_event(index, nativeHandle) < 0) {
         log.warn("wait or process CQ event error in CQ task {}. ignoring", index);
       }
     }
 
-    private int processEvent(int index) {
-      int ret = 0;
-      if (wait_cq_event(index, nativeHandle) < 0) {
-        ret = -1;
-      }
-      int extRet = 0;
-      if(!externalHandlers.isEmpty()) {
-        extRet = processExternalEvent();
-      }
-      return ret == -1 ? ret : extRet;
-    }
-
     @Override
-    protected void cleanUp(){
-      log.info("process remaining external events");
-      processExternalEvent();
-    }
+    protected void cleanUp(){}
 
     @Override
     protected Logger getLogger(){
       return log;
-    }
-
-    private int processExternalEvent(){
-      int ret = 0;
-      ExternalHandler handler = externalHandlers.poll();
-      while(handler != null){
-        try {
-          handler.handle();
-        }catch (Throwable throwable){
-          throwable.printStackTrace();
-          ret = -1;
-        }
-        handler = externalHandlers.poll();
-      }
-      return ret;
     }
   }
 }

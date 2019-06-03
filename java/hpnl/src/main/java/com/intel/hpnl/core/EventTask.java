@@ -2,16 +2,19 @@ package com.intel.hpnl.core;
 
 import org.slf4j.Logger;
 
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Base class of CQ task and EQ task
+ * Base class of CQ task and EQ task. Bound to only one thread
  */
 public abstract class EventTask implements Runnable {
-  protected volatile CountDownLatch completed;
-  protected final AtomicBoolean running = new AtomicBoolean(false);
-  protected final AtomicBoolean pause = new AtomicBoolean(false);
+  private volatile CountDownLatch completed;
+  private final AtomicBoolean running = new AtomicBoolean(false);
+
+  private final Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue<>();
 
   public EventTask() {
     running.set(true);
@@ -21,8 +24,9 @@ public abstract class EventTask implements Runnable {
   public void run(){
     boolean failed = false;
     try {
-      while (running.get() && !pause.get()) {
+      while (running.get()) {
         waitEvent();
+        runPendingTasks();
       }
     }catch (Throwable throwable){
       getLogger().error("error occurred in event task "+this, throwable);
@@ -30,7 +34,9 @@ public abstract class EventTask implements Runnable {
     }
     if(!running.get() || failed) {
       try {
-        getLogger().info("cleaning up before exiting event task");
+        if(getLogger().isDebugEnabled()){
+          getLogger().info("cleaning up before exiting event task");
+        }
         cleanUp();
       } catch (Throwable throwable) {
         getLogger().error("error occurred during clean-up in task " + this, throwable);
@@ -46,24 +52,27 @@ public abstract class EventTask implements Runnable {
     }
   }
 
+  protected void runPendingTasks(){
+    Runnable task = pendingTasks.poll();
+    long tasks = 0L;
+    while(task != null) {
+      task.run();
+      tasks++;
+      if((tasks & 0x3F) == 0) {
+        break;
+      }
+      task = pendingTasks.poll();
+    }
+  }
+
+  public void addPendingTask(Runnable task){
+//    TrackedTask trackedTask = TrackedTask.newInstance();
+//    trackedTask.setTask(task);
+    pendingTasks.offer(task);
+  }
+
   public boolean isStopped(){
     return !running.get();
-  }
-
-  /**
-   * pause this event task so that other task can be run in the same thread executor.
-   */
-  public void pause(){
-    pause.set(true);
-    getLogger().info(this+" paused");
-  }
-
-  /**
-   * resume this event task whe other tasks are done
-   */
-  public void resume(){
-    pause.set(false);
-    getLogger().info(this+" resumed");
   }
 
   protected abstract void waitEvent();

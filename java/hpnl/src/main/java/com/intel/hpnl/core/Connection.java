@@ -57,9 +57,15 @@ public class Connection {
     init(nativeCon);
     cqIndex = get_cq_index(this.nativeHandle);
     connected = true;
-    this.connectId = connectId;
+    if(connectId == 0){
+      this.connectId = service.getNewConnectionId();
+    }else {
+      this.connectId = connectId;
+    }
     shutdownCallbacks.add(new InternalShutdownCallback());
-    log.info("connection {} with CQ index {} established.", connectId, cqIndex);
+    if(log.isDebugEnabled()) {
+      log.debug("connection {} with CQ index {} established.", this.connectId, cqIndex);
+    }
   }
 
   /**
@@ -75,6 +81,7 @@ public class Connection {
 
   /**
    * shutdown proactively or passively
+   * //TODO:check handle in native code
    * @param proactive
    */
   private void shutdown(boolean proactive){
@@ -94,7 +101,9 @@ public class Connection {
       this.service.unregCon(nativeEq);
       free(nativeHandle);
       connected = false;
-      log.info("connection {} with CQ index {} closed.", connectId, cqIndex);
+      if(log.isDebugEnabled()) {
+        log.debug("connection {} with CQ index {} closed.", connectId, cqIndex);
+      }
     }
   }
 
@@ -277,7 +286,7 @@ public class Connection {
     return cqIndex;
   }
 
-  public long getConnectId() {
+  public long getConnectionId() {
     return connectId;
   }
 
@@ -299,6 +308,7 @@ public class Connection {
       case EventType.SEND_EVENT:
         e = executeCallback(sendCallback, rdmaBufferId, blockBufferSize);
         if(e == Handler.RESULT_DEFAULT) {
+          //TODO: get buffer from connection's pool
           putSendBuffer(service.getSendBuffer(rdmaBufferId));
         }
         break;
