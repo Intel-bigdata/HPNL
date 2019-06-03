@@ -6,7 +6,7 @@ import com.intel.hpnl.core.HpnlBuffer;
 
 import java.nio.ByteBuffer;
 
-public class ReadCallback implements Handler {
+public class ReadCallback extends Handler {
   public ReadCallback() {}
   public synchronized void handle(Connection con, int bufferId, int blockBufferSize) {
     HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);

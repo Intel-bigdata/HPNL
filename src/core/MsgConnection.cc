@@ -133,7 +133,7 @@ free_ep:
   return -1;
 }
 
-int MsgConnection::send(const char *buffer, int buffer_size, long seq) {
+int MsgConnection::sendBuf(const char *buffer, int buffer_size) {
   Chunk *ck = send_buffers.back();
   send_buffers.pop_back();
   memcpy(ck->buffer, buffer, buffer_size);

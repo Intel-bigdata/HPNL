@@ -2,6 +2,7 @@
 #include "core/RdmConnection.h"
 
 #include <stdio.h>
+#include <iostream>
 
 RdmStack::RdmStack(int buffer_num_, bool is_server_) : buffer_num(buffer_num_), is_server(is_server_) {}
 
@@ -70,9 +71,12 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
 }
 
 RdmConnection* RdmStack::get_con(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
+  std::lock_guard<std::mutex> lk(mtx);
+  if (rbuf_mgr->free_size() < buffer_num) {
+    return NULL; 
+  }
   RdmConnection *con = new RdmConnection(ip, port, NULL, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, false);
   con->init();
-  conMap.insert(std::pair<uint64_t, RdmConnection*>(id++, con));
   return con;
 }
 

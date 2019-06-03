@@ -39,7 +39,7 @@ class ConnectedCallback : public Callback {
       Connection *con = (Connection*)param_1;
       char* buffer = (char*)std::malloc(SIZE);
       memset(buffer, '0', SIZE);
-      con->send(buffer, SIZE, 0);
+      con->sendBuf(buffer, SIZE);
       std::free(buffer);
     }
   private:
@@ -67,7 +67,7 @@ class RecvCallback : public Callback {
       if (count == 1) {
         start = timestamp_now(); 
       }
-      con->send((char*)ck->buffer, SIZE, 0);
+      con->sendBuf((char*)ck->buffer, SIZE);
     }
   private:
     Client *client;

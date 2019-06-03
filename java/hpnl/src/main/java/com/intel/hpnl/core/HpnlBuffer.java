@@ -21,6 +21,11 @@ public class HpnlBuffer {
     this.address = address;
   }
 
+  public class Type {
+    public final static byte MSG = 0;
+    public final static byte RDM = 1;
+  }
+
   public int getBufferId() {
     return this.bufferId;
   }
@@ -45,13 +50,28 @@ public class HpnlBuffer {
     return address;
   }
 
+  public ByteBuffer getName() {
+    return name.slice(); 
+  }
+
   public int size() {
     return this.byteBuffer.remaining();
   }
 
   private void putMetadata(int srcSize, byte type, long seq) {
     byteBuffer.rewind();
-    byteBuffer.limit(METADATA_SIZE+srcSize);
+    byteBuffer.limit(METADATA_SIZE+srcSize+1);
+    byteBuffer.put(Type.MSG);
+    byteBuffer.put(type);
+    byteBuffer.putLong(seq);
+  }
+
+  private void putMetadata(int srcSize, int nameLength, ByteBuffer name, byte type, long seq) {
+    byteBuffer.rewind();
+    byteBuffer.limit(METADATA_SIZE+srcSize+nameLength+4+1);
+    byteBuffer.put(Type.RDM);
+    byteBuffer.putInt(nameLength);
+    byteBuffer.put(name.slice());
     byteBuffer.put(type);
     byteBuffer.putLong(seq);
   }
@@ -62,12 +82,32 @@ public class HpnlBuffer {
     byteBuffer.flip();
   }
 
+  public void put(ByteBuffer src, int nameLength, ByteBuffer name, byte type, long seq) {
+    putMetadata(src.remaining(), nameLength, name, type, seq);
+    byteBuffer.put(src.slice());
+    byteBuffer.flip();
+  }
+
   public ByteBuffer get(int blockBufferSize) {
     byteBuffer.position(0); 
     byteBuffer.limit(blockBufferSize);
-    this.type = byteBuffer.get();
-    this.seq = byteBuffer.getLong();
-    return byteBuffer.slice();
+    if (byteBuffer.get() == Type.MSG) {
+      this.type = byteBuffer.get();
+      this.seq = byteBuffer.getLong();
+      return byteBuffer.slice();
+    } else {
+      this.nameLength = byteBuffer.getInt();
+      byte[] nameTmp = new byte[this.nameLength];
+      byteBuffer.get(nameTmp, 0, this.nameLength);
+      if (this.name == null) {
+        this.name = ByteBuffer.allocateDirect(this.nameLength);
+      }
+      this.name.put(nameTmp);
+      this.name.flip();
+      this.type = byteBuffer.get();
+      this.seq = byteBuffer.getLong();
+      return byteBuffer.slice();
+    }
   }
 
   public int getWritableBytes(){
@@ -77,6 +117,8 @@ public class HpnlBuffer {
   private int bufferId;
   private byte type;
   private long seq;
+  private int nameLength;
+  private ByteBuffer name;
   private ByteBuffer byteBuffer;
   private long rkey;
   private long address;

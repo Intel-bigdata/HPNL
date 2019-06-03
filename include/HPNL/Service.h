@@ -26,6 +26,7 @@ class Service {
     int listen(const char*, const char*);
     int connect(const char*, const char*);
     Connection* get_con(const char*, const char*);
+    Stack* get_stack();
     void start();
     void shutdown();
     void shutdown(Connection *con);

@@ -6,7 +6,7 @@ import com.intel.hpnl.core.Handler;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class ServerConnectedCallback implements Handler {
+public class ServerConnectedCallback extends Handler {
   public ServerConnectedCallback(List<Connection> conList, boolean isServer) {
     this.conList = conList;
     this.isServer = isServer;

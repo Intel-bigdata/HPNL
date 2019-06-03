@@ -9,9 +9,11 @@ class Connection {
     virtual int init() { return 0; }
     virtual fi_addr_t recv(const char*, int) { return 0; }
     virtual char* get_peer_name() { return 0; }
-    virtual int send(const char*, int, long) { return 0; }
     virtual int send(Chunk*) { return 0; }
     virtual int send(int, int) { return 0; }
+    virtual int sendBuf(const char*, int) { return 0; }
+    virtual int sendTo(int, int, const char*) { return 0; }
+    virtual int sendBufTo(const char*, int, const char*) { return 0; }
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) { return 0; }
     virtual void decode_peer_name(void*, char*) {}
     virtual char* decode_buf(void *buf) { return nullptr; }

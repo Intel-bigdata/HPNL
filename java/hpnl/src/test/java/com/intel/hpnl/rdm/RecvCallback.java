@@ -1,10 +1,10 @@
-package com.intel.hpnl.pingpong;
+package com.intel.hpnl.rdm;
 
 import java.nio.ByteBuffer;
 
 import com.intel.hpnl.core.Handler;
 import com.intel.hpnl.core.HpnlBuffer;
-import com.intel.hpnl.core.Connection;
+import com.intel.hpnl.core.RdmConnection;
 
 public class RecvCallback extends Handler {
   public RecvCallback(boolean is_server, int interval, int msgSize) {
@@ -12,7 +12,7 @@ public class RecvCallback extends Handler {
     this.interval = interval;
     this.msgSize = msgSize;
   }
-  public void handle(Connection con, int bufferId, int blockBufferSize) {
+  public void handle(RdmConnection con, int bufferId, int blockBufferSize) {
     if (!is_server) {
       count++;
       if (count == 1) {
@@ -32,8 +32,7 @@ public class RecvCallback extends Handler {
     }
     HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
-
-    con.send(recvByteBuffer, (byte)0, 10);
+    con.sendTo(recvByteBuffer, (byte)0, 10, recvBuffer.getName());
   }
   private float count = 0;
   private long startTime;
