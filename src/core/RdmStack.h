@@ -6,7 +6,9 @@
 #include <string.h>
 #include <assert.h>
 
-#include <map>
+#include <thread>
+#include <mutex>
+#include <vector>
 
 #include "HPNL/BufMgr.h"
 #include "core/Stack.h"
@@ -32,11 +34,10 @@ class RdmStack : public Stack {
     int buffer_num;
     bool is_server;
 
-    uint64_t id = 0;
+    std::mutex mtx;
+    std::vector<RdmConnection*> cons;
 
     RdmConnection *server_con;
-
-    std::map<uint64_t, RdmConnection*> conMap;
 };
 
 #endif

@@ -152,9 +152,9 @@ public class EqService {
     this.recvBufferPool.realloc();
   }
 
-  public void putSendBuffer(long eq, int bufferId) {
+  public void pushSendBuffer(long eq, int bufferId) {
     Connection connection = conMap.get(eq);
-    connection.putSendBuffer(sendBufferPool.getBuffer(bufferId));
+    connection.pushSendBuffer(sendBufferPool.getBuffer(bufferId));
   }
 
   public HpnlBuffer getSendBuffer(int bufferId) {

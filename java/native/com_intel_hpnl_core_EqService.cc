@@ -16,7 +16,7 @@ static jmethodID handleEqCallback;
 static jmethodID reallocBufferPool;
 static jmethodID regCon;
 static jmethodID unregCon;
-static jmethodID putSendBuffer;
+static jmethodID pushSendBuffer;
 
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {
@@ -31,7 +31,7 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
     reallocBufferPool = (*env).GetMethodID(eqServiceClassTmp, "reallocBufferPool", "()V");
     regCon = (*env).GetMethodID(eqServiceClassTmp, "regCon", "(JJILjava/lang/String;ILjava/lang/String;I)V");
     unregCon = (*env).GetMethodID(eqServiceClassTmp, "unregCon", "(J)V");
-    putSendBuffer = (*env).GetMethodID(eqServiceClassTmp, "putSendBuffer", "(JI)V");
+    pushSendBuffer = (*env).GetMethodID(eqServiceClassTmp, "pushSendBuffer", "(JI)V");
 
     fidSelfPtr = env->GetFieldID(eqServiceClassTmp, "nativeHandle", "J");
     init = 1;
@@ -141,7 +141,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     std::vector<Chunk*> send_buffer = con->get_send_buffer();
     int chunks_size = send_buffer.size();
     for (int i = 0; i < chunks_size; i++) {
-      (*env).CallVoidMethod(thisObj, putSendBuffer, jEq, send_buffer[i]->buffer_id);
+      (*env).CallVoidMethod(thisObj, pushSendBuffer, jEq, send_buffer[i]->buffer_id);
     }
     
     //callback

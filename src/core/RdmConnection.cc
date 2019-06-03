@@ -12,6 +12,11 @@ RdmConnection::~RdmConnection() {
   for (auto ck: recv_buffers) {
     rbuf_mgr->put(ck->buffer_id, ck);
   }
+  if (!is_server) {
+    fi_freeinfo(info);
+  }
+  fi_close(&av->fid);
+  fi_close(&ep->fid);
 }
 
 int RdmConnection::init() {
@@ -74,8 +79,11 @@ int RdmConnection::init() {
     }
     recv_buffers.push_back(rck);
 
-    Chunk *sck = sbuf_mgr->get();
-    send_buffers.push_back(sck);
+    if (sbuf_mgr->free_size()) {
+      Chunk *sck = sbuf_mgr->get();
+      send_buffers.push_back(sck);
+      send_buffers_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
+    }
     size++;
   }
   return 0;
@@ -88,8 +96,97 @@ int RdmConnection::send(Chunk *ck) {
   return 0;
 }
 
+int RdmConnection::send(int buffer_size, int buffer_id) {
+  Chunk *ck = send_buffers_map[buffer_id];
+  char tmp[32];
+  size_t tmp_len = 64;
+  fi_av_straddr(av, info->dest_addr, tmp, &tmp_len);
+
+  ck->con = this;
+  ck->peer_addr = addr_map[tmp];
+  ck->ctx.internal[4] = ck;
+  if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
+    perror("fi_send");
+    return -1;
+  }
+  return 0;
+}
+
+int RdmConnection::sendBuf(const char* buffer, int buffer_size) {
+  fi_context2 *ctx = (fi_context2*)std::malloc(sizeof(fi_context2));
+  ctx->internal[4] = NULL;
+
+  char tmp[32];
+  size_t tmp_len = 64;
+  fi_av_straddr(av, info->dest_addr, tmp, &tmp_len);
+  if (fi_send(ep, buffer, buffer_size, NULL, addr_map[tmp], ctx)) {
+    perror("fi_send");
+    return -1;
+  }
+  return 0;
+}
+
+int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name) {
+  Chunk *ck = send_buffers_map[buffer_id];
+  char tmp[32];
+  size_t tmp_len = 64;
+  fi_av_straddr(av, peer_name, tmp, &tmp_len);
+
+  std::map<std::string, fi_addr_t>::const_iterator iter = addr_map.find(tmp);
+  if (iter == addr_map.end()) {
+    fi_addr_t addr;
+    assert(fi_av_insert(av, peer_name, 1, &addr, 0, NULL) == 1);
+    addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
+    ck->peer_addr = addr;
+  } else {
+    ck->peer_addr = addr_map[tmp];
+  }
+  ck->ctx.internal[4] = ck;
+  ck->con = this;
+  if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
+    perror("fi_send");
+    return -1;
+  }
+  return 0;
+}
+
+int RdmConnection::sendBufTo(const char* buffer, int buffer_size, const char* peer_name) {
+  fi_context2 *ctx = (fi_context2*)std::malloc(sizeof(fi_context2));
+  ctx->internal[4] = NULL;
+
+  char tmp[32];
+  size_t tmp_len = 64;
+
+  fi_av_straddr(av, peer_name, tmp, &tmp_len);
+  fi_addr_t peer_addr;
+  std::map<std::string, fi_addr_t>::const_iterator iter = addr_map.find(tmp);
+  if (iter == addr_map.end()) {
+    fi_addr_t addr;
+    assert(fi_av_insert(av, peer_name, 1, &addr, 0, NULL) == 1);
+    addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
+    peer_addr = addr;
+  } else {
+    peer_addr = addr_map[tmp];
+  }
+
+  if (fi_send(ep, buffer, buffer_size, NULL, peer_addr, ctx)) {
+    perror("fi_send");
+    return -1;
+  }
+  return 0;
+}
+
+
 char* RdmConnection::get_peer_name() {
   return (char*)info->dest_addr;
+}
+
+char* RdmConnection::get_local_name() {
+  return local_name;
+}
+
+int RdmConnection::get_local_name_length() {
+  return local_name_len;
 }
 
 Chunk* RdmConnection::encode(void *buf, int size, char* peer_name) {
@@ -142,6 +239,10 @@ int RdmConnection::activate_chunk(Chunk *ck) {
 
 void RdmConnection::reclaim_chunk(Chunk *ck) {
   send_buffers.push_back(ck);
+}
+
+std::vector<Chunk*> RdmConnection::get_send_buffer() {
+  return send_buffers;
 }
 
 void RdmConnection::set_recv_callback(Callback *callback) {

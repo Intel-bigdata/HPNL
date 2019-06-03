@@ -80,14 +80,14 @@ class RecvCallback : public Callback {
 
       if (count == 0) {
 	local_addr = std::to_string((long)rootp->buf);
-	con->send(local_addr.c_str(), local_addr.length(), 0);
+	con->sendBuf(local_addr.c_str(), local_addr.length());
       } else if (count == 1){
 	rkey = server->reg_rma_buffer((char*)pop, POOL_SIZE, 0);
 	local_rkey = std::to_string(rkey);
-	con->send(local_rkey.c_str(), local_rkey.length(), 0);
+	con->sendBuf(local_rkey.c_str(), local_rkey.length());
       } else {
 	local_len = std::to_string(rootp->len);
-	con->send(local_len.c_str(), local_len.length(), 0);
+	con->sendBuf(local_len.c_str(), local_len.length());
       }
       count++;
     }

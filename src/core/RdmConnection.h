@@ -9,6 +9,7 @@
 
 #include <vector>
 #include <map>
+#include <unordered_map>
 
 #include "HPNL/Connection.h"
 #include "HPNL/BufMgr.h"
@@ -19,10 +20,18 @@ class RdmConnection : public Connection {
     ~RdmConnection();
     virtual int init() override;
     virtual int send(Chunk*) override;
+    virtual int send(int, int) override;
+    virtual int sendBuf(const char*, int) override;
+    virtual int sendTo(int, int, const char*) override;
+
+    virtual int sendBufTo(const char*, int, const char*) override;
     virtual char* get_peer_name() override;
+    char* get_local_name();
+    int get_local_name_length();
     fid_cq* get_cq();
     virtual void reclaim_chunk(Chunk*) override;
     virtual int activate_chunk(Chunk*) override;
+    std::vector<Chunk*> get_send_buffer();
 
     virtual void set_recv_callback(Callback*) override;
     virtual void set_send_callback(Callback*) override;
@@ -51,6 +60,8 @@ class RdmConnection : public Connection {
     BufMgr *sbuf_mgr;
     std::vector<Chunk*> recv_buffers;
     std::vector<Chunk*> send_buffers;
+    std::unordered_map<int, Chunk*> send_buffers_map;
+
     int buffer_num;
     bool is_server;
 

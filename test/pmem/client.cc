@@ -40,7 +40,7 @@ class ConnectedCallback : public Callback {
       Connection *con = (Connection*)param_1;
       char* buffer = (char*)std::malloc(SIZE);
       memset(buffer, '0', SIZE);
-      con->send(buffer, SIZE, 0);
+      con->sendBuf(buffer, SIZE);
       std::free(buffer);
     }
   private:
@@ -62,11 +62,11 @@ class RecvCallback : public Callback {
       if (count == 0) {
         char* buf = (char*)ck->buffer;
         addr = atol(buf);
-        con->send(buffer, SIZE, 0);
+        con->sendBuf(buffer, SIZE);
       } else if (count == 1){
         char* buf = (char*)ck->buffer;
         rkey = atol(buf);
-        con->send(buffer, SIZE, 0);
+        con->sendBuf(buffer, SIZE);
       } else {
         char* buf = (char*)ck->buffer;
         len = atol(buf);

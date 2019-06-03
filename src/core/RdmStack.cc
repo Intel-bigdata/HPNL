@@ -2,10 +2,22 @@
 #include "core/RdmConnection.h"
 
 #include <stdio.h>
+#include <iostream>
 
 RdmStack::RdmStack(int buffer_num_, bool is_server_) : buffer_num(buffer_num_), is_server(is_server_) {}
 
-RdmStack::~RdmStack() {}
+RdmStack::~RdmStack() {
+  for (auto con : cons) {
+    delete con;
+    con = NULL;
+  }
+  fi_close(&cq->fid);
+  fi_close(&domain->fid);
+  fi_close(&fabric->fid);
+  fi_freeinfo(info);
+  if (is_server)
+    fi_freeinfo(server_info);
+}
 
 int RdmStack::init() {
   fi_info* hints = fi_allocinfo();
@@ -65,14 +77,18 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
 
   server_con = new RdmConnection(ip, port, server_info, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, true);
   server_con->init();
-
+  cons.push_back(server_con);
   return server_con;
 }
 
 RdmConnection* RdmStack::get_con(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
+  std::lock_guard<std::mutex> lk(mtx);
+  if (rbuf_mgr->free_size() < buffer_num) {
+    return NULL; 
+  }
   RdmConnection *con = new RdmConnection(ip, port, NULL, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, false);
   con->init();
-  conMap.insert(std::pair<uint64_t, RdmConnection*>(id++, con));
+  cons.push_back(con);
   return con;
 }
 

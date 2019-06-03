@@ -126,6 +126,10 @@ Connection* Service::get_con(const char* addr, const char* port) {
   return (Connection*)con;
 }
 
+Stack* Service::get_stack() {
+  return this->stack;
+}
+
 void Service::shutdown() {
   for (int i = 0; i < worker_num; i++) {
     if (cqThread[i]) {

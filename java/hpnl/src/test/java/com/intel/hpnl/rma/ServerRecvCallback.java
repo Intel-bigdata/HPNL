@@ -9,7 +9,7 @@ import com.intel.hpnl.core.EqService;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 
-public class ServerRecvCallback implements Handler {
+public class ServerRecvCallback extends Handler {
   public ServerRecvCallback(EqService eqService) {
     this.eqService = eqService;
     

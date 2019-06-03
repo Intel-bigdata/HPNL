@@ -28,7 +28,7 @@ public class Connection {
       this.eqService.delete_eq_event(nativeEq, eqService.getNativeHandle());
       this.eqService.unregCon(nativeEq);
       if (shutdownCallback != null) {
-        shutdownCallback.handle(null, 0, 0);
+        shutdownCallback.handle(this, 0, 0);
       }
       connected = false;
     }
@@ -125,7 +125,7 @@ public class Connection {
     shutdownCallback = callback; 
   }
 
-  public void putSendBuffer(HpnlBuffer buffer) {
+  public void pushSendBuffer(HpnlBuffer buffer) {
     try {
       sendBufferList.put(buffer);
     } catch (InterruptedException e) {
@@ -180,7 +180,7 @@ public class Connection {
       e = executeCallback(recvCallback, bufferId, blockBufferSize);
     } else if (eventType == EventType.SEND_EVENT) {
       e = executeCallback(sendCallback, bufferId, blockBufferSize);
-      putSendBuffer(eqService.getSendBuffer(bufferId));
+      pushSendBuffer(eqService.getSendBuffer(bufferId));
     } else if (eventType == EventType.READ_EVENT) {
       e = executeCallback(readCallback, bufferId, blockBufferSize);
     }
