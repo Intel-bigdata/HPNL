@@ -92,7 +92,7 @@ public abstract class EventTask implements Runnable {
           if(needWait) {
             completed = new CountDownLatch(1);
           }
-          getLogger().info(this+" is stopped");
+          getLogger().info(this+" is stopping");
         }
       }
     }

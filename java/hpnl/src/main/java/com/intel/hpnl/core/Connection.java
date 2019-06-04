@@ -81,7 +81,6 @@ public class Connection {
 
   /**
    * shutdown proactively or passively
-   * //TODO:check handle in native code
    * @param proactive
    */
   private void shutdown(boolean proactive){

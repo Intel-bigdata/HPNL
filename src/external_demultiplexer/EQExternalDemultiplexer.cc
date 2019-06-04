@@ -110,13 +110,12 @@ int EQExternalDemultiplexer::delete_event(fid_eq *eq) {
     perror("fi_control");
     goto quit_delete_event;
   }
-  if(!fd){
-	return -1;
-  }
+  
   event.events = EPOLLIN;
   event.data.ptr = &eq->fid;
   if (epoll_ctl(epfd, EPOLL_CTL_DEL, fd, &event) < 0) {
     perror("epoll_ctl");
+    std::cout<<fd<<std::endl;
     goto quit_delete_event;
   }
   fid_map.erase(&eq->fid);

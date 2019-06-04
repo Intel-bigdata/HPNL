@@ -389,8 +389,8 @@ public class EqService {
    */
   public void stop() {
     eqTask.stop();
-    delete_eq_event(localEq, nativeHandle);
     waitToComplete();
+    delete_eq_event(localEq, nativeHandle);
     free(nativeHandle);
   }
 
@@ -425,11 +425,7 @@ public class EqService {
     @Override
     protected void cleanUp(){
       log.info("close and remove all connections");
-      Iterator<Connection> it = conMap.values().iterator();
-      while(it.hasNext()){
-        it.next().shutdown();
-        it.remove();
-      }
+      conMap.clear();
     }
   }
 }
