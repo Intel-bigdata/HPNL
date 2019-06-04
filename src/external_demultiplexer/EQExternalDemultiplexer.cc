@@ -90,6 +90,9 @@ int EQExternalDemultiplexer::add_event(fid_eq *eq) {
     perror("fi_control");
     goto quit_add_event;
   }
+  if(!fd){
+	return -1;
+  }
   event.events = EPOLLIN;
   event.data.ptr = &eq->fid;
   if (epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event) < 0) {
