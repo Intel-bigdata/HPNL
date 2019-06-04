@@ -51,6 +51,7 @@ class FIStack {
 
     std::map<fid*, FIConnection*> conMap;
     HandlePtr peqHandle;
+    std::mutex conMtx;
 
     fid_cq *cqs[MAX_WORKER_NUM];
     Handle *cqHandle[MAX_WORKER_NUM];

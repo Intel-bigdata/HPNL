@@ -265,6 +265,7 @@ void FIStack::shutdown() {
 
 void FIStack::reap(void *con_id) {
   fid *id = (fid*)con_id;
+  std::lock_guard<std::mutex> lk(conMtx);
   auto iter = conMap.find(id);
   if (iter == conMap.end()) {
     return;
