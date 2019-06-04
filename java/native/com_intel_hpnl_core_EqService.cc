@@ -189,7 +189,6 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, 
   if(con){
 	if (con->status < DOWN) {
 	  con->shutdown();
-	  con->status = DOWN;
 	  service->reap(&eq->fid);
 	}
   }

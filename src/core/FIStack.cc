@@ -266,11 +266,11 @@ void FIStack::shutdown() {
 void FIStack::reap(void *con_id) {
   fid *id = (fid*)con_id;
   std::lock_guard<std::mutex> lk(conMtx);
-  auto iter = conMap.find(id);
-  if (iter == conMap.end()) {
-    return;
+  FIConnection *con = get_connection(id);
+  if(con){
+	  con->status = DOWN;
+	  conMap.erase(id);
   }
-  conMap.erase(iter);
 }
 
 FIConnection* FIStack::get_connection(fid* id) {
