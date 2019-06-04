@@ -19,6 +19,8 @@ class EQExternalDemultiplexer {
     int add_event(fid_eq*);
     int delete_event(fid_eq*);
   private:
+    void shutdown_con(fi_eq_cm_entry *entry, fid_eq **eq);
+
     FIStack *stack;
     fid_fabric *fabric;
     struct epoll_event event;
@@ -26,6 +28,7 @@ class EQExternalDemultiplexer {
     std::mutex mtx;
 
     std::unordered_map<fid*, fid_eq*> fid_map;
+    std::mutex conMtx;
 };
 
 #endif

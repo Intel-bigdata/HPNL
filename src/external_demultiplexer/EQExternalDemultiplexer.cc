@@ -20,6 +20,16 @@ int EQExternalDemultiplexer::init() {
   return 0;
 }
 
+void EQExternalDemultiplexer::shutdown_con(fi_eq_cm_entry *entry, fid_eq **eq){
+  std::lock_guard<std::mutex> lk(conMtx);
+  delete_event(*eq);
+  FIConnection *con = stack->get_connection(entry->fid);
+  if(con){
+	con->status = DOWN;
+	stack->reap(entry->fid);
+  }
+}
+
 int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FIConnection** con) {
   struct fid *fids[fid_map.size()];
   int i = 0;
@@ -65,12 +75,7 @@ int EQExternalDemultiplexer::wait_event(fi_info** info, fid_eq** eq, FIConnectio
       (*con)->init_addr();
       return CONNECTED_EVENT;
     } else if (event == FI_SHUTDOWN) {
-      delete_event(*eq);
-      *con = stack->get_connection(entry.fid);
-      if (*con) {
-        (*con)->status = DOWN;
-        stack->reap(entry.fid);
-      }
+      shutdown_con(&entry, eq);
       return SHUTDOWN;
     } else {
       return 0;
@@ -113,6 +118,9 @@ int EQExternalDemultiplexer::delete_event(fid_eq *eq) {
   if (fi_control(&eq->fid, FI_GETWAIT, (void*)&fd)) {
     perror("fi_control");
     goto quit_delete_event;
+  }
+  if(!fd){
+	return -1;
   }
   event.events = EPOLLIN;
   event.data.ptr = &eq->fid;
