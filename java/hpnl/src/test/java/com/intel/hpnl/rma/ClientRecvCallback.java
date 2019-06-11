@@ -6,7 +6,7 @@ import com.intel.hpnl.core.Handler;
 import com.intel.hpnl.core.HpnlBuffer;
 import com.intel.hpnl.core.Connection;
 
-public class ClientRecvCallback extends Handler {
+public class ClientRecvCallback implements Handler {
   public ClientRecvCallback(boolean is_server, HpnlBuffer buffer) {
     this.is_server = is_server;
     this.buffer = buffer;

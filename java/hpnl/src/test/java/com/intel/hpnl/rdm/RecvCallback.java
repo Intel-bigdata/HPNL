@@ -2,11 +2,11 @@ package com.intel.hpnl.rdm;
 
 import java.nio.ByteBuffer;
 
-import com.intel.hpnl.core.Handler;
+import com.intel.hpnl.core.RdmHandler;
 import com.intel.hpnl.core.HpnlBuffer;
 import com.intel.hpnl.core.RdmConnection;
 
-public class RecvCallback extends Handler {
+public class RecvCallback implements RdmHandler {
   public RecvCallback(boolean is_server, int interval, int msgSize) {
     this.is_server = is_server;
     this.interval = interval;

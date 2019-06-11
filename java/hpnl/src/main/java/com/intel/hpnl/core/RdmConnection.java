@@ -61,7 +61,7 @@ public class RdmConnection {
     return this.rdmService.getRecvBuffer(bufferId);
   }
 
-  private Exception executeCallback(Handler handler, int bufferId, int blockBufferSize){
+  private Exception executeCallback(RdmHandler handler, int bufferId, int blockBufferSize){
     if (handler == null) {
       return null;
     }
@@ -90,6 +90,12 @@ public class RdmConnection {
   private native int get_local_name_length(long nativeHandle);
   public native int send(int blockBufferSize, int bufferId, long nativeHandle);
   public native int sendTo(int blockBufferSize, int bufferId, ByteBuffer peerName, long nativeHandle);
+  // 1 byte -> 0(connection) or 1(nonconnection)
+  // 4 bytes -> address length
+  // N bytes -> address
+  // 1 byte -> type
+  // 8 bytes -> seq id
+  // N bytes -> raw message
   public native int sendBuf(ByteBuffer buffer, int bufferSize, long nativeHandle);
   public native int sendBufTo(ByteBuffer buffer, int bufferSize, ByteBuffer peerName, long nativeHandle);
 
@@ -97,8 +103,8 @@ public class RdmConnection {
   ByteBuffer localName;
   int localNameLength;
   private LinkedBlockingQueue<HpnlBuffer> sendBufferList;
-  private Handler recvCallback = null;
-  private Handler sendCallback = null;
+  private RdmHandler recvCallback = null;
+  private RdmHandler sendCallback = null;
 
   private long nativeHandle;
 }

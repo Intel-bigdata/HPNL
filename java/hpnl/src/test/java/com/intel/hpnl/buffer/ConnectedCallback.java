@@ -5,7 +5,7 @@ import com.intel.hpnl.core.Handler;
 
 import java.util.List;
 
-public class ConnectedCallback extends Handler {
+public class ConnectedCallback implements Handler {
   public ConnectedCallback(List<Connection> conList, boolean isServer) {
     this.conList = conList;
     this.isServer = isServer;
