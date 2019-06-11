@@ -5,7 +5,7 @@ import com.intel.hpnl.core.Connection;
 
 import java.nio.ByteBuffer;
 
-public class ClientReadCallback extends Handler {
+public class ClientReadCallback implements Handler {
   public ClientReadCallback() {
   }
   public synchronized void handle(Connection con, int bufferId, int blockBufferSize) {
