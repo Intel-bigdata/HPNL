@@ -7,8 +7,11 @@ class Connection {
   public:
     virtual int init() { return 0; }
     virtual void recv(char*, int) {}
-    virtual int send(const char*, int, int, int, long) { return 0; }
+    virtual int send(Chunk*) { return 0; }
     virtual int send(int, int) { return 0; }
+	virtual int sendBuf(const char*, int) { return 0; }
+    virtual int sendTo(int, int, const char*) { return 0; }
+    virtual int sendBufTo(const char*, int, const char*) { return 0; }
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) { return 0; }
     virtual void shutdown() { }
     virtual void take_back_chunk(Chunk*) {}

@@ -10,7 +10,7 @@ extern "C" {
 /*
  * Class:     com_intel_hpnl_core_CqService
  * Method:    wait_cq_event
- * Signature: (I)I
+ * Signature: (IJ)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event
   (JNIEnv *, jobject, jint, jlong);
@@ -18,7 +18,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event
 /*
  * Class:     com_intel_hpnl_core_CqService
  * Method:    init
- * Signature: (J)V
+ * Signature: (J)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_init
   (JNIEnv *, jobject, jlong);
@@ -34,7 +34,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_finalize
 /*
  * Class:     com_intel_hpnl_core_CqService
  * Method:    free
- * Signature: ()V
+ * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_CqService_free
   (JNIEnv *, jobject, jlong);

@@ -23,7 +23,7 @@ set(EXTERNAL_SERVICE ${PROJECT_SOURCE_DIR}/src/external_service)
 set(EXTERNAL_DEMULTIPLEXER ${PROJECT_SOURCE_DIR}/src/external_demultiplexer)
 
 set(DEMULTIPLEXER_FILE ${DEMULTIPLEXER}/Reactor.cc ${DEMULTIPLEXER}/EQEventDemultiplexer.cc ${DEMULTIPLEXER}/EQHandler.cc ${DEMULTIPLEXER}/CQEventDemultiplexer.cc)
-set(EXTERNAL_DEMULTIPLEXER_FILE ${EXTERNAL_DEMULTIPLEXER}/EQExternalDemultiplexer.cc ${EXTERNAL_DEMULTIPLEXER}/CQExternalDemultiplexer.cc)
+set(EXTERNAL_DEMULTIPLEXER_FILE ${EXTERNAL_DEMULTIPLEXER}/EQExternalDemultiplexer.cc ${EXTERNAL_DEMULTIPLEXER}/CQExternalDemultiplexer.cc ${EXTERNAL_DEMULTIPLEXER}/ExternalRdmCqDemultiplexer.cc)
 set(LOG_FILE ${LOG}/NanoLog.cc)
 set(CORE_FILE ${CORE}/FIConnection.cc ${CORE}/FIStack.cc)
 set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc)

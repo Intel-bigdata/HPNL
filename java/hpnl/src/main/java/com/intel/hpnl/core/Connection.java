@@ -198,7 +198,7 @@ public class Connection {
    * put send buffer back after sendCallback is invoked
    * @param buffer
    */
-  public void putSendBuffer(RdmaBuffer buffer) {
+  public void pushSendBuffer(RdmaBuffer buffer) {
     try {
       sendBufferList.put(buffer);
     } catch (InterruptedException e) {
@@ -308,7 +308,7 @@ public class Connection {
         e = executeCallback(sendCallback, rdmaBufferId, blockBufferSize);
         if(e == Handler.RESULT_DEFAULT) {
           //TODO: get buffer from connection's pool
-          putSendBuffer(service.getSendBuffer(rdmaBufferId));
+          pushSendBuffer(service.getSendBuffer(rdmaBufferId));
         }
         break;
       case EventType.READ_EVENT:

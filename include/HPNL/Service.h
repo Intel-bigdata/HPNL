@@ -17,8 +17,13 @@ class AcceptRequestCallback;
 
 class Service {
   public:
-	void run(const char*, const char*, int, int, int);
+	int listen(const char*, const char*);
+    int connect(const char*, const char*);
+    Connection* get_con(const char*, const char*);
+    Stack* get_stack();
+    void start();
     void shutdown();
+	void shutdown(Connection *con);
     void wait();
     void set_recv_buf_mgr(BufMgr*);
     void set_send_buf_mgr(BufMgr*);

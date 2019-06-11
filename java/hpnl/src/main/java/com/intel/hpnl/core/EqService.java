@@ -233,9 +233,9 @@ public class EqService {
    * @param eq
    * @param rdmaBufferId
    */
-  public void putSendBuffer(long eq, int rdmaBufferId) {
+  public void pushSendBuffer(long eq, int rdmaBufferId) {
     Connection connection = conMap.get(eq);
-    connection.putSendBuffer(sendBufferPool.getBuffer(rdmaBufferId));
+    connection.pushSendBuffer(sendBufferPool.getBuffer(rdmaBufferId));
   }
 
   public RdmaBuffer getSendBuffer(int rdmaBufferId) {

@@ -1,14 +1,25 @@
 #include "HPNL/Service.h"
-
-Service::Service(bool is_server_)
-  : is_server(is_server_) {
+#include "core/Stack.h"
+#include "core/MsgStack.h"
+#include "core/MsgConnection.h"
+#include "core/RdmConnection.h"
+#include "core/RdmStack.h"
+#include "demultiplexer/EqDemultiplexer.h"
+#include "demultiplexer/CqDemultiplexer.h"
+#include "demultiplexer/RdmCqDemultiplexer.h"
+#include "demultiplexer/Proactor.h"
+#include "demultiplexer/EqHandler.h"
+Service::Service(int worker_num_, int buffer_num_, bool is_server_) 
+  : worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_), msg(true) {
+  eqThread = NULL;
+  rdmCqThread = NULL;
   recvCallback = NULL;
   sendCallback = NULL;
+  readCallback = NULL;
   acceptRequestCallback = NULL;
   connectedCallback = NULL;
   shutdownCallback = NULL;
 }
-
 Service::~Service() {
   // TODO: IOService deconstruction
   delete stack;
@@ -17,7 +28,7 @@ Service::~Service() {
     delete cq_demulti_plexer[i]; 
     if (!is_server) break;
   }
-  delete reactor;
+  delete proactor;
   delete acceptRequestCallback;
   delete eqThread;
   for (int i = 0; i < worker_num; i++) {
@@ -25,93 +36,150 @@ Service::~Service() {
     if (!is_server) break;
   }
 }
-
-void Service::run(const char* ip_, const char* port_, int cq_index, int worker_num, int buffer_num) {
-  stack = new FIStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server, nullptr);
-  stack->init();
-  eq_demulti_plexer = new EQEventDemultiplexer();
-  for (int i = 0; i < worker_num; i++) {
-    cq_demulti_plexer[i] = new CQEventDemultiplexer(stack, i);
-    if (!is_server) break;
+int Service::init(bool msg_) {
+  int res = 0;
+  msg = msg_;
+  if (msg) {
+    stack = new MsgStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
+    if ((res = stack->init())) {
+      return res;
+    }
+    eq_demulti_plexer = new EqDemultiplexer((MsgStack*)stack);
+    eq_demulti_plexer->init();
+    for (int i = 0; i < worker_num; i++) {
+      cq_demulti_plexer[i] = new CqDemultiplexer((MsgStack*)stack, i);
+      cq_demulti_plexer[i]->init();
+    }
+    proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, 1);
+  } else {
+    stack = new RdmStack(buffer_num, is_server);
+    if ((res = stack->init())) {
+      return res;
+    }
+    rdm_cq_demulti_plexer = new RdmCqDemultiplexer((RdmStack*)stack);
+    rdm_cq_demulti_plexer->init();
+    proactor = new Proactor(rdm_cq_demulti_plexer);
   }
-
-  assert(recvBufMgr);
-  if (is_server) {
-    reactor = new Reactor(eq_demulti_plexer, cq_demulti_plexer, worker_num);
-    HandlePtr eqHandle;
-    eqHandle = stack->bind(ip_, port_);
+  
+  return 0;
+}
+void Service::start() {
+  if (msg) {
+    eqThread = new EqThread(proactor);
+    eqThread->start();
+    for (int i = 0; i < worker_num; i++) {
+      cqThread[i] = new CqThread(proactor, i);
+      cqThread[i]->start(); 
+    }
+  } else {
+    rdmCqThread = new RdmCqThread(proactor);
+    rdmCqThread->start(); 
+  }
+}
+int Service::listen(const char* addr, const char* port) {
+  if (msg) {
+    fid_eq* eq = (fid_eq*)stack->bind(addr, port, recvBufMgr, sendBufMgr);
     stack->listen();
-
-    EventHandlerPtr handler(new EQHandler(stack, reactor, eqHandle));
+    std::shared_ptr<EqHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
     acceptRequestCallback = new AcceptRequestCallback(this);
     handler->set_recv_callback(recvCallback);
     handler->set_send_callback(sendCallback);
+    handler->set_read_callback(readCallback);
     handler->set_accept_request_callback(acceptRequestCallback);
     handler->set_connected_callback(connectedCallback);
     handler->set_shutdown_callback(shutdownCallback);
-    reactor->register_handler(handler);
+    proactor->register_handler(handler);
   } else {
-    reactor = new Reactor(eq_demulti_plexer, cq_demulti_plexer, 1);
-    HandlePtr eqHandle[worker_num];
-    for (int i = 0; i< worker_num; i++) {
-      eqHandle[i] = stack->connect(ip_, port_, cq_index, 0, recvBufMgr, sendBufMgr);
+    RdmConnection* con = (RdmConnection*)stack->bind(addr, port, recvBufMgr, sendBufMgr);
+    con->set_recv_callback(recvCallback);
+    con->set_send_callback(sendCallback);
+  }
+  return 0;
+}
+int Service::connect(const char* addr, const char* port) {
+  fid_eq *eq = stack->connect(addr, port, recvBufMgr, sendBufMgr);
+  std::shared_ptr<EventHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
+  acceptRequestCallback = new AcceptRequestCallback(this);
+  handler->set_recv_callback(recvCallback);
+  handler->set_send_callback(sendCallback);
+  handler->set_read_callback(readCallback);
+  handler->set_accept_request_callback(acceptRequestCallback);
+  handler->set_connected_callback(connectedCallback);
+  handler->set_shutdown_callback(shutdownCallback);
+  proactor->register_handler(handler);
+  return 0;
+}
+Connection* Service::get_con(const char* addr, const char* port) {
+  RdmConnection *con = ((RdmStack*)stack)->get_con(addr, port, recvBufMgr, sendBufMgr);
+  con->set_recv_callback(recvCallback);
+  con->set_send_callback(sendCallback);
+  return (Connection*)con;
+}
 
-      EventHandlerPtr handler(new EQHandler(stack, reactor, eqHandle[i]));
-      acceptRequestCallback = new AcceptRequestCallback(this);
-      handler->set_recv_callback(recvCallback);
-      handler->set_send_callback(sendCallback);
-      handler->set_accept_request_callback(acceptRequestCallback);
-      handler->set_connected_callback(connectedCallback);
-      handler->set_shutdown_callback(shutdownCallback);
-      reactor->register_handler(handler);
-    }
-  }
-    
-  eqThread = new EQThread(reactor);
-  for (int i = 0; i < worker_num; i++) {
-    cqThread[i] = new CQThread(reactor, i);
-    if (!is_server) break;
-  }
-  eqThread->start(); 
-  for (int i = 0; i < worker_num; i++) {
-    cqThread[i]->start(); 
-    if (!is_server) break;
-  }
+Stack* Service::get_stack() {
+  return this->stack;
 }
 
 void Service::shutdown() {
   for (int i = 0; i < worker_num; i++) {
-    cqThread[i]->stop(); 
-    cqThread[i]->join();
-    if (!is_server) break;
+    if (cqThread[i]) {
+      cqThread[i]->stop(); 
+      cqThread[i]->join();
+    }
   }
-  eq_demulti_plexer->shutdown();
+  if (eqThread) {
+    eqThread->stop();
+    eqThread->join();
+  }
+  if (rdmCqThread) {
+    rdmCqThread->stop(); 
+    rdmCqThread->join(); 
+  }
 }
-
+void Service::shutdown(Connection *con) {
+  proactor->remove_handler(((MsgConnection*)con)->get_fid());
+  ((MsgConnection*)con)->shutdown();
+  ((MsgStack*)stack)->reap(((MsgConnection*)con)->get_fid());
+  if (shutdownCallback) {
+    shutdownCallback->operator()(NULL, NULL);
+  }
+  delete con;
+}
 void Service::wait() {
-  eqThread->join();
+  if (eqThread) {
+    eqThread->join(); 
+  }
+  if (rdmCqThread) {
+    rdmCqThread->join(); 
+  }
 }
-
 void Service::set_recv_buf_mgr(BufMgr* bufMgr) {
   recvBufMgr = bufMgr;
 }
-
 void Service::set_send_buf_mgr(BufMgr* bufMgr) {
   sendBufMgr = bufMgr;
 }
-
 void Service::set_recv_callback(Callback *callback) {
   recvCallback = callback;
 }
-
 void Service::set_send_callback(Callback *callback) {
   sendCallback = callback;
 }
-
+void Service::set_read_callback(Callback *callback) {
+  readCallback = callback;
+}
 void Service::set_connected_callback(Callback *callback) {
   connectedCallback = callback;
 }
-
 void Service::set_shutdown_callback(Callback *callback) {
   shutdownCallback = callback;
+}
+uint64_t Service::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+  return ((MsgStack*)stack)->reg_rma_buffer(buffer, buffer_size, buffer_id);
+}
+void Service::unreg_rma_buffer(int buffer_id) {
+  ((MsgStack*)stack)->unreg_rma_buffer(buffer_id);
+}
+Chunk* Service::get_rma_buffer(int buffer_id) {
+  return ((MsgStack*)stack)->get_rma_chunk(buffer_id);
 }

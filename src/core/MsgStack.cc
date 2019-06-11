@@ -1,13 +1,13 @@
-#include "HPNL/FIStack.h"
+#include "HPNL/MsgStack.h"
 #include <iostream>
 
-FIStack::FIStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_, const char* prov_name_) :
+MsgStack::MsgStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_server_, const char* prov_name_) :
   flags(flags_),
   worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_), prov_name(prov_name_),
   fabric(NULL), domain(NULL), hints(NULL), info(NULL), hints_tmp(NULL), info_tmp(NULL),
   peq(NULL), pep(NULL), waitset(NULL) {}
 
-FIStack::~FIStack() {
+MsgStack::~MsgStack() {
   for (auto iter : conMap) {
     delete iter.second; 
   }
@@ -49,7 +49,7 @@ FIStack::~FIStack() {
   prov_name = nullptr;
 }
 
-int FIStack::init() {
+int MsgStack::init() {
   struct fi_eq_attr eq_attr = {
     .size = 0,
     .flags = 0,
@@ -142,7 +142,7 @@ free_hints:
   return -1;
 }
 
-HandlePtr FIStack::bind(const char *ip_, const char *port_) {
+HandlePtr MsgStack::bind(const char *ip_, const char *port_) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
 	perror("fi_allocinfo");
   }
@@ -173,7 +173,7 @@ HandlePtr FIStack::bind(const char *ip_, const char *port_) {
   return peqHandle;
 }
 
-int FIStack::listen() {
+int MsgStack::listen() {
   if (fi_listen(pep)) {
     perror("fi_listen");
     return -1; 
@@ -181,7 +181,7 @@ int FIStack::listen() {
   return 0;
 }
 
-HandlePtr FIStack::connect(const char *ip_, const char *port_, int cq_index, long connect_id, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+HandlePtr MsgStack::connect(const char *ip_, const char *port_, int cq_index, long connect_id, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
   }
@@ -220,7 +220,7 @@ HandlePtr FIStack::connect(const char *ip_, const char *port_, int cq_index, lon
   return con->get_eqhandle();
 }
 
-HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
+HandlePtr MsgStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mgr) {
   int cq_index = seq_num%worker_num;
   FIConnection *con = new FIConnection(this, fabric, (fi_info*)info_, domain, cqs[cq_index], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num, cq_index, 0);
   if (con->init())
@@ -233,7 +233,7 @@ HandlePtr FIStack::accept(void *info_, BufMgr *recv_buf_mgr, BufMgr *send_buf_mg
   return con->get_eqhandle();
 }
 
-uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
+uint64_t MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_buffer_id) {
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
   ck->capacity = buffer_size;
@@ -249,21 +249,21 @@ uint64_t FIStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int rdma_bu
   return ((fid_mr*)ck->mr)->key;
 }
 
-void FIStack::unreg_rma_buffer(int rdma_buffer_id) {
+void MsgStack::unreg_rma_buffer(int rdma_buffer_id) {
   Chunk *ck = get_rma_chunk(rdma_buffer_id);
   fi_close(&((fid_mr*)ck->mr)->fid);
 }
 
-Chunk* FIStack::get_rma_chunk(int rdma_buffer_id) {
+Chunk* MsgStack::get_rma_chunk(int rdma_buffer_id) {
   std::lock_guard<std::mutex> lk(mtx);
   return chunkMap[rdma_buffer_id];
 }
 
-void FIStack::shutdown() {
+void MsgStack::shutdown() {
   //TODO: shutdown
 }
 
-void FIStack::reap(void *con_id) {
+void MsgStack::reap(void *con_id) {
   fid *id = (fid*)con_id;
   std::lock_guard<std::mutex> lk(conMtx);
   FIConnection *con = get_connection(id);
@@ -273,18 +273,18 @@ void FIStack::reap(void *con_id) {
   }
 }
 
-FIConnection* FIStack::get_connection(fid* id) {
+FIConnection* MsgStack::get_connection(fid* id) {
   if (conMap.find(id) != conMap.end()) {
     return conMap[id]; 
   }
   return NULL;
 }
 
-fid_fabric* FIStack::get_fabric() {
+fid_fabric* MsgStack::get_fabric() {
   return fabric;
 }
 
-fid_cq** FIStack::get_cqs() {
+fid_cq** MsgStack::get_cqs() {
   return cqs;
 }
 
