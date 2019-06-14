@@ -14,6 +14,7 @@ public class ServerRecvCallback implements Handler {
     this.eqService = eqService;
     
     this.buf = eqService.getRmaBuffer(4096*1024);
+    assert(buf != null);
     for (int i = 0; i < 4096*1024; i++) {
       buf.getRawBuffer().put((byte)i); 
     }
@@ -26,6 +27,7 @@ public class ServerRecvCallback implements Handler {
     }
     this.last_buf = cur_buf;
     this.rmaBuffer = eqService.regRmaBufferByAddress(this.cur_buf.nioBuffer(0, 4096*1024), this.cur_buf.memoryAddress(), 4096*1024);
+    assert(rmaBuffer != null);
     for (int i = 0; i < 4096*1024; i++) {
       rmaBuffer.getRawBuffer().put((byte)i); 
     }

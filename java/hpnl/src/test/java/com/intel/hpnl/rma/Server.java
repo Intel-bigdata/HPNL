@@ -10,7 +10,8 @@ public class Server {
 
     EqService eqService = new EqService(1, BUFFER_NUM, true).init();
     CqService cqService = new CqService(eqService).init();
-
+    assert(eqService != null);
+    assert(cqService != null);
     ServerRecvCallback recvCallback = new ServerRecvCallback(eqService);
     eqService.setRecvCallback(recvCallback);
 

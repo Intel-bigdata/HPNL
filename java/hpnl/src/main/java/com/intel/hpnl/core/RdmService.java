@@ -49,6 +49,9 @@ public class RdmService {
 
   private void handleCallback(long handle, int eventType, int blockId, int blockSize) {
     RdmConnection connection = conMap.get(handle);
+    if (connection == null) {
+      throw new NullPointerException("connection is NULL when handling " + eventType + " event.");
+    }
     connection.handleCallback(eventType, blockId, blockSize);
   }
 
@@ -76,16 +79,19 @@ public class RdmService {
     this.recvBufferPool.realloc();
   }
 
-  public void setRecvCallback(Handler callback) {
+  public void setRecvCallback(RdmHandler callback) {
     recvCallback = callback;
   }
 
-  public void setSendCallback(Handler callback) {
+  public void setSendCallback(RdmHandler callback) {
     sendCallback = callback;
   }
 
   public void pushSendBuffer(long handle, int bufferId) {
     RdmConnection connection = conMap.get(handle);
+    if (connection == null) {
+      throw new NullPointerException("connection is null when putting " + bufferId + " bufferId"); 
+    }
     connection.pushSendBuffer(sendBufferPool.getBuffer(bufferId));
   }
 
@@ -115,8 +121,8 @@ public class RdmService {
   private boolean is_server;
   private RdmThread worker;
   private ConcurrentHashMap<Long, RdmConnection> conMap;
-  private Handler recvCallback;
-  private Handler sendCallback;
+  private RdmHandler recvCallback;
+  private RdmHandler sendCallback;
   private MemPool sendBufferPool;
   private MemPool recvBufferPool;
 

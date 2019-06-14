@@ -44,7 +44,6 @@ public class ClientTest implements Runnable {
     byteBufferTmp.flip();
 
     Client client = new Client(workNbr, bufferNbr);
-
     client.setAffinities(affinities);
 
     RecvCallback recvCallback = new RecvCallback(false, interval, msgSize);
@@ -56,7 +55,7 @@ public class ClientTest implements Runnable {
     client.start();
 
     Connection con = client.connect(addr, port, 0);
-
+    assert(con != null);
     System.out.println("connected, start to pingpong");
     con.send(byteBufferTmp, (byte)0, 10);
 

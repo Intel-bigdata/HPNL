@@ -14,7 +14,9 @@ public class ClientRecvCallback implements Handler {
   
   public synchronized void handle(final Connection con, int bufferId, int blockBufferSize) {
     HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
+    assert(recvBuffer != null);
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
+    assert(recvByteBuffer != null);
     if (count++ == 0) {
       System.out.println("client recv.");
     }

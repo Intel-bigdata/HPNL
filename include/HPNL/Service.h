@@ -48,6 +48,9 @@ class Service {
     ~Service();
   private:
     friend class AcceptRequestCallback;
+
+    Service(const Service& service) {}
+    Service& operator=(const Service &service) { return *this; }
     BufMgr *recvBufMgr;
     BufMgr *sendBufMgr;
 

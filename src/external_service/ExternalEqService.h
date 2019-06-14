@@ -35,6 +35,9 @@ class ExternalEqService {
     Chunk* get_chunk(int, int);
     int get_worker_num();
   private:
+    ExternalEqService(const ExternalEqService& service) {}
+    ExternalEqService& operator=(const ExternalEqService& service) { return *this; }
+
     MsgStack *stack;
 
     int worker_num;

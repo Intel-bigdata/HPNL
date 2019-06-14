@@ -35,6 +35,7 @@ public class ServerTest implements Runnable {
 
   public void run() {
     RdmService service = new RdmService(bufferNbr, true).init();
+    assert(service != null);
     
     RecvCallback recvCallback = new RecvCallback(true, interval, msgSize);
     service.setRecvCallback(recvCallback);

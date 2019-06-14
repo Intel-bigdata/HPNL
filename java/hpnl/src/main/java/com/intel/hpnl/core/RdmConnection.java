@@ -15,19 +15,19 @@ public class RdmConnection {
     init(this.nativeHandle);
   }
 
-  public Handler getRecvCallback() {
+  public RdmHandler getRecvCallback() {
     return recvCallback; 
   }
 
-  public void setRecvCallback(Handler callback) {
+  public void setRecvCallback(RdmHandler callback) {
     this.recvCallback = callback; 
   }
 
-  public Handler getSendCallback() {
+  public RdmHandler getSendCallback() {
     return sendCallback; 
   }
 
-  public void setSendCallback(Handler callback) {
+  public void setSendCallback(RdmHandler callback) {
     sendCallback = callback; 
   }
 

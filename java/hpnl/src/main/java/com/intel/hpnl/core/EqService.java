@@ -24,7 +24,7 @@ public class EqService {
     this.conMap = new HashMap<Long, Connection>();
     this.reapCons = new LinkedBlockingQueue<Connection>();
     this.rmaBufferMap = new ConcurrentHashMap<Integer, ByteBuffer>();
-    this.connectLatch = new ConcurrentHashMap<Long, CountDownLatch>();
+    this.connectLatchMap = new ConcurrentHashMap<Long, CountDownLatch>();
   }
 
   public EqService init() {
@@ -41,14 +41,16 @@ public class EqService {
       if (localEq == -1) {
         return null;
       }
-      connectLatch.put(localEq, new CountDownLatch(1));
+      connectLatchMap.put(localEq, new CountDownLatch(1));
       add_eq_event(localEq, nativeHandle);
       try {
+        CountDownLatch latch = this.connectLatchMap.get(localEq);
+        assert(latch != null);
         if (timeout == 0) {
-          this.connectLatch.get(localEq).await();
+          latch.await();
           return curCon;
         } else {
-          if (!this.connectLatch.get(localEq).await(timeout, TimeUnit.MILLISECONDS)) {
+          if (!latch.await(timeout, TimeUnit.MILLISECONDS)) {
             return null;
           }
         }
@@ -103,6 +105,10 @@ public class EqService {
 
   private void handleEqCallback(long eq, int eventType, int blockId) {
     Connection connection = conMap.get(eq);
+    if (connection == null) {
+      throw new NullPointerException("connection is NULL when handle " + eventType + " event.");
+    }
+      
     if (eventType == EventType.CONNECTED_EVENT) {
       connection.setConnectedCallback(connectedCallback);
       connection.setRecvCallback(recvCallback);
@@ -113,8 +119,12 @@ public class EqService {
     connection.handleCallback(eventType, 0, 0);
     if (!is_server && eventType == EventType.CONNECTED_EVENT) {
       curCon = connection;
-      this.connectLatch.get(eq).countDown();
-      this.connectLatch.remove(eq);
+      CountDownLatch latch = this.connectLatchMap.get(eq);
+      if (latch == null) {
+        throw new NullPointerException("connection is NULL when handle " + eventType + " event.");
+      }
+      latch.countDown();
+      this.connectLatchMap.remove(eq);
     }
   }
 
@@ -154,6 +164,7 @@ public class EqService {
 
   public void pushSendBuffer(long eq, int bufferId) {
     Connection connection = conMap.get(eq);
+    assert(connection != null);
     connection.pushSendBuffer(sendBufferPool.getBuffer(bufferId));
   }
 
@@ -275,7 +286,7 @@ public class EqService {
   private int buffer_num;
   public boolean is_server;
   private Connection curCon;
-  private ConcurrentHashMap<Long, CountDownLatch> connectLatch;
+  private ConcurrentHashMap<Long, CountDownLatch> connectLatchMap;
   private HashMap<Long, Connection> conMap;
   private LinkedBlockingQueue<Connection> reapCons;
 

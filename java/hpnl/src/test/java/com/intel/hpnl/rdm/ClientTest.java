@@ -38,13 +38,14 @@ public class ClientTest implements Runnable {
 
   public void run() {
     ByteBuffer byteBufferTmp = ByteBuffer.allocate(msgSize);
+    assert(byteBufferTmp != null);
     for (int i = 0; i < msgSize; i++) {
       byteBufferTmp.put((byte)0);
     }
     byteBufferTmp.flip();
 
     RdmService service = new RdmService(bufferNbr, false).init();
-    
+    assert(service != null) ;
     RecvCallback recvCallback = new RecvCallback(false, interval, msgSize);
     service.setRecvCallback(recvCallback);
 
@@ -54,6 +55,7 @@ public class ClientTest implements Runnable {
     RdmConnection[] con = new RdmConnection[50];
     for (int i = 0; i < 50; i++) {
       con[i] = service.get_con(addr, port);
+      assert(con[i] != null);
     }
     for (int i = 0; i < 50; i++) {
       con[i].send(byteBufferTmp, (byte)0, 10);

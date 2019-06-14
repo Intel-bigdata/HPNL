@@ -35,7 +35,6 @@ public class ServerTest implements Runnable {
 
   public void run() {
     Server server = new Server(workNbr, bufferNbr);
-    
     server.setAffinities(affinities);
 
     RecvCallback recvCallback = new RecvCallback(true, interval, msgSize);

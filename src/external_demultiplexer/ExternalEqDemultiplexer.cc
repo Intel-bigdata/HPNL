@@ -46,6 +46,9 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnecti
       return 0; 
     }
   }
+  if (!*eq) {
+    return 0; 
+  }
   uint32_t event;
   fi_eq_cm_entry entry;
   int ret = fi_eq_read(*eq, &event, &entry, sizeof(entry), 0);
@@ -60,13 +63,15 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnecti
     }
     return 0;
   } else {
-    assert(*eq != NULL);
     entry.fid = &(*eq)->fid;
     if (event == FI_CONNREQ) {
       *info = entry.info;
       return ACCEPT_EVENT;
     } else if (event == FI_CONNECTED)  {
       *con = stack->get_connection(entry.fid);
+      if (!*con) {
+        return -1; 
+      }
       (*con)->init_addr();
       return CONNECTED_EVENT;
     } else if (event == FI_SHUTDOWN) {

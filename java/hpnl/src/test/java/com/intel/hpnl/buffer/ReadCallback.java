@@ -10,7 +10,7 @@ public class ReadCallback implements Handler {
   public ReadCallback() {}
   public synchronized void handle(Connection con, int bufferId, int blockBufferSize) {
     HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
-
+    assert(recvBuffer != null);
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
 
     System.out.println(recvByteBuffer.getInt());

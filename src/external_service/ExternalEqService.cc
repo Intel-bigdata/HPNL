@@ -30,10 +30,12 @@ ExternalEqService::~ExternalEqService() {
 
 int ExternalEqService::init() {
   stack = new MsgStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
+  assert(stack);
   if (stack->init() == -1)
     goto free_stack;
 
   eq_demulti_plexer = new ExternalEqDemultiplexer(stack);
+  assert(eq_demulti_plexer);
   if (eq_demulti_plexer->init() == -1)
     goto free_eq_demulti_plexer;
 

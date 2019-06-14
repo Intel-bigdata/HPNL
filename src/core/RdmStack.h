@@ -18,7 +18,7 @@ class RdmConnection;
 class RdmStack : public Stack {
   public:
     RdmStack(int, bool);
-    ~RdmStack();
+    virtual ~RdmStack();
     virtual int init() override;
     virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
 
