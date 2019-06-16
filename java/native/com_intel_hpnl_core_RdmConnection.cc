@@ -99,3 +99,12 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_deleteGlobalRef
 	env->DeleteGlobalRef(con->get_java_conn());
 	con->set_java_conn(NULL);
 }
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_free
+  (JNIEnv *env, jobject thisObj, jlong conPtr){
+	RdmConnection *con = *(RdmConnection**)&conPtr;
+	if(con != NULL){
+		delete con;
+		con = NULL;
+	}
+}

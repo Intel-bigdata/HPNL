@@ -53,7 +53,20 @@ public class RdmService extends AbstractService {
   }
 
   public void stop() {
+    this.task.stop();
+    this.waitToComplete();
     this.free(this.nativeHandle);
+  }
+
+  private void waitToComplete() {
+    try {
+      this.task.waitToComplete();
+    } catch (InterruptedException var5) {
+      log.error("EQ task interrupted when wait its completion", var5);
+    } finally {
+      log.info("EQ task stopped? {}", this.task.isStopped());
+    }
+
   }
 
   public long getNativeHandle() {

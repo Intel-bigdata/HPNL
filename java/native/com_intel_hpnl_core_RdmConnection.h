@@ -79,6 +79,9 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_deleteGlobalRef
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_releaseRecvBuffer
   (JNIEnv *, jobject, jint, jlong);
 
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_free
+  (JNIEnv *env, jobject thisObj, jlong conPtr);
+
 #ifdef __cplusplus
 }
 #endif
