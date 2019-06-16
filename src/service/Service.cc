@@ -40,7 +40,7 @@ int Service::init(bool msg_) {
   int res = 0;
   msg = msg_;
   if (msg) {
-    stack = new MsgStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
+    stack = new MsgStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server, NULL);
     if ((res = stack->init())) {
       return res;
     }
@@ -52,7 +52,7 @@ int Service::init(bool msg_) {
     }
     proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, 1);
   } else {
-    stack = new RdmStack(buffer_num, is_server);
+    stack = new RdmStack(buffer_num, is_server, NULL);
     if ((res = stack->init())) {
       return res;
     }
@@ -97,7 +97,7 @@ int Service::listen(const char* addr, const char* port) {
   return 0;
 }
 int Service::connect(const char* addr, const char* port) {
-  fid_eq *eq = stack->connect(addr, port, recvBufMgr, sendBufMgr);
+  fid_eq *eq = stack->connect(addr, port, 0, 0, recvBufMgr, sendBufMgr);
   std::shared_ptr<EventHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
   acceptRequestCallback = new AcceptRequestCallback(this);
   handler->set_recv_callback(recvCallback);

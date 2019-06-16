@@ -2,6 +2,9 @@
 #include "core/RdmConnection.h"
 #include <iostream>
 
+static jclass parentClass;
+static jmethodID handleCallback;
+
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {
   static int init = 0;
@@ -9,6 +12,9 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   if (!init) {
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
+
+    parentClass = env->FindClass("com/intel/hpnl/core/AbstractConnection");
+    handleCallback = (*env).GetMethodID(parentClass, "handleCallback", "(III)I");
     init = 1;
   }
   return fidSelfPtr;
@@ -20,7 +26,11 @@ static void _set_self(JNIEnv *env, jobject thisObj, long nativeCon)
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_init(JNIEnv *env, jobject obj, jlong nativeHandle) {
-  _set_self(env, obj, nativeHandle);
+	RdmConnection *fiConn = *(RdmConnection**)&nativeHandle;
+	jobject javaConn = env->NewGlobalRef(obj);
+	fiConn->set_java_conn(javaConn);
+	fiConn->set_java_callback_methodID(handleCallback);
+    _set_self(env, obj, nativeHandle);
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_get_1local_1name(JNIEnv *env, jobject obj, jobject buffer, jlong nativeHandle) {

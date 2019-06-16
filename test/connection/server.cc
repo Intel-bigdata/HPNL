@@ -2,10 +2,12 @@
 #include "HPNL/Server.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/Common.h"
 #include "ConBufMgr.h"
 
 #define SIZE 3
+#define BUFFER_SIZE 65536
+#define MEM_SIZE 65536
+#define MAX_WORKERS 10
 
 class ShutdownCallback : public Callback {
   public:
@@ -24,7 +26,7 @@ int main(int argc, char *argv[]) {
     ck->buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->add(ck->buffer_id, ck);
+    recvBufMgr->put(ck->buffer_id, ck);
   }
   BufMgr *sendBufMgr = new ConBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
@@ -32,10 +34,11 @@ int main(int argc, char *argv[]) {
     ck->buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    sendBufMgr->add(ck->buffer_id, ck);
+    sendBufMgr->put(ck->buffer_id, ck);
   }
 
-  Server *server = new Server();
+  Server *server = new Server(1, 16);
+  server->init();
   server->set_recv_buf_mgr(recvBufMgr);
   server->set_send_buf_mgr(sendBufMgr);
 
@@ -46,7 +49,8 @@ int main(int argc, char *argv[]) {
   server->set_connected_callback(NULL);
   server->set_shutdown_callback(shutdownCallback);
 
-  server->run("172.168.2.106", "123456", 0, 1, 16);
+  server->start();
+  server->listen("172.168.2.106", "123456");
 
   server->wait();
 
@@ -55,12 +59,12 @@ int main(int argc, char *argv[]) {
   int recv_chunk_size = recvBufMgr->get_id();
   assert(recv_chunk_size == MEM_SIZE);
   for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = recvBufMgr->index(i);
+    Chunk *ck = recvBufMgr->get(i);
     free(ck->buffer);
   }
   int send_chunk_size = sendBufMgr->get_id();
   for (int i = 0; i < send_chunk_size; i++) {
-    Chunk *ck = sendBufMgr->index(i);
+    Chunk *ck = sendBufMgr->get(i);
     free(ck->buffer);
   }
 

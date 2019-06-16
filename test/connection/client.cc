@@ -2,10 +2,12 @@
 #include "HPNL/Client.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/Common.h"
 #include "ConBufMgr.h"
 
 #define SIZE 4096
+#define BUFFER_SIZE 65536
+#define MEM_SIZE 65536
+#define MAX_WORKERS 10
 
 uint64_t start, end = 0;
 
@@ -26,13 +28,14 @@ class ShutdownCallback : public Callback {
 
 class ConnectedCallback : public Callback {
   public:
-    ConnectedCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    ConnectedCallback(Client *client_, BufMgr *bufMgr_) : client(client_), bufMgr(bufMgr_) {}
     virtual ~ConnectedCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       Connection *con = (Connection*)param_1;
-      con->shutdown();
+      client->shutdown(con);
     }
   private:
+    Client *client;
     BufMgr *bufMgr;
 };
 
@@ -44,7 +47,7 @@ void connect() {
     ck->buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->add(ck->buffer_id, ck);
+    recvBufMgr->put(ck->buffer_id, ck);
   }
   BufMgr *sendBufMgr = new ConBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
@@ -52,13 +55,14 @@ void connect() {
     ck->buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    sendBufMgr->add(ck->buffer_id, ck);
+    sendBufMgr->put(ck->buffer_id, ck);
   }
-  Client *client = new Client();
+  Client *client = new Client(1, 16);
+  client->init();
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 
-  ConnectedCallback *connectedCallback = new ConnectedCallback(sendBufMgr);
+  ConnectedCallback *connectedCallback = new ConnectedCallback(client, sendBufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback(client);
 
   client->set_recv_callback(NULL);
@@ -66,7 +70,10 @@ void connect() {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run("172.168.2.106", "123456", 0, 50, 16);
+  client->start();
+  for (int i = 0; i < 1; i++) {
+    client->connect("172.168.2.106", "123456");
+  }
 
   client->wait();
 
@@ -77,12 +84,12 @@ void connect() {
   int recv_chunk_size = recvBufMgr->get_id();
   assert(recv_chunk_size == MEM_SIZE);
   for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = recvBufMgr->index(i);
+    Chunk *ck = recvBufMgr->get(i);
     free(ck->buffer);
   }
   int send_chunk_size = sendBufMgr->get_id();
   for (int i = 0; i < send_chunk_size; i++) {
-    Chunk *ck = sendBufMgr->index(i);
+    Chunk *ck = sendBufMgr->get(i);
     free(ck->buffer);
   }
 

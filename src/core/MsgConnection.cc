@@ -220,11 +220,15 @@ std::vector<Chunk*> MsgConnection::get_recv_buffer(){
 }
 
 void MsgConnection::set_recv_callback(Callback *callback) {
-  read_callback = callback;
+  recv_callback = callback;
 }
 
 void MsgConnection::set_send_callback(Callback *callback) {
   send_callback = callback;
+}
+
+void MsgConnection::set_read_callback(Callback *callback) {
+  read_callback = callback;
 }
 
 void MsgConnection::set_shutdown_callback(Callback *callback) {
@@ -233,6 +237,10 @@ void MsgConnection::set_shutdown_callback(Callback *callback) {
 
 Callback* MsgConnection::get_read_callback() {
   return read_callback;
+}
+
+Callback* MsgConnection::get_recv_callback() {
+  return recv_callback;
 }
 
 Callback* MsgConnection::get_send_callback() {

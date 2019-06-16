@@ -65,7 +65,7 @@ fid_eq* ExternalEqService::accept(fi_info* info) {
 fid_eq* ExternalEqService::connect(const char* ip, const char* port, int cq_index, long connect_id) {
   fid_eq* eq;
   if (is_server) {
-    eq = stack->bind(ip, port, recvBufMgr, sendBufMgr);
+    eq = (fid_eq*)stack->bind(ip, port, recvBufMgr, sendBufMgr);
     if (!eq)
       return NULL;
     if (stack->listen()) {

@@ -5,6 +5,7 @@
 #include "core/MsgConnection.h"
 
 static jmethodID handleCallback;
+static jclass parentClass;
 
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {
@@ -14,8 +15,8 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
 
-    jclass connClass = env->FindClass("com/intel/hpnl/core/MsgConnection");
-    handleCallback = (*env).GetMethodID(connClass, "handleCallback", "(III)I");
+    parentClass = env->FindClass("com/intel/hpnl/core/AbstractConnection");
+    handleCallback = (*env).GetMethodID(parentClass, "handleCallback", "(III)I");
     init = 1;
   }
   return fidSelfPtr;

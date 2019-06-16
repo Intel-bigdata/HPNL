@@ -52,7 +52,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
 	return -1;
   }
   jmethodID handleCallback = conn->get_java_callback_methodID();
-  jint rst = (*env).CallIntMethod(javaConn, handleCallback, ret, rdma_buffer_id, block_buffer_size);
+  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentClass, handleCallback, ret, chunk->buffer_id, block_buffer_size);
   if (ret == RECV_EVENT && rst) {
 	if (conn->activate_chunk(chunk)) {
 		perror("failed to return receive chunk/buffer");

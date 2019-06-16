@@ -14,11 +14,11 @@ class PingPongBufMgr : public BufMgr {
         buf.second = NULL;
       } 
     }
-    virtual Chunk* index(int id) override {
+    virtual Chunk* get(int id) override {
       std::lock_guard<std::mutex> l(mtx);
       return buf_map[id];
     }
-    virtual void add(int mid, Chunk* ck) override {
+    virtual void put(int mid, Chunk* ck) override {
       std::lock_guard<std::mutex> l(mtx);
       if (!buf_map.count(mid))
         buf_map[mid] = ck;

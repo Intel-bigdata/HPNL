@@ -13,6 +13,8 @@
 #include "HPNL/Connection.h"
 #include "HPNL/BufMgr.h"
 
+#include <jni.sh>
+
 class RdmConnection : public Connection {
   public:
     RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, BufMgr*, int, bool, const char*);
@@ -43,6 +45,22 @@ class RdmConnection : public Connection {
     virtual void decode_peer_name(void*, char*) override;
     virtual char* decode_buf(void *buf) override;
     virtual Chunk* encode(void *buf, int size, char*) override;
+
+    jobject get_java_conn(){
+       	return java_conn;
+    }
+
+	void set_java_conn(jobject java_conn_){
+		java_conn = java_conn_;
+	}
+
+	jmethodID get_java_callback_methodID(){
+		return java_callback_methodID;
+	}
+
+	void set_java_callback_methodID(jmethodID methodID){
+		java_callback_methodID = methodID;
+	}
   private:
     fid_fabric *fabric;
     fi_info *info;
@@ -76,5 +94,8 @@ class RdmConnection : public Connection {
     char src_addr[20];
 
     const char* prov_name;
+
+    jobject java_conn;
+    jmethodID java_callback_methodID;
 };
 #endif

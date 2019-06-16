@@ -1,11 +1,15 @@
+#include <string.h>
+
 #include "HPNL/Connection.h"
 #include "HPNL/Client.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/Common.h"
 #include "PingPongBufMgr.h"
 
 #define SIZE 4096
+#define BUFFER_SIZE 65536
+#define MEM_SIZE 65536
+#define MAX_WORKERS 10
 
 int count = 0;
 uint64_t start, end = 0;
@@ -35,7 +39,7 @@ class ConnectedCallback : public Callback {
       Connection *con = (Connection*)param_1;
       char* buffer = (char*)std::malloc(SIZE);
       memset(buffer, '0', SIZE);
-      con->send(buffer, SIZE, SIZE, 0, 0);
+      con->sendBuf(buffer, SIZE);
       std::free(buffer);
     }
   private:
@@ -44,16 +48,15 @@ class ConnectedCallback : public Callback {
 
 class RecvCallback : public Callback {
   public:
-    RecvCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    RecvCallback(Client *client_, BufMgr *bufMgr_) : client(client_), bufMgr(bufMgr_) {}
     virtual ~RecvCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       std::lock_guard<std::mutex> lk(mtx);
       count++;
       int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->index(mid);
+      Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
       if (count >= 1000000) {
-        con->shutdown();
         end = timestamp_now();
         printf("finished, totally consumes %f s, message round trip time is %f us.\n", (end-start)/1000.0, (end-start)*1000/1000000.0);
         return;
@@ -64,9 +67,10 @@ class RecvCallback : public Callback {
       if (count == 1) {
         start = timestamp_now(); 
       }
-      con->send((char*)ck->buffer, SIZE, SIZE, 0, 0);
+      con->sendBuf((char*)ck->buffer, SIZE);
     }
   private:
+    Client *client;
     BufMgr *bufMgr; 
 };
 
@@ -76,9 +80,9 @@ class SendCallback : public Callback {
     virtual ~SendCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->index(mid);
+      Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
-      con->take_back_chunk(ck);
+      con->reclaim_chunk(ck);
     }
   private:
     BufMgr *bufMgr;
@@ -92,7 +96,7 @@ int main(int argc, char *argv[]) {
     ck->buffer_id = recvBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->add(ck->buffer_id, ck);
+    recvBufMgr->put(ck->buffer_id, ck);
   }
   BufMgr *sendBufMgr = new PingPongBufMgr();
   for (int i = 0; i < MEM_SIZE; i++) {
@@ -100,13 +104,14 @@ int main(int argc, char *argv[]) {
     ck->buffer_id = sendBufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    sendBufMgr->add(ck->buffer_id, ck);
+    sendBufMgr->put(ck->buffer_id, ck);
   }
-  Client *client = new Client();
+  Client *client = new Client(1, 16);
+  client->init();
   client->set_recv_buf_mgr(recvBufMgr);
   client->set_send_buf_mgr(sendBufMgr);
 
-  RecvCallback *recvCallback = new RecvCallback(recvBufMgr);
+  RecvCallback *recvCallback = new RecvCallback(client, recvBufMgr);
   SendCallback *sendCallback = new SendCallback(sendBufMgr);
   ConnectedCallback *connectedCallback = new ConnectedCallback(sendBufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback(client);
@@ -116,7 +121,8 @@ int main(int argc, char *argv[]) {
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
-  client->run("10.100.0.35", "123456", 0, 1, 16);
+  client->start();
+  client->connect("192.168.2.106", "12345");
 
   client->wait();
 
@@ -129,12 +135,12 @@ int main(int argc, char *argv[]) {
   int recv_chunk_size = recvBufMgr->get_id();
   assert(recv_chunk_size == MEM_SIZE*2);
   for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = recvBufMgr->index(i);
+    Chunk *ck = recvBufMgr->get(i);
     free(ck->buffer);
   }
   int send_chunk_size = sendBufMgr->get_id();
   for (int i = 0; i < send_chunk_size; i++) {
-    Chunk *ck = sendBufMgr->index(i);
+    Chunk *ck = sendBufMgr->get(i);
     free(ck->buffer);
   }
 

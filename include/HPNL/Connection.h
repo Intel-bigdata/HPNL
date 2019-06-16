@@ -21,7 +21,7 @@ class Connection {
 
     virtual void reclaim_chunk(Chunk*) {}
     virtual int activate_chunk(Chunk*) { return 0; }
-    virtual void activate_chunk(int) {}
+    virtual int activate_chunk(int) {}
     virtual void set_recv_callback(Callback*) {}
     virtual void set_send_callback(Callback*) {}
     virtual Callback* get_recv_callback() { return nullptr; }

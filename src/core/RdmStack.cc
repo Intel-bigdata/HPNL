@@ -85,6 +85,7 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, BufMgr* rbuf_
 fid_fabric* RdmStack::get_fabric() {
   return fabric;
 }
+
 fid_cq* RdmStack::get_cq() {
   return cq;
 }

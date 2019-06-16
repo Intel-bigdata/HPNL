@@ -1,3 +1,6 @@
+#ifndef RDMSTACK_H
+#define RDMSTACK_H
+
 #include <string.h>
 #include <assert.h>
 
