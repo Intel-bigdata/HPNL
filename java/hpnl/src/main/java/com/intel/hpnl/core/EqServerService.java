@@ -1,28 +1,26 @@
 package com.intel.hpnl.core;
 
-/**
- * A server service for libfabric's event queue
- */
-public class EqServerService extends EqService {
+import com.intel.hpnl.api.Connection;
+import com.intel.hpnl.api.Handler;
 
+public class EqServerService extends EqService {
   private Handler connectedCallback;
 
   public EqServerService(int workerNum, int bufferNum, int bufferSize) {
-    super(workerNum, bufferNum, bufferSize,true);
+    super(workerNum, bufferNum, bufferSize, true);
   }
 
-  @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    long ret = tryConnect(ip, port, cqIndex);
+    long ret = this.tryConnect(ip, port, cqIndex);
     this.connectedCallback = connectedCallback;
-    return ret<0 ? -1:0;
+    return ret < 0L ? -1 : 0;
   }
 
-  @Override
   protected void handleEqCallback(long eq, int eventType, int blockId) {
-    Connection connection = conMap.get(eq);
-    if(connectedCallback != null) {
-      connectedCallback.handle(connection, 0, 0);
+    Connection connection = (Connection)this.conMap.get(eq);
+    if (this.connectedCallback != null) {
+      this.connectedCallback.handle(connection, 0, 0);
     }
+
   }
 }

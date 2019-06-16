@@ -1,39 +1,50 @@
 #ifndef SERVICE
 #define SERVICE
 
-#include <string>
+#include <assert.h>
 
-#include "HPNL/Common.h"
 #include "HPNL/Callback.h"
-#include "HPNL/FIStack.h"
-#include "HPNL/FIConnection.h"
-#include "HPNL/ConMgr.h"
-#include "HPNL/Reactor.h"
-#include "HPNL/EQHandler.h"
-#include "HPNL/EQEventDemultiplexer.h"
-#include "HPNL/CQEventDemultiplexer.h"
+#include "HPNL/BufMgr.h"
+#include "HPNL/Common.h"
 
 class AcceptRequestCallback;
+class Stack;
+class MsgStack;
+class Proactor;
+class EqDemultiplexer;
+class CqDemultiplexer;
+class RdmCqDemultiplexer;
+class EqHandler;
+class EqThread;
+class CqThread;
+class RdmCqThread;
+class Connection;
 
 class Service {
   public:
-	int listen(const char*, const char*);
+    int init(bool msg_ = true);
+    int listen(const char*, const char*);
     int connect(const char*, const char*);
     Connection* get_con(const char*, const char*);
     Stack* get_stack();
     void start();
     void shutdown();
-	void shutdown(Connection *con);
+    void shutdown(Connection *con);
     void wait();
     void set_recv_buf_mgr(BufMgr*);
     void set_send_buf_mgr(BufMgr*);
 
     void set_send_callback(Callback*);
     void set_recv_callback(Callback*);
+    void set_read_callback(Callback*);
     void set_connected_callback(Callback*);
     void set_shutdown_callback(Callback*);
+
+    uint64_t reg_rma_buffer(char*, uint64_t, int);
+    void unreg_rma_buffer(int);
+    Chunk* get_rma_buffer(int);
   protected:
-    Service(bool is_server_ = false);
+    Service(int, int, bool is_server_ = false);
     ~Service();
   private:
     friend class AcceptRequestCallback;
@@ -42,22 +53,25 @@ class Service {
 
     Callback *recvCallback;
     Callback *sendCallback;
+    Callback *readCallback;
     Callback *acceptRequestCallback;
     Callback *connectedCallback;
     Callback *shutdownCallback;
 
     int worker_num;
+    int buffer_num;
     bool is_server;
+    bool msg;
 
-    FIStack *stack;
-    ConMgr *conMgr;
-    EQEventDemultiplexer *eq_demulti_plexer;
-    CQEventDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
-    Reactor *reactor;
+    Stack *stack;
+    EqDemultiplexer *eq_demulti_plexer;
+    CqDemultiplexer *cq_demulti_plexer[MAX_WORKERS];
+    RdmCqDemultiplexer *rdm_cq_demulti_plexer;
+    Proactor *proactor;
 
-    EQThread *eqThread;
-    CQThread *cqThread[MAX_WORKERS];
-    EventThread *eventThread;
+    EqThread *eqThread;
+    CqThread *cqThread[MAX_WORKERS];
+    RdmCqThread *rdmCqThread;
 };
 
 class AcceptRequestCallback : public Callback {

@@ -15,14 +15,17 @@
 
 class RdmConnection : public Connection {
   public:
-    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, BufMgr*, int, bool);
+    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, BufMgr*, int, bool, const char*);
     ~RdmConnection();
     virtual int init() override;
+
+    void init_addr();
+    void get_addr(char**, size_t*, char**, size_t*);
+
     virtual int send(Chunk*) override;
     virtual int send(int, int) override;
     virtual int sendBuf(const char*, int) override;
     virtual int sendTo(int, int, const char*) override;
-
     virtual int sendBufTo(const char*, int, const char*) override;
     virtual char* get_peer_name() override;
     char* get_local_name();
@@ -31,6 +34,7 @@ class RdmConnection : public Connection {
     virtual void reclaim_chunk(Chunk*) override;
     virtual int activate_chunk(Chunk*) override;
     std::vector<Chunk*> get_send_buffer();
+    std::vector<Chunk*> get_recv_buffer();
 
     virtual void set_recv_callback(Callback*) override;
     virtual void set_send_callback(Callback*) override;
@@ -65,5 +69,12 @@ class RdmConnection : public Connection {
     Callback* recv_callback;
     Callback* send_callback;
     bool inited = false;
+
+    size_t dest_port;
+    char dest_addr[20];
+    size_t src_port;
+    char src_addr[20];
+
+    const char* prov_name;
 };
 #endif

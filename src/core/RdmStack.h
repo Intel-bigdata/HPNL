@@ -10,7 +10,7 @@
 class RdmConnection;
 class RdmStack : public Stack {
   public:
-    RdmStack(int, bool);
+    RdmStack(int, bool, const char*);
     ~RdmStack();
     virtual int init() override;
     virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
@@ -30,6 +30,8 @@ class RdmStack : public Stack {
     std::vector<RdmConnection*> cons;
 
     RdmConnection *server_con;
+
+    const char* prov_name;
 };
 
 #endif

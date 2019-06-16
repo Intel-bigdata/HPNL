@@ -1,80 +1,63 @@
 package com.intel.hpnl.core;
 
+import com.intel.hpnl.api.HpnlBuffer;
+import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.nio.ByteBuffer;
 
-/**
- * buffer pool for send and receive
- */
 public class MemPool {
-  public enum Type {
-    SEND, RECV 
-  }
-
-  public MemPool(EqService eqService, int initBufferNum, int bufferSize, int nextBufferNum, Type type) {
-    this.eqService = eqService;
-	this.rdmService = null;
-    this.initBufferNum = initBufferNum;
-    this.bufferSize = bufferSize;
-    this.nextBufferNum = nextBufferNum;
-    this.type = type;
-    this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
-    this.seqId = new AtomicInteger(0);
-    for (int i = 0; i < this.initBufferNum; i++) {
-      alloc();
-    }
-  }
-
-  public MemPool(RdmService rdmService, int initBufferNum, int bufferSize, int nextBufferNum, Type type) {
-    this.eqService = null;
-    this.rdmService = rdmService;
-    this.initBufferNum = initBufferNum;
-    this.bufferSize = bufferSize;
-    this.nextBufferNum = nextBufferNum;
-    this.type = type;
-    //TODO: tuning concurrency
-    this.bufferMap = new ConcurrentHashMap<>();
-    this.seqId = new AtomicInteger(0);
-    for (int i = 0; i < this.initBufferNum; i++) {
-      alloc();
-    }
-  }
-
-  public void realloc() {
-    for (int i = 0; i < this.nextBufferNum; i++) {
-      alloc();
-    }
-  }
-
-  public RdmaBuffer getBuffer(int bufferId) {
-    return bufferMap.get(bufferId); 
-  }
-
-  private void alloc() {
-    ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
-    int seq = seqId.getAndIncrement();
-    RdmaBuffer rdmaBuffer = new RdmaBuffer(seq, byteBuffer);
-    bufferMap.put(seq, rdmaBuffer);
-    if (eqService!= null) {
-      if (type == Type.SEND)
-        eqService.set_send_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
-      else
-        eqService.set_recv_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
-    } else {
-      if (type == Type.SEND)
-        rdmService.set_send_buffer(byteBuffer, bufferSize, seq, rdmService.getNativeHandle());
-      else
-        rdmService.set_recv_buffer(byteBuffer, bufferSize, seq, rdmService.getNativeHandle());
-    }
-  }
-
-  private EqService eqService;
-  private RdmService rdmService;
+  private AbstractService service;
   private int initBufferNum;
   private int bufferSize;
   private int nextBufferNum;
-  private Type type;
-  private ConcurrentHashMap<Integer, RdmaBuffer> bufferMap;
+  private MemPool.Type type;
+  private ConcurrentHashMap<Integer, HpnlBuffer> bufferMap;
   private AtomicInteger seqId;
+
+  public MemPool(AbstractService service, int initBufferNum, int bufferSize, int nextBufferNum, MemPool.Type type) {
+    this.service = service;
+    this.initBufferNum = initBufferNum;
+    this.bufferSize = bufferSize;
+    this.nextBufferNum = nextBufferNum;
+    this.type = type;
+    this.bufferMap = new ConcurrentHashMap();
+    this.seqId = new AtomicInteger(0);
+
+    for(int i = 0; i < this.initBufferNum; ++i) {
+      this.alloc();
+    }
+
+  }
+
+  public void realloc() {
+    for(int i = 0; i < this.nextBufferNum; ++i) {
+      this.alloc();
+    }
+
+  }
+
+  public HpnlBuffer getBuffer(int bufferId) {
+    return (HpnlBuffer)this.bufferMap.get(bufferId);
+  }
+
+  private void alloc() {
+    ByteBuffer byteBuffer = ByteBuffer.allocateDirect(this.bufferSize);
+    int seq = this.seqId.getAndIncrement();
+    HpnlBuffer hpnlBuffer = new HpnlRdmBuffer(seq, byteBuffer);
+    this.bufferMap.put(seq, hpnlBuffer);
+    if (this.type == MemPool.Type.SEND) {
+      this.service.setSendBuffer(byteBuffer, (long)this.bufferSize, seq);
+    } else {
+      this.service.setRecvBuffer(byteBuffer, (long)this.bufferSize, seq);
+    }
+
+  }
+
+  public static enum Type {
+    SEND,
+    RECV;
+
+    private Type() {
+    }
+  }
 }

@@ -10,17 +10,17 @@ extern "C" {
 /*
  * Class:     com_intel_hpnl_core_RdmService
  * Method:    init
- * Signature: (IZ)I
+ * Signature: (IZLjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init
-  (JNIEnv *, jobject, jint, jboolean);
+  (JNIEnv *, jobject, jint, jboolean, jstring);
 
 /*
  * Class:     com_intel_hpnl_core_RdmService
  * Method:    listen
- * Signature: (Ljava/lang/String;Ljava/lang/String;J)V
+ * Signature: (Ljava/lang/String;Ljava/lang/String;J)J
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_listen
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen
   (JNIEnv *, jobject, jstring, jstring, jlong);
 
 /*

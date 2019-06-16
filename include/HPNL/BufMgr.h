@@ -1,6 +1,8 @@
 #ifndef BUFMGR_H
 #define BUFMGR_H
 
+#include <rdma/fabric.h>
+
 #include <memory>
 
 enum ChunkType {
@@ -15,10 +17,13 @@ struct Chunk {
     con = NULL;
   }
   void *buffer;
+  uint32_t size;
   void *mr;
   void *con;
-  uint64_t capacity;
-  int rdma_buffer_id;
+  uint32_t capacity;
+  int buffer_id;
+  fi_context2 ctx;
+  fi_addr_t peer_addr;
 };
 
 class BufMgr {
@@ -26,8 +31,8 @@ class BufMgr {
     virtual ~BufMgr() {}
 
     // not thread safe
-    virtual Chunk* index(int id) = 0;
-    virtual void add(int, Chunk*) = 0;
+    virtual Chunk* get(int id) = 0;
+    virtual void put(int, Chunk*) = 0;
     virtual Chunk* get() = 0;
     virtual int free_size() = 0;
 

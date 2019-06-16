@@ -1,15 +1,23 @@
 #include <rdma/fi_domain.h>
 
-#include "HPNL/ExternalEqService.h"
-#include "HPNL/Connection.h"
-
 #include "com_intel_hpnl_core_EqService.h"
+
+#include <assert.h>
+
+#include "HPNL/Connection.h"
+#include "demultiplexer/EventType.h"
+#include "core/MsgConnection.h"
+#include "external_service/ExternalEqService.h"
+
+#include <iostream>
 
 static jmethodID handleEqCallback;
 static jmethodID reallocBufferPool;
 static jmethodID regCon;
 static jmethodID unregCon;
 static jmethodID pushSendBuffer;
+static jmethodID pushRecvBuffer;
+static jclass parentClass;
 
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {
@@ -21,10 +29,13 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
 
     handleEqCallback = (*env).GetMethodID(thisClass, "handleEqCallback", "(JII)V");
-	reallocBufferPool = (*env).GetMethodID(thisClass, "reallocBufferPool", "()V");
 	regCon = (*env).GetMethodID(thisClass, "regCon", "(JJLjava/lang/String;ILjava/lang/String;IJ)V");
 	unregCon = (*env).GetMethodID(thisClass, "unregCon", "(J)V");
-	pushSendBuffer = (*env).GetMethodID(thisClass, "pushSendBuffer", "(JI)V");
+
+	parentClass = env->FindClass("com/intel/hpnl/core/AbstractService");
+	pushSendBuffer = (*env).GetMethodID(parentClass, "pushSendBuffer", "(JI)V");
+	pushRecvBuffer = (*env).GetMethodID(parentClass, "pushRecvBuffer", "(JI)V");
+	reallocBufferPool = (*env).GetMethodID(parentClass, "reallocBufferPool", "()V");
 
     init = 1;
   }
@@ -89,7 +100,8 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_internal_1connect(JNI
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fid_eq *new_eq = service->connect(ip, port, cq_index, connect_id);
   if (!new_eq) {
-    (*env).CallVoidMethod(thisObj, reallocBufferPool);
+//    (*env).CallVoidMethod(thisObj, reallocBufferPool);
+	(*env).CallNonvirtualVoidMethod(thisObj, parentClass, reallocBufferPool);
     new_eq = service->connect(ip, port, cq_index, connect_id);
     if (!new_eq) {
       return -1;
@@ -108,7 +120,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fi_info *info = NULL;
   fid_eq *eq;
-  FIConnection *con = NULL;
+  MsgConnection *con = NULL;
   int ret = service->wait_eq_event(&info, &eq, &con);
   if (ret < 0) return ret;
 
@@ -117,7 +129,8 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     fid_eq *new_eq;
     new_eq = service->accept(info);
     if (!new_eq) {
-      (*env).CallVoidMethod(thisObj, reallocBufferPool);
+//      (*env).CallVoidMethod(thisObj, reallocBufferPool);
+      (*env).CallNonvirtualVoidMethod(thisObj, parentClass, reallocBufferPool);
       new_eq = service->accept(info);
       assert(new_eq != NULL);
     }
@@ -142,9 +155,17 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     std::vector<Chunk*> send_buffer = con->get_send_buffer();
     int chunks_size = send_buffer.size();
     for (int i = 0; i < chunks_size; i++) {
-      (*env).CallVoidMethod(thisObj, pushSendBuffer, jEq, send_buffer[i]->rdma_buffer_id);
+//      (*env).CallVoidMethod(thisObj, pushSendBuffer, jEq, send_buffer[i]->buffer_id);
+      (*env).CallNonvirtualVoidMethod(thisObj, parentClass, pushSendBuffer, jEq, send_buffer[i]->buffer_id);
     }
     
+    std::vector<Chunk*> recv_buffer = con->get_recv_buffer();
+	chunks_size = recv_buffer.size();
+	for (int i = 0; i < chunks_size; i++) {
+//	  (*env).CallVoidMethod(thisObj, pushRecvBuffer, jEq, recv_buffer[i]->buffer_id);
+	  (*env).CallNonvirtualVoidMethod(thisObj, parentClass, pushRecvBuffer, jEq, recv_buffer[i]->buffer_id);
+	}
+
     (*env).CallVoidMethod(thisObj, handleEqCallback, jEq, ret, 0);
     {
       std::lock_guard<std::mutex> l(con->con_mtx);
@@ -185,7 +206,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event(JNIE
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, jobject thisObj, jlong eqPtr, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fid_eq *eq = *(fid_eq**)&eqPtr;
-  FIConnection *con = (FIConnection*)service->get_connection(eq);
+  MsgConnection *con = (MsgConnection*)service->get_connection(eq);
   if(con){
 	if (con->status < DOWN) {
 	  con->shutdown();

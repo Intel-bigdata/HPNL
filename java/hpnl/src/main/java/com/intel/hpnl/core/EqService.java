@@ -1,431 +1,199 @@
 package com.intel.hpnl.core;
 
+import com.intel.hpnl.api.Connection;
+import com.intel.hpnl.api.EventTask;
+import com.intel.hpnl.api.Handler;
+import com.intel.hpnl.api.HpnlFactory;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-/**
- * A client service for libfabric's event queue
- */
-public class EqService {
+public class EqService extends AbstractService {
   private long nativeHandle;
   private long localEq;
-  private int workerNum;//number of threads/tasks of CQ service
-  private int bufferNbr;//number of buffer per connection
-  private int bufferSize;
-  public boolean server;
-  //TODO: tuning concurrency
-  protected Map<Long, Connection> conMap;
-
-  //TODO: tuning concurrency
-  private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
-
-  //global buffer pools
-  private MemPool sendBufferPool;
-  private MemPool recvBufferPool;
-
-  AtomicInteger rmaBufferId;
-
   private volatile CountDownLatch connectLatch;
-
   private EventTask eqTask;
-
-  private Map<Long, Handler> connectedHandlers = new ConcurrentHashMap<>();
-
+  private Map<Long, Handler> connectedHandlers;
   private CqService cqService;
-
-  private AtomicLong nextConnectId = new AtomicLong();
-
-  private static String providerName; //libfabric's provider name
-  private static String fabricFilename;//name of libfabric file reference by libhpnl.so
-
+  private AtomicLong nextConnectId;
   private static final Logger log = LoggerFactory.getLogger("com.intel.hpnl.core.EqService");
 
-  //load hpnl configuration and dynamic libraries
-  static {
-    providerName = null;
-    fabricFilename = "libfabric.so";
-    String path = "/hpnl/hpnl.conf";
-    try(InputStream is = EqService.class.getResourceAsStream(path)){
-      Properties properties = new Properties();
-      properties.load(is);
-      providerName = properties.getProperty("provider_name");
-      if(providerName != null && providerName.length() == 0){
-        providerName = null;
-      }
-      fabricFilename = properties.getProperty("libfabric_file_name");
-      if(fabricFilename != null && fabricFilename.length() == 0){
-        fabricFilename = "libfabric.so";
-      }
-    }catch (IOException e){
-      log.error("no hpnl/hpnl.conf found", e);
-    }
-
-    try {
-      log.info("loading libhpnl.so");
-      System.loadLibrary("hpnl");
-    }catch (UnsatisfiedLinkError error){
-      log.info("failed to load from lib directory. loading from jar instead");
-      loadFromJar();
-    }
+  protected EqService(int workerNum, int bufferNum, int bufferSize, boolean server) {
+    super(workerNum, bufferNum, bufferSize, server);
+    this.connectedHandlers = new ConcurrentHashMap();
+    this.nextConnectId = new AtomicLong();
+    this.eqTask = new EqService.EqTask();
+    this.nextConnectId.set((new Random()).nextLong());
   }
 
-  protected EqService(int workerNum, int bufferNbr, int bufferSize, boolean server) {
-    this.workerNum = workerNum;
-    this.bufferNbr = bufferNbr;
-    this.bufferSize = bufferSize;
-    this.server = server;
-    this.rmaBufferId = new AtomicInteger(0);
-
-    this.conMap = new ConcurrentHashMap();
-    this.rmaBufferMap = new ConcurrentHashMap();
-    this.eqTask = new EqTask();
-    nextConnectId.set(new Random().nextLong());
+  public EqService(int workerNum, int bufferNum, int bufferSize) {
+    this(workerNum, bufferNum, bufferSize, false);
   }
 
-  public EqService(int workerNum, int bufferNbr, int bufferSize) {
-    this(workerNum, bufferNbr, bufferSize, false);
-  }
-
-  /**
-   * Initialize native resources and buffers
-   * @return
-   */
   public EqService init() {
-    if (init(workerNum, bufferNbr, server, providerName) == -1)
+    if (this.init(this.workerNum, this.bufferNum, this.server, HpnlFactory.getLibfabricProviderName()) == -1) {
       return null;
-    initBufferPool(bufferNbr, bufferSize, bufferNbr);
-    return this; 
+    } else {
+      this.initBufferPool(this.bufferNum, this.bufferSize, this.bufferNum);
+      return this;
+    }
   }
 
-  /**
-   * try to bind or connect to given <code>ip</code>:<code>port</code> and listen
-   * CQ event on <code>cqIndex</code>
-   * @param ip
-   * @param port
-   * @param cqIndex
-   * @return
-   */
-  protected long tryConnect(String ip, String port, int cqIndex){
+  protected long tryConnect(String ip, String port, int cqIndex) {
     long id = sequenceId();
-    localEq = internal_connect(ip, port, cqIndex, id, nativeHandle);
-    if (localEq == -1) {
+    this.localEq = this.internal_connect(ip, port, cqIndex, id, this.nativeHandle);
+    if (this.localEq == -1L) {
       return -1L;
+    } else {
+      this.add_eq_event(this.localEq, this.nativeHandle);
+      return id;
     }
-    add_eq_event(localEq, nativeHandle);
-    return id;
   }
 
-  /**
-   * asynchronously bind or connect to given <code>ip</code>:<code>port</code> with given
-   * <code>connectedCallback</code>, and listen CQ event on <code>cqIndex</code>
-   * @param ip
-   * @param port
-   * @param cqIndex
-   * @param connectedCallback
-   * @return
-   */
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    long seqId = tryConnect(ip, port, cqIndex);
-    if(seqId < 0){
+    long seqId = this.tryConnect(ip, port, cqIndex);
+    if (seqId < 0L) {
       return -1;
-    }
-    if(connectedCallback != null) {
-      Handler prv = connectedHandlers.putIfAbsent(seqId, connectedCallback);
-      if(prv != null){
-        throw new RuntimeException("non-unique id found, "+seqId);
+    } else {
+      if (connectedCallback != null) {
+        Handler prv = (Handler)this.connectedHandlers.putIfAbsent(seqId, connectedCallback);
+        if (prv != null) {
+          throw new RuntimeException("non-unique id found, " + seqId);
+        }
       }
+
+      return 0;
     }
-
-    return 0;
   }
 
-  /**
-   * register newly established connection with connection ID and addresses from JNI
-   * @param eq
-   * @param con
-   * @param dest_addr
-   * @param dest_port
-   * @param src_addr
-   * @param src_port
-   * @param connectId
-   */
-  private void regCon(long eq, long con,
-                      String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
-    Connection connection = new Connection(eq, con, this, this.cqService, connectId);
+  protected void regCon(long eq, long connHandle, String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
+    MsgConnection connection = new MsgConnection(eq, connHandle, this.hpnlService, connectId);
     connection.setAddrInfo(dest_addr, dest_port, src_addr, src_port);
-    conMap.put(eq, connection);
+    this.conMap.put(eq, connection);
   }
 
-  /**
-   * should be invoked from JNI when there is a connection SHUTDOWN event.
-   * Java method may call it too to make sure connection is removed.
-   * @param eq
-   */
   public void unregCon(long eq) {
-    conMap.remove(eq);
+    this.conMap.remove(eq);
   }
 
-  private static long sequenceId() {
-    return Math.abs(UUID.randomUUID().getLeastSignificantBits());
-  }
-
-  /**
-   * handle EQ callback. invoked from JNI.
-   * connectedCallback is invoked here if it's registered.
-   * @param eq
-   * @param eventType
-   * @param blockId
-   */
   protected void handleEqCallback(long eq, int eventType, int blockId) {
-    Connection connection = conMap.get(eq);
-    if (eventType == EventType.CONNECTED_EVENT) {
+    Connection connection = (Connection)this.conMap.get(eq);
+    if (eventType == 2) {
       long id = connection.getConnectionId();
-      Handler connectedHandler =  connectedHandlers.remove(id);
-      if(connectedHandler != null){
+      Handler connectedHandler = (Handler)this.connectedHandlers.remove(id);
+      if (connectedHandler != null) {
         connectedHandler.handle(connection, 0, 0);
       }
     }
-  }
 
-  public Connection getCon(long eq) {
-    return conMap.get(eq);
   }
 
   public long getNativeHandle() {
-    return nativeHandle;
+    return this.nativeHandle;
   }
 
-  /**
-   * initialize buffers
-   * @param initBufferNum
-   * @param bufferSize
-   * @param nextBufferNum
-   */
-  private void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
-    this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, MemPool.Type.SEND);
-    this.recvBufferPool = new MemPool(this, initBufferNum*2, bufferSize, nextBufferNum*2, MemPool.Type.RECV);
-  }
-
-  /**
-   * allocate more buffers when more connections are established
-   */
-  public void reallocBufferPool() {
-    this.sendBufferPool.realloc();
-    this.recvBufferPool.realloc();
-  }
-
-  /**
-   * invoked from JNI after buffers are assigned to connection and connection is registered.
-   * Java method can then take send buffer from connection.
-   * @param eq
-   * @param rdmaBufferId
-   */
-  public void pushSendBuffer(long eq, int rdmaBufferId) {
-    Connection connection = conMap.get(eq);
-    connection.pushSendBuffer(sendBufferPool.getBuffer(rdmaBufferId));
-  }
-
-  public RdmaBuffer getSendBuffer(int rdmaBufferId) {
-    return sendBufferPool.getBuffer(rdmaBufferId); 
-  }
-
-  public RdmaBuffer getRecvBuffer(int rdmaBufferId) {
-    return recvBufferPool.getBuffer(rdmaBufferId);
-  }
-
-  /**
-   * register buffer for RDMA
-   * @param byteBuffer
-   * @param bufferSize
-   * @return
-   */
-  public RdmaBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
-    int bufferId = this.rmaBufferId.getAndIncrement();
-    rmaBufferMap.put(bufferId, byteBuffer);
-    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId, nativeHandle);
-    if (rkey < 0) {
-      return null;
-    }
-    RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey);
-    return buffer;
-  }
-
-  /**
-   * register RDMA buffer by address
-   * @param byteBuffer
-   * @param address
-   * @param bufferSize
-   * @return
-   */
-  public RdmaBuffer regRmaBufferByAddress(ByteBuffer byteBuffer, long address, long bufferSize) {
-    int bufferId = this.rmaBufferId.getAndIncrement();
-    if (byteBuffer != null) {
-      rmaBufferMap.put(bufferId, byteBuffer);
-    }
-    long rkey = reg_rma_buffer_by_address(address, bufferSize, bufferId, nativeHandle);
-    if (rkey < 0) {
-      return null;
-    }
-    RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey);
-    return buffer;
-  }
-
-  /**
-   * un-register RDMA buffer by <code>rdmaBufferId</code>
-   * @param rdmaBufferId
-   */
-  public void unregRmaBuffer(int rdmaBufferId) {
-    unreg_rma_buffer(rdmaBufferId, nativeHandle);
-  }
-
-  /**
-   * allocate and register new RDMA buffer
-   * @param bufferSize
-   * @return
-   */
-  public RdmaBuffer getRmaBuffer(int bufferSize) {
-    int bufferId = this.rmaBufferId.getAndIncrement();
-    // allocate memory from on-heap, off-heap or AEP.
-    ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
-    long address = get_buffer_address(byteBuffer, nativeHandle);
-    rmaBufferMap.put(bufferId, byteBuffer);
-    long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId, nativeHandle);
-    if (rkey < 0) {
-      return null;
-    }
-    RdmaBuffer buffer = new RdmaBuffer(bufferId, byteBuffer, rkey, address);
-    return buffer; 
-  }
-
-  public void setCqService(CqService cqService){
+  public void setCqService(CqService cqService) {
     this.cqService = cqService;
-  }
-
-  public CqService getCqService() {
-    return cqService;
-  }
-
-  public ByteBuffer getRmaBufferByBufferId(int rmaBufferId) {
-    return rmaBufferMap.get(rmaBufferId); 
   }
 
   public int getWorkerNum() {
     return this.workerNum;
   }
 
-  public EventTask getEventTask(){
-    return eqTask;
+  public EventTask getEventTask() {
+    return this.eqTask;
   }
 
-  /**
-   * load libfabric.so and libhpnl.so from jar
-   */
-  private static void loadFromJar(){
-    File tempDir = null;
-    try {
-      tempDir = Files.createTempDirectory("hpnl").toFile();
-      tempDir.deleteOnExit();
-      loadByPath("/hpnl/"+fabricFilename, tempDir);
-      loadByPath("/hpnl/libhpnl.so", tempDir);
-    }catch (IOException e){
-      if(tempDir != null){
-        tempDir.delete();
-      }
-      throw new RuntimeException("failed to load libfabric and libhpnl from jar", e);
-    }
+  protected void setSendBuffer(ByteBuffer buffer, long size, int bufferId) {
+    this.set_send_buffer(buffer, size, bufferId, this.nativeHandle);
   }
 
-  private static void loadByPath(String path, File tempDir)throws IOException{
-    File tempFile = null;
-    String fields[] = path.split("/");
-    String name = fields[fields.length-1];
-    try(InputStream is = EqService.class.getResourceAsStream(path)){
-      tempFile = new File(tempDir, name);
-      tempFile.deleteOnExit();
-      Files.copy(is, tempFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-      System.load(tempFile.getAbsolutePath());
-    }catch (IOException e){
-      if(tempFile != null){
-        tempFile.delete();
-      }
-      throw e;
-    }
+  protected void setRecvBuffer(ByteBuffer buffer, long size, int bufferId) {
+    this.set_recv_buffer(buffer, size, bufferId, this.nativeHandle);
   }
 
-  //native methods
-  public native void shutdown(long eq, long nativeHandle);
-  private native long internal_connect(String ip, String port, int cqIndex, long connectId, long nativeHandle);
-  public native int wait_eq_event(long nativeHandle);
-  public native int add_eq_event(long eq, long nativeHandle);
-  public native int delete_eq_event(long eq, long nativeHandle);
-  public native void set_recv_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
-  public native void set_send_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
-  private native long reg_rma_buffer(ByteBuffer buffer, long size, int rdmaBufferId, long nativeHandle);
-  private native long reg_rma_buffer_by_address(long address, long size, int rdmaBufferId, long nativeHandle);
-  private native void unreg_rma_buffer(int rdmaBufferId, long nativeHandle);
-  private native long get_buffer_address(ByteBuffer buffer, long nativeHandle);
-  private native int init(int worker_num_, int buffer_num_, boolean is_server_, String prov_name);
-  private native void free(long nativeHandle);
+  public native void shutdown(long var1, long var3);
+
+  private native long internal_connect(String var1, String var2, int var3, long var4, long var6);
+
+  public native int wait_eq_event(long var1);
+
+  public native int add_eq_event(long var1, long var3);
+
+  public native int delete_eq_event(long var1, long var3);
+
+  protected native void set_recv_buffer(ByteBuffer var1, long var2, int var4, long var5);
+
+  protected native void set_send_buffer(ByteBuffer var1, long var2, int var4, long var5);
+
+  private native long reg_rma_buffer(ByteBuffer var1, long var2, int var4, long var5);
+
+  private native long reg_rma_buffer_by_address(long var1, long var3, int var5, long var6);
+
+  private native void unreg_rma_buffer(int var1, long var2);
+
+  private native long get_buffer_address(ByteBuffer var1, long var2);
+
+  private native int init(int var1, int var2, boolean var3, String var4);
+
+  private native void free(long var1);
+
   public native void finalize();
 
-  /**
-   * stop EQ service by,
-   * - stop EQ task and wait its completion
-   * - delete EQ event
-   * - free JNI resources
-   */
   public void stop() {
-    eqTask.stop();
-    waitToComplete();
-    delete_eq_event(localEq, nativeHandle);
-    free(nativeHandle);
+    this.eqTask.stop();
+    this.waitToComplete();
+    this.delete_eq_event(this.localEq, this.nativeHandle);
+    this.free(this.nativeHandle);
   }
 
   private void waitToComplete() {
     try {
-      eqTask.waitToComplete();
-    } catch (InterruptedException e) {
-      log.error("EQ task interrupted when wait its completion", e);
+      this.eqTask.waitToComplete();
+    } catch (InterruptedException var5) {
+      log.error("EQ task interrupted when wait its completion", var5);
     } finally {
-      log.info("EQ task stopped? {}", eqTask.isStopped());
+      log.info("EQ task stopped? {}", this.eqTask.isStopped());
     }
+
+  }
+
+  public void removeConnection(long connEq, boolean proactive) {
+    this.shutdown(connEq, this.getNativeHandle());
+    if (proactive) {
+      this.delete_eq_event(connEq, this.getNativeHandle());
+    }
+
+    this.unregCon(connEq);
   }
 
   public long getNewConnectionId() {
-    return nextConnectId.incrementAndGet();
+    return this.nextConnectId.incrementAndGet();
   }
 
   protected class EqTask extends EventTask {
+    protected EqTask() {
+    }
 
-    @Override
     public void waitEvent() {
-      if (wait_eq_event(nativeHandle) == -1) {
-        log.warn("wait or process EQ event error, ignoring");
+      if (EqService.this.wait_eq_event(EqService.this.nativeHandle) == -1) {
+        EqService.log.warn("wait or process EQ event error, ignoring");
       }
+
     }
 
-    @Override
-    protected Logger getLogger(){
-      return log;
+    protected Logger getLogger() {
+      return EqService.log;
     }
 
-    @Override
-    protected void cleanUp(){
-      log.info("close and remove all connections");
-      conMap.clear();
+    protected void cleanUp() {
+      EqService.log.info("close and remove all connections");
+      EqService.this.conMap.clear();
     }
   }
 }

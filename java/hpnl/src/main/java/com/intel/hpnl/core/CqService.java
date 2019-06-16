@@ -1,90 +1,77 @@
 package com.intel.hpnl.core;
 
+import com.intel.hpnl.api.EventTask;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.ArrayList;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
-/**
- * A service for completion queue
- */
 public class CqService {
   private long nativeHandle;
   private EqService eqService;
   private long serviceNativeHandle;
   private List<EventTask> cqTasks;
-
   private static final Logger log = LoggerFactory.getLogger(CqService.class);
 
-  /**
-   * construct CQ service with EqService.
-   * One {@link CqTask} per completion queue
-   * Number of completion queue is determined by number of worker
-   * @param service
-   * @param serviceNativeHandle
-   */
   public CqService(EqService service, long serviceNativeHandle) {
     this.eqService = service;
     this.serviceNativeHandle = serviceNativeHandle;
-
     this.cqTasks = new ArrayList();
     int workerNum = this.eqService.getWorkerNum();
-    for (int i = 0; i < workerNum; i++) {
-      EventTask task = new CqTask(i);
-      cqTasks.add(task);
+
+    for(int i = 0; i < workerNum; ++i) {
+      EventTask task = new CqService.CqTask(i);
+      this.cqTasks.add(task);
     }
+
     this.eqService.setCqService(this);
   }
 
-  /**
-   * initialize native resources
-   * @return
-   */
   public CqService init() {
-    if (init(serviceNativeHandle) == -1)
-      return null;
-    return this;
+    return this.init(this.serviceNativeHandle) == -1 ? null : this;
   }
 
   public List<EventTask> getEventTasks() {
-    return cqTasks;
+    return this.cqTasks;
   }
 
   public void addExternalEvent(int cqIndex, Runnable task) {
-    cqTasks.get(cqIndex).addPendingTask(task);
+    ((EventTask)this.cqTasks.get(cqIndex)).addPendingTask(task);
   }
 
-  //native methods
-  public native int wait_cq_event(int index, long nativeHandle);
-  private native int init(long Service);
-  public native void finalize();
-  private native void free(long nativeHandle);
+  public native int wait_cq_event(int var1, long var2);
 
-  /**
-   * stop CQ service by,
-   * - stop all CQ tasks and wait their completion
-   * - free native resources
-   */
+  private native int init(long var1);
+
+  public native void finalize();
+
+  private native void free(long var1);
+
   public void stop() {
-    for (EventTask task : cqTasks) {
+    Iterator var1 = this.cqTasks.iterator();
+
+    while(var1.hasNext()) {
+      EventTask task = (EventTask)var1.next();
       task.stop();
     }
-    waitToComplete();
-    //delete service after all tasks completed
-    free(nativeHandle);
+
+    this.waitToComplete();
+    this.free(this.nativeHandle);
   }
 
   private void waitToComplete() {
     try {
-      for (EventTask task : cqTasks) {
+      Iterator var1 = this.cqTasks.iterator();
+
+      while(var1.hasNext()) {
+        EventTask task = (EventTask)var1.next();
         task.waitToComplete();
       }
-    } catch (InterruptedException e) {
-      log.error("CQ task is interrupted when wait its completion", e);
+    } catch (InterruptedException var3) {
+      log.error("CQ task is interrupted when wait its completion", var3);
     }
+
   }
 
   public class CqTask extends EventTask {
@@ -93,27 +80,25 @@ public class CqService {
 
     public CqTask(int index) {
       this.index = index;
-      this.name = "CqTask "+index;
+      this.name = "CqTask " + index;
     }
 
-    @Override
-    public String toString(){
-      return name;
+    public String toString() {
+      return this.name;
     }
 
-    @Override
     public void waitEvent() {
-      if (wait_cq_event(index, nativeHandle) < 0) {
-        log.warn("wait or process CQ event error in CQ task {}. ignoring", index);
+      if (CqService.this.wait_cq_event(this.index, CqService.this.nativeHandle) < 0) {
+        CqService.log.warn("wait or process CQ event error in CQ task {}. ignoring", this.index);
       }
+
     }
 
-    @Override
-    protected void cleanUp(){}
+    protected void cleanUp() {
+    }
 
-    @Override
-    protected Logger getLogger(){
-      return log;
+    protected Logger getLogger() {
+      return CqService.log;
     }
   }
 }

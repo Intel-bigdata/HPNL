@@ -20,8 +20,8 @@ ExternalRdmService::~ExternalRdmService() {
   delete this->sendBufMgr;
 }
 
-int ExternalRdmService::init() {
-  this->stack = new RdmStack(this->buffer_num, this->is_server);
+int ExternalRdmService::init(const char* prov_name) {
+  this->stack = new RdmStack(this->buffer_num, this->is_server, prov_name);
   this->stack->init();
   this->demulti_plexer = new ExternalRdmCqDemultiplexer(stack);
   this->demulti_plexer->init();

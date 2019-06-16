@@ -1,9 +1,10 @@
-#include "HPNL/MsgConnection.h"
-#include "HPNL/FIStack.h"
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-MsgConnection::MsgConnection(FIStack *stack_, fid_fabric *fabric_, 
+#include "core/MsgStack.h"
+#include "core/MsgConnection.h"
+
+MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_,
     fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
     fid_wait *waitset_, BufMgr *recv_buf_mgr_, 
     BufMgr *send_buf_mgr_, bool is_server_, int buffer_num_, int cq_index_, long connect_id_) :
@@ -16,13 +17,13 @@ MsgConnection::~MsgConnection() {
   for (auto buffer: send_buffers_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
-    send_buf_mgr->add(ck->rdma_buffer_id, ck);
+    send_buf_mgr->put(ck->buffer_id, ck);
   }
   while (recv_buffers.size() > 0) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
-    recv_buf_mgr->add(ck->rdma_buffer_id, ck);
+    recv_buf_mgr->put(ck->buffer_id, ck);
   }
   if (ep) {
     shutdown();
@@ -54,7 +55,7 @@ int MsgConnection::init() {
     goto free_ep;
   }
 
-  if (fi_eq_open(fabric, &eq_attr, &conEq, &eqHandle)) {
+  if (fi_eq_open(fabric, &eq_attr, &conEq, NULL)) {
     perror("fi_eq_open");
     goto free_eq;
   }
@@ -98,25 +99,24 @@ int MsgConnection::init() {
     ck->mr = mr;
     mr = NULL;
     send_buffers.push_back(ck);
-    send_buffers_map.insert(std::pair<int, Chunk*>(ck->rdma_buffer_id, ck));
+    send_buffers_map.insert(std::pair<int, Chunk*>(ck->buffer_id, ck));
     size++;
   }
 
-  eqHandle.reset(new Handle(&conEq->fid, EQ_EVENT, conEq));
   return 0;
 
 free_send_buf:
   for (auto buffer: send_buffers_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
-    send_buf_mgr->add(ck->rdma_buffer_id, ck);
+    send_buf_mgr->put(ck->buffer_id, ck);
   }
 free_recv_buf:
   while (recv_buffers.size() > 0) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
-    recv_buf_mgr->add(ck->rdma_buffer_id, ck);
+    recv_buf_mgr->put(ck->buffer_id, ck);
   }
 free_eq:
   if (conEq) {
@@ -143,8 +143,8 @@ int MsgConnection::sendBuf(const char *buffer, int block_buffer_size) {
   return 0;
 }
 
-int MsgConnection::send(int block_buffer_size, int rdma_buffer_id) {
-  Chunk *ck = send_buffers_map[rdma_buffer_id];
+int MsgConnection::send(int block_buffer_size, int buffer_id) {
+  Chunk *ck = send_buffers_map[buffer_id];
   if (fi_send(ep, ck->buffer, block_buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
     return -1;
@@ -152,12 +152,8 @@ int MsgConnection::send(int block_buffer_size, int rdma_buffer_id) {
   return 0;
 }
 
-void MsgConnection::recv(char *buffer, int buffer_size) {
-  // TODO: buffer filter
-}
-
-int MsgConnection::read(int rdma_buffer_id, int local_offset, uint64_t len, uint64_t remote_addr, uint64_t remote_key) {
-  Chunk *ck = stack->get_rma_chunk(rdma_buffer_id);
+int MsgConnection::read(int buffer_id, int local_offset, uint64_t len, uint64_t remote_addr, uint64_t remote_key) {
+  Chunk *ck = stack->get_rma_chunk(buffer_id);
   ck->con = this;
   return fi_read(ep, (char*)ck->buffer+local_offset, len, fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
 }
@@ -211,12 +207,16 @@ void MsgConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_a
   *src_port_ = src_port;
 }
 
-void MsgConnection::take_back_chunk(Chunk *ck) {
+void MsgConnection::reclaim_chunk(Chunk *ck) {
   send_buffers.push_back(ck);
 }
 
 std::vector<Chunk*> MsgConnection::get_send_buffer() {
   return send_buffers;
+}
+
+std::vector<Chunk*> MsgConnection::get_recv_buffer(){
+  return recv_buffers;
 }
 
 void MsgConnection::set_recv_callback(Callback *callback) {
@@ -268,11 +268,11 @@ int MsgConnection::activate_chunk(Chunk *ck) {
   return 0;
 }
 
-int MsgConnection::activate_chunk(int rdmaBufferId) {
-  Chunk *ck = recv_buf_mgr->index(rdmaBufferId);
+int MsgConnection::activate_chunk(int bufferId) {
+  Chunk *ck = recv_buf_mgr->get(bufferId);
   return activate_chunk(ck);
 }
 
-HandlePtr MsgConnection::get_eqhandle() {
-  return eqHandle;
+fid_eq* MsgConnection::get_eq() {
+  return conEq;
 }

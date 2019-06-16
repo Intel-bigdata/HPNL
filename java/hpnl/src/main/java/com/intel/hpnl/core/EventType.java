@@ -1,19 +1,18 @@
 package com.intel.hpnl.core;
 
-/**
- * event type with same values as libfabric's event
- */
 public class EventType {
-  public final static int ACCEPT_EVENT = 1;
-  public final static int CONNECTED_EVENT = 2;
-  public final static int READ_EVENT = 4;
-  public final static int WRITE_EVENT = 8;
-  public final static int RECV_EVENT = 16;
-  public final static int SEND_EVENT = 32;
-  public final static int CLOSE_EVENT = 64;
-  public final static int ERROR_EVENT = 128;
-  public final static int CONNECT = 256;
-  public final static int ACCEPT = 512;
-  public final static int SHUTDOWN = 1024;
+  public static final int ACCEPT_EVENT = 1;
+  public static final int CONNECTED_EVENT = 2;
+  public static final int READ_EVENT = 4;
+  public static final int WRITE_EVENT = 8;
+  public static final int RECV_EVENT = 16;
+  public static final int SEND_EVENT = 32;
+  public static final int CLOSE_EVENT = 64;
+  public static final int ERROR_EVENT = 128;
+  public static final int CONNECT = 256;
+  public static final int ACCEPT = 512;
+  public static final int SHUTDOWN = 1024;
 
+  public EventType() {
+  }
 }

@@ -1,30 +1,39 @@
 package com.intel.hpnl.core;
 
-import java.net.ServerSocket;
 import java.io.IOException;
+import java.net.ServerSocket;
 
 public class Utils {
+  public Utils() {
+  }
+
   public static int getPort() {
     ServerSocket socket = null;
-    int port = 0;
+    boolean var1 = false;
+
     try {
       socket = new ServerSocket(0);
       socket.setReuseAddress(true);
-      port = socket.getLocalPort();
+      int port = socket.getLocalPort();
+
       try {
         socket.close();
-      } catch (IOException e) {
+      } catch (IOException var13) {
       }
-      return port;
-    } catch (IOException e) {
+
+      int var2 = port;
+      return var2;
+    } catch (IOException var14) {
     } finally {
       if (socket != null) {
         try {
           socket.close();
-        } catch (IOException e) {
+        } catch (IOException var12) {
         }
       }
+
     }
+
     throw new IllegalStateException("Could not find a free TCP/IP port.");
   }
 }

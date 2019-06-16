@@ -1,5 +1,6 @@
-#include "HPNL/ExternalCqService.h"
-#include "HPNL/ExternalEqService.h"
+#include "demultiplexer/EventType.h"
+#include "external_service/ExternalCqService.h"
+#include "external_service/ExternalEqService.h"
 
 #include "com_intel_hpnl_core_CqService.h"
 
@@ -43,14 +44,14 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
   if (ret <= 0) {
     return ret; 
   }
-  FIConnection* conn = (FIConnection*)chunk->con;
+  MsgConnection* conn = (MsgConnection*)chunk->con;
   if (!conn)
     return -1;
   jobject javaConn = conn->get_java_conn();
   if(!javaConn){
 	return -1;
   }
-  jmethodID handleCallback = conn->get_callback_methodID();
+  jmethodID handleCallback = conn->get_java_callback_methodID();
   jint rst = (*env).CallIntMethod(javaConn, handleCallback, ret, rdma_buffer_id, block_buffer_size);
   if (ret == RECV_EVENT && rst) {
 	if (conn->activate_chunk(chunk)) {

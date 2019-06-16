@@ -3,7 +3,7 @@
 #include <assert.h>
 #include <algorithm>
 
-RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_, fid_domain* domain_, fid_cq* cq_, BufMgr* rbuf_mgr_, BufMgr* sbuf_mgr_, int buffer_num_, bool is_server_) : ip(ip_), port(port_), info(info_), domain(domain_), conCq(cq_), rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), buffer_num(buffer_num_), is_server(is_server_) {}
+RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_, fid_domain* domain_, fid_cq* cq_, BufMgr* rbuf_mgr_, BufMgr* sbuf_mgr_, int buffer_num_, bool is_server_, const char* prov_name_) : ip(ip_), port(port_), info(info_), domain(domain_), conCq(cq_), rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), buffer_num(buffer_num_), is_server(is_server_), prov_name(prov_name_) {}
 RdmConnection::~RdmConnection() {
   for (auto ck: send_buffers) {
     sbuf_mgr->put(ck->buffer_id, ck);
@@ -76,6 +76,41 @@ int RdmConnection::init() {
   }
   return 0;
 }
+
+void RdmConnection::init_addr() {
+  char tmp[32];
+  size_t tmp_len = 64;
+  fi_av_straddr(av, local_name, tmp, &tmp_len);
+
+  int index = 0;
+  for(int i=0; i<tmp_len; i++){
+	  if(tmp[i] == ':'){
+		  index = i;
+		  break;
+	  }
+  }
+  strncpy(src_addr, tmp, index);
+  src_addr[index] = '\0';
+  std::string tmpPort = &tmp[index+1];
+  src_port = std::stoi(tmpPort);
+
+  if (!is_server) {
+	  strcpy(dest_addr, ip);
+	  dest_port = std::stoi(port);
+  }else{
+	  dest_addr[0] = '\n';
+	  dest_port = 0;
+  }
+}
+
+void RdmConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_addr_, size_t* src_port_) {
+  *dest_addr_ = dest_addr;
+  *dest_port_ = dest_port;
+
+  *src_addr_ = src_addr;
+  *src_port_ = src_port;
+}
+
 int RdmConnection::send(Chunk *ck) {
   if (fi_send(ep, ck->buffer, ck->size, NULL, ck->peer_addr, &ck->ctx) < 0) {
     perror("fi_send");
@@ -222,6 +257,10 @@ void RdmConnection::reclaim_chunk(Chunk *ck) {
 
 std::vector<Chunk*> RdmConnection::get_send_buffer() {
   return send_buffers;
+}
+
+std::vector<Chunk*> RdmConnection::get_recv_buffer(){
+  return recv_buffers;
 }
 
 void RdmConnection::set_recv_callback(Callback *callback) {
