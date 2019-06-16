@@ -15,7 +15,7 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
 
-    parentClass = env->FindClass("com/intel/hpnl/core/AbstractConnection");
+    parentClass = env->FindClass("com/intel/hpnl/api/AbstractConnection");
     handleCallback = (*env).GetMethodID(parentClass, "handleCallback", "(III)I");
     init = 1;
   }

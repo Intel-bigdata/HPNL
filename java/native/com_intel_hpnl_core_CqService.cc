@@ -4,6 +4,8 @@
 
 #include "com_intel_hpnl_core_CqService.h"
 
+static jclass parentConnClass;
+
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 {
   static int init = 0;
@@ -12,6 +14,8 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   {
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
+
+    parentConnClass = env->FindClass("com/intel/hpnl/api/AbstractConnection");
     init = 1;
   }
   return fidSelfPtr;
@@ -52,7 +56,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
 	return -1;
   }
   jmethodID handleCallback = conn->get_java_callback_methodID();
-  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentClass, handleCallback, ret, chunk->buffer_id, block_buffer_size);
+  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, ret, chunk->buffer_id, block_buffer_size);
   if (ret == RECV_EVENT && rst) {
 	if (conn->activate_chunk(chunk)) {
 		perror("failed to return receive chunk/buffer");

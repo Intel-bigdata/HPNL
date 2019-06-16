@@ -13,7 +13,7 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
     jclass thisClass = env->GetObjectClass(thisObj);
     fidSelfPtr = env->GetFieldID(thisClass, "nativeHandle", "J");
 
-    parentClass = env->FindClass("com/intel/hpnl/core/AbstractConnection");
+    parentClass = env->FindClass("com/intel/hpnl/api/AbstractConnection");
     handleCallback = (*env).GetMethodID(parentClass, "handleCallback", "(III)I");
     init = 1;
   }
@@ -86,4 +86,16 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBufTo(JNIEnv *
   jbyte* name = (jbyte*)(*env).GetDirectBufferAddress(peerName);
   int res = con->sendBufTo((char*)bytes, bufferSize, (char*)name);
   return res;
+}
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_releaseRecvBuffer(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jlong conPtr){
+	Connection *con = *(Connection**)&conPtr;
+	con->activate_chunk(rdmaBufferId);
+}
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_deleteGlobalRef
+  (JNIEnv *env, jobject thisObj, jlong conPtr){
+	RdmConnection *con = *(RdmConnection**)&conPtr;
+	env->DeleteGlobalRef(con->get_java_conn());
+	con->set_java_conn(NULL);
 }

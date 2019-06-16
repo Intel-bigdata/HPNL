@@ -13,7 +13,7 @@
 #include "HPNL/Connection.h"
 #include "HPNL/BufMgr.h"
 
-#include <jni.sh>
+#include <jni.h>
 
 class RdmConnection : public Connection {
   public:

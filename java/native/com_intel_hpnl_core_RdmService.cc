@@ -4,7 +4,6 @@
 
 #include <iostream>
 static jlong selfPtr;
-static jmethodID handleCallback;
 static jmethodID reallocBufferPool;
 static jmethodID regCon;
 static jmethodID pushSendBuffer;
@@ -21,8 +20,6 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
     jclass serviceClassTmp;
     serviceClassTmp = env->FindClass("com/intel/hpnl/core/RdmService");
 
-    handleCallback = (*env).GetMethodID(serviceClassTmp, "handleCallback", "(JIII)V");
-
     regCon = (*env).GetMethodID(serviceClassTmp, "regCon", "(JJLjava/lang/String;ILjava/lang/String;IJ)V");
 
     parentClass = env->FindClass("com/intel/hpnl/core/AbstractService");
@@ -30,9 +27,9 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
     pushRecvBuffer = (*env).GetMethodID(parentClass, "pushRecvBuffer", "(JI)V");
     reallocBufferPool = (*env).GetMethodID(parentClass, "reallocBufferPool", "()V");
 
-    fidSelfPtr = env->GetFieldID(serviceClassTmp, "nativeHandle", "J");
+    parentConnClass = env->FindClass("com/intel/hpnl/api/AbstractConnection");
 
-    parentConnClass = env->FindClass("com/intel/hpnl/core/AbstractConnection");
+    fidSelfPtr = env->GetFieldID(serviceClassTmp, "nativeHandle", "J");
     init = 1;
   }
   return fidSelfPtr;
@@ -172,7 +169,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *e
 	 return -1;
   }
   jmethodID handleCallback = con->get_java_callback_methodID();
-  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentClass, handleCallback, ret, ck->buffer_id, block_buffer_size);
+  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, ret, ck->buffer_id, block_buffer_size);
   if (ret == RECV_EVENT && rst) {
 	if (con->activate_chunk(ck)) {
 	  perror("failed to return receive chunk/buffer");

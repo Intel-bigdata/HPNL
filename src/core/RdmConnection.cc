@@ -74,6 +74,7 @@ int RdmConnection::init() {
     }
     size++;
   }
+  init_addr();
   return 0;
 }
 

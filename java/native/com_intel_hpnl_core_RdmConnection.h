@@ -63,6 +63,22 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBuf
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBufTo
   (JNIEnv *, jobject, jobject, jint, jobject, jlong);
 
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    deleteGlobalRef
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_deleteGlobalRef
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    releaseRecvBuffer
+ * Signature: (IJ)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_releaseRecvBuffer
+  (JNIEnv *, jobject, jint, jlong);
+
 #ifdef __cplusplus
 }
 #endif
