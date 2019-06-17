@@ -11,11 +11,21 @@ RdmConnection::~RdmConnection() {
   for (auto ck: recv_buffers) {
     rbuf_mgr->put(ck->buffer_id, ck);
   }
-  if (!is_server) {
-    fi_freeinfo(info);
+  if(av){
+  	  fi_close(&av->fid);
+  	  av = nullptr;
+    }
+  if(ep){
+	  fi_close(&ep->fid);
+	  ep = nullptr;
   }
-  fi_close(&av->fid);
-  fi_close(&ep->fid);
+  if (!is_server) {
+	if(info){
+		fi_freeinfo(info);
+    	info = nullptr;
+	}
+  }
+  prov_name = nullptr;
 }
 
 int RdmConnection::init() {

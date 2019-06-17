@@ -20,6 +20,7 @@ public abstract class AbstractService {
   protected boolean server;
   protected HpnlService hpnlService;
   protected Map<Long, Connection> conMap;
+  protected boolean stopped;
   private MemPool sendBufferPool;
   private MemPool recvBufferPool;
   private static final Logger log = LoggerFactory.getLogger(AbstractService.class);
@@ -78,7 +79,7 @@ public abstract class AbstractService {
 
   public abstract void unregCon(long var1);
 
-  public abstract void removeConnection(long var1, boolean var3);
+  public abstract void removeConnection(long connectionId, long connHandle, boolean proactive);
 
   public abstract EventTask getEventTask();
 

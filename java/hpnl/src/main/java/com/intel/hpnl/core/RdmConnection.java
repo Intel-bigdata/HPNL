@@ -12,34 +12,37 @@ public class RdmConnection extends AbstractConnection {
   private long nativeHandle;
 
   public RdmConnection(long nativeHandle, HpnlService service, boolean server) {
-    super(nativeHandle, service, 0L);
+    super(nativeHandle, service, -1L);
     this.localNameLength = this.get_local_name_length(this.nativeHandle);
     this.localName = ByteBuffer.allocateDirect(this.localNameLength);
     this.get_local_name(this.localName, this.nativeHandle);
     this.localName.limit(this.localNameLength);
     this.init(this.nativeHandle);
+    this.connectId = get_connection_id(this.nativeHandle);
     this.server = server;
   }
 
   private native void init(long var1);
 
-  private native void get_local_name(ByteBuffer var1, long var2);
+  private native void get_local_name(ByteBuffer var1, long nativeHandle);
 
-  private native int get_local_name_length(long var1);
+  private native int get_local_name_length(long nativeHandle);
 
-  public native int send(int var1, int var2, long var3);
+  private native long get_connection_id(long nativeHandle);
 
-  public native int sendTo(int var1, int var2, ByteBuffer var3, long var4);
+  public native int send(int var1, int var2, long nativeHandle);
 
-  public native int sendBuf(ByteBuffer var1, int var2, long var3);
+  public native int sendTo(int var1, int var2, ByteBuffer var3, long nativeHandle);
 
-  public native int sendBufTo(ByteBuffer var1, int var2, ByteBuffer var3, long var4);
+  public native int sendBuf(ByteBuffer var1, int var2, long nativeHandle);
 
-  private native void releaseRecvBuffer(int var1, long var2);
+  public native int sendBufTo(ByteBuffer var1, int var2, ByteBuffer var3, long nativeHandle);
 
-  private native void deleteGlobalRef(long var1);
+  private native void releaseRecvBuffer(int var1, long nativeHandle);
 
-  private native void free(long var1);
+  private native void deleteGlobalRef(long nativeHandle);
+
+  private native void free(long nativeHandle);
 
   protected void initialize(long nativeCon) {
     this.init(nativeCon);
@@ -54,7 +57,7 @@ public class RdmConnection extends AbstractConnection {
   }
 
   protected void doShutdown(boolean proactive) {
-    this.service.removeConnection(this.nativeHandle, proactive);
+    this.service.removeConnection(this.getConnectionId(), this.nativeHandle, proactive);
     this.deleteGlobalRef(this.nativeHandle);
     this.free(this.nativeHandle);
   }

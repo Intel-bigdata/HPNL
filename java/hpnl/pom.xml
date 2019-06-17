@@ -28,6 +28,12 @@
       <artifactId>netty-all</artifactId>
       <version>4.1.17.Final</version>
     </dependency>
+    <dependency>
+      <groupId>info.picocli</groupId>
+      <artifactId>picocli</artifactId>
+      <version>3.9.5</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
   <build>
     <plugins>

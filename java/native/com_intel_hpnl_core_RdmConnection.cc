@@ -50,6 +50,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_get_1local_1name_1
   return con->get_local_name_length();
 }
 
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmConnection_get_1connection_1id(JNIEnv *env, jobject obj, jlong nativeHandle){
+  RdmConnection *con = *(RdmConnection**)&nativeHandle;
+  return con->get_id();
+}
+
 /*
  * Class:     com_intel_hpnl_core_RdmConnection
  * Method:    send

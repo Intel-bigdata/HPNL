@@ -41,6 +41,14 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event
 
 /*
  * Class:     com_intel_hpnl_core_RdmService
+ * Method:    wait_event
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_remove_1connection
+  (JNIEnv *, jobject, jlong, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_RdmService
  * Method:    set_recv_buffer
  * Signature: (Ljava/nio/ByteBuffer;JIJ)V
  */

@@ -6,6 +6,8 @@
 #include "external_demultiplexer/ExternalRdmCqDemultiplexer.h"
 #include "core/RdmStack.h"
 
+#include <iostream>
+
 ExternalRdmService::ExternalRdmService(int buffer_num, bool is_server) {
   this->buffer_num = buffer_num;
   this->is_server = is_server;
@@ -39,6 +41,10 @@ RdmConnection* ExternalRdmService::get_con(const char* ip, const char* port) {
 
 int ExternalRdmService::wait_event(Chunk **ck, int *block_buffer_size) {
   return this->demulti_plexer->wait_event(ck, block_buffer_size);
+}
+
+void ExternalRdmService::reap(int64_t connection_id){
+  stack->reap(connection_id);
 }
 
 void ExternalRdmService::set_recv_buffer(char* buffer, uint64_t size, int buffer_id) {

@@ -33,6 +33,14 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_get_1local_1name_1
 
 /*
  * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    get_connection_id
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmConnection_get_1connection_1id
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
  * Method:    send
  * Signature: (IIJ)I
  */

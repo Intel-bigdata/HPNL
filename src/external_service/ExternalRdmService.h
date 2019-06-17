@@ -17,6 +17,7 @@ class ExternalRdmService {
     RdmConnection* listen(const char*, const char*);
     RdmConnection* get_con(const char*, const char*);
     int wait_event(Chunk**, int*);
+    void reap(int64_t);
 
     void set_recv_buffer(char*, uint64_t, int);
     void set_send_buffer(char*, uint64_t, int);

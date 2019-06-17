@@ -7,16 +7,44 @@
 RdmStack::RdmStack(int buffer_num_, bool is_server_, const char* prov_name_) : buffer_num(buffer_num_), is_server(is_server_), prov_name(prov_name_) {}
 
 RdmStack::~RdmStack() {
-  for (auto con : cons) {
-    delete con;
-    con = NULL;
+	std::cout<<"30"<<std::endl;
+  for (auto item : conMap) {
+	  std::cout<<"300"<<std::endl;
+    delete item.second;
+    std::cout<<"301"<<std::endl;
+    std::cout<<"302"<<std::endl;
   }
-  fi_close(&cq->fid);
-  fi_close(&domain->fid);
-  fi_close(&fabric->fid);
-  fi_freeinfo(info);
-  if (is_server)
-    fi_freeinfo(server_info);
+  conMap.erase(conMap.begin(), conMap.end());
+
+  std::cout<<"31"<<std::endl;
+  if(cq){
+	  fi_close(&cq->fid);
+	  cq = nullptr;
+  }
+  std::cout<<"32"<<std::endl;
+  if(domain){
+	  fi_close(&domain->fid);
+	  std::cout<<"33"<<std::endl;
+	  domain = nullptr;
+  }
+  if(fabric){
+	  fi_close(&fabric->fid);
+	  std::cout<<"34"<<std::endl;
+	  fabric = nullptr;
+  }
+  if(info){
+	  fi_freeinfo(info);
+	  info = nullptr;
+  }
+  std::cout<<"35"<<std::endl;
+  if (is_server){
+	  std::cout<<"36"<<std::endl;
+	  if(server_info){
+		  fi_freeinfo(server_info);
+		  std::cout<<"37"<<std::endl;
+		  server_info = nullptr;
+	  }
+  }
 }
 
 int RdmStack::init() {
@@ -65,9 +93,11 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
     perror("fi_getinfo");
   fi_freeinfo(hints);
 
+  long id = id_generator.fetch_add(1);
   server_con = new RdmConnection(ip, port, server_info, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, true, prov_name);
+  server_con->set_id(id);
   server_con->init();
-  cons.push_back(server_con);
+  conMap.insert(std::pair<long, RdmConnection*>(id, server_con));
   return server_con;
 }
 
@@ -76,10 +106,27 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, BufMgr* rbuf_
   if (rbuf_mgr->free_size() < buffer_num) {
     return NULL; 
   }
+  long id = id_generator.fetch_add(1);
   RdmConnection *con = new RdmConnection(ip, port, NULL, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, false, prov_name);
+  con->set_id(id);
   con->init();
-  cons.push_back(con);
+  conMap.insert(std::pair<long, RdmConnection*>(id, con));
   return con;
+}
+
+RdmConnection* RdmStack::get_connection(long id){
+  if (conMap.find(id) != conMap.end()) {
+	return conMap[id];
+  }
+  return NULL;
+}
+
+void RdmStack::reap(long id) {
+  std::lock_guard<std::mutex> lk(conMtx);
+  RdmConnection *con = get_connection(id);
+  if(con){
+	  conMap.erase(id);
+  }
 }
 
 fid_fabric* RdmStack::get_fabric() {

@@ -178,6 +178,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *e
   return ret;
 }
 
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_remove_1connection(JNIEnv *env, jobject obj, jlong connection_id, jlong nativeHandle){
+  ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
+  service->reap(connection_id);
+}
+
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1recv_1buffer(JNIEnv *env, jobject obj, jobject recv_buffer, jlong size, jint bufferId, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(recv_buffer);

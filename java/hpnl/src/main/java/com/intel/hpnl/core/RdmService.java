@@ -29,7 +29,7 @@ public class RdmService extends AbstractService {
   }
 
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    Connection conn = (Connection)this.conMap.get(this.get_con(ip, port, this.nativeHandle));
+    Connection conn = this.conMap.get(this.get_con(ip, port, this.nativeHandle));
     connectedCallback.handle(conn, -1, -1);
     return 1;
   }
@@ -44,7 +44,8 @@ public class RdmService extends AbstractService {
     this.conMap.remove(connHandle);
   }
 
-  public void removeConnection(long connHandle, boolean proactive) {
+  public void removeConnection(long connectionId, long connHandle, boolean proactive) {
+    remove_connection(connectionId, nativeHandle);
     this.conMap.remove(connHandle);
   }
 
@@ -53,9 +54,16 @@ public class RdmService extends AbstractService {
   }
 
   public void stop() {
-    this.task.stop();
-    this.waitToComplete();
-    this.free(this.nativeHandle);
+    if(!stopped) {
+      synchronized (this) {
+        if (!stopped) {
+          this.task.stop();
+          this.waitToComplete();
+          this.free(this.nativeHandle);
+          stopped = true;
+        }
+      }
+    }
   }
 
   private void waitToComplete() {
@@ -81,19 +89,21 @@ public class RdmService extends AbstractService {
     this.set_recv_buffer(buffer, size, bufferId, this.nativeHandle);
   }
 
-  private native int init(int var1, boolean var2, String var3);
+  private native int init(int var1, boolean var2, String nativeHandle);
 
-  protected native long listen(String var1, String var2, long var3);
+  protected native long listen(String var1, String var2, long nativeHandle);
 
-  private native long get_con(String var1, String var2, long var3);
+  private native long get_con(String var1, String var2, long nativeHandle);
 
-  private native int wait_event(long var1);
+  private native int wait_event(long nativeHandle);
 
-  public native void set_recv_buffer(ByteBuffer var1, long var2, int var4, long var5);
+  public native void set_recv_buffer(ByteBuffer var1, long var2, int var4, long nativeHandle);
 
-  public native void set_send_buffer(ByteBuffer var1, long var2, int var4, long var5);
+  public native void set_send_buffer(ByteBuffer var1, long var2, int var4, long nativeHandle);
 
-  private native void free(long var1);
+  public native void remove_connection(long id, long nativeHandle);
+
+  private native void free(long nativeHandle);
 
   protected class RdmTask extends EventTask {
     protected RdmTask() {

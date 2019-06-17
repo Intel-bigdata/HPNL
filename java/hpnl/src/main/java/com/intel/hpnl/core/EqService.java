@@ -146,10 +146,17 @@ public class EqService extends AbstractService {
   public native void finalize();
 
   public void stop() {
-    this.eqTask.stop();
-    this.waitToComplete();
-    this.delete_eq_event(this.localEq, this.nativeHandle);
-    this.free(this.nativeHandle);
+    if(!stopped) {
+      synchronized (this) {
+        if(!stopped) {
+          this.eqTask.stop();
+          this.waitToComplete();
+          this.delete_eq_event(this.localEq, this.nativeHandle);
+          this.free(this.nativeHandle);
+          stopped = true;
+        }
+      }
+    }
   }
 
   private void waitToComplete() {
@@ -163,7 +170,7 @@ public class EqService extends AbstractService {
 
   }
 
-  public void removeConnection(long connEq, boolean proactive) {
+  public void removeConnection(long connectionId, long connEq, boolean proactive) {
     this.shutdown(connEq, this.getNativeHandle());
     if (proactive) {
       this.delete_eq_event(connEq, this.getNativeHandle());

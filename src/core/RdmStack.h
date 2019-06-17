@@ -5,7 +5,9 @@
 #include <assert.h>
 
 #include <thread>
+#include <atomic>
 #include <mutex>
+#include <map>
 #include <vector>
 
 #include "HPNL/BufMgr.h"
@@ -20,6 +22,10 @@ class RdmStack : public Stack {
     RdmConnection* get_con(const char*, const char*, BufMgr*, BufMgr*);
     fid_fabric* get_fabric();
     fid_cq* get_cq();
+
+    RdmConnection* get_connection(long id);
+    void reap(long id);
+
   private:
     fi_info *info;
     fi_info *server_info;
@@ -29,8 +35,11 @@ class RdmStack : public Stack {
     int buffer_num;
     bool is_server;
 
+    std::map<long, RdmConnection*> conMap;
+    std::mutex conMtx;
+    std::atomic_long id_generator;
+
     std::mutex mtx;
-    std::vector<RdmConnection*> cons;
 
     RdmConnection *server_con;
 

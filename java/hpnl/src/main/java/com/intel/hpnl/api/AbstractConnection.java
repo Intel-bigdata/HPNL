@@ -28,7 +28,7 @@ public abstract class AbstractConnection implements Connection {
   private int srcPort;
   private boolean connected;
   protected int cqIndex;
-  protected final long connectId;
+  protected long connectId;
   private static final Logger log = LoggerFactory.getLogger(AbstractConnection.class);
 
   protected AbstractConnection(long nativeCon, HpnlService service, long connectId) {

@@ -46,6 +46,11 @@ class RdmConnection : public Connection {
     virtual char* decode_buf(void *buf) override;
     virtual Chunk* encode(void *buf, int size, char*) override;
 
+    void set_id(long id_){
+    	connect_id = id_;
+    }
+    long get_id() { return connect_id; }
+
     jobject get_java_conn(){
        	return java_conn;
     }
@@ -94,6 +99,8 @@ class RdmConnection : public Connection {
     char src_addr[20];
 
     const char* prov_name;
+
+    long connect_id;
 
     jobject java_conn;
     jmethodID java_callback_methodID;

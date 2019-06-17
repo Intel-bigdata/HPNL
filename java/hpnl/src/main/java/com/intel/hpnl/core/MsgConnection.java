@@ -57,7 +57,7 @@ public class MsgConnection extends AbstractConnection {
   private native void free(long var1);
 
   protected void doShutdown(boolean proactive) {
-    this.service.removeConnection(this.nativeEq, proactive);
+    this.service.removeConnection(this.getConnectionId(), this.nativeEq, proactive);
     this.deleteGlobalRef(this.nativeHandle);
     this.free(this.nativeHandle);
   }
