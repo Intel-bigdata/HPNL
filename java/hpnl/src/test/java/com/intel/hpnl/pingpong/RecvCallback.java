@@ -15,13 +15,13 @@ public class RecvCallback implements Handler {
   public void handle(Connection con, int bufferId, int blockBufferSize) {
     if (!is_server) {
       count++;
-      if (count >= 1) {
+      if (count == 1) {
         startTime = System.currentTimeMillis();
         endTime = startTime;
       } else {
         endTime = System.currentTimeMillis();
         if ((total_time = endTime-startTime) >= interval*1000) {
-          latency = total_time*1000/count;
+          latency = total_time*1000/(float)count;
           throughput = count*msgSize/1024/1024/(total_time/1000);
           System.out.println(msgSize + " bytes message, latency " + latency + " us");
           System.out.println(msgSize + " bytes message, throughput " + throughput + " MB/s");
@@ -35,7 +35,7 @@ public class RecvCallback implements Handler {
 
     con.send(recvByteBuffer, (byte)0, 10);
   }
-  private float count = 0;
+  private long count = 0;
   private long startTime;
   private long endTime;
   private float total_time = 0;
