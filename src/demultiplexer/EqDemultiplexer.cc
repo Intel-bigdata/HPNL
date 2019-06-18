@@ -26,7 +26,7 @@ int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> ev
   for (auto iter: event_map) {
     fids[i++] = iter.first;
   }
-  fid_eq *eq;
+  fid_eq *eq = NULL;
   if (fi_trywait(fabric, fids, event_map.size()) == FI_SUCCESS) {
     int epoll_ret = epoll_wait(epfd, &event, 1, 200);
     if (epoll_ret > 0) {
@@ -41,7 +41,9 @@ int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> ev
       return 0; 
     }
   }
-
+  if (!eq) {
+    return 0; 
+  }
   uint32_t event;
   fi_eq_cm_entry entry;
   int ret = fi_eq_read(eq, &event, &entry, sizeof(entry), 0);

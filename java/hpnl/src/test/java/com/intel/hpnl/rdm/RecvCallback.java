@@ -15,7 +15,7 @@ public class RecvCallback implements RdmHandler {
   public void handle(RdmConnection con, int bufferId, int blockBufferSize) {
     if (!is_server) {
       count++;
-      if (count == 1) {
+      if (count >= 1) {
         startTime = System.currentTimeMillis();
         endTime = startTime;
       } else {
@@ -31,6 +31,7 @@ public class RecvCallback implements RdmHandler {
       }
     }
     HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
+    assert(recvBuffer != null);
     ByteBuffer recvByteBuffer = recvBuffer.get(blockBufferSize);
     con.sendTo(recvByteBuffer, (byte)0, 10, recvBuffer.getName());
   }

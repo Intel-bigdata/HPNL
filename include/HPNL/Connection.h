@@ -6,6 +6,7 @@
 
 class Connection {
   public:
+    virtual ~Connection() {}
     virtual int init() { return 0; }
     virtual fi_addr_t recv(const char*, int) { return 0; }
     virtual char* get_peer_name() { return 0; }

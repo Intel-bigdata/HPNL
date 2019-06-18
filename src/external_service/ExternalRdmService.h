@@ -22,6 +22,8 @@ class ExternalRdmService {
     void set_send_buffer(char*, uint64_t, int);
 
   private:
+    ExternalRdmService(ExternalRdmService& service) {}
+    ExternalRdmService& operator=(const ExternalRdmService& service) { return *this; }
     RdmStack *stack;
     ExternalRdmCqDemultiplexer *demulti_plexer;
     int buffer_num;

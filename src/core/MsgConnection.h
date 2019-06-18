@@ -33,7 +33,7 @@ class MsgStack;
 class MsgConnection : public Connection {
   public:
     MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int, int);
-    ~MsgConnection();
+    virtual ~MsgConnection();
 
     virtual int init() override;
     virtual int sendBuf(const char*, int) override;

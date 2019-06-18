@@ -7,6 +7,7 @@ class fid_eq;
 
 class Stack {
   public:
+    virtual ~Stack() {}
     virtual int init() { return 0; }
     virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) { return nullptr; }
     virtual int listen() { return 0; }

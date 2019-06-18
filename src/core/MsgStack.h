@@ -20,7 +20,7 @@ class MsgConnection;
 class MsgStack : public Stack {
   public:
     MsgStack(uint64_t, int, int, bool);
-    ~MsgStack();
+    virtual ~MsgStack();
     virtual int init() override;
     virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
     virtual int listen() override;
@@ -36,6 +36,8 @@ class MsgStack : public Stack {
     fid_cq** get_cqs();
 
   private:
+    MsgStack(const MsgStack& stack) {}
+    MsgStack& operator=(const MsgStack& stack) { return *this; }
     uint64_t flags;
     int worker_num;
     int buffer_num;

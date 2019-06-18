@@ -152,6 +152,7 @@ free_hints:
 void* MsgStack::bind(const char *ip_, const char *port_, BufMgr* rbuf, BufMgr* sbuf) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
+    return NULL;
   }
 
   hints_tmp->addr_format = FI_SOCKADDR_IN;
@@ -169,6 +170,7 @@ void* MsgStack::bind(const char *ip_, const char *port_, BufMgr* rbuf, BufMgr* s
 
   if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
     perror("fi_getinfo");
+    return NULL;
   }
 
   if (fi_passive_ep(fabric, info_tmp, &pep, NULL)) {
@@ -193,6 +195,7 @@ int MsgStack::listen() {
 fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
+    return NULL;
   }
 
   hints_tmp->addr_format = FI_SOCKADDR_IN;
@@ -213,12 +216,17 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* rbuf_mgr, 
   }
 
   MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], waitset, rbuf_mgr, sbuf_mgr, false, buffer_num, seq_num%worker_num);
-  if (con->init())
+  if (con->init()) {
+    delete con;
+    con = NULL;
     return NULL;
+  }
   if (int res = con->connect()) {
     if (res == EAGAIN) {
       // TODO: try again  
     } else {
+      delete con;
+      con = NULL;
       return NULL;  
     }
   }
@@ -230,8 +238,11 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* rbuf_mgr, 
 
 fid_eq* MsgStack::accept(void *info_, BufMgr* recv_buf_mgr, BufMgr* send_buf_mgr) {
   MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num, seq_num%worker_num);
-  if (con->init())
+  if (con->init()) {
+    delete con;
+    con = NULL;
     return NULL; 
+  }
   con->status = ACCEPT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, MsgConnection*>(con->get_fid(), con));
@@ -247,6 +258,8 @@ uint64_t MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer
   ck->buffer_id = buffer_id;
   fid_mr *mr;
   if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
+    delete ck;
+    ck = NULL;
     perror("fi_mr_reg");
     return -1;
   }

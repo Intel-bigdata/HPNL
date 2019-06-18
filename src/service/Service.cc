@@ -121,6 +121,9 @@ int Service::connect(const char* addr, const char* port) {
 
 Connection* Service::get_con(const char* addr, const char* port) {
   RdmConnection *con = ((RdmStack*)stack)->get_con(addr, port, recvBufMgr, sendBufMgr);
+  if (!con) {
+    return NULL; 
+  }
   con->set_recv_callback(recvCallback);
   con->set_send_callback(sendCallback);
   return (Connection*)con;

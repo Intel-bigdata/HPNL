@@ -15,7 +15,7 @@ public class RecvCallback implements Handler {
   public void handle(Connection con, int bufferId, int blockBufferSize) {
     if (!is_server) {
       count++;
-      if (count == 1) {
+      if (count >= 1) {
         startTime = System.currentTimeMillis();
         endTime = startTime;
       } else {

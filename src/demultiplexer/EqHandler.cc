@@ -13,6 +13,8 @@ int EqHandler::handle_event(EventType et, void *context) {
 
     fid_eq *eq = stack->accept(entry->info, recv_buf_mgr, send_buf_mgr);
     std::shared_ptr<EqHandler> eqHandler = std::make_shared<EqHandler>(stack, proactor, eq);
+    if (!eqHandler)
+      return -1;
     if (connectedCallback) {
       eqHandler->set_connected_callback(connectedCallback); 
     }
@@ -58,6 +60,7 @@ int EqHandler::handle_event(EventType et, void *context) {
     }
   } else if (et == CLOSE_EVENT) {
     auto con = stack->get_connection(entry->fid);
+    assert(con);
     con->status = SHUTDOWN_REQ;
     if (con->get_shutdown_callback()) {
       (*(con->get_shutdown_callback()))(NULL, NULL);

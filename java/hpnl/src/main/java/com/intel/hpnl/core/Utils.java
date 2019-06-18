@@ -6,7 +6,7 @@ import java.io.IOException;
 public class Utils {
   public static int getPort() {
     ServerSocket socket = null;
-    int port = 0;
+    int port;
     try {
       socket = new ServerSocket(0);
       socket.setReuseAddress(true);
@@ -14,14 +14,17 @@ public class Utils {
       try {
         socket.close();
       } catch (IOException e) {
+        e.printStackTrace();
       }
       return port;
     } catch (IOException e) {
+      e.printStackTrace();
     } finally {
       if (socket != null) {
         try {
           socket.close();
         } catch (IOException e) {
+          e.printStackTrace();
         }
       }
     }

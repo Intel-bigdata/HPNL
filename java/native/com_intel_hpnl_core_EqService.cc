@@ -127,6 +127,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     size_t dest_port;
     char **src_addr = (char**)malloc(sizeof(char*));
     size_t src_port;
+    assert(con);
     con->get_addr(dest_addr, &dest_port, src_addr, &src_port);
     jstring dest_addr_str = (*env).NewStringUTF(*dest_addr);
     jstring src_addr_str = (*env).NewStringUTF(*src_addr);
@@ -186,7 +187,9 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, 
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fid_eq *eq = *(fid_eq**)&eqPtr;
   MsgConnection *con = (MsgConnection*)service->get_connection(eq);
-
+  if (!con) {
+    return;
+  }
   if (con->status < DOWN) {
     con->shutdown();
     con->status = DOWN;

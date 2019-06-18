@@ -18,6 +18,8 @@ public class Client {
 
     EqService eqService = new EqService(1, BUFFER_NUM, false).init();
     CqService cqService = new CqService(eqService).init();
+    assert(eqService != null);
+    assert(cqService != null);
     HpnlBuffer buffer = eqService.getRmaBuffer(4096*1024);
 
     ClientRecvCallback recvCallback = new ClientRecvCallback(false, buffer);
@@ -32,7 +34,7 @@ public class Client {
 
     cqService.start();
     Connection con = eqService.connect("172.168.2.106", "123456", 0);
-
+    assert(con != null);
     System.out.println("connected, start to remote read.");
     
     con.send(byteBufferTmp, (byte)0, 10);
