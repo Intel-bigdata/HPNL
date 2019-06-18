@@ -60,7 +60,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, j
   if (!send_buffer.empty()) {
     int chunks_size = send_buffer.size();
     for (int i = 0; i < chunks_size; i++) {
-      (*env).CallVoidMethod(obj, pushSendBuffer, con, send_buffer[i]->buffer_id);
+      (*env).CallVoidMethod(obj, pushSendBuffer, *(jlong*)&con, send_buffer[i]->buffer_id);
     }
   }
 }
@@ -82,7 +82,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
   std::vector<Chunk*> send_buffer = con->get_send_buffer();
   int chunks_size = send_buffer.size();
   for (int i = 0; i < chunks_size; i++) {
-    (*env).CallVoidMethod(obj, pushSendBuffer, con, send_buffer[i]->buffer_id);
+    (*env).CallVoidMethod(obj, pushSendBuffer, *(jlong*)&con, send_buffer[i]->buffer_id);
   }
   return *(jlong*)&con;
 }
