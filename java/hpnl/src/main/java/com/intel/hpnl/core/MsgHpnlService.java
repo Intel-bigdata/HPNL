@@ -76,8 +76,9 @@ public class MsgHpnlService implements HpnlService {
     return this.eqService.getNewConnectionId();
   }
 
-  public void removeConnection(long connectionId, long connEq, boolean proactive) {
-    this.eqService.removeConnection(connectionId, connEq, proactive);
+  @Override
+  public void removeNativeConnection(long nativeConnectionId, long connEq, boolean proactive) {
+    this.eqService.removeConnection(nativeConnectionId, connEq, proactive);
   }
 
   public EndpointType getEndpointType() {

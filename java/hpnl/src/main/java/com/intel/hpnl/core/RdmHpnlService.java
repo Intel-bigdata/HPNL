@@ -50,8 +50,9 @@ public class RdmHpnlService implements HpnlService {
     return this.nextConnectionId.getAndIncrement();
   }
 
-  public void removeConnection(long connectionId, long connEq, boolean proactive) {
-    this.service.removeConnection(connectionId, connEq, proactive);
+  @Override
+  public void removeNativeConnection(long nativeConnectionId, long connEq, boolean proactive) {
+    this.service.removeConnection(nativeConnectionId, connEq, proactive);
   }
 
   public boolean isServer() {

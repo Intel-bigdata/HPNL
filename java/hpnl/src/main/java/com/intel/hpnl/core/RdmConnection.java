@@ -9,6 +9,7 @@ public class RdmConnection extends AbstractConnection {
   private ByteBuffer localName;
   private int localNameLength;
   private boolean server;
+  private long nativeConnId;
   private long nativeHandle;
 
   public RdmConnection(long nativeHandle, HpnlService service, boolean server) {
@@ -18,7 +19,7 @@ public class RdmConnection extends AbstractConnection {
     this.get_local_name(this.localName, this.nativeHandle);
     this.localName.limit(this.localNameLength);
     this.init(this.nativeHandle);
-    this.connectId = get_connection_id(this.nativeHandle);
+    this.nativeConnId = get_connection_id(this.nativeHandle);
     this.server = server;
   }
 
@@ -56,8 +57,9 @@ public class RdmConnection extends AbstractConnection {
     return this.nativeHandle;
   }
 
+  @Override
   protected void doShutdown(boolean proactive) {
-    this.service.removeConnection(this.getConnectionId(), this.nativeHandle, proactive);
+    this.service.removeNativeConnection(nativeConnId, this.nativeHandle, proactive);
     this.deleteGlobalRef(this.nativeHandle);
     if(!server) {
       RdmService.removePortFromRegister(getSrcPort());
@@ -93,5 +95,15 @@ public class RdmConnection extends AbstractConnection {
 
   public boolean isServer() {
     return server;
+  }
+
+  /**
+   * globally unique id based on IP and port
+   * @param localIp
+   * @param port
+   */
+  public void setConnectionId(String localIp, int port){
+    String tmp = localIp.replaceAll("\\.", "");
+    connectId = Long.valueOf(tmp) + port;
   }
 }

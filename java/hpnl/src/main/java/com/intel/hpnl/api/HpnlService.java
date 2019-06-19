@@ -16,7 +16,7 @@ public interface HpnlService {
 
   long getNewConnectionId();
 
-  void removeConnection(long connectionId, long connHandle, boolean proactive);
+  void removeNativeConnection(long nativeConnectionId, long connHandle, boolean proactive);
 
   boolean isServer();
 

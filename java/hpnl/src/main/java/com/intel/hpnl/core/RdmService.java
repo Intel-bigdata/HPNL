@@ -70,6 +70,7 @@ public class RdmService extends AbstractService {
       peerIp = "<unset>";
     }
     con.setAddrInfo(peerIp, peerPort, localIp, localPort);
+    con.setConnectionId(localIp, localPort);
     this.conMap.put(connHandle, con);
   }
 
@@ -80,8 +81,8 @@ public class RdmService extends AbstractService {
     }
   }
 
-  public void removeConnection(long connectionId, long connHandle, boolean proactive) {
-    remove_connection(connectionId, nativeHandle);
+  public void removeConnection(long nativeConnectionId, long connHandle, boolean proactive) {
+    remove_connection(nativeConnectionId, nativeHandle);
     this.conMap.remove(connHandle);
   }
 

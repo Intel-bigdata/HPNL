@@ -7,41 +7,30 @@
 RdmStack::RdmStack(int buffer_num_, bool is_server_, const char* prov_name_) : buffer_num(buffer_num_), is_server(is_server_), prov_name(prov_name_) {}
 
 RdmStack::~RdmStack() {
-	std::cout<<"30"<<std::endl;
   for (auto item : conMap) {
-	  std::cout<<"300"<<std::endl;
     delete item.second;
-    std::cout<<"301"<<std::endl;
-    std::cout<<"302"<<std::endl;
   }
   conMap.erase(conMap.begin(), conMap.end());
 
-  std::cout<<"31"<<std::endl;
   if(cq){
 	  fi_close(&cq->fid);
 	  cq = nullptr;
   }
-  std::cout<<"32"<<std::endl;
   if(domain){
 	  fi_close(&domain->fid);
-	  std::cout<<"33"<<std::endl;
 	  domain = nullptr;
   }
   if(fabric){
 	  fi_close(&fabric->fid);
-	  std::cout<<"34"<<std::endl;
 	  fabric = nullptr;
   }
   if(info){
 	  fi_freeinfo(info);
 	  info = nullptr;
   }
-  std::cout<<"35"<<std::endl;
   if (is_server){
-	  std::cout<<"36"<<std::endl;
 	  if(server_info){
 		  fi_freeinfo(server_info);
-		  std::cout<<"37"<<std::endl;
 		  server_info = nullptr;
 	  }
   }
