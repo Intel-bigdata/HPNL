@@ -59,6 +59,9 @@ public class RdmConnection extends AbstractConnection {
   protected void doShutdown(boolean proactive) {
     this.service.removeConnection(this.getConnectionId(), this.nativeHandle, proactive);
     this.deleteGlobalRef(this.nativeHandle);
+    if(!server) {
+      RdmService.removePortFromRegister(getSrcPort());
+    }
     this.free(this.nativeHandle);
   }
 
@@ -86,5 +89,9 @@ public class RdmConnection extends AbstractConnection {
 
   public ByteBuffer getLocalName() {
     return this.localName;
+  }
+
+  public boolean isServer() {
+    return server;
   }
 }

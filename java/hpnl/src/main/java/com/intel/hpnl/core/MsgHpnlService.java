@@ -48,6 +48,17 @@ public class MsgHpnlService implements HpnlService {
     return this.server;
   }
 
+  @Override
+  public int getFreePort() {
+    //TODO:
+    return 0;
+  }
+
+  @Override
+  public void reclaimPort(int port) {
+    //TODO:
+  }
+
   public void stop() {
     this.cqService.stop();
     this.eqService.stop();

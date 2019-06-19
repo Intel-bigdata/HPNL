@@ -58,6 +58,16 @@ public class RdmHpnlService implements HpnlService {
     return this.server;
   }
 
+  @Override
+  public int getFreePort() {
+    return RdmService.getFreePort();
+  }
+
+  @Override
+  public void reclaimPort(int port) {
+    RdmService.removePortFromRegister(port);
+  }
+
   public EndpointType getEndpointType() {
     return EndpointType.RDM;
   }

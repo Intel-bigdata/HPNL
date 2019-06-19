@@ -1,9 +1,7 @@
 package com.intel.hpnl.core;
 
-import com.intel.hpnl.api.Connection;
-import com.intel.hpnl.api.EventTask;
-import com.intel.hpnl.api.Handler;
-import com.intel.hpnl.api.HpnlFactory;
+import com.intel.hpnl.api.*;
+
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Random;
@@ -36,7 +34,7 @@ public class EqService extends AbstractService {
   }
 
   public EqService init() {
-    if (this.init(this.workerNum, this.bufferNum, this.server, HpnlFactory.getLibfabricProviderName()) == -1) {
+    if (this.init(this.workerNum, this.bufferNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName()) == -1) {
       return null;
     } else {
       this.initBufferPool(this.bufferNum, this.bufferSize, this.bufferNum);

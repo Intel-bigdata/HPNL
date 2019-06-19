@@ -3,9 +3,10 @@ package com.intel.hpnl.api;
 import java.util.List;
 
 public interface HpnlService {
-  int bind(String var1, int var2, int var3, Handler var4);
 
-  int connect(String var1, int var2, int var3, Handler var4);
+  int bind(String hostname, int port, int cqIndex, Handler connectedCallback);
+
+  int connect(String hostname, int port, int cqIndex, Handler connectedCallback);
 
   void stop();
 
@@ -18,6 +19,10 @@ public interface HpnlService {
   void removeConnection(long connectionId, long connHandle, boolean proactive);
 
   boolean isServer();
+
+  int getFreePort();
+
+  void reclaimPort(int port);
 
   HpnlService.EndpointType getEndpointType();
 
