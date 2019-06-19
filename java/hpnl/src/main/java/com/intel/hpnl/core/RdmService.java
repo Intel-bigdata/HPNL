@@ -135,9 +135,9 @@ public class RdmService extends AbstractService {
 
   private native int init(int var1, boolean var2, String nativeHandle);
 
-  protected native long listen(String var1, String var2, long nativeHandle);
+  protected native long listen(String host, String port, long nativeHandle);
 
-  private native long get_con(String var1, String var2, long nativeHandle);
+  private native long get_con(String host, String port, long nativeHandle);
 
   private native int wait_event(long nativeHandle);
 

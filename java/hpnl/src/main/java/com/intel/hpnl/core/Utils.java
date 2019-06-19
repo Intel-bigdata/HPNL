@@ -20,6 +20,10 @@ public class Utils {
     }
   }
 
+  public static boolean isIp(String host){
+    return IP_PTN.matcher(host).matches();
+  }
+
   public static String getLocalhost(String nic)throws SocketException, UnknownHostException {
     if(nic == null || nic.trim().length() == 0){
       return InetAddress.getLocalHost().getHostAddress();
@@ -44,6 +48,11 @@ public class Utils {
       }
     }
     return null;
+  }
+
+  public static String getIpFromHostname(String hostname) throws UnknownHostException {
+    InetAddress address = InetAddress.getByName(hostname);
+    return address.getHostAddress();
   }
 
 }

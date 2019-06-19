@@ -3,6 +3,10 @@ package com.intel.hpnl.core;
 import com.intel.hpnl.api.AbstractConnection;
 import com.intel.hpnl.api.HpnlBuffer;
 import com.intel.hpnl.api.HpnlService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
 public class RdmConnection extends AbstractConnection {
@@ -11,6 +15,8 @@ public class RdmConnection extends AbstractConnection {
   private boolean server;
   private long nativeConnId;
   private long nativeHandle;
+
+  private static final Logger log = LoggerFactory.getLogger(RdmConnection.class);
 
   public RdmConnection(long nativeHandle, HpnlService service, boolean server) {
     super(nativeHandle, service, -1L);
@@ -103,6 +109,14 @@ public class RdmConnection extends AbstractConnection {
    * @param port
    */
   public void setConnectionId(String localIp, int port){
+    if(!Utils.isIp(localIp)) {
+      try {
+        localIp = Utils.getIpFromHostname(localIp);
+      }catch(UnknownHostException e){
+        log.error("failed to resolve "+localIp, e);
+        throw new RuntimeException(e);
+      }
+    }
     String tmp = localIp.replaceAll("\\.", "");
     connectId = Long.valueOf(tmp) + port;
   }

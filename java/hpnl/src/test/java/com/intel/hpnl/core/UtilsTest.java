@@ -13,4 +13,14 @@ public class UtilsTest {
   public void testGetDefaultLocalhost()throws Exception{
     System.out.println(Utils.getLocalhost(null));
   }
+
+  @Test
+  public void testGetIpByHostname()throws Exception{
+    try {
+      System.out.println(Utils.getIpFromHostname("sr555"));
+    }catch (Exception e){
+
+    }
+  }
+
 }
