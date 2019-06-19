@@ -4,7 +4,7 @@ import com.intel.hpnl.api.AbstractHpnlBuffer;
 import java.nio.ByteBuffer;
 
 public class HpnlMsgBuffer extends AbstractHpnlBuffer {
-  public static final int METADATA_SIZE = 9;
+  public static final int METADATA_SIZE = BASE_METADATA_SIZE;
 
   public HpnlMsgBuffer(int bufferId, ByteBuffer byteBuffer) {
     super(bufferId, byteBuffer);
@@ -39,6 +39,6 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
   }
 
   public int getMetadataSize() {
-    return 9;
+    return METADATA_SIZE;
   }
 }

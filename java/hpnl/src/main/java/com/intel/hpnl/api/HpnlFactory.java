@@ -1,9 +1,8 @@
 package com.intel.hpnl.api;
 
 import com.intel.hpnl.api.HpnlService.EndpointType;
-import com.intel.hpnl.core.EqService;
-import com.intel.hpnl.core.MsgHpnlService;
-import com.intel.hpnl.core.RdmHpnlService;
+import com.intel.hpnl.core.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,8 +22,6 @@ public class HpnlFactory {
   private static String endpointType;
   private static final Logger log = LoggerFactory.getLogger(HpnlFactory.class);
 
-  public HpnlFactory() {
-  }
 
   private static void loadFromJar() {
     File tempDir = null;
@@ -86,7 +83,7 @@ public class HpnlFactory {
 
   public static EndpointType getEndpointType() {
     if (endpointType == null) {
-      endpointType = "RDM";
+      endpointType = DEFAULT_VALUE_ENDPOINT_TYPE;
     }
 
     return EndpointType.valueOf(endpointType);
@@ -94,7 +91,7 @@ public class HpnlFactory {
 
   public static String getLibfabricProviderName() {
     if (providerName == null) {
-      providerName = "sockets";
+      providerName = DEFAULT_PROVIDER_NAME;
     }
 
     return providerName;
@@ -102,7 +99,7 @@ public class HpnlFactory {
 
   public static String getLibfabricFileName() {
     if (fabricFilename == null) {
-      fabricFilename = "libfabric.so";
+      fabricFilename = DEFAULT_LIBFABRIC_FILE_NAME;
     }
 
     return fabricFilename;
@@ -112,9 +109,9 @@ public class HpnlFactory {
     EndpointType endpointType = getEndpointType();
     switch(endpointType) {
       case MSG:
-        return 9;
+        return HpnlMsgBuffer.METADATA_SIZE;
       case RDM:
-        return 17;
+        return HpnlRdmBuffer.METADATA_SIZE;
       default:
         throw new UnsupportedOperationException("unsupported: " + endpointType);
     }
@@ -144,17 +141,17 @@ public class HpnlFactory {
         properties.load(is);
         providerName = properties.getProperty("provider_name");
         if (providerName != null && providerName.length() == 0) {
-          providerName = "sockets";
+          providerName = DEFAULT_PROVIDER_NAME;
         }
 
         fabricFilename = properties.getProperty("libfabric_file_name");
         if (fabricFilename != null && fabricFilename.length() == 0) {
-          fabricFilename = "libfabric.so";
+          fabricFilename = DEFAULT_LIBFABRIC_FILE_NAME;
         }
 
         endpointType = properties.getProperty("endpoint_type");
         if (endpointType != null && endpointType.length() == 0) {
-          endpointType = "RDM";
+          endpointType = DEFAULT_VALUE_ENDPOINT_TYPE;
         }
       } catch (Throwable var14) {
         var2 = var14;

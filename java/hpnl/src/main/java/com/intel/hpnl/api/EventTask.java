@@ -51,12 +51,10 @@ public abstract class EventTask implements Runnable {
   }
 
   protected void runPendingTasks() {
-    Runnable task = (Runnable)this.pendingTasks.poll();
+    Runnable task = this.pendingTasks.poll();
 
-    for(long tasks = 0L; task != null; task = (Runnable)this.pendingTasks.poll()) {
-      getLogger().info("before");
+    for(long tasks = 0L; task != null; task = this.pendingTasks.poll()) {
       task.run();
-      getLogger().info("end");
       ++tasks;
       if ((tasks & 63L) == 0L) {
         break;

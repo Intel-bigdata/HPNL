@@ -88,31 +88,7 @@ int RdmConnection::init() {
   return 0;
 }
 
-void RdmConnection::init_addr() {
-  char tmp[32];
-  size_t tmp_len = 64;
-  fi_av_straddr(av, local_name, tmp, &tmp_len);
-
-  int index = 0;
-  for(int i=0; i<tmp_len; i++){
-	  if(tmp[i] == ':'){
-		  index = i;
-		  break;
-	  }
-  }
-  strncpy(src_addr, tmp, index);
-  src_addr[index] = '\0';
-  std::string tmpPort = &tmp[index+1];
-  src_port = std::stoi(tmpPort);
-
-  if (!is_server) {
-	  strcpy(dest_addr, ip);
-	  dest_port = std::stoi(port);
-  }else{
-	  dest_addr[0] = '\n';
-	  dest_port = 0;
-  }
-}
+void RdmConnection::init_addr() {}
 
 void RdmConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_addr_, size_t* src_port_) {
   *dest_addr_ = dest_addr;

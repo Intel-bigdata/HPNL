@@ -11,6 +11,11 @@ import org.slf4j.LoggerFactory;
 public class RdmService extends AbstractService {
   private EventTask task;
   private long nativeHandle;
+  protected String localIp;
+  protected int localPort;
+  protected String peerIp;
+  protected int peerPort;
+
   private static final Logger log = LoggerFactory.getLogger(RdmService.class);
 
   public RdmService(int workNum, int bufferNum, int bufferSize) {
@@ -29,6 +34,8 @@ public class RdmService extends AbstractService {
   }
 
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
+    peerIp = ip;
+    peerPort = Integer.valueOf(port);
     Connection conn = this.conMap.get(this.get_con(ip, port, this.nativeHandle));
     connectedCallback.handle(conn, -1, -1);
     return 1;
@@ -36,7 +43,10 @@ public class RdmService extends AbstractService {
 
   protected void regCon(long key, long connHandle, String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
     RdmConnection con = new RdmConnection(connHandle, this.hpnlService, this.server);
-    con.setAddrInfo(dest_addr, dest_port, src_addr, src_port);
+    if(!server){
+
+    }
+    con.setAddrInfo(peerIp, peerPort, localIp, localPort);
     this.conMap.put(connHandle, con);
   }
 

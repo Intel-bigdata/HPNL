@@ -4,7 +4,7 @@ import com.intel.hpnl.api.AbstractHpnlBuffer;
 import java.nio.ByteBuffer;
 
 public class HpnlRdmBuffer extends AbstractHpnlBuffer {
-  public static final int METADATA_SIZE = 17;
+  public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
   private long connectionId;
 
   public HpnlRdmBuffer(int bufferId, ByteBuffer byteBuffer) {
@@ -13,7 +13,7 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
 
   private void putMetadata(int srcSize, byte type, long seq) {
     this.byteBuffer.rewind();
-    this.byteBuffer.limit(17 + srcSize);
+    this.byteBuffer.limit(METADATA_SIZE + srcSize);
     this.byteBuffer.put(type);
     this.byteBuffer.putLong(this.connectionId);
     this.byteBuffer.putLong(seq);
@@ -26,7 +26,7 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   }
 
   public int getMetadataSize() {
-    return 17;
+    return METADATA_SIZE;
   }
 
   public ByteBuffer parse(int blockBufferSize) {

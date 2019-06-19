@@ -3,7 +3,7 @@ package com.intel.hpnl.api;
 import java.nio.ByteBuffer;
 
 public interface HpnlBuffer {
-  ByteBuffer parse(int var1);
+  ByteBuffer parse(int bufferSize);
 
   byte getFrameType();
 
@@ -17,9 +17,9 @@ public interface HpnlBuffer {
 
   long getSeq();
 
-  void putData(ByteBuffer var1, byte var2, long var3);
+  void putData(ByteBuffer dataBuffer, byte frameType, long seqId);
 
-  void insertMetadata(byte var1, long var2, int var4);
+  void insertMetadata(byte frameType, long seqId, int bufferLimit);
 
   int getMetadataSize();
 }

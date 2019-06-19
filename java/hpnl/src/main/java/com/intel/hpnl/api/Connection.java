@@ -7,27 +7,27 @@ public interface Connection {
 
   int getCqIndex();
 
-  void setRecvCallback(Handler var1);
+  void setRecvCallback(Handler callback);
 
-  void setReadCallback(Handler var1);
+  void setReadCallback(Handler callback);
 
-  void addShutdownCallback(Handler var1);
+  void addShutdownCallback(Handler callback);
 
-  HpnlBuffer getRecvBuffer(int var1);
+  HpnlBuffer getRecvBuffer(int bufferId);
 
-  void releaseRecvBuffer(int var1);
+  void releaseRecvBuffer(int bufferId);
 
   HpnlBuffer takeSendBuffer();
 
-  HpnlBuffer getSendBuffer(int var1);
+  HpnlBuffer getSendBuffer(int bufferId);
 
-  void pushSendBuffer(HpnlBuffer var1);
+  void pushSendBuffer(HpnlBuffer buffer);
 
-  void pushRecvBuffer(HpnlBuffer var1);
+  void pushRecvBuffer(HpnlBuffer buffer);
 
-  int send(int var1, int var2);
+  int send(int bufferSize, int bufferId);
 
-  int sendTo(int var1, int var2, ByteBuffer var3);
+  int sendTo(int bufferSize, int bufferId, ByteBuffer peerName);
 
   String getSrcAddr();
 

@@ -9,6 +9,8 @@ public class RdmServerService extends RdmService {
   }
 
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
+    localIp = ip;
+    localPort = Integer.valueOf(port);
     Connection connection = this.getConnection(this.listen(ip, port, this.getNativeHandle()));
     return connectedCallback.handle(connection, -1, -1);
   }
