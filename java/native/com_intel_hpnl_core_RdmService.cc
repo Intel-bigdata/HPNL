@@ -112,20 +112,11 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
       return -1; 
     }
   }
-  char **dest_addr = (char**)malloc(sizeof(char*));
-  size_t dest_port;
-  char **src_addr = (char**)malloc(sizeof(char*));
-  size_t src_port;
-  con->get_addr(dest_addr, &dest_port, src_addr, &src_port);
-  jstring dest_addr_str = (*env).NewStringUTF(*dest_addr);
-  jstring src_addr_str = (*env).NewStringUTF(*src_addr);
-  free(dest_addr);
-  free(src_addr);
 
   jlong jcon = *(jlong*)&con;
   jlong jEq = -1;
   jlong id = -1;
-  (*env).CallVoidMethod(obj, regCon, jEq, jcon, dest_addr_str, dest_port, src_addr_str, src_port, id);
+  (*env).CallVoidMethod(obj, regCon, jEq, jcon, NULL, 0, NULL, 0, id);
 
   std::vector<Chunk*> send_buffer = con->get_send_buffer();
   int chunks_size = send_buffer.size();

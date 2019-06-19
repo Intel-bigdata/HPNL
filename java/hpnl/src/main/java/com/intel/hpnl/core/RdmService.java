@@ -24,6 +24,8 @@ public class RdmService extends AbstractService {
   private static Map<Integer, Object> portRegister = new ConcurrentHashMap<>();
   private static AtomicInteger portGenerator = new AtomicInteger(1);
 
+  private static Object dummyValue = new Object();
+
   private static final Logger log = LoggerFactory.getLogger(RdmService.class);
 
   static{
@@ -151,7 +153,7 @@ public class RdmService extends AbstractService {
     while(portRegister.containsKey(port)){
       port = getNextValidPort();
     }
-    portRegister.put(Integer.valueOf(port), null);
+    portRegister.put(Integer.valueOf(port), dummyValue);
     return port;
   }
 
