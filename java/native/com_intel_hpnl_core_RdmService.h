@@ -44,7 +44,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event
  * Method:    set_recv_buffer
  * Signature: (Ljava/nio/ByteBuffer;JIJ)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1recv_1buffer
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1recv_1buffer1
   (JNIEnv *, jobject, jobject, jlong, jint, jlong);
 
 /*
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1recv_1buffer
  * Method:    set_send_buffer
  * Signature: (Ljava/nio/ByteBuffer;JIJ)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1send_1buffer
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1send_1buffer1
   (JNIEnv *, jobject, jobject, jlong, jint, jlong);
 
 /*

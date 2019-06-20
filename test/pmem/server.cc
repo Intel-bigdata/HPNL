@@ -65,7 +65,7 @@ class RecvCallback : public Callback {
       struct my_root *data_tmp = (struct my_root*)((uintptr_t)pop+root.off);
 
       char buf[MAX_BUF_LEN] = "hello world";
-      rootp->len = strlen(buf);
+      rootp->len = strlen("hello world");
 
       pmemobj_persist(pop, &rootp->len, sizeof(rootp->len));
       pmemobj_memcpy_persist(pop, rootp->buf, buf, rootp->len);

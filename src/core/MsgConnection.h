@@ -39,8 +39,8 @@ class MsgConnection : public Connection {
     virtual int sendBuf(const char*, int) override;
     virtual int send(int, int) override;
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) override;
-    virtual void reclaim_chunk(Chunk*) override;
-    virtual int activate_chunk(Chunk*) override;
+    virtual void activate_send_chunk(Chunk*) override;
+    virtual int activate_recv_chunk(Chunk*) override;
     
     void shutdown();
     int connect();

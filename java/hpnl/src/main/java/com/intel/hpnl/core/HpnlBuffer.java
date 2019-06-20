@@ -60,7 +60,10 @@ public class HpnlBuffer {
 
   private void putMetadata(int srcSize, byte type, long seq) {
     byteBuffer.rewind();
-    byteBuffer.limit(METADATA_SIZE+srcSize+1);
+    if (METADATA_SIZE+srcSize > size()) {
+      throw new ArithmeticException(); 
+    }
+    byteBuffer.limit(METADATA_SIZE+srcSize);
     byteBuffer.put(Type.MSG);
     byteBuffer.put(type);
     byteBuffer.putLong(seq);
@@ -68,7 +71,10 @@ public class HpnlBuffer {
 
   private void putMetadata(int srcSize, int nameLength, ByteBuffer name, byte type, long seq) {
     byteBuffer.rewind();
-    byteBuffer.limit(METADATA_SIZE+srcSize+nameLength+4+1);
+    if (METADATA_SIZE+srcSize+nameLength+4 > size()) {
+      throw new ArithmeticException(); 
+    }
+    byteBuffer.limit(METADATA_SIZE+srcSize+nameLength+4);
     byteBuffer.put(Type.RDM);
     byteBuffer.putInt(nameLength);
     byteBuffer.put(name.slice());
@@ -77,13 +83,21 @@ public class HpnlBuffer {
   }
 
   public void put(ByteBuffer src, byte type, long seq) {
-    putMetadata(src.remaining(), type, seq);
+    try {
+      putMetadata(src.remaining(), type, seq);
+    } catch (ArithmeticException e) {
+      e.printStackTrace(); 
+    }
     byteBuffer.put(src.slice());
     byteBuffer.flip();
   }
 
   public void put(ByteBuffer src, int nameLength, ByteBuffer name, byte type, long seq) {
-    putMetadata(src.remaining(), nameLength, name, type, seq);
+    try {
+      putMetadata(src.remaining(), nameLength, name, type, seq);
+    } catch (ArithmeticException e) {
+      e.printStackTrace(); 
+    }
     byteBuffer.put(src.slice());
     byteBuffer.flip();
   }
@@ -123,5 +137,5 @@ public class HpnlBuffer {
   private long rkey;
   private long address;
 
-  private static int METADATA_SIZE = 9;
+  private static int METADATA_SIZE = 10;
 }

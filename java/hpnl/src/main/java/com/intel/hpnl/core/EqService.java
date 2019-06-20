@@ -70,6 +70,16 @@ public class EqService {
     return 0;
   }
 
+  public void shutdown() {
+    for (long key : conMap.keySet()) {
+      addReapConnection(conMap.get(key));
+    }
+    synchronized(EqService.class) {
+      eqThread.shutdown();
+    }
+    delete_eq_event(localEq);
+  }
+
   public void join() {
     try {
       eqThread.join();
@@ -79,23 +89,13 @@ public class EqService {
     }
   }
 
-  public void shutdown() {
-    for (long key : conMap.keySet()) {
-      addReapCon(conMap.get(key));
-    }
-    synchronized(EqService.class) {
-      eqThread.shutdown();
-    }
-    delete_eq_event(localEq, nativeHandle);
-  }
-
-  private void regCon(long eq, long con, int index, String dest_addr, int dest_port, String src_addr, int src_port) {
+  private void establishConnection(long eq, long con, int index, String dest_addr, int dest_port, String src_addr, int src_port) {
     Connection connection = new Connection(eq, con, index, cqService.getThreadId(index), this, this.cqService);
     connection.setAddrInfo(dest_addr, dest_port, src_addr, src_port);
     conMap.put(eq, connection);
   }
 
-  public void unregCon(long eq) {
+  public void closeConnection(long eq) {
     Connection con = conMap.get(eq);
     if (con != null) {
       con.delCon();
@@ -148,7 +148,7 @@ public class EqService {
     shutdownCallback = callback;
   }
 
-  public Connection getCon(long eq) {
+  public Connection getConnection(long eq) {
     return conMap.get(eq);
   }
 
@@ -209,6 +209,9 @@ public class EqService {
     // allocate memory from on-heap, off-heap or AEP.
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
     long address = get_buffer_address(byteBuffer, nativeHandle);
+    if (address < 0) {
+      return null;  
+    }
     rmaBufferMap.put(bufferId, byteBuffer);
     long rkey = reg_rma_buffer(byteBuffer, bufferSize, bufferId, nativeHandle);
     if (rkey < 0) {
@@ -222,7 +225,7 @@ public class EqService {
     return rmaBufferMap.get(rmaBufferId); 
   }
 
-  public void addReapCon(Connection con) {
+  public void addReapConnection(Connection con) {
     reapCons.offer(con);
   }
 
@@ -249,13 +252,35 @@ public class EqService {
     free(this.nativeHandle);
   }
 
-  public native void shutdown(long eq, long nativeHandle);
+  public void set_send_buffer(ByteBuffer buffer, long size, int bufferId) {
+    set_send_buffer1(buffer, size, bufferId, this.nativeHandle);
+  }
+
+
+  public void set_recv_buffer(ByteBuffer buffer, long size, int bufferId) {
+    set_recv_buffer1(buffer, size, bufferId, this.nativeHandle);
+  }
+
+  public int wait_eq_event() {
+    return wait_eq_event1(this.nativeHandle); 
+  }
+
+
+  public void shutdown(long eq) {
+    shutdown1(eq, this.nativeHandle);
+  }
+
+  public int delete_eq_event(long eq) {
+    return delete_eq_event1(eq, this.nativeHandle);
+  }
+
+  private native void shutdown1(long eq, long nativeHandle);
   private native long native_connect(String ip, String port, long nativeHandle);
-  public native int wait_eq_event(long nativeHandle);
-  public native int add_eq_event(long eq, long nativeHandle);
-  public native int delete_eq_event(long eq, long nativeHandle);
-  public native void set_recv_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
-  public native void set_send_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
+  private native int wait_eq_event1(long nativeHandle);
+  private native int add_eq_event(long eq, long nativeHandle);
+  private native int delete_eq_event1(long eq, long nativeHandle);
+  private native void set_recv_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
+  private native void set_send_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
   private native long reg_rma_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
   private native long reg_rma_buffer_by_address(long address, long size, int bufferId, long nativeHandle);
   private native void unreg_rma_buffer(int bufferId, long nativeHandle);

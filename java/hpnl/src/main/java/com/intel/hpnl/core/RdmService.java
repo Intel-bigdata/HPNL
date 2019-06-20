@@ -16,7 +16,9 @@ public class RdmService {
   }
 
   public RdmService init() {
-    init(buffer_num, is_server);
+    int res = init(buffer_num, is_server);
+    if (res < 0)
+      return null;
     this.worker = new RdmThread(this);
     this.worker.start();
     return this;
@@ -39,11 +41,11 @@ public class RdmService {
     this.worker.shutdown();
   }
 
-  public RdmConnection get_con(String ip, String port) {
+  public RdmConnection getConnection(String ip, String port) {
     return conMap.get(get_con(ip, port, nativeHandle));
   }
 
-  public int wait_event() {
+  public int waitEvent() {
     return wait_event(this.nativeHandle);
   }
 
@@ -59,7 +61,7 @@ public class RdmService {
     free(this.nativeHandle);
   }
 
-  private void regCon(long con_handle) {
+  private void establishConnection(long con_handle) {
     RdmConnection con = new RdmConnection(con_handle, this);
     con.setRecvCallback(recvCallback);
     con.setSendCallback(sendCallback);
@@ -103,16 +105,20 @@ public class RdmService {
     return recvBufferPool.getBuffer(bufferId);
   }
 
-  public long getNativeHandle() {
-    return nativeHandle;
+  public void set_recv_buffer(ByteBuffer buffer, long size, int bufferId) {
+    set_recv_buffer1(buffer, size, bufferId, this.nativeHandle);
+  }
+
+  public void set_send_buffer(ByteBuffer buffer, long size, int bufferId) {
+    set_send_buffer1(buffer, size, bufferId, this.nativeHandle);
   }
 
   private native int init(int buffer_num, boolean is_server);
   private native void listen(String ip, String port, long nativeHandle);
   private native long get_con(String ip, String port, long nativeHandle);
   private native int wait_event(long nativeHandle);
-  public native void set_recv_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
-  public native void set_send_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
+  private native void set_recv_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
+  private native void set_send_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
   private native void free(long nativeHandle);
 
   private String addr;

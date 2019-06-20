@@ -65,7 +65,7 @@ public class CqService {
   }
 
   private void handleCqCallback(long eq, int eventType, int bufferId, int block_buffer_size) {
-    Connection connection = eqService.getCon(eq);
+    Connection connection = eqService.getConnection(eq);
     if (connection != null) {
       connection.handleCallback(eventType, bufferId, block_buffer_size);
     }
@@ -101,7 +101,7 @@ public class CqService {
     }
   }
 
-  public native int wait_cq_event(int index, long nativeHandle);
+  private native int wait_cq_event(int index, long nativeHandle);
   private native int init(long Service);
   public native void finalize();
   private native void free(long nativeHandle);

@@ -24,9 +24,9 @@ public class Connection {
       if(!connected){
         return;
       }
-      this.eqService.shutdown(nativeEq, eqService.getNativeHandle());
-      this.eqService.delete_eq_event(nativeEq, eqService.getNativeHandle());
-      this.eqService.unregCon(nativeEq);
+      this.eqService.shutdown(nativeEq);
+      this.eqService.delete_eq_event(nativeEq);
+      this.eqService.closeConnection(nativeEq);
       if (shutdownCallback != null) {
         shutdownCallback.handle(this, 0, 0);
       }
@@ -56,10 +56,10 @@ public class Connection {
         });
       } else {
         hpnlBuffer.put(buffer, b, seq);
-        send(hpnlBuffer.size(), hpnlBuffer.getBufferId(), this.nativeHandle);
+        return send(hpnlBuffer.size(), hpnlBuffer.getBufferId(), this.nativeHandle);
       }
     }
-    return 0; 
+    return 0;
   }
 
   public int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr) {
@@ -81,13 +81,6 @@ public class Connection {
       }
     });
   }
-
-  public native void recv(ByteBuffer buffer, int id, long nativeHandle);
-  public native int send(int blockBufferSize, int bufferId, long nativeHandle);
-  public native int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr, long nativeHandle);
-  private native void init(long eq);
-  public native void finalize();
-  public native void free(long nativeHandle);
 
   public Handler getConnectedCallback() {
     return connectedCallback;
@@ -200,6 +193,13 @@ public class Connection {
     }
     return null;
   }
+
+  private native void recv(ByteBuffer buffer, int id, long nativeHandle);
+  private native int send(int blockBufferSize, int bufferId, long nativeHandle);
+  private native int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr, long nativeHandle);
+  private native void init(long eq);
+  private native void free(long nativeHandle);
+  public native void finalize();
 
   private EqService eqService;
   private CqService cqService;

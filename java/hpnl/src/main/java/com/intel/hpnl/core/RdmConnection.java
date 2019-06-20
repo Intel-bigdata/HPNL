@@ -88,8 +88,8 @@ public class RdmConnection {
   private native void init(long nativeHandle);
   private native void get_local_name(ByteBuffer localName, long nativeHandle);
   private native int get_local_name_length(long nativeHandle);
-  public native int send(int blockBufferSize, int bufferId, long nativeHandle);
-  public native int sendTo(int blockBufferSize, int bufferId, ByteBuffer peerName, long nativeHandle);
+  private native int send(int blockBufferSize, int bufferId, long nativeHandle);
+  private native int sendTo(int blockBufferSize, int bufferId, ByteBuffer peerName, long nativeHandle);
   // 1 byte -> 0(connection) or 1(nonconnection)
   // 4 bytes -> address length
   // N bytes -> address

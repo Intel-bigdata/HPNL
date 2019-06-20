@@ -12,7 +12,7 @@ extern "C" {
  * Method:    shutdown
  * Signature: (JJ)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown1
   (JNIEnv *, jobject, jlong, jlong);
 
 /*
@@ -28,7 +28,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_native_1connect
  * Method:    wait_eq_event
  * Signature: (J)I
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event1
   (JNIEnv *, jobject, jlong);
 
 /*
@@ -44,7 +44,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_add_1eq_1event
  * Method:    delete_eq_event
  * Signature: (JJ)I
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event1
   (JNIEnv *, jobject, jlong, jlong);
 
 /*
@@ -52,7 +52,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event
  * Method:    set_recv_buffer
  * Signature: (Ljava/nio/ByteBuffer;JIJ)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer1
   (JNIEnv *, jobject, jobject, jlong, jint, jlong);
 
 /*
@@ -60,7 +60,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer
  * Method:    set_send_buffer
  * Signature: (Ljava/nio/ByteBuffer;JIJ)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer1
   (JNIEnv *, jobject, jobject, jlong, jint, jlong);
 
 /*

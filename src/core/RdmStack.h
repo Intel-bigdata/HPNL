@@ -30,7 +30,7 @@ class RdmStack : public Stack {
     fi_info *server_info;
     fid_fabric *fabric;
     fid_domain *domain;
-    fid_cq *cq = NULL;
+    fid_cq *cq;
     int buffer_num;
     bool is_server;
 

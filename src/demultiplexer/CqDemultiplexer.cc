@@ -69,7 +69,7 @@ int CqDemultiplexer::wait_event() {
         con->recv((char*)ck->buffer, entry.len);
         if (con->get_recv_callback()) {
           (*con->get_recv_callback())(&ck->buffer_id, &entry.len);
-          con->activate_chunk(ck);
+          con->activate_recv_chunk(ck);
         }
       } else if (entry.flags & FI_SEND) {
         assert(con->get_send_callback());

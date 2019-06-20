@@ -3,7 +3,7 @@
 
 class Callback {
   public:
-    virtual ~Callback() {}
+    virtual      ~Callback() {}
     virtual void operator()(void *param_1, void *param_2) = 0;
 };
 

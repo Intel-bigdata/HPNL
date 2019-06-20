@@ -84,7 +84,7 @@ void Service::start() {
 int Service::listen(const char* addr, const char* port) {
   if (msg) {
     fid_eq* eq = (fid_eq*)stack->bind(addr, port, recvBufMgr, sendBufMgr);
-    stack->listen();
+    ((MsgStack*)stack)->listen();
     std::shared_ptr<EqHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
     acceptRequestCallback = new AcceptRequestCallback(this);
     handler->set_recv_callback(recvCallback);
@@ -104,7 +104,7 @@ int Service::listen(const char* addr, const char* port) {
 }
 
 int Service::connect(const char* addr, const char* port) {
-  fid_eq *eq = stack->connect(addr, port, recvBufMgr, sendBufMgr);
+  fid_eq *eq = ((MsgStack*)stack)->connect(addr, port, recvBufMgr, sendBufMgr);
 
   std::shared_ptr<EventHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
   acceptRequestCallback = new AcceptRequestCallback(this);

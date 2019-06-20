@@ -34,7 +34,7 @@ class RecvCallback : public Callback {
         start = timestamp_now(); 
       }
       char peer_name[16];
-      con->decode_peer_name(ck->buffer, peer_name);
+      con->decode_peer_name(ck->buffer, peer_name, 16);
       Chunk *sck = con->encode(ck->buffer, SIZE, peer_name);
       con->send(sck);
     }
