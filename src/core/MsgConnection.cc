@@ -136,6 +136,9 @@ free_ep:
 int MsgConnection::sendBuf(const char *buffer, int buffer_size) {
   Chunk *ck = send_buffers.back();
   send_buffers.pop_back();
+  if (buffer_size > ck->capacity) {
+    return -1; 
+  }
   memcpy(ck->buffer, buffer, buffer_size);
   if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
@@ -212,7 +215,7 @@ int MsgConnection::get_cq_index() {
   return cq_index;
 }
 
-void MsgConnection::reclaim_chunk(Chunk *ck) {
+void MsgConnection::activate_send_chunk(Chunk *ck) {
   send_buffers.push_back(ck);
 }
 
@@ -256,7 +259,7 @@ fid* MsgConnection::get_fid() {
   return &conEq->fid;
 }
 
-int MsgConnection::activate_chunk(Chunk *ck) {
+int MsgConnection::activate_recv_chunk(Chunk *ck) {
   ck->con = this;
   if (fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_recv");

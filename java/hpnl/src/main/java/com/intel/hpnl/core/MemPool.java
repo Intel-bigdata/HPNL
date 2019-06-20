@@ -54,14 +54,14 @@ public class MemPool {
     bufferMap.put(seq, buffer);
     if (eqService!= null) {
       if (type == Type.SEND)
-        eqService.set_send_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
+        eqService.set_send_buffer(byteBuffer, bufferSize, seq);
       else
-        eqService.set_recv_buffer(byteBuffer, bufferSize, seq, eqService.getNativeHandle());
+        eqService.set_recv_buffer(byteBuffer, bufferSize, seq);
     } else {
       if (type == Type.SEND)
-        rdmService.set_send_buffer(byteBuffer, bufferSize, seq, rdmService.getNativeHandle());
+        rdmService.set_send_buffer(byteBuffer, bufferSize, seq);
       else
-        rdmService.set_recv_buffer(byteBuffer, bufferSize, seq, rdmService.getNativeHandle());
+        rdmService.set_recv_buffer(byteBuffer, bufferSize, seq);
     }
   }
 

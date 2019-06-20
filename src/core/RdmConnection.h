@@ -29,8 +29,8 @@ class RdmConnection : public Connection {
     char* get_local_name();
     int get_local_name_length();
     fid_cq* get_cq();
-    virtual void reclaim_chunk(Chunk*) override;
-    virtual int activate_chunk(Chunk*) override;
+    virtual void activate_send_chunk(Chunk*) override;
+    virtual int activate_recv_chunk(Chunk*) override;
     std::vector<Chunk*> get_send_buffer();
 
     virtual void set_recv_callback(Callback*) override;
@@ -38,7 +38,7 @@ class RdmConnection : public Connection {
     virtual Callback* get_recv_callback() override;
     virtual Callback* get_send_callback() override;
 
-    virtual void decode_peer_name(void*, char*) override;
+    virtual void decode_peer_name(void*, char*, int) override;
     virtual char* decode_buf(void *buf) override;
     virtual Chunk* encode(void *buf, int size, char*) override;
   private:

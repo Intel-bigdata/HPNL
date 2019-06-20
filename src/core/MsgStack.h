@@ -23,9 +23,9 @@ class MsgStack : public Stack {
     virtual ~MsgStack();
     virtual int init() override;
     virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
-    virtual int listen() override;
-    virtual fid_eq* connect(const char*, const char*, BufMgr*, BufMgr*) override;
-    virtual fid_eq* accept(void*, BufMgr*, BufMgr*) override;
+    int listen();
+    fid_eq* connect(const char*, const char*, BufMgr*, BufMgr*);
+    fid_eq* accept(void*, BufMgr*, BufMgr*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);
     void unreg_rma_buffer(int);
     Chunk* get_rma_chunk(int);

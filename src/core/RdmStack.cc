@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <iostream>
 
-RdmStack::RdmStack(int buffer_num_, bool is_server_) : buffer_num(buffer_num_), is_server(is_server_) {}
+RdmStack::RdmStack(int buffer_num_, bool is_server_) : buffer_num(buffer_num_), is_server(is_server_), cq(NULL) {}
 
 RdmStack::~RdmStack() {
   for (auto con : cons) {

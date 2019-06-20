@@ -14,8 +14,8 @@
 static jlong selfPtr;
 static jmethodID handleEqCallback;
 static jmethodID reallocBufferPool;
-static jmethodID regCon;
-static jmethodID unregCon;
+static jmethodID establishConnection;
+static jmethodID closeConnection;
 static jmethodID pushSendBuffer;
 
 static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
@@ -29,8 +29,8 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
 
     handleEqCallback = (*env).GetMethodID(eqServiceClassTmp, "handleEqCallback", "(JII)V");
     reallocBufferPool = (*env).GetMethodID(eqServiceClassTmp, "reallocBufferPool", "()V");
-    regCon = (*env).GetMethodID(eqServiceClassTmp, "regCon", "(JJILjava/lang/String;ILjava/lang/String;I)V");
-    unregCon = (*env).GetMethodID(eqServiceClassTmp, "unregCon", "(J)V");
+    establishConnection = (*env).GetMethodID(eqServiceClassTmp, "establishConnection", "(JJILjava/lang/String;ILjava/lang/String;I)V");
+    closeConnection = (*env).GetMethodID(eqServiceClassTmp, "closeConnection", "(J)V");
     pushSendBuffer = (*env).GetMethodID(eqServiceClassTmp, "pushSendBuffer", "(JI)V");
 
     fidSelfPtr = env->GetFieldID(eqServiceClassTmp, "nativeHandle", "J");
@@ -104,7 +104,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_native_1connect(JNIEn
  * Method:    wait_eq_event
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv *env, jobject thisObj, jlong eqServicePtr) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event1(JNIEnv *env, jobject thisObj, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fi_info *info = NULL;
   fid_eq *eq;
@@ -136,7 +136,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     //register connection  
     jlong jEq = *(jlong*)&eq;
     jlong jCon = *(jlong*)&con;
-    (*env).CallVoidMethod(thisObj, regCon, jEq, jCon, con->get_cq_index(), dest_addr_str, dest_port, src_addr_str, src_port);
+    (*env).CallVoidMethod(thisObj, establishConnection, jEq, jCon, con->get_cq_index(), dest_addr_str, dest_port, src_addr_str, src_port);
 
     //set send buffer;
     std::vector<Chunk*> send_buffer = con->get_send_buffer();
@@ -154,7 +154,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event(JNIEnv
     con->con_cv.notify_one();
   } else if (ret == SHUTDOWN) {
     jlong jEq = *(jlong*)&eq;
-    (*env).CallVoidMethod(thisObj, unregCon, jEq);
+    (*env).CallVoidMethod(thisObj, closeConnection, jEq);
   } else {
   }
   return ret;
@@ -176,14 +176,14 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_add_1eq_1event(JNIEnv 
  * Method:    delete_eq_event
  * Signature: (j)I
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event(JNIEnv *env, jobject thisObj, jlong eqPtr, jlong eqServicePtr) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event1(JNIEnv *env, jobject thisObj, jlong eqPtr, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   if (service == NULL) return 0;
   fid_eq *eq = *(fid_eq**)&eqPtr;
   return service->delete_eq_event(eq);
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, jobject thisObj, jlong eqPtr, jlong eqServicePtr) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown1(JNIEnv *env, jobject thisObj, jlong eqPtr, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   fid_eq *eq = *(fid_eq**)&eqPtr;
   MsgConnection *con = (MsgConnection*)service->get_connection(eq);
@@ -202,7 +202,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, 
  * Method:    set_recv_buffer
  * Signature: (Ljava/nio/ByteBuffer;J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIEnv *env, jobject thisObj, jobject recv_buffer, jlong size, jint bufferId, jlong eqServicePtr) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer1(JNIEnv *env, jobject thisObj, jobject recv_buffer, jlong size, jint bufferId, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(recv_buffer);
   assert(buffer != NULL);
@@ -214,7 +214,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIE
  * Method:    set_send_buffer
  * Signature: (Ljava/nio/ByteBuffer;J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size, jint bufferId, jlong eqServicePtr) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer1(JNIEnv *env, jobject thisObj, jobject send_buffer, jlong size, jint bufferId, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(send_buffer);
   service->set_send_buffer((char*)buffer, size, bufferId);
@@ -248,6 +248,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_unreg_1rma_1buffer(JNI
  */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_get_1buffer_1address(JNIEnv *env, jobject thisObj, jobject rma_buffer, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
+  assert(rma_buffer);
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(rma_buffer);
   jlong buffer_address = *(jlong*)&buffer;
   return buffer_address;

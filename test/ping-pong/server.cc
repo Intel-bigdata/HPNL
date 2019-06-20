@@ -40,7 +40,7 @@ class SendCallback : public Callback {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
-      con->reclaim_chunk(ck);
+      con->activate_send_chunk(ck);
     }
   private:
     BufMgr *bufMgr;

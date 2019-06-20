@@ -54,7 +54,7 @@ public class ClientTest implements Runnable {
 
     RdmConnection[] con = new RdmConnection[50];
     for (int i = 0; i < 50; i++) {
-      con[i] = service.get_con(addr, port);
+      con[i] = service.getConnection(addr, port);
       assert(con[i] != null);
     }
     for (int i = 0; i < 50; i++) {
