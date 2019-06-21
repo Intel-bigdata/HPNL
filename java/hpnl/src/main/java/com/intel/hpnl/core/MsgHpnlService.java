@@ -4,7 +4,6 @@ import com.intel.hpnl.api.EventTask;
 import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlService;
 import com.intel.hpnl.api.ServiceException;
-import com.intel.hpnl.api.HpnlService.EndpointType;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,14 +35,17 @@ public class MsgHpnlService implements HpnlService {
     }
   }
 
+  @Override
   public int bind(String hostname, int port, int cqIndex, Handler connectedCallback) {
     return this.eqService.connect(hostname, String.valueOf(port), cqIndex, connectedCallback);
   }
 
+  @Override
   public int connect(String hostname, int port, int cqIndex, Handler connectedCallback) {
     return this.eqService.connect(hostname, String.valueOf(port), cqIndex, connectedCallback);
   }
 
+  @Override
   public boolean isServer() {
     return this.server;
   }
@@ -59,19 +61,23 @@ public class MsgHpnlService implements HpnlService {
     //TODO:
   }
 
+  @Override
   public void stop() {
     this.cqService.stop();
     this.eqService.stop();
   }
 
+  @Override
   public EventTask getEqTask() {
     return this.eqService.getEventTask();
   }
 
+  @Override
   public List<EventTask> getCqTasks() {
     return this.cqService.getEventTasks();
   }
 
+  @Override
   public long getNewConnectionId() {
     return this.eqService.getNewConnectionId();
   }
@@ -81,6 +87,7 @@ public class MsgHpnlService implements HpnlService {
     this.eqService.removeConnection(nativeConnectionId, connEq, proactive);
   }
 
+  @Override
   public EndpointType getEndpointType() {
     return EndpointType.MSG;
   }

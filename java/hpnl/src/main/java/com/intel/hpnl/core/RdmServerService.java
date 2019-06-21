@@ -8,6 +8,7 @@ public class RdmServerService extends RdmService {
     super(workNum, bufferNum, bufferSize, true);
   }
 
+  @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
     localIp = ip;
     localPort = Integer.valueOf(port);

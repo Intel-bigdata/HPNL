@@ -20,42 +20,48 @@ public class MsgConnection extends AbstractConnection {
 
   }
 
+  @Override
   protected void initialize(long nativeCon) {
     this.init(nativeCon);
   }
 
+  @Override
   protected int getCqIndexFromNative(long nativeHandle) {
     return this.get_cq_index(nativeHandle);
   }
 
+  @Override
   protected long getNativeHandle() {
     return this.nativeHandle;
   }
 
+  @Override
   public int send(int bufferSize, int bufferId) {
     return this.send(bufferSize, bufferId, this.nativeHandle);
   }
 
+  @Override
   public void releaseRecvBuffer(int bufferId) {
     this.releaseRecvBuffer(bufferId, this.nativeHandle);
   }
 
-  private native void recv(ByteBuffer var1, int var2, long var3);
+  private native void recv(ByteBuffer buffer, int mid, long nativeHandle);
 
-  private native int send(int var1, int var2, long var3);
+  private native int send(int bufferSize, int bufferId, long nativeHandle);
 
-  protected native void init(long var1);
+  protected native void init(long nativeHandle);
 
-  protected native int get_cq_index(long var1);
+  protected native int get_cq_index(long nativeHandle);
 
   public native void finalize();
 
-  private native void releaseRecvBuffer(int var1, long var2);
+  private native void releaseRecvBuffer(int bufferId, long nativeHandle);
 
-  private native void deleteGlobalRef(long var1);
+  private native void deleteGlobalRef(long nativeHandle);
 
-  private native void free(long var1);
+  private native void free(long nativeHandle);
 
+  @Override
   protected void doShutdown(boolean proactive) {
     this.service.removeNativeConnection(this.getConnectionId(), this.nativeEq, proactive);
     this.deleteGlobalRef(this.nativeHandle);

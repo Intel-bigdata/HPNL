@@ -37,16 +37,16 @@ public class CqService {
   }
 
   public void addExternalEvent(int cqIndex, Runnable task) {
-    ((EventTask)this.cqTasks.get(cqIndex)).addPendingTask(task);
+    this.cqTasks.get(cqIndex).addPendingTask(task);
   }
 
-  public native int wait_cq_event(int var1, long var2);
+  public native int wait_cq_event(int index, long nativeHandle);
 
-  private native int init(long var1);
+  private native int init(long nativeHandle);
 
   public native void finalize();
 
-  private native void free(long var1);
+  private native void free(long nativeHandle);
 
   public void stop() {
     Iterator var1 = this.cqTasks.iterator();

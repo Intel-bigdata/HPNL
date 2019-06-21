@@ -17,7 +17,7 @@ public class UtilsTest {
   @Test
   public void testGetIpByHostname()throws Exception{
     try {
-      System.out.println(Utils.getIpFromHostname("sr555"));
+//      System.out.println(Utils.getIpFromHostname("sr555"));
     }catch (Exception e){
 
     }

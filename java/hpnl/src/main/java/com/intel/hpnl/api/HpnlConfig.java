@@ -13,8 +13,12 @@ public class HpnlConfig {
   private String fabricFilename;
   private String endpointType;
   private String nic;
+  private String appId;
+  private int portBatchSize;
 
-  public static final String DEFAULT_VALUE_ENDPOINT_TYPE = "RDM";
+  public static final String DEFAULT_ENDPOINT_TYPE = "RDM";
+  public static final String DEFAULT_APP_ID = "default";
+  public static final int DEFAULT_PORT_BATCH_SIZE = 50;
   public static final String DEFAULT_PROVIDER_NAME = "sockets";
   public static final String DEFAULT_LIBFABRIC_FILE_NAME = "libfabric.so";
 
@@ -40,10 +44,23 @@ public class HpnlConfig {
 
       endpointType = properties.getProperty("endpoint_type");
       if (!hasValue(endpointType)) {
-        endpointType = DEFAULT_VALUE_ENDPOINT_TYPE;
+        endpointType = DEFAULT_ENDPOINT_TYPE;
       }
 
       nic = properties.getProperty("nic_name");
+
+      appId = properties.getProperty("app_id");
+      if(!hasValue(appId)){
+        appId = DEFAULT_APP_ID;
+      }
+
+      String tmp = properties.getProperty("port_batch_size");
+      if(!hasValue(tmp)){
+        portBatchSize = DEFAULT_PORT_BATCH_SIZE;
+      }else{
+        portBatchSize = Integer.valueOf(tmp);
+      }
+
     } catch (IOException e) {
       log.error("failed to read hpnl config from "+path, e);
     }
@@ -73,4 +90,11 @@ public class HpnlConfig {
     return nic;
   }
 
+  public String getAppId() {
+    return appId;
+  }
+
+  public int getPortBatchSize() {
+    return portBatchSize;
+  }
 }

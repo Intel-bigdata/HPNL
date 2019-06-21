@@ -6,7 +6,6 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +13,6 @@ import org.slf4j.LoggerFactory;
 public class EqService extends AbstractService {
   private long nativeHandle;
   private long localEq;
-  private volatile CountDownLatch connectLatch;
   private EventTask eqTask;
   private Map<Long, Handler> connectedHandlers;
   private CqService cqService;
@@ -53,13 +51,14 @@ public class EqService extends AbstractService {
     }
   }
 
+  @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
     long seqId = this.tryConnect(ip, port, cqIndex);
     if (seqId < 0L) {
       return -1;
     } else {
       if (connectedCallback != null) {
-        Handler prv = (Handler)this.connectedHandlers.putIfAbsent(seqId, connectedCallback);
+        Handler prv = this.connectedHandlers.putIfAbsent(seqId, connectedCallback);
         if (prv != null) {
           throw new RuntimeException("non-unique id found, " + seqId);
         }
@@ -69,21 +68,23 @@ public class EqService extends AbstractService {
     }
   }
 
+  @Override
   protected void regCon(long eq, long connHandle, String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
     MsgConnection connection = new MsgConnection(eq, connHandle, this.hpnlService, connectId);
     connection.setAddrInfo(dest_addr, dest_port, src_addr, src_port);
     this.conMap.put(eq, connection);
   }
 
+  @Override
   public void unregCon(long eq) {
     this.conMap.remove(eq);
   }
 
   protected void handleEqCallback(long eq, int eventType, int blockId) {
-    Connection connection = (Connection)this.conMap.get(eq);
+    Connection connection = this.conMap.get(eq);
     if (eventType == 2) {
       long id = connection.getConnectionId();
-      Handler connectedHandler = (Handler)this.connectedHandlers.remove(id);
+      Handler connectedHandler = this.connectedHandlers.remove(id);
       if (connectedHandler != null) {
         connectedHandler.handle(connection, 0, 0);
       }
@@ -103,46 +104,55 @@ public class EqService extends AbstractService {
     return this.workerNum;
   }
 
+  @Override
   public EventTask getEventTask() {
     return this.eqTask;
   }
 
+  @Override
   protected void setSendBuffer(ByteBuffer buffer, long size, int bufferId) {
     this.set_send_buffer(buffer, size, bufferId, this.nativeHandle);
   }
 
+  @Override
   protected void setRecvBuffer(ByteBuffer buffer, long size, int bufferId) {
     this.set_recv_buffer(buffer, size, bufferId, this.nativeHandle);
   }
 
-  public native void shutdown(long var1, long var3);
+  @Override
+  protected HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer){
+    return new HpnlMsgBuffer(bufferId, byteBuffer);
+  }
 
-  private native long internal_connect(String var1, String var2, int var3, long var4, long var6);
+  public native void shutdown(long eq, long nativeHandle);
 
-  public native int wait_eq_event(long var1);
+  private native long internal_connect(String var1, String var2, int var3, long var4, long nativeHandle);
 
-  public native int add_eq_event(long var1, long var3);
+  public native int wait_eq_event(long nativeHandle);
 
-  public native int delete_eq_event(long var1, long var3);
+  public native int add_eq_event(long eq, long nativeHandle);
 
-  protected native void set_recv_buffer(ByteBuffer var1, long var2, int var4, long var5);
+  public native int delete_eq_event(long eq, long nativeHandle);
 
-  protected native void set_send_buffer(ByteBuffer var1, long var2, int var4, long var5);
+  protected native void set_recv_buffer(ByteBuffer buffer, long size, int id, long nativeHandle);
 
-  private native long reg_rma_buffer(ByteBuffer var1, long var2, int var4, long var5);
+  protected native void set_send_buffer(ByteBuffer buffer, long size, int id, long nativeHandle);
 
-  private native long reg_rma_buffer_by_address(long var1, long var3, int var5, long var6);
+  private native long reg_rma_buffer(ByteBuffer buffer, long size, int id, long nativeHandle);
 
-  private native void unreg_rma_buffer(int var1, long var2);
+  private native long reg_rma_buffer_by_address(long var1, long var3, int var5, long nativeHandle);
 
-  private native long get_buffer_address(ByteBuffer var1, long var2);
+  private native void unreg_rma_buffer(int var1, long nativeHandle);
 
-  private native int init(int var1, int var2, boolean var3, String var4);
+  private native long get_buffer_address(ByteBuffer buffer, long nativeHandle);
 
-  private native void free(long var1);
+  private native int init(int workNum, int bufferNum, boolean server, String providerName);
+
+  private native void free(long nativeHandle);
 
   public native void finalize();
 
+  @Override
   public void stop() {
     if(!stopped) {
       synchronized (this) {
@@ -168,6 +178,7 @@ public class EqService extends AbstractService {
 
   }
 
+  @Override
   public void removeConnection(long connectionId, long connEq, boolean proactive) {
     this.shutdown(connEq, this.getNativeHandle());
     if (proactive) {

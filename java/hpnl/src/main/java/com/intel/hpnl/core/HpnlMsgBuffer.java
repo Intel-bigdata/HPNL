@@ -35,6 +35,7 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
     this.byteBuffer.position(0);
     this.byteBuffer.put(frameType);
     this.byteBuffer.putLong(seqId);
+    this.byteBuffer.limit(limit);
     this.byteBuffer.position(limit);
   }
 

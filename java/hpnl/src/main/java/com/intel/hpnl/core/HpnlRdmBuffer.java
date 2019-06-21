@@ -43,6 +43,7 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
     this.byteBuffer.put(frameType);
     this.byteBuffer.putLong(this.connectionId);
     this.byteBuffer.putLong(seqId);
+    this.byteBuffer.limit(limit);
     this.byteBuffer.position(limit);
   }
 

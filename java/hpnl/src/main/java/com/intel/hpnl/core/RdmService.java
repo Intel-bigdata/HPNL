@@ -3,10 +3,6 @@ package com.intel.hpnl.core;
 import com.intel.hpnl.api.*;
 
 import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,15 +12,10 @@ public class RdmService extends AbstractService {
   private long nativeHandle;
   protected String localIp;
   protected int localPort;
-  protected String peerIp;
-  protected int peerPort;
+
+  private PortGenerator portGenerator = PortGenerator.getInstance();
 
   private static String LOCAL_IP ;
-
-  private static Map<Integer, Object> portRegister = new ConcurrentHashMap<>();
-  private static AtomicInteger portGenerator = new AtomicInteger(1);
-
-  private static Object dummyValue = new Object();
 
   private static final Logger log = LoggerFactory.getLogger(RdmService.class);
 
@@ -53,43 +44,46 @@ public class RdmService extends AbstractService {
     return this;
   }
 
+  @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    peerIp = ip;
-    peerPort = Integer.valueOf(port);
-    Connection conn = this.conMap.get(this.get_con(ip, port, this.nativeHandle));
+    RdmConnection conn = (RdmConnection)this.conMap.get(this.get_con(ip, port, this.nativeHandle));
+    conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
     connectedCallback.handle(conn, -1, -1);
     return 1;
   }
 
+  @Override
   protected void regCon(long key, long connHandle, String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
     RdmConnection con = new RdmConnection(connHandle, this.hpnlService, this.server);
     if(!server){
       localIp = LOCAL_IP;
       localPort = getFreePort();
+      con.setAddrInfo(con.getDestAddr(), con.getDestPort(), localIp, localPort);
     }else{
-      peerIp = "<unset>";
+      con.setAddrInfo("<unset>", 0, localIp, localPort);
     }
-    con.setAddrInfo(peerIp, peerPort, localIp, localPort);
     con.setConnectionId(localIp, localPort);
     this.conMap.put(connHandle, con);
   }
 
-  public void unregCon(long connHandle) {
+  @Override
+  public void unregCon(long connHandle) {}
+
+  @Override
+  public void removeConnection(long nativeConnectionId, long connHandle, boolean proactive) {
+    remove_connection(nativeConnectionId, nativeHandle);
     RdmConnection connection = (RdmConnection)this.conMap.remove(connHandle);
-    if(connection != null && !connection.isServer()){
-      portRegister.remove(connection.getSrcPort());
+    if(!connection.isServer()){
+      portGenerator.reclaimPort(connection.getSrcPort());
     }
   }
 
-  public void removeConnection(long nativeConnectionId, long connHandle, boolean proactive) {
-    remove_connection(nativeConnectionId, nativeHandle);
-    this.conMap.remove(connHandle);
-  }
-
+  @Override
   public EventTask getEventTask() {
     return this.task;
   }
 
+  @Override
   public void stop() {
     if(!stopped) {
       synchronized (this) {
@@ -99,7 +93,7 @@ public class RdmService extends AbstractService {
           conMap.forEach((k, v) -> {
             RdmConnection connection = (RdmConnection)v;
             if(!connection.isServer()) {
-              portRegister.remove(Integer.valueOf(v.getSrcPort()));
+              portGenerator.reclaimPort(v.getSrcPort());
             }
           });
           conMap.clear();
@@ -125,15 +119,22 @@ public class RdmService extends AbstractService {
     return this.nativeHandle;
   }
 
+  @Override
   protected void setSendBuffer(ByteBuffer buffer, long size, int bufferId) {
     this.set_send_buffer(buffer, size, bufferId, this.nativeHandle);
   }
 
+  @Override
   protected void setRecvBuffer(ByteBuffer buffer, long size, int bufferId) {
     this.set_recv_buffer(buffer, size, bufferId, this.nativeHandle);
   }
 
-  private native int init(int var1, boolean var2, String nativeHandle);
+  @Override
+  protected HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer){
+    return new HpnlRdmBuffer(bufferId, byteBuffer);
+  }
+
+  private native int init(int bufferNum, boolean server, String providerName);
 
   protected native long listen(String host, String port, long nativeHandle);
 
@@ -141,40 +142,20 @@ public class RdmService extends AbstractService {
 
   private native int wait_event(long nativeHandle);
 
-  public native void set_recv_buffer(ByteBuffer var1, long var2, int var4, long nativeHandle);
+  public native void set_recv_buffer(ByteBuffer buffer, long size, int id, long nativeHandle);
 
-  public native void set_send_buffer(ByteBuffer var1, long var2, int var4, long nativeHandle);
+  public native void set_send_buffer(ByteBuffer buffer, long size, int id, long nativeHandle);
 
   public native void remove_connection(long id, long nativeHandle);
 
   private native void free(long nativeHandle);
 
-  public static int getFreePort(){
-    int port = getNextValidPort();
-    while(portRegister.containsKey(port)){
-      port = getNextValidPort();
-    }
-    portRegister.put(Integer.valueOf(port), dummyValue);
-    return port;
+  public int getFreePort(){
+    return portGenerator.getFreePort();
   }
 
-  private static int getNextValidPort(){
-    int value = portGenerator.getAndIncrement();
-    if(value > 65535 || value < 1){
-      synchronized (portGenerator){
-        value = portGenerator.getAndIncrement();
-        if(value > 65535 || value < 1){
-          portGenerator.set(1);
-          return portGenerator.getAndIncrement();
-        }
-        return value;
-      }
-    }
-    return value;
-  }
-
-  public static void removePortFromRegister(int port){
-    portRegister.remove(Integer.valueOf(port));
+  public void reclaimPort(int port){
+    portGenerator.reclaimPort(port);
   }
 
   protected class RdmTask extends EventTask {
@@ -185,7 +166,6 @@ public class RdmService extends AbstractService {
       if (RdmService.this.wait_event(RdmService.this.nativeHandle) == -1) {
         RdmService.log.warn("wait or process event error, ignoring");
       }
-
     }
 
     protected Logger getLogger() {

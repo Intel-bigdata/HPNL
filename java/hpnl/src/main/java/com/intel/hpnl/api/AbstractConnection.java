@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,17 +49,19 @@ public abstract class AbstractConnection implements Connection {
     this.shutdownCallbacks.add(new AbstractConnection.InternalShutdownCallback());
   }
 
+  @Override
   public int getCqIndex() {
     return this.cqIndex;
   }
 
+  @Override
   public long getConnectionId() {
     return this.connectId;
   }
 
-  protected abstract void initialize(long var1);
+  protected abstract void initialize(long nativeHandle);
 
-  protected abstract int getCqIndexFromNative(long var1);
+  protected abstract int getCqIndexFromNative(long nativeHandle);
 
   protected abstract long getNativeHandle();
 
@@ -74,6 +77,7 @@ public abstract class AbstractConnection implements Connection {
     return this.recvCallback;
   }
 
+  @Override
   public void setRecvCallback(Handler callback) {
     this.recvCallback = callback;
   }
@@ -86,6 +90,7 @@ public abstract class AbstractConnection implements Connection {
     this.sendCallback = callback;
   }
 
+  @Override
   public void setReadCallback(Handler callback) {
     this.readCallback = callback;
   }
@@ -94,6 +99,7 @@ public abstract class AbstractConnection implements Connection {
     return this.shutdownCallbacks;
   }
 
+  @Override
   public void addShutdownCallback(Handler callback) {
     this.shutdownCallbacks.add(callback);
   }
@@ -107,7 +113,7 @@ public abstract class AbstractConnection implements Connection {
   }
 
   protected void reclaimSendBuffer(int bufferId) {
-    HpnlBuffer buffer = (HpnlBuffer)this.sendBufferMap.get(bufferId);
+    HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
     if (buffer == null) {
       throw new IllegalStateException("buffer not found with id: " + bufferId);
     } else {
@@ -115,6 +121,7 @@ public abstract class AbstractConnection implements Connection {
     }
   }
 
+  @Override
   public void pushSendBuffer(HpnlBuffer buffer) {
     synchronized(this) {
       this.sendBufferMap.put(buffer.getBufferId(), buffer);
@@ -122,43 +129,48 @@ public abstract class AbstractConnection implements Connection {
     }
   }
 
+  @Override
   public void pushRecvBuffer(HpnlBuffer buffer) {
     synchronized(this) {
       this.recvBufferMap.put(buffer.getBufferId(), buffer);
     }
   }
 
+  @Override
   public HpnlBuffer takeSendBuffer() {
-    return (HpnlBuffer)this.sendBufferList.poll();
+    return this.sendBufferList.poll();
   }
 
+  @Override
   public HpnlBuffer getSendBuffer(int bufferId) {
-    return (HpnlBuffer)this.sendBufferMap.get(bufferId);
+    return this.sendBufferMap.get(bufferId);
   }
 
+  @Override
   public HpnlBuffer getRecvBuffer(int bufferId) {
-    return (HpnlBuffer)this.recvBufferMap.get(bufferId);
+    return this.recvBufferMap.get(bufferId);
   }
 
   protected int handleCallback(int eventType, int bufferId, int bufferSize) {
     int e;
     switch(eventType) {
-      case 2:
-        e = this.executeCallback(this.connectedCallback, bufferId, 0);
-        break;
-      case 4:
-        e = this.executeCallback(this.readCallback, bufferId, bufferSize);
-        break;
-      case 16:
+      case EventType.RECV_EVENT:
         e = this.executeCallback(this.recvCallback, bufferId, bufferSize);
         break;
-      case 32:
+      case EventType.SEND_EVENT:
         e = this.executeCallback(this.sendCallback, bufferId, bufferSize);
-        if (e == 1) {
+        if (e == Handler.RESULT_DEFAULT) {
           this.reclaimSendBuffer(bufferId);
         }
         break;
-      case 1024:
+      case EventType
+              .CONNECTED_EVENT:
+        e = this.executeCallback(this.connectedCallback, bufferId, 0);
+        break;
+      case EventType.READ_EVENT:
+        e = this.executeCallback(this.readCallback, bufferId, bufferSize);
+        break;
+      case EventType.SHUTDOWN:
         e = this.executeCallbacks(this.shutdownCallbacks, bufferId, 0);
         break;
       default:
@@ -204,30 +216,37 @@ public abstract class AbstractConnection implements Connection {
     this.srcPort = srcPort;
   }
 
+  @Override
   public String getDestAddr() {
     return this.destAddr;
   }
 
+  @Override
   public int getDestPort() {
     return this.destPort;
   }
 
+  @Override
   public String getSrcAddr() {
     return this.srcAddr;
   }
 
+  @Override
   public int getSrcPort() {
     return this.srcPort;
   }
 
+  @Override
   public int sendTo(int bufferSize, int bufferId, ByteBuffer peerName) {
     throw new UnsupportedOperationException();
   }
 
+  @Override
   public ByteBuffer getLocalName() {
     throw new UnsupportedOperationException();
   }
 
+  @Override
   public void shutdown() {
     this.shutdown(true);
   }
@@ -247,7 +266,7 @@ public abstract class AbstractConnection implements Connection {
     }
   }
 
-  protected abstract void doShutdown(boolean var1);
+  protected abstract void doShutdown(boolean proactive);
 
   private class InternalShutdownCallback implements Handler {
     private InternalShutdownCallback() {
@@ -255,7 +274,7 @@ public abstract class AbstractConnection implements Connection {
 
     public int handle(Connection connection, int bufferId, int bufferSize) {
       AbstractConnection.this.shutdown(false);
-      return 1;
+      return Handler.RESULT_DEFAULT;
     }
   }
 }

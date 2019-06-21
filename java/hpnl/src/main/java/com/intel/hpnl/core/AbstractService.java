@@ -48,21 +48,23 @@ public abstract class AbstractService {
   }
 
   protected void pushSendBuffer(long eq, int bufferId) {
-    Connection connection = (Connection)this.conMap.get(eq);
+    Connection connection = this.conMap.get(eq);
     connection.pushSendBuffer(this.sendBufferPool.getBuffer(bufferId));
   }
 
   protected void pushRecvBuffer(long eq, int bufferId) {
-    Connection connection = (Connection)this.conMap.get(eq);
+    Connection connection = this.conMap.get(eq);
     connection.pushRecvBuffer(this.recvBufferPool.getBuffer(bufferId));
   }
 
-  protected abstract void setSendBuffer(ByteBuffer var1, long var2, int var4);
+  protected abstract HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer);
 
-  protected abstract void setRecvBuffer(ByteBuffer var1, long var2, int var4);
+  protected abstract void setSendBuffer(ByteBuffer buffer, long size, int id);
+
+  protected abstract void setRecvBuffer(ByteBuffer buffer, long size, int id);
 
   public Connection getConnection(long key) {
-    return (Connection)this.conMap.get(key);
+    return this.conMap.get(key);
   }
 
   public HpnlBuffer getSendBuffer(int bufferId) {
@@ -73,11 +75,11 @@ public abstract class AbstractService {
     return this.recvBufferPool.getBuffer(bufferId);
   }
 
-  public abstract int connect(String var1, String var2, int var3, Handler var4);
+  public abstract int connect(String host, String port, int cqIndex, Handler callback);
 
-  protected abstract void regCon(long var1, long var3, String var5, int var6, String var7, int var8, long var9);
+  protected abstract void regCon(long eq, long connectHandle, String destAddr, int destPort, String srcAddr, int srcPort, long connectId);
 
-  public abstract void unregCon(long var1);
+  public abstract void unregCon(long eq);
 
   public abstract void removeConnection(long connectionId, long connHandle, boolean proactive);
 

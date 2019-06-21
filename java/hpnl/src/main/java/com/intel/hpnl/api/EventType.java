@@ -1,4 +1,4 @@
-package com.intel.hpnl.core;
+package com.intel.hpnl.api;
 
 public class EventType {
   public static final int ACCEPT_EVENT = 1;
@@ -13,6 +13,6 @@ public class EventType {
   public static final int ACCEPT = 512;
   public static final int SHUTDOWN = 1024;
 
-  public EventType() {
+  private EventType() {
   }
 }

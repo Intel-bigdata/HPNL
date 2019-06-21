@@ -29,23 +29,23 @@ public class RdmConnection extends AbstractConnection {
     this.server = server;
   }
 
-  private native void init(long var1);
+  private native void init(long nativeHandle);
 
-  private native void get_local_name(ByteBuffer var1, long nativeHandle);
+  private native void get_local_name(ByteBuffer localName, long nativeHandle);
 
   private native int get_local_name_length(long nativeHandle);
 
   private native long get_connection_id(long nativeHandle);
 
-  public native int send(int var1, int var2, long nativeHandle);
+  public native int send(int size, int id, long nativeHandle);
 
-  public native int sendTo(int var1, int var2, ByteBuffer var3, long nativeHandle);
+  public native int sendTo(int size, int id, ByteBuffer peer, long nativeHandle);
 
-  public native int sendBuf(ByteBuffer var1, int var2, long nativeHandle);
+  public native int sendBuf(ByteBuffer buffer, int size, long nativeHandle);
 
-  public native int sendBufTo(ByteBuffer var1, int var2, ByteBuffer var3, long nativeHandle);
+  public native int sendBufTo(ByteBuffer buffer, int size, ByteBuffer peer, long nativeHandle);
 
-  private native void releaseRecvBuffer(int var1, long nativeHandle);
+  private native void releaseRecvBuffer(int id, long nativeHandle);
 
   private native void deleteGlobalRef(long nativeHandle);
 
@@ -67,34 +67,37 @@ public class RdmConnection extends AbstractConnection {
   protected void doShutdown(boolean proactive) {
     this.service.removeNativeConnection(nativeConnId, this.nativeHandle, proactive);
     this.deleteGlobalRef(this.nativeHandle);
-    if(!server) {
-      RdmService.removePortFromRegister(getSrcPort());
-    }
     this.free(this.nativeHandle);
   }
 
+  @Override
   public void pushSendBuffer(HpnlBuffer buffer) {
     ((HpnlRdmBuffer)buffer).setConnectionId(this.getConnectionId());
     super.pushSendBuffer(buffer);
   }
 
+  @Override
   public void pushRecvBuffer(HpnlBuffer buffer) {
     ((HpnlRdmBuffer)buffer).setConnectionId(this.getConnectionId());
     super.pushRecvBuffer(buffer);
   }
 
+  @Override
   public void releaseRecvBuffer(int bufferId) {
     this.releaseRecvBuffer(bufferId, this.nativeHandle);
   }
 
+  @Override
   public int send(int bufferSize, int bufferId) {
     return this.send(bufferSize, bufferId, this.nativeHandle);
   }
 
+  @Override
   public int sendTo(int bufferSize, int bufferId, ByteBuffer peerName) {
     return this.sendTo(bufferSize, bufferId, peerName, this.nativeHandle);
   }
 
+  @Override
   public ByteBuffer getLocalName() {
     return this.localName;
   }
@@ -117,7 +120,7 @@ public class RdmConnection extends AbstractConnection {
         throw new RuntimeException(e);
       }
     }
-    String tmp = localIp.replaceAll("\\.", "");
-    connectId = Long.valueOf(tmp) + port;
+    String tmp = localIp.replaceAll("\\.", "") + port;
+    connectId = Long.valueOf(tmp);
   }
 }

@@ -37,13 +37,13 @@ public class MemPool {
   }
 
   public HpnlBuffer getBuffer(int bufferId) {
-    return (HpnlBuffer)this.bufferMap.get(bufferId);
+    return this.bufferMap.get(bufferId);
   }
 
   private void alloc() {
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(this.bufferSize);
     int seq = this.seqId.getAndIncrement();
-    HpnlBuffer hpnlBuffer = new HpnlRdmBuffer(seq, byteBuffer);
+    HpnlBuffer hpnlBuffer = service.newHpnlBuffer(seq, byteBuffer);
     this.bufferMap.put(seq, hpnlBuffer);
     if (this.type == MemPool.Type.SEND) {
       this.service.setSendBuffer(byteBuffer, (long)this.bufferSize, seq);
@@ -53,11 +53,7 @@ public class MemPool {
 
   }
 
-  public static enum Type {
-    SEND,
-    RECV;
-
-    private Type() {
-    }
+  public enum Type {
+    SEND, RECV
   }
 }

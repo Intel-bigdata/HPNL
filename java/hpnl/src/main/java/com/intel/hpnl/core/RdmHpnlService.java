@@ -3,7 +3,6 @@ package com.intel.hpnl.core;
 import com.intel.hpnl.api.EventTask;
 import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlService;
-import com.intel.hpnl.api.HpnlService.EndpointType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
@@ -24,28 +23,34 @@ public class RdmHpnlService implements HpnlService {
     this.server = server;
   }
 
+  @Override
   public int bind(String hostname, int port, int cqIndex, Handler connectedCallback) {
     return this.service.connect(hostname, String.valueOf(port), cqIndex, connectedCallback);
   }
 
+  @Override
   public int connect(String hostname, int port, int cqIndex, Handler connectedCallback) {
     return this.service.connect(hostname, String.valueOf(port), cqIndex, connectedCallback);
   }
 
+  @Override
   public void stop() {
     this.service.stop();
   }
 
+  @Override
   public EventTask getEqTask() {
     return null;
   }
 
+  @Override
   public List<EventTask> getCqTasks() {
     List<EventTask> tasks = new ArrayList();
     tasks.add(this.service.getEventTask());
     return tasks;
   }
 
+  @Override
   public long getNewConnectionId() {
     return this.nextConnectionId.getAndIncrement();
   }
@@ -55,20 +60,22 @@ public class RdmHpnlService implements HpnlService {
     this.service.removeConnection(nativeConnectionId, connEq, proactive);
   }
 
+  @Override
   public boolean isServer() {
     return this.server;
   }
 
   @Override
   public int getFreePort() {
-    return RdmService.getFreePort();
+    return service.getFreePort();
   }
 
   @Override
   public void reclaimPort(int port) {
-    RdmService.removePortFromRegister(port);
+    service.reclaimPort(port);
   }
 
+  @Override
   public EndpointType getEndpointType() {
     return EndpointType.RDM;
   }

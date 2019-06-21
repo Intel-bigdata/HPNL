@@ -17,7 +17,7 @@ public class EqServerService extends EqService {
   }
 
   protected void handleEqCallback(long eq, int eventType, int blockId) {
-    Connection connection = (Connection)this.conMap.get(eq);
+    Connection connection = this.conMap.get(eq);
     if (this.connectedCallback != null) {
       this.connectedCallback.handle(connection, 0, 0);
     }
