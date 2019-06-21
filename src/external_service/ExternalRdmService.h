@@ -18,9 +18,7 @@ class ExternalRdmService {
     RdmConnection* get_con(const char*, const char*);
     int wait_event(Chunk**, int*);
 
-    void set_recv_buffer(char*, uint64_t, int);
-    void set_send_buffer(char*, uint64_t, int);
-
+    void set_buffer(char*, uint64_t, int);
   private:
     ExternalRdmService(ExternalRdmService& service) {}
     ExternalRdmService& operator=(const ExternalRdmService& service) { return *this; }
@@ -28,8 +26,7 @@ class ExternalRdmService {
     ExternalRdmCqDemultiplexer *demulti_plexer;
     int buffer_num;
     bool is_server;
-    BufMgr *recvBufMgr;
-    BufMgr *sendBufMgr;
+    BufMgr *bufMgr;
 };
 
 #endif

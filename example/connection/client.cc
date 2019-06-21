@@ -40,29 +40,21 @@ class ConnectedCallback : public Callback {
 };
 
 void connect() {
-  BufMgr *recvBufMgr = new ConBufMgr();
+  BufMgr *bufMgr = new ConBufMgr();
   Chunk *ck;
-  for (int i = 0; i < MEM_SIZE; i++) {
+  for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();
-    ck->buffer_id = recvBufMgr->get_id();
+    ck->buffer_id = bufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->put(ck->buffer_id, ck);
+    bufMgr->put(ck->buffer_id, ck);
   }
-  BufMgr *sendBufMgr = new ConBufMgr();
-  for (int i = 0; i < MEM_SIZE; i++) {
-    ck = new Chunk();
-    ck->buffer_id = sendBufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    sendBufMgr->put(ck->buffer_id, ck);
-  }
+
   Client *client = new Client(1, 16);
   client->init();
-  client->set_recv_buf_mgr(recvBufMgr);
-  client->set_send_buf_mgr(sendBufMgr);
+  client->set_buf_mgr(bufMgr);
 
-  ConnectedCallback *connectedCallback = new ConnectedCallback(client, sendBufMgr);
+  ConnectedCallback *connectedCallback = new ConnectedCallback(client, bufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback(client);
 
   client->set_recv_callback(NULL);
@@ -81,26 +73,16 @@ void connect() {
   delete connectedCallback;
   delete client;
 
-  int recv_chunk_size = recvBufMgr->get_id();
-  assert(recv_chunk_size == MEM_SIZE);
-  for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = recvBufMgr->get(i);
+  for (int i = 0; i < MEM_SIZE*2; i++) {
+    Chunk *ck = bufMgr->get(i);
     free(ck->buffer);
   }
-  int send_chunk_size = sendBufMgr->get_id();
-  for (int i = 0; i < send_chunk_size; i++) {
-    Chunk *ck = sendBufMgr->get(i);
-    free(ck->buffer);
-  }
-
-  delete recvBufMgr;
-  delete sendBufMgr;
+  delete bufMgr;
 
   shutdownCallback = NULL;
   connectedCallback = NULL;
   client = NULL;
-  recvBufMgr = NULL;
-  sendBufMgr = NULL;
+  bufMgr = NULL;
 }
 
 int main(int argc, char *argv[]) {

@@ -7,11 +7,12 @@ MsgStack::MsgStack(uint64_t flags_, int worker_num_, int buffer_num_, bool is_se
   flags(flags_), 
   worker_num(worker_num_), seq_num(0), buffer_num(buffer_num_), is_server(is_server_),
   fabric(NULL), domain(NULL), hints(NULL), info(NULL), hints_tmp(NULL), info_tmp(NULL), 
-  peq(NULL), pep(NULL), waitset(NULL) {}
+  peq(NULL), pep(NULL), waitset(NULL), initialized(false) {
+}
 
 MsgStack::~MsgStack() {
   for (auto iter : conMap) {
-    delete iter.second; 
+    delete iter.second;
   }
   conMap.erase(conMap.begin(), conMap.end());
   if (peq) {
@@ -77,7 +78,6 @@ int MsgStack::init() {
   hints->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-
   if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, flags, hints, &info)) {
     perror("fi_getinfo");
     goto free_info;
@@ -114,6 +114,7 @@ int MsgStack::init() {
       goto free_cq;
     }
   }
+  initialized = true;
   return 0;
 
 free_cq:
@@ -146,10 +147,13 @@ free_hints:
     fi_freeinfo(hints);
     hints = nullptr;
   }
+  initialized = false;
   return -1;
 }
 
-void* MsgStack::bind(const char *ip_, const char *port_, BufMgr* rbuf, BufMgr* sbuf) {
+void* MsgStack::bind(const char *ip_, const char *port_, BufMgr* buf_mgr) {
+  if (!initialized || !ip_ || !port_)
+    return NULL;
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
     return NULL;
@@ -163,9 +167,9 @@ void* MsgStack::bind(const char *ip_, const char *port_, BufMgr* rbuf, BufMgr* s
   hints_tmp->tx_attr->msg_order = FI_ORDER_SAS;
   hints_tmp->rx_attr->msg_order = FI_ORDER_SAS;
 #ifdef VERBS
-  hints->fabric_attr->prov_name = strdup("verbs");
+  hints_tmp->fabric_attr->prov_name = strdup("verbs");
 #else
-  hints->fabric_attr->prov_name = strdup("sockets");
+  hints_tmp->fabric_attr->prov_name = strdup("sockets");
 #endif
 
   if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
@@ -177,6 +181,7 @@ void* MsgStack::bind(const char *ip_, const char *port_, BufMgr* rbuf, BufMgr* s
     perror("fi_passive_ep");
     return NULL;
   }
+
   if (fi_pep_bind(pep, &peq->fid, 0)) {
     perror("fi_pep_bind");
     return NULL;
@@ -185,6 +190,8 @@ void* MsgStack::bind(const char *ip_, const char *port_, BufMgr* rbuf, BufMgr* s
 }
 
 int MsgStack::listen() {
+  if (!initialized || !pep)
+    return -1;
   if (fi_listen(pep)) {
     perror("fi_listen");
     return -1; 
@@ -192,7 +199,9 @@ int MsgStack::listen() {
   return 0;
 }
 
-fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
+fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* buf_mgr) {
+  if (!initialized || !ip_ || !port_ || !buf_mgr)
+    return NULL;
   if ((hints_tmp = fi_allocinfo()) == NULL) {
     perror("fi_allocinfo");
     return NULL;
@@ -206,16 +215,16 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* rbuf_mgr, 
   hints_tmp->tx_attr->msg_order = FI_ORDER_SAS;
   hints_tmp->rx_attr->msg_order = FI_ORDER_SAS;
 #ifdef VERBS
-  hints->fabric_attr->prov_name = strdup("verbs");
+  hints_tmp->fabric_attr->prov_name = strdup("verbs");
 #else
-  hints->fabric_attr->prov_name = strdup("sockets");
+  hints_tmp->fabric_attr->prov_name = strdup("sockets");
 #endif
 
   if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, flags, hints_tmp, &info_tmp)) {
     perror("fi_getinfo");
   }
 
-  MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], waitset, rbuf_mgr, sbuf_mgr, false, buffer_num, seq_num%worker_num);
+  MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], waitset, buf_mgr, false, buffer_num, seq_num%worker_num);
   if (con->init()) {
     delete con;
     con = NULL;
@@ -236,8 +245,10 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* rbuf_mgr, 
   return con->get_eq();
 }
 
-fid_eq* MsgStack::accept(void *info_, BufMgr* recv_buf_mgr, BufMgr* send_buf_mgr) {
-  MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, recv_buf_mgr, send_buf_mgr, true, buffer_num, seq_num%worker_num);
+fid_eq* MsgStack::accept(void *info_, BufMgr* buf_mgr) {
+  if (!initialized || !info_)
+    return NULL;
+  MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], waitset, buf_mgr, true, buffer_num, seq_num%worker_num);
   if (con->init()) {
     delete con;
     con = NULL;
@@ -252,6 +263,8 @@ fid_eq* MsgStack::accept(void *info_, BufMgr* recv_buf_mgr, BufMgr* send_buf_mgr
 }
 
 uint64_t MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+  if (!initialized || !buffer || buffer_size <= 0)
+    return -1;
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
   ck->capacity = buffer_size;
@@ -271,16 +284,16 @@ uint64_t MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer
 
 void MsgStack::unreg_rma_buffer(int buffer_id) {
   Chunk *ck = get_rma_chunk(buffer_id);
+  if (!ck) {
+    return;
+  }
   fi_close(&((fid_mr*)ck->mr)->fid);
+  chunkMap.erase(buffer_id);
 }
 
 Chunk* MsgStack::get_rma_chunk(int buffer_id) {
   std::lock_guard<std::mutex> lk(mtx);
   return chunkMap[buffer_id];
-}
-
-void MsgStack::shutdown() {
-  //TODO: shutdown
 }
 
 void MsgStack::reap(void *con_id) {

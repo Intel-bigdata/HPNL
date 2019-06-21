@@ -37,8 +37,7 @@ class Service {
     void               wait();
 
     // Initialize buffer container
-    void               set_recv_buf_mgr(BufMgr*);
-    void               set_send_buf_mgr(BufMgr*);
+    void               set_buf_mgr(BufMgr*);
 
     // Initialize event callback
     void               set_send_callback(Callback*);
@@ -68,8 +67,7 @@ class Service {
     CqDemultiplexer    *cq_demulti_plexer[MAX_WORKERS];
     RdmCqDemultiplexer *rdm_cq_demulti_plexer;
 
-    BufMgr             *recvBufMgr;
-    BufMgr             *sendBufMgr;
+    BufMgr             *bufMgr;
 
     Callback           *recvCallback;
     Callback           *sendCallback;
@@ -93,13 +91,10 @@ class AcceptRequestCallback : public Callback {
     AcceptRequestCallback(Service *ioService_) : ioService(ioService_) {}
     virtual ~AcceptRequestCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
-      assert(ioService->recvBufMgr);
-      assert(ioService->sendBufMgr);
-      BufMgr **recvBufMgr = (BufMgr**)param_1;
-      BufMgr **sendBufMgr = (BufMgr**)param_2;
+      assert(ioService->bufMgr);
+      BufMgr **bufMgr = (BufMgr**)param_1;
 
-      *recvBufMgr = ioService->recvBufMgr; 
-      *sendBufMgr = ioService->sendBufMgr;
+      *bufMgr = ioService->bufMgr;
     }
   private:
     Service *ioService;

@@ -39,5 +39,9 @@ if(WITH_VERBS)
   add_definitions(-DVERBS)
 endif(WITH_VERBS)
 
-add_subdirectory(test)
+add_subdirectory(src)
+add_subdirectory(example)
 add_subdirectory(java)
+
+enable_testing()
+add_test(NAME CORE_TEST COMMAND core_test)

@@ -32,7 +32,7 @@ class MsgStack;
 
 class MsgConnection : public Connection {
   public:
-    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, BufMgr*, bool, int, int);
+    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, bool, int, int);
     virtual ~MsgConnection();
 
     virtual int init() override;
@@ -80,8 +80,7 @@ class MsgConnection : public Connection {
     fid_eq *conEq;
 
     uint64_t mid;
-    BufMgr *recv_buf_mgr;
-    BufMgr *send_buf_mgr;
+    BufMgr *buf_mgr;
     std::vector<Chunk*> recv_buffers;
     std::vector<Chunk*> send_buffers;
     std::unordered_map<int, Chunk*> send_buffers_map;

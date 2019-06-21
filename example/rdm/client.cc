@@ -8,6 +8,8 @@ int count = 0;
 uint64_t start, end = 0;
 std::mutex mtx;
 
+#define MEM_SIZE 65536
+
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
 }
@@ -43,30 +45,22 @@ class RecvCallback : public Callback {
 };
 
 int main() {
-  BufMgr *rBufMgr = new PingPongBufMgr();
-  for (int i = 0; i < BUFFER_NUM*10; i++) {
-    Chunk *ck = new Chunk();
-    ck->buffer_id = rBufMgr->get_id();
+  BufMgr *bufMgr = new PingPongBufMgr();
+  Chunk *ck;
+  for (int i = 0; i < MEM_SIZE*2; i++) {
+    ck = new Chunk();
+    ck->buffer_id = bufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    rBufMgr->put(ck->buffer_id, ck);
-  }
-  BufMgr *sBufMgr = new PingPongBufMgr();
-  for (int i = 0; i < BUFFER_NUM*10; i++) {
-    Chunk *ck = new Chunk();
-    ck->buffer_id = sBufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    sBufMgr->put(ck->buffer_id, ck);
+    bufMgr->put(ck->buffer_id, ck);
   }
 
   Client *client = new Client(1, 16);
   client->init(false);
 
-  client->set_recv_buf_mgr(rBufMgr);
-  client->set_send_buf_mgr(sBufMgr);
+  client->set_buf_mgr(bufMgr);
 
-  RecvCallback *recvCallback = new RecvCallback(rBufMgr);
+  RecvCallback *recvCallback = new RecvCallback(bufMgr);
   client->set_recv_callback(recvCallback);
 
   client->start();
@@ -77,7 +71,7 @@ int main() {
   memset(buffer, '0', SIZE);
   
   char* peer_name = con->get_peer_name();
-  Chunk *ck = con->encode(buffer, SIZE, peer_name);
+  ck = con->encode(buffer, SIZE, peer_name);
   con->send(ck);
 
   client->wait();
@@ -85,19 +79,13 @@ int main() {
   delete recvCallback;
   delete client;
 
-  int recv_chunk_size = rBufMgr->get_id();
+  int recv_chunk_size = bufMgr->get_id();
+  assert(recv_chunk_size == MEM_SIZE*2);
   for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = rBufMgr->get(i);
+    Chunk *ck = bufMgr->get(i);
     free(ck->buffer);
   }
-  int send_chunk_size = sBufMgr->get_id();
-  for (int i = 0; i < send_chunk_size; i++) {
-    Chunk *ck = sBufMgr->get(i);
-    free(ck->buffer);
-  }
-
-  delete rBufMgr;
-  delete sBufMgr;
+  delete bufMgr;
 
   return 0;
 }

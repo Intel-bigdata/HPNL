@@ -26,6 +26,8 @@ class PingPongBufMgr : public BufMgr {
     }
     virtual Chunk* get() override {
       std::lock_guard<std::mutex> l(mtx);
+      if (bufs.empty())
+        return NULL;
       Chunk *ck = bufs.back();
       bufs.pop_back();
       return ck;

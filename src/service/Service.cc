@@ -83,7 +83,7 @@ void Service::start() {
 
 int Service::listen(const char* addr, const char* port) {
   if (msg) {
-    fid_eq* eq = (fid_eq*)stack->bind(addr, port, recvBufMgr, sendBufMgr);
+    fid_eq* eq = (fid_eq*)stack->bind(addr, port, bufMgr);
     ((MsgStack*)stack)->listen();
     std::shared_ptr<EqHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
     acceptRequestCallback = new AcceptRequestCallback(this);
@@ -95,7 +95,7 @@ int Service::listen(const char* addr, const char* port) {
     handler->set_shutdown_callback(shutdownCallback);
     proactor->register_handler(handler);
   } else {
-    RdmConnection* con = (RdmConnection*)stack->bind(addr, port, recvBufMgr, sendBufMgr);
+    RdmConnection* con = (RdmConnection*)stack->bind(addr, port, bufMgr);
     con->set_recv_callback(recvCallback);
     con->set_send_callback(sendCallback);
   }
@@ -104,7 +104,7 @@ int Service::listen(const char* addr, const char* port) {
 }
 
 int Service::connect(const char* addr, const char* port) {
-  fid_eq *eq = ((MsgStack*)stack)->connect(addr, port, recvBufMgr, sendBufMgr);
+  fid_eq *eq = ((MsgStack*)stack)->connect(addr, port, bufMgr);
 
   std::shared_ptr<EventHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
   acceptRequestCallback = new AcceptRequestCallback(this);
@@ -120,7 +120,7 @@ int Service::connect(const char* addr, const char* port) {
 }
 
 Connection* Service::get_con(const char* addr, const char* port) {
-  RdmConnection *con = ((RdmStack*)stack)->get_con(addr, port, recvBufMgr, sendBufMgr);
+  RdmConnection *con = ((RdmStack*)stack)->get_con(addr, port, bufMgr);
   if (!con) {
     return NULL; 
   }
@@ -169,12 +169,8 @@ void Service::wait() {
   }
 }
 
-void Service::set_recv_buf_mgr(BufMgr* bufMgr) {
-  recvBufMgr = bufMgr;
-}
-
-void Service::set_send_buf_mgr(BufMgr* bufMgr) {
-  sendBufMgr = bufMgr;
+void Service::set_buf_mgr(BufMgr* bufMgr) {
+  this->bufMgr = bufMgr;
 }
 
 void Service::set_recv_callback(Callback *callback) {

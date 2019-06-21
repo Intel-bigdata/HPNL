@@ -68,17 +68,12 @@ public class RdmService {
     conMap.put(con_handle, con);
   }
 
-  public void initRecvBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
-    this.recvBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, MemPool.Type.RECV);
-  }
-
-  public void initSendBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
-    this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, MemPool.Type.SEND);
+  public void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
+    this.bufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum);
   }
 
   public void reallocBufferPool() {
-    this.sendBufferPool.realloc();
-    this.recvBufferPool.realloc();
+    this.bufferPool.realloc();
   }
 
   public void setRecvCallback(RdmHandler callback) {
@@ -94,31 +89,26 @@ public class RdmService {
     if (connection == null) {
       throw new NullPointerException("connection is null when putting " + bufferId + " bufferId"); 
     }
-    connection.pushSendBuffer(sendBufferPool.getBuffer(bufferId));
+    connection.pushSendBuffer(bufferPool.getBuffer(bufferId));
   }
 
   public HpnlBuffer getSendBuffer(int bufferId) {
-    return sendBufferPool.getBuffer(bufferId); 
+    return this.bufferPool.getBuffer(bufferId); 
   }
 
   public HpnlBuffer getRecvBuffer(int bufferId) {
-    return recvBufferPool.getBuffer(bufferId);
+    return this.bufferPool.getBuffer(bufferId);
   }
 
-  public void set_recv_buffer(ByteBuffer buffer, long size, int bufferId) {
-    set_recv_buffer1(buffer, size, bufferId, this.nativeHandle);
-  }
-
-  public void set_send_buffer(ByteBuffer buffer, long size, int bufferId) {
-    set_send_buffer1(buffer, size, bufferId, this.nativeHandle);
+  public void set_buffer(ByteBuffer buffer, long size, int bufferId) {
+    set_buffer1(buffer, size, bufferId, this.nativeHandle);
   }
 
   private native int init(int buffer_num, boolean is_server);
   private native void listen(String ip, String port, long nativeHandle);
   private native long get_con(String ip, String port, long nativeHandle);
   private native int wait_event(long nativeHandle);
-  private native void set_recv_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
-  private native void set_send_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
+  private native void set_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
   private native void free(long nativeHandle);
 
   private String addr;
@@ -129,8 +119,7 @@ public class RdmService {
   private ConcurrentHashMap<Long, RdmConnection> conMap;
   private RdmHandler recvCallback;
   private RdmHandler sendCallback;
-  private MemPool sendBufferPool;
-  private MemPool recvBufferPool;
+  private MemPool bufferPool;
 
   private long nativeHandle;
 }

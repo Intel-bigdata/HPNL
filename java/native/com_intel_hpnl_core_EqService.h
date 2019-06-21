@@ -49,18 +49,10 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_delete_1eq_1event1
 
 /*
  * Class:     com_intel_hpnl_core_EqService
- * Method:    set_recv_buffer
+ * Method:    set_buffer
  * Signature: (Ljava/nio/ByteBuffer;JIJ)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer1
-  (JNIEnv *, jobject, jobject, jlong, jint, jlong);
-
-/*
- * Class:     com_intel_hpnl_core_EqService
- * Method:    set_send_buffer
- * Signature: (Ljava/nio/ByteBuffer;JIJ)V
- */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1send_1buffer1
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1buffer1
   (JNIEnv *, jobject, jobject, jlong, jint, jlong);
 
 /*

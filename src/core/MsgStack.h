@@ -11,25 +11,23 @@
 #include <mutex>
 
 #include "HPNL/BufMgr.h"
+#include "HPNL/Common.h"
 #include "core/Stack.h"
 
 class MsgConnection;
-
-#define MAX_WORKER_NUM 10
 
 class MsgStack : public Stack {
   public:
     MsgStack(uint64_t, int, int, bool);
     virtual ~MsgStack();
     virtual int init() override;
-    virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
+    virtual void* bind(const char*, const char*, BufMgr*) override;
     int listen();
-    fid_eq* connect(const char*, const char*, BufMgr*, BufMgr*);
-    fid_eq* accept(void*, BufMgr*, BufMgr*);
+    fid_eq* connect(const char*, const char*, BufMgr*);
+    fid_eq* accept(void*, BufMgr*);
     uint64_t reg_rma_buffer(char*, uint64_t, int);
     void unreg_rma_buffer(int);
     Chunk* get_rma_chunk(int);
-    void shutdown();
     void reap(void*);
     MsgConnection* get_connection(fid* id);
     fid_fabric* get_fabric();
@@ -41,8 +39,6 @@ class MsgStack : public Stack {
     uint64_t flags;
     int worker_num;
     int buffer_num;
-    BufMgr* recv_buf_mgr;
-    BufMgr* send_buf_mgr;
     bool is_server;
     uint64_t seq_num;
     int total_buffer_num;
@@ -55,11 +51,13 @@ class MsgStack : public Stack {
 
     std::map<fid*, MsgConnection*> conMap;
 
-    fid_cq *cqs[MAX_WORKER_NUM];
+    fid_cq *cqs[MAX_WORKERS];
     fid_wait *waitset;
 
     std::map<int, Chunk*> chunkMap;
     std::mutex mtx;
+    
+    bool initialized;
 };
 
 #endif
