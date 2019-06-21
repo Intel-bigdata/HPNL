@@ -16,7 +16,7 @@
 
 class RdmConnection : public Connection {
   public:
-    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, BufMgr*, int, bool);
+    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, int, bool);
     ~RdmConnection();
     virtual int init() override;
     virtual int send(Chunk*) override;
@@ -56,8 +56,7 @@ class RdmConnection : public Connection {
     size_t local_name_len = 64;
     std::map<std::string, fi_addr_t> addr_map;
 
-    BufMgr *rbuf_mgr;
-    BufMgr *sbuf_mgr;
+    BufMgr *buf_mgr;
     std::vector<Chunk*> recv_buffers;
     std::vector<Chunk*> send_buffers;
     std::unordered_map<int, Chunk*> send_buffers_map;

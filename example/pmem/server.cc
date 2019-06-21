@@ -107,38 +107,29 @@ class SendCallback : public Callback {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
-      con->reclaim_chunk(ck);
+      con->activate_send_chunk(ck);
     }
   private:
     BufMgr *bufMgr;
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *recvBufMgr = new PmemBufMgr();
+  BufMgr *bufMgr = new PmemBufMgr();
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();
-    ck->buffer_id = recvBufMgr->get_id();
+    ck->buffer_id = bufMgr->get_id();
     ck->buffer = std::malloc(BUFFER_SIZE);
     ck->capacity = BUFFER_SIZE;
-    recvBufMgr->put(ck->buffer_id, ck);
-  }
-  BufMgr *sendBufMgr = new PmemBufMgr();
-  for (int i = 0; i < MEM_SIZE; i++) {
-    ck = new Chunk();
-    ck->buffer_id = sendBufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    sendBufMgr->put(ck->buffer_id, ck);
+    bufMgr->put(ck->buffer_id, ck);
   }
 
   Server *server = new Server(1, 16);
   server->init();
-  server->set_recv_buf_mgr(recvBufMgr);
-  server->set_send_buf_mgr(sendBufMgr);
+  server->set_buf_mgr(bufMgr);
 
-  RecvCallback *recvCallback = new RecvCallback(recvBufMgr, server);
-  SendCallback *sendCallback = new SendCallback(sendBufMgr);
+  RecvCallback *recvCallback = new RecvCallback(bufMgr, server);
+  SendCallback *sendCallback = new SendCallback(bufMgr);
   ShutdownCallback *shutdownCallback = new ShutdownCallback();
 
   server->set_recv_callback(recvCallback);
@@ -155,26 +146,16 @@ int main(int argc, char *argv[]) {
   delete recvCallback;
   delete server;
 
-  int recv_chunk_size = recvBufMgr->get_id();
-  assert(recv_chunk_size == MEM_SIZE*2);
-  for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = recvBufMgr->get(i);
+  for (int i = 0; i < MEM_SIZE*2; i++) {
+    Chunk *ck = bufMgr->get(i);
     free(ck->buffer);
   }
-  int send_chunk_size = sendBufMgr->get_id();
-  for (int i = 0; i < send_chunk_size; i++) {
-    Chunk *ck = sendBufMgr->get(i);
-    free(ck->buffer);
-  }
-
-  delete recvBufMgr;
-  delete sendBufMgr;
+  delete bufMgr;
 
   sendCallback = NULL;
   recvCallback = NULL;
   server = NULL;
-  recvBufMgr = NULL;
-  sendBufMgr = NULL;
+  bufMgr = NULL;
 
   return 0;
 }

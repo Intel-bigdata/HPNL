@@ -6,10 +6,9 @@
 
 MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_, 
     fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
-    fid_wait *waitset_, BufMgr *recv_buf_mgr_, 
-    BufMgr *send_buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
+    fid_wait *waitset_, BufMgr *buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
   stack(stack_), fabric(fabric_), info(info_), domain(domain_), ep(NULL),
-  conCq(cq_), conEq(NULL), recv_buf_mgr(recv_buf_mgr_), send_buf_mgr(send_buf_mgr_), 
+  conCq(cq_), conEq(NULL), buf_mgr(buf_mgr_),
   waitset(waitset_), is_server(is_server_), buffer_num(buffer_num_), cq_index(cq_index_),
   recv_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {}
 
@@ -17,13 +16,13 @@ MsgConnection::~MsgConnection() {
   for (auto buffer: send_buffers_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
-    send_buf_mgr->put(ck->buffer_id, ck);
+    buf_mgr->put(ck->buffer_id, ck);
   }
   while (recv_buffers.size() > 0) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
-    recv_buf_mgr->put(ck->buffer_id, ck);
+    buf_mgr->put(ck->buffer_id, ck);
   }
   if (ep) {
     shutdown();
@@ -71,9 +70,12 @@ int MsgConnection::init() {
   }
   
   fi_enable(ep);
-  while (size < buffer_num*2) {
+  while (size < buffer_num) {
     fid_mr *mr;
-    Chunk *ck = recv_buf_mgr->get();
+    Chunk *ck = buf_mgr->get();
+    if (ck == NULL) {
+      return -1; 
+    }
     if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
       perror("fi_mr_reg");
       goto free_recv_buf;
@@ -91,7 +93,10 @@ int MsgConnection::init() {
   size = 0;
   while (size < buffer_num) {
     fid_mr *mr;
-    Chunk *ck = send_buf_mgr->get();
+    Chunk *ck = buf_mgr->get();
+    if (ck == NULL) {
+      return -1; 
+    }
     if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
       perror("fi_mr_reg");
       goto free_send_buf;
@@ -110,14 +115,14 @@ free_send_buf:
   for (auto buffer: send_buffers_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
-    send_buf_mgr->put(ck->buffer_id, ck);
+    buf_mgr->put(ck->buffer_id, ck);
   }
 free_recv_buf:
   while (recv_buffers.size() > 0) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
-    recv_buf_mgr->put(ck->buffer_id, ck);
+    buf_mgr->put(ck->buffer_id, ck);
   }
 free_eq:
   if (conEq) {

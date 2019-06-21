@@ -22,8 +22,7 @@ class ExternalEqService {
     uint64_t reg_rma_buffer(char*, uint64_t, int);
     void unreg_rma_buffer(int);
     Chunk* get_rma_buffer(int);
-    void set_recv_buffer(char*, uint64_t, int);
-    void set_send_buffer(char*, uint64_t, int);
+    void set_buffer(char*, uint64_t, int);
 
     int wait_eq_event(fi_info**, fid_eq**, MsgConnection**);
     int add_eq_event(fid_eq*);
@@ -48,8 +47,7 @@ class ExternalEqService {
     char *sendBuffer;
     uint64_t recvSize;
     uint64_t sendSize;
-    ExternalEqServiceBufMgr *recvBufMgr;
-    ExternalEqServiceBufMgr *sendBufMgr;
+    ExternalEqServiceBufMgr *bufMgr;
     std::map<int, Chunk*> chunkMap;
 
     ExternalEqDemultiplexer *eq_demulti_plexer;

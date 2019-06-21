@@ -1,4 +1,4 @@
-set(PING_PONG_TEST ${PROJECT_SOURCE_DIR}/test/ping-pong)
+set(PING_PONG_TEST ${PROJECT_SOURCE_DIR}/example/ping-pong)
 
 add_executable(pingpong_server ${PING_PONG_TEST}/server.cc ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
 target_link_libraries(pingpong_server fabric)
@@ -12,7 +12,7 @@ set_target_properties(pingpong_client
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pingpong")
 
-set(CONNECTION_TEST ${PROJECT_SOURCE_DIR}/test/connection)
+set(CONNECTION_TEST ${PROJECT_SOURCE_DIR}/example/connection)
 
 add_executable(connection_server ${CONNECTION_TEST}/server.cc ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
 target_link_libraries(connection_server fabric)
@@ -26,7 +26,7 @@ set_target_properties(connection_client
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/connection")
 
-set(RDM_TEST ${PROJECT_SOURCE_DIR}/test/rdm)
+set(RDM_TEST ${PROJECT_SOURCE_DIR}/example/rdm)
 
 add_executable(rdm_server ${RDM_TEST}/server.cc ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
 target_link_libraries(rdm_server fabric)
@@ -42,7 +42,7 @@ set_target_properties(rdm_client
 
 option(WITH_PMEM "enable PMoF code" OFF)
 if(WITH_PMEM)
-  set(PMEM_TEST ${PROJECT_SOURCE_DIR}/test/pmem)
+  set(PMEM_TEST ${PROJECT_SOURCE_DIR}/example/pmem)
 
   add_executable(pmem_server ${PMEM_TEST}/server.cc ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
   target_link_libraries(pmem_server fabric pmemobj)

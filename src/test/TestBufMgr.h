@@ -5,10 +5,10 @@
 #include <iostream>
 #include <mutex>
 
-class ConBufMgr : public BufMgr {
+class TestBufMgr : public BufMgr {
   public:
-    ConBufMgr() {}
-    virtual ~ConBufMgr() {
+    TestBufMgr() {}
+    virtual ~TestBufMgr() {
       for (auto buf : buf_map) {
         delete buf.second; 
         buf.second = NULL;
@@ -26,6 +26,8 @@ class ConBufMgr : public BufMgr {
     }
     virtual Chunk* get() override {
       std::lock_guard<std::mutex> l(mtx);
+      if (bufs.empty())
+        return NULL;
       Chunk *ck = bufs.back();
       bufs.pop_back();
       return ck;

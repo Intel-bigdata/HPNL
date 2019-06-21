@@ -17,9 +17,10 @@ class Server : public Service {
     void     start();
     void     wait();
 
+    // Buffer management
+    void     set_buf_mgr(BufMgr*);
+
     // Initialize event callback
-    void     set_recv_buf_mgr(BufMgr*);
-    void     set_send_buf_mgr(BufMgr*);
     void     set_recv_callback(Callback *callback);
     void     set_send_callback(Callback *callback);
     void     set_read_callback(Callback *callback);

@@ -5,17 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.nio.ByteBuffer;
 
 public class MemPool {
-  public enum Type {
-    SEND, RECV 
-  }
-
-  public MemPool(EqService eqService, int initBufferNum, int bufferSize, int nextBufferNum, Type type) {
+  public MemPool(EqService eqService, int initBufferNum, int bufferSize, int nextBufferNum) {
     this.eqService = eqService;
     this.rdmService = null;
     this.initBufferNum = initBufferNum;
     this.bufferSize = bufferSize;
     this.nextBufferNum = nextBufferNum;
-    this.type = type;
     this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
     this.seqId = new AtomicInteger(0);
     for (int i = 0; i < this.initBufferNum; i++) {
@@ -23,13 +18,12 @@ public class MemPool {
     }
   }
 
-  public MemPool(RdmService rdmService, int initBufferNum, int bufferSize, int nextBufferNum, Type type) {
+  public MemPool(RdmService rdmService, int initBufferNum, int bufferSize, int nextBufferNum) {
     this.eqService = null;
     this.rdmService = rdmService;
     this.initBufferNum = initBufferNum;
     this.bufferSize = bufferSize;
     this.nextBufferNum = nextBufferNum;
-    this.type = type;
     this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
     this.seqId = new AtomicInteger(0);
     for (int i = 0; i < this.initBufferNum; i++) {
@@ -53,15 +47,9 @@ public class MemPool {
     HpnlBuffer buffer = new HpnlBuffer(seq, byteBuffer);
     bufferMap.put(seq, buffer);
     if (eqService!= null) {
-      if (type == Type.SEND)
-        eqService.set_send_buffer(byteBuffer, bufferSize, seq);
-      else
-        eqService.set_recv_buffer(byteBuffer, bufferSize, seq);
+      eqService.set_buffer(byteBuffer, bufferSize, seq);
     } else {
-      if (type == Type.SEND)
-        rdmService.set_send_buffer(byteBuffer, bufferSize, seq);
-      else
-        rdmService.set_recv_buffer(byteBuffer, bufferSize, seq);
+      rdmService.set_buffer(byteBuffer, bufferSize, seq);
     }
   }
 
@@ -70,7 +58,6 @@ public class MemPool {
   private int initBufferNum;
   private int bufferSize;
   private int nextBufferNum;
-  private Type type;
   private ConcurrentHashMap<Integer, HpnlBuffer> bufferMap;
   private AtomicInteger seqId;
 }

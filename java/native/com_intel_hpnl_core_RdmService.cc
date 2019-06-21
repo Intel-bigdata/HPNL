@@ -104,23 +104,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *e
   return ret;
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1recv_1buffer1(JNIEnv *env, jobject obj, jobject recv_buffer, jlong size, jint bufferId, jlong nativeHandle) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1buffer1(JNIEnv *env, jobject obj, jobject buffer, jlong size, jint bufferId, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
-  jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(recv_buffer);
-  assert(buffer != NULL);
-  service->set_recv_buffer((char*)buffer, size, bufferId);
-}
-
-/*
- * Class:     com_intel_hpnl_core_RdmService
- * Method:    set_send_buffer
- * Signature: (Ljava/nio/ByteBuffer;JIJ)V
- */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1send_1buffer1(JNIEnv *env, jobject obj, jobject send_buffer, jlong size, jint bufferId, jlong nativeHandle) {
-  ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
-  jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(send_buffer);
-  assert(buffer != NULL);
-  service->set_send_buffer((char*)buffer, size, bufferId);
+  jbyte* bufferAddr = (jbyte*)(*env).GetDirectBufferAddress(buffer);
+  assert(bufferAddr != NULL);
+  service->set_buffer((char*)bufferAddr, size, bufferId);
 }
 
 /*

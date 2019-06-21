@@ -7,11 +7,10 @@ int EqHandler::handle_event(EventType et, void *context) {
   fi_eq_cm_entry *entry = (fi_eq_cm_entry*)context;
   if (et == ACCEPT_EVENT) {
     assert(acceptRequestCallback);
-    BufMgr *recv_buf_mgr;
-    BufMgr *send_buf_mgr;
-    (*acceptRequestCallback)(&recv_buf_mgr, &send_buf_mgr);
+    BufMgr *buf_mgr;
+    (*acceptRequestCallback)(&buf_mgr, NULL);
 
-    fid_eq *eq = stack->accept(entry->info, recv_buf_mgr, send_buf_mgr);
+    fid_eq *eq = stack->accept(entry->info, buf_mgr);
     std::shared_ptr<EqHandler> eqHandler = std::make_shared<EqHandler>(stack, proactor, eq);
     if (!eqHandler)
       return -1;

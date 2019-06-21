@@ -5,8 +5,7 @@
 #include "core/MsgConnection.h"
 
 ExternalEqService::ExternalEqService(int worker_num_, int buffer_num_, bool is_server_) : worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
-  recvBufMgr = new ExternalEqServiceBufMgr();
-  sendBufMgr = new ExternalEqServiceBufMgr();
+  bufMgr = new ExternalEqServiceBufMgr();
 }
 
 ExternalEqService::~ExternalEqService() {
@@ -18,13 +17,9 @@ ExternalEqService::~ExternalEqService() {
     delete eq_demulti_plexer;
     eq_demulti_plexer = nullptr;
   }
-  if (recvBufMgr) {
-    delete recvBufMgr;
-    recvBufMgr = nullptr;
-  }
-  if (sendBufMgr) {
-    delete sendBufMgr;
-    sendBufMgr = nullptr;
+  if (bufMgr) {
+    delete bufMgr;
+    bufMgr = nullptr;
   }
 }
 
@@ -57,9 +52,10 @@ free_stack:
 
 fid_eq* ExternalEqService::accept(fi_info* info) {
   fid_eq *eq = NULL;
-  if (sendBufMgr->free_size() < buffer_num || recvBufMgr->free_size() < buffer_num*2)
+  if (bufMgr->free_size() < buffer_num*2) {
     return NULL;
-  eq = stack->accept(info, recvBufMgr, sendBufMgr);
+  }
+  eq = stack->accept(info, bufMgr);
   if (!eq)
     return NULL;
   return eq;
@@ -68,16 +64,17 @@ fid_eq* ExternalEqService::accept(fi_info* info) {
 fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
   fid_eq *eq = NULL;
   if (is_server) {
-    eq = (fid_eq*)stack->bind(ip, port, NULL, NULL);
+    eq = (fid_eq*)stack->bind(ip, port, bufMgr);
     if (!eq)
       return NULL;
     if (stack->listen()) {
       return NULL; 
     }
   } else {
-    if (sendBufMgr->free_size() < buffer_num || recvBufMgr->free_size() < buffer_num*2)
+    if (bufMgr->free_size() < buffer_num*2) {
       return NULL;
-    eq = stack->connect(ip, port, recvBufMgr, sendBufMgr);
+    }
+    eq = stack->connect(ip, port, bufMgr);
     if (!eq)
       return NULL;
   }
@@ -96,20 +93,12 @@ Chunk* ExternalEqService::get_rma_buffer(int buffer_id) {
   return stack->get_rma_chunk(buffer_id);
 }
 
-void ExternalEqService::set_recv_buffer(char* buffer, uint64_t size, int buffer_id) {
+void ExternalEqService::set_buffer(char* buffer, uint64_t size, int buffer_id) {
   Chunk *ck = new Chunk();
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
-  recvBufMgr->put(ck->buffer_id, ck);
-}
-
-void ExternalEqService::set_send_buffer(char* buffer, uint64_t size, int buffer_id) {
-  Chunk *ck = new Chunk();
-  ck->buffer = buffer;
-  ck->buffer_id = buffer_id;
-  ck->capacity = size;
-  sendBufMgr->put(ck->buffer_id, ck);
+  bufMgr->put(ck->buffer_id, ck);
 }
 
 int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, MsgConnection** con) {
@@ -131,12 +120,7 @@ MsgStack* ExternalEqService::get_stack() {
 }
 
 Chunk* ExternalEqService::get_chunk(int id, int type) {
-  Chunk *ck = NULL;
-  if (type == RECV_CHUNK)
-    ck = recvBufMgr->get(id);
-  else
-    ck = sendBufMgr->get(id);
-  return ck;
+  return bufMgr->get(id);
 }
 
 int ExternalEqService::get_worker_num() {

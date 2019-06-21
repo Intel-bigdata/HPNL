@@ -20,9 +20,9 @@ class RdmStack : public Stack {
     RdmStack(int, bool);
     virtual ~RdmStack();
     virtual int init() override;
-    virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
+    virtual void* bind(const char*, const char*, BufMgr*) override;
 
-    RdmConnection* get_con(const char*, const char*, BufMgr*, BufMgr*);
+    RdmConnection* get_con(const char*, const char*, BufMgr*);
     fid_fabric* get_fabric();
     fid_cq* get_cq();
   private:
@@ -38,6 +38,8 @@ class RdmStack : public Stack {
     std::vector<RdmConnection*> cons;
 
     RdmConnection *server_con;
+
+    bool initialized;
 };
 
 #endif

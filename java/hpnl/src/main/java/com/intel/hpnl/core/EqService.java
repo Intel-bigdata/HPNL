@@ -153,27 +153,25 @@ public class EqService {
   }
 
   public void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
-    this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, MemPool.Type.SEND);
-    this.recvBufferPool = new MemPool(this, initBufferNum*2, bufferSize, nextBufferNum*2, MemPool.Type.RECV);
+    this.bufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum);
   }
 
   public void reallocBufferPool() {
-    this.sendBufferPool.realloc();
-    this.recvBufferPool.realloc();
+    this.bufferPool.realloc();
   }
 
   public void pushSendBuffer(long eq, int bufferId) {
     Connection connection = conMap.get(eq);
     assert(connection != null);
-    connection.pushSendBuffer(sendBufferPool.getBuffer(bufferId));
+    connection.pushSendBuffer(bufferPool.getBuffer(bufferId));
   }
 
   public HpnlBuffer getSendBuffer(int bufferId) {
-    return sendBufferPool.getBuffer(bufferId); 
+    return bufferPool.getBuffer(bufferId); 
   }
 
   public HpnlBuffer getRecvBuffer(int bufferId) {
-    return recvBufferPool.getBuffer(bufferId);
+    return bufferPool.getBuffer(bufferId);
   }
 
   public HpnlBuffer regRmaBuffer(ByteBuffer byteBuffer, int bufferSize) {
@@ -252,13 +250,8 @@ public class EqService {
     free(this.nativeHandle);
   }
 
-  public void set_send_buffer(ByteBuffer buffer, long size, int bufferId) {
-    set_send_buffer1(buffer, size, bufferId, this.nativeHandle);
-  }
-
-
-  public void set_recv_buffer(ByteBuffer buffer, long size, int bufferId) {
-    set_recv_buffer1(buffer, size, bufferId, this.nativeHandle);
+  public void set_buffer(ByteBuffer buffer, long size, int bufferId) {
+    set_buffer1(buffer, size, bufferId, this.nativeHandle);
   }
 
   public int wait_eq_event() {
@@ -279,8 +272,7 @@ public class EqService {
   private native int wait_eq_event1(long nativeHandle);
   private native int add_eq_event(long eq, long nativeHandle);
   private native int delete_eq_event1(long eq, long nativeHandle);
-  private native void set_recv_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
-  private native void set_send_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
+  private native void set_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
   private native long reg_rma_buffer(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
   private native long reg_rma_buffer_by_address(long address, long size, int bufferId, long nativeHandle);
   private native void unreg_rma_buffer(int bufferId, long nativeHandle);
@@ -317,8 +309,7 @@ public class EqService {
 
   private ConcurrentHashMap<Integer, ByteBuffer> rmaBufferMap;
 
-  private MemPool sendBufferPool;
-  private MemPool recvBufferPool;
+  private MemPool bufferPool;
 
   AtomicInteger rmaBufferId;
 

@@ -3,14 +3,14 @@
 #include <assert.h>
 #include <algorithm>
 
-RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_, fid_domain* domain_, fid_cq* cq_, BufMgr* rbuf_mgr_, BufMgr* sbuf_mgr_, int buffer_num_, bool is_server_) : ip(ip_), port(port_), info(info_), domain(domain_), conCq(cq_), rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), buffer_num(buffer_num_), is_server(is_server_) {}
+RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_, fid_domain* domain_, fid_cq* cq_, BufMgr* buf_mgr_, int buffer_num_, bool is_server_) : ip(ip_), port(port_), info(info_), domain(domain_), conCq(cq_), buf_mgr(buf_mgr_), buffer_num(buffer_num_), is_server(is_server_) {}
 
 RdmConnection::~RdmConnection() {
   for (auto ck: send_buffers) {
-    sbuf_mgr->put(ck->buffer_id, ck);
+    buf_mgr->put(ck->buffer_id, ck);
   }
   for (auto ck: recv_buffers) {
-    rbuf_mgr->put(ck->buffer_id, ck);
+    buf_mgr->put(ck->buffer_id, ck);
   }
   if (!is_server) {
     fi_freeinfo(info);
@@ -71,16 +71,18 @@ int RdmConnection::init() {
 
   int size = 0;
   while (size < buffer_num) {
-    Chunk *rck = rbuf_mgr->get();
-    rck->con = this;
-    rck->ctx.internal[4] = rck;
-    if (fi_recv(ep, rck->buffer, rck->capacity, NULL, FI_ADDR_UNSPEC, &rck->ctx)) {
-      perror("fi_recv");
+    if (buf_mgr->free_size()) {
+      Chunk *rck = buf_mgr->get();
+      rck->con = this;
+      rck->ctx.internal[4] = rck;
+      if (fi_recv(ep, rck->buffer, rck->capacity, NULL, FI_ADDR_UNSPEC, &rck->ctx)) {
+        perror("fi_recv");
+      }
+      recv_buffers.push_back(rck);
     }
-    recv_buffers.push_back(rck);
 
-    if (sbuf_mgr->free_size()) {
-      Chunk *sck = sbuf_mgr->get();
+    if (buf_mgr->free_size()) {
+      Chunk *sck = buf_mgr->get();
       send_buffers.push_back(sck);
       send_buffers_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
     }

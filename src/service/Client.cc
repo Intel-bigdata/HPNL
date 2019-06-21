@@ -26,12 +26,8 @@ void Client::wait() {
   Service::wait();
 }
 
-void Client::set_recv_buf_mgr(BufMgr* bufMgr) {
-  Service::set_recv_buf_mgr(bufMgr);
-}
-
-void Client::set_send_buf_mgr(BufMgr* bufMgr) {
-  Service::set_send_buf_mgr(bufMgr);
+void Client::set_buf_mgr(BufMgr* bufMgr) {
+  Service::set_buf_mgr(bufMgr);
 }
 
 void Client::set_send_callback(Callback *callback) {
