@@ -46,9 +46,11 @@ public class RdmService extends AbstractService {
 
   @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    RdmConnection conn = (RdmConnection)this.conMap.get(this.get_con(ip, port, this.nativeHandle));
-    conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
-    connectedCallback.handle(conn, -1, -1);
+    synchronized (this) {
+      RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(ip, port, this.nativeHandle));
+      conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
+      connectedCallback.handle(conn, -1, -1);
+    }
     return 1;
   }
 

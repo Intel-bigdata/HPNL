@@ -22,11 +22,17 @@ public class PortGenerator {
 
     private Queue<Integer> queue = new ConcurrentLinkedQueue<>();
 
+    private TreeSet<Range> ranges = new TreeSet<>();
+
     private static final String RECYCLE_PREFIX = "recycled-";
 
     private static final int MAX_PORT = 65535;
 
     private static final PortGenerator _INSTANCE = new PortGenerator();
+
+    static{
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {_INSTANCE.release();}));
+    }
 
     private PortGenerator(){
         String tmpDir = System.getProperty("java.io.tmpdir");
@@ -95,7 +101,7 @@ public class PortGenerator {
                 if(recycledSet.isEmpty()){
                     throw new RuntimeException("cannot find recycled ports whilst all other ports are occupied.");
                 }
-                rangeSet.clear();//clear range of 1-65535
+                //clear range of 1-65535 and get occupied port by reverting recycled
                 revert(rangeSet, recycledSet);
             }
             //try again after recycling
@@ -103,9 +109,7 @@ public class PortGenerator {
             if(range == null){
                 throw new RuntimeException("all ports are occupied");
             }
-            for(int i=range.start; i<=range.end; i++){
-                queue.add(i);
-            }
+            addRanges(range);
             writePortFile(rangeSet);
         }finally{
             removeLock();
@@ -119,7 +123,19 @@ public class PortGenerator {
         }
     }
 
+    private void addRanges(Range range){
+        if(ranges.contains(range)){
+            throw new RuntimeException("duplicate range assigned. "+range);
+        }
+        ranges.add(range);
+        ranges = mergeSelf(ranges);
+        for(int i=range.start; i<=range.end; i++){
+            queue.add(i);
+        }
+    }
+
     private void revert(TreeSet<Range> rangeSet, TreeSet<Range> recycledSet){
+        rangeSet.clear();
         Range p = null;
         for(Range r : recycledSet){
             if(p == null){
@@ -137,51 +153,106 @@ public class PortGenerator {
         }
     }
 
+    private TreeSet<Range> mergeSelf(TreeSet<Range> rangeSet){
+        if(rangeSet.size() <= 1){
+            return rangeSet;
+        }
+        TreeSet<Range> retSet = new TreeSet<>();
+        Range previous = null;
+        for(Range range : rangeSet){
+            if(previous == null){
+                previous = range;
+                retSet.add(range);
+                continue;
+            }
+            if(previous.end >= range.start){
+                throw new RuntimeException(String.format("previous range %s overlaps with current range %s",
+                        previous, range));
+            }
+            if(previous.end == range.start - 1){//merge
+                retSet.remove(previous);
+                previous = new Range(previous.start, range.end);
+                retSet.add(previous);
+            }else {
+                previous = range;
+                retSet.add(range);
+            }
+        }
+        return retSet;
+    }
+
     private void writePortFile(TreeSet<Range> rangeSet){
-        try(FileWriter writer = new FileWriter(portFile)){
+        writeToFile(rangeSet, portFile);
+    }
+
+    private void writeToFile(TreeSet<Range> rangeSet, File file) {
+        try(FileWriter writer = new FileWriter(file)){
             for(Range r : rangeSet){
                 writer.write(r.toString());
                 writer.write('\n');
             }
         } catch (IOException e) {
-            throw new RuntimeException("failed to write back port file, "+portFile.getAbsolutePath(), e);
+            throw new RuntimeException("failed to write port ranges to file, "+file.getAbsolutePath(), e);
         }
     }
 
     private Range findSlot(TreeSet<Range> rangeSet){
         Range p = null;
         Range current = null;
-        Range result = null;
+        Range result;
+        int start = 0, end = 0;
         for(Range r : rangeSet){
             if(p == null){
+                if(r.start > 1) {//from 1
+                    start = 1;
+                    end = r.start - 1;
+                    end = portBatchSize >= end ? end : portBatchSize;
+                    current = r;
+                    break;
+                }
                 p = r;
                 continue;
             }
-            result = new Range(p.end+1, r.start-1);
+            //after first range
+            start = p.end + 1;
+            int size = r.start - p.end - 1;
+            end = portBatchSize >= size ? r.start-1 : p.end+portBatchSize;
             current = r;
             break;
         }
-        if(result != null){
-            rangeSet.remove(p);
-            rangeSet.remove(current);
-            rangeSet.add(new Range(p.start, current.end));
-        }else{
-            if(p == null){//empty rangeSet
-                result = new Range(1, portBatchSize);
-                rangeSet.add(result);
-            }else{//only one existing range
-                if(p.end == MAX_PORT){
-                    return null;
+        if(start > 0){
+            result = new Range(start, end);
+            boolean needMerge = result.end == current.start - 1;
+            if(p == null){
+                if(needMerge) {
+                    rangeSet.remove(current);
                 }
-                int end = p.end + portBatchSize;
-                end = end > MAX_PORT ? MAX_PORT : end;
-                result = new Range(p.end+1, end);
+                rangeSet.add(needMerge ? new Range(1, current.end) : result);
+            }else {
                 rangeSet.remove(p);
-                rangeSet.add(new Range(p.start, end));
+                if (needMerge) {
+                    rangeSet.remove(current);
+                }
+                rangeSet.add(new Range(p.start, needMerge ? current.end : result.end));
             }
+            return result;
         }
 
-        return result;
+        if(p == null){//empty rangeSet
+            result = new Range(1, portBatchSize);
+            rangeSet.add(result);
+            return result;
+        }
+        //only one existing range starting from 1
+        if(p.end < MAX_PORT){
+            end = p.end + portBatchSize;
+            end = end > MAX_PORT ? MAX_PORT : end;
+            result = new Range(p.end+1, end);
+            rangeSet.remove(p);
+            rangeSet.add(new Range(p.start, end));
+            return result;
+        }
+        return null;
     }
 
     private void putLock(){
@@ -233,7 +304,7 @@ public class PortGenerator {
         }
         for(Range r : fileRanges){
             //merge with previous range
-            Range p = rangeSet.floor(r);
+            Range p = rangeSet.lower(r);
             Range newRange = r;
             if(p != null){
                 if(p.end >= r.start){
@@ -248,7 +319,7 @@ public class PortGenerator {
                 }
             }
             //merge with next range
-            Range n = rangeSet.ceiling(newRange);
+            Range n = rangeSet.higher(newRange);
             if(n != null){
                 if(n.start <= newRange.end){
                     throw new IllegalStateException(
@@ -257,6 +328,7 @@ public class PortGenerator {
                 }
                 if(n.start == newRange.end+1){
                     Range tmp = new Range(newRange.start, n.end);
+                    rangeSet.remove(newRange);
                     rangeSet.remove(n);
                     rangeSet.add(tmp);
                     newRange = tmp;
@@ -266,10 +338,6 @@ public class PortGenerator {
                 rangeSet.add(r);
             }
         }
-    }
-
-    private void subtract(TreeSet<Range> rangeSet, TreeSet<Range> recycledSet){
-
     }
 
     /**
@@ -285,12 +353,17 @@ public class PortGenerator {
                 if(line.length() > 0){
                     String[] st = line.split("-");
                     Range range = new Range(st[0], st[1]);
-                    Range last = rangeSet.last();
-                    if(last != null){
-                        if(range.start <= last.end){
+                    if(!rangeSet.isEmpty()) {
+                        Range last = rangeSet.last();
+                        if (range.start <= last.end) {
                             throw new IllegalStateException(
                                     String.format("this range's start (%d) should be greater than " +
                                             "last range's end (%d).", range.start, last.end));
+                        }
+                        if(range.start == last.end + 1){
+                            rangeSet.remove(last);
+                            rangeSet.add(new Range(last.start, range.end));
+                            continue;
                         }
                     }
 
@@ -308,11 +381,12 @@ public class PortGenerator {
     }
 
     public void release(){
-        lockFile.delete();
-        //write recycled file
+        if(recycleFile.exists()) {
+            writeToFile(ranges, recycleFile);
+        }
     }
 
-    private static class Range implements Comparable<Range>{
+    protected static class Range implements Comparable<Range>{
         private final int start;
         private final int end;
         public Range(int start, int end){
@@ -357,7 +431,7 @@ public class PortGenerator {
 
         @Override
         public String toString(){
-            return new StringBuffer(start).append('-').append(end).toString();
+            return new StringBuffer(String.valueOf(start)).append('-').append(end).toString();
         }
     }
 }
