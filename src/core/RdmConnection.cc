@@ -68,7 +68,7 @@ int RdmConnection::init() {
     addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
   }
   int size = 0;
-  while (size < buffer_num) {
+  while (size < 2*buffer_num) {
     Chunk *rck = rbuf_mgr->get();
     rck->con = this;
     rck->ctx.internal[4] = rck;
@@ -76,13 +76,14 @@ int RdmConnection::init() {
       perror("fi_recv");
     }
     recv_buffers.push_back(rck);
-
-    if (sbuf_mgr->free_size()) {
-      Chunk *sck = sbuf_mgr->get();
-      send_buffers.push_back(sck);
-      send_buffers_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
-    }
     size++;
+  }
+  size = 0;
+  while(size < buffer_num){
+	Chunk *sck = sbuf_mgr->get();
+	send_buffers.push_back(sck);
+	send_buffers_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
+	size++;
   }
   init_addr();
   return 0;

@@ -67,7 +67,7 @@ int RdmStack::init() {
   return 0;
 }
 void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
-  if (rbuf_mgr->free_size() < buffer_num) {
+  if (rbuf_mgr->free_size() < 2*buffer_num || sbuf_mgr->free_size() < buffer_num) {
     return NULL;
   }
   fi_info* hints = fi_allocinfo();
@@ -92,7 +92,7 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
 
 RdmConnection* RdmStack::get_con(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
   std::lock_guard<std::mutex> lk(mtx);
-  if (rbuf_mgr->free_size() < buffer_num) {
+  if (rbuf_mgr->free_size() < 2*buffer_num || sbuf_mgr->free_size() < buffer_num) {
     return NULL; 
   }
   long id = id_generator.fetch_add(1);
