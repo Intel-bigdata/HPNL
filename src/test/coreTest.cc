@@ -10,7 +10,7 @@
 #include "TestBufMgr.h"
 
 TEST_CASE("msg server") {
-  MsgStack *stack = new MsgStack(FI_SOURCE, 1, 6, true);
+  MsgStack *stack = new MsgStack(1, 6, true);
   SECTION("init") {
     REQUIRE(stack->init() == 0);
   }
@@ -36,7 +36,7 @@ TEST_CASE("msg server") {
 
 TEST_CASE("msg client") {
   int buffer_num_per_connection = 16;
-  MsgStack *stack = new MsgStack(0, 1, buffer_num_per_connection, false);
+  MsgStack *stack = new MsgStack(1, buffer_num_per_connection, false);
   SECTION("init") {
     REQUIRE(stack->init() == 0);
   }
@@ -59,18 +59,17 @@ void connect(MsgStack *stack, TestBufMgr *mgr, int buffer_num_per_connection) {
 }
 #endif
 
-TEST_CASE("msg connection") {
+TEST_CASE("msg connect operation") {
   int parallel_num = 10;
   int buffer_num_per_connection = 16;
   int total_buffer_num = parallel_num*buffer_num_per_connection*2;
 
-  MsgStack *stack = new MsgStack(0, 1, buffer_num_per_connection, false);
+  MsgStack *stack = new MsgStack(1, buffer_num_per_connection, false);
   REQUIRE(stack->init() == 0);
 
   TestBufMgr *mgr = new TestBufMgr();
-  Chunk *ck;
   for (int i = 0; i < total_buffer_num; i++) {
-    ck = new Chunk();
+    Chunk *ck = new Chunk();
     ck->buffer_id = mgr->get_id();
     ck->buffer = std::malloc(65536);
     ck->capacity = 65536;
@@ -97,18 +96,39 @@ TEST_CASE("msg connection") {
   }
 }
 
-TEST_CASE("rma buffer registration") {
-  MsgStack *stack = new MsgStack(0, 1, 6, false);
-  SECTION("register rma buffer") {
-    char test[10] = "1234";
-    REQUIRE(stack->reg_rma_buffer(NULL, 1, 2) == -1);
-    REQUIRE(stack->reg_rma_buffer(test, 10, 2) == -1);
-  }
-  SECTION("register rma buffer") {
-    char test[10] = "1234";
-    REQUIRE(stack->init() == 0);
-    REQUIRE(stack->reg_rma_buffer(NULL, 1, 2) == -1);
+void reg_rma_buffer(MsgStack *stack, char* test, int i) {
+  stack->reg_rma_buffer(test, i*10, i);
+}
 
+TEST_CASE("rma buffer registration") {
+  char test[10] = "12345";
+  int parallel_num = 100;
+  MsgStack *stack = new MsgStack(1, 6, false);
+  stack->init();
+
+  SECTION("async rma buffer registration") {
+    std::vector<std::thread> threads;
+    for (int i = 0; i < parallel_num; i++) {
+      threads.push_back(std::thread(reg_rma_buffer, stack, test, i));
+    }
+
+    for (int i = 0; i < parallel_num; i++) {
+      threads[i].join();
+    }
+
+    REQUIRE(stack->get_rma_chunk(5)->capacity == 50);
+    REQUIRE(stack->get_rma_chunk(2)->capacity == 20);
+
+    for (int i = 0; i < parallel_num; i++) {
+      stack->unreg_rma_buffer(i);
+    }
+
+    REQUIRE(stack->get_rma_chunk(5) == NULL);
+    REQUIRE(stack->get_rma_chunk(2) == NULL);
+  }
+
+  SECTION("sycn rma buffer registration") {
+    REQUIRE(stack->reg_rma_buffer(NULL, 1, 2) == -1);
     REQUIRE(stack->reg_rma_buffer(test, 10, 1) > 0);
     REQUIRE(stack->reg_rma_buffer(test, 20, 2) > 0);
     REQUIRE(stack->reg_rma_buffer(test, 30, 3) > 0);
@@ -126,6 +146,7 @@ TEST_CASE("rma buffer registration") {
     REQUIRE(stack->get_rma_chunk(3) == NULL);
     REQUIRE(stack->get_rma_chunk(4) == NULL);
   }
+
   delete stack;
 }
 

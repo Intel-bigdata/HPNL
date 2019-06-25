@@ -3,15 +3,20 @@
 #include "demultiplexer/EqHandler.h"
 #include "demultiplexer/Proactor.h"
 
+EqHandler::EqHandler(MsgStack *stack_, Proactor *proactor_, fid_eq *eq_) : stack(stack_), proactor(proactor_),
+  eq(eq_), recvCallback(nullptr), sendCallback(nullptr),
+  acceptRequestCallback(nullptr), connectedCallback(nullptr),
+  shutdownCallback(nullptr) {}
+
 int EqHandler::handle_event(EventType et, void *context) {
-  fi_eq_cm_entry *entry = (fi_eq_cm_entry*)context;
+  auto *entry = (fi_eq_cm_entry*)context;
   if (et == ACCEPT_EVENT) {
     assert(acceptRequestCallback);
     BufMgr *buf_mgr;
-    (*acceptRequestCallback)(&buf_mgr, NULL);
+    (*acceptRequestCallback)(&buf_mgr, nullptr);
 
-    fid_eq *eq = stack->accept(entry->info, buf_mgr);
-    std::shared_ptr<EqHandler> eqHandler = std::make_shared<EqHandler>(stack, proactor, eq);
+    fid_eq *local_eq = stack->accept(entry->info, buf_mgr);
+    std::shared_ptr<EqHandler> eqHandler = std::make_shared<EqHandler>(stack, proactor, local_eq);
     if (!eqHandler)
       return -1;
     if (connectedCallback) {
@@ -55,14 +60,14 @@ int EqHandler::handle_event(EventType et, void *context) {
     con->init_addr();
 
     if (connectedCallback) {
-      (*connectedCallback)(con, NULL);
+      (*connectedCallback)(con, nullptr);
     }
   } else if (et == CLOSE_EVENT) {
     auto con = stack->get_connection(entry->fid);
     assert(con);
     con->status = SHUTDOWN_REQ;
     if (con->get_shutdown_callback()) {
-      (*(con->get_shutdown_callback()))(NULL, NULL);
+      (*(con->get_shutdown_callback()))(nullptr, nullptr);
     }
     proactor->remove_handler(&get_handle()->fid);
     con->status = DOWN;
@@ -100,4 +105,6 @@ void EqHandler::set_recv_callback(Callback *callback) {
 void EqHandler::set_read_callback(Callback *callback) {
   readCallback = callback;
 }
+
+
 

@@ -30,6 +30,7 @@ class Proactor {
     EqDemultiplexer *eqDemultiplexer;
     CqDemultiplexer *cqDemultiplexer[MAX_WORKERS];
     RdmCqDemultiplexer *rdmCqDemultiplexer;
+    int cq_worker_num;
 };
 
 class EqThread : public ThreadWrapper {

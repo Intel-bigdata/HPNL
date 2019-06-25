@@ -13,6 +13,9 @@ class ExternalRdmService {
   public:
     ExternalRdmService(int, bool);
     ~ExternalRdmService();
+    ExternalRdmService(ExternalRdmService& service) = delete;
+    ExternalRdmService& operator=(const ExternalRdmService& service) = delete;
+
     int init();
     RdmConnection* listen(const char*, const char*);
     RdmConnection* get_con(const char*, const char*);
@@ -20,8 +23,6 @@ class ExternalRdmService {
 
     void set_buffer(char*, uint64_t, int);
   private:
-    ExternalRdmService(ExternalRdmService& service) {}
-    ExternalRdmService& operator=(const ExternalRdmService& service) { return *this; }
     RdmStack *stack;
     ExternalRdmCqDemultiplexer *demulti_plexer;
     int buffer_num;

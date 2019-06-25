@@ -1,0 +1,2 @@
+[test/coreTest.cc:55]: (information) Skipping configuration 'LOCAL_IP;LOCAL_PORT' since the value of 'LOCAL_IP' is unknown. Use -D if you want to check it. You can use -U to skip it explicitly.
+[test/coreTest.cc:55]: (information) Skipping configuration 'LOCAL_IP;LOCAL_PORT' since the value of 'LOCAL_PORT' is unknown. Use -D if you want to check it. You can use -U to skip it explicitly.

@@ -43,7 +43,7 @@ int Service::init(bool msg_) {
   int res = 0;
   msg = msg_;
   if (msg) {
-    stack = new MsgStack(is_server ? FI_SOURCE : 0, worker_num, buffer_num, is_server);
+    stack = new MsgStack(worker_num, buffer_num, is_server);
     if ((res = stack->init())) {
       return res;
     }
@@ -53,7 +53,7 @@ int Service::init(bool msg_) {
       cq_demulti_plexer[i] = new CqDemultiplexer((MsgStack*)stack, i);
       cq_demulti_plexer[i]->init();
     }
-    proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, 1);
+    proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, worker_num);
   } else {
     stack = new RdmStack(buffer_num, is_server);
     if ((res = stack->init())) {

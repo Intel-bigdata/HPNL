@@ -11,7 +11,7 @@ public class RdmThread extends Thread {
 
   public void run() {
     while (running.get()) {
-      if (this.rdmService.wait_event() == -1) {
+      if (this.rdmService.waitEvent() == -1) {
         shutdown();
       }
     }

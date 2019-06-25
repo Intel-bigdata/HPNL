@@ -16,6 +16,9 @@ class ExternalEqService {
   public:
     ExternalEqService(int, int, bool is_server_ = false);
     ~ExternalEqService();
+    ExternalEqService(const ExternalEqService& service) = delete;
+    ExternalEqService& operator=(const ExternalEqService& service) = delete;
+
     int init();
     fid_eq* connect(const char*, const char*);
     fid_eq* accept(fi_info*);
@@ -34,9 +37,6 @@ class ExternalEqService {
     Chunk* get_chunk(int, int);
     int get_worker_num();
   private:
-    ExternalEqService(const ExternalEqService& service) {}
-    ExternalEqService& operator=(const ExternalEqService& service) { return *this; }
-
     MsgStack *stack;
 
     int worker_num;

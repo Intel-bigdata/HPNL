@@ -90,7 +90,6 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_native_1connect(JNIEn
   fid_eq *new_eq = service->connect(ip, port);
   if (!new_eq) {
     (*env).CallVoidMethod(thisObj, reallocBufferPool);
-    std::cout << "try again." << std::endl;
     new_eq = service->connect(ip, port);
     if (!new_eq) {
       return -1;

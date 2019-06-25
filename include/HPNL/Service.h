@@ -24,6 +24,8 @@ class Service {
   public:
     Service(int, int, bool is_server_ = false);
     ~Service();
+    Service(const Service& service) = delete;
+    Service&           operator=(const Service &service) = delete;
 
     // Connection management
     int                init(bool msg_ = true);
@@ -54,12 +56,8 @@ class Service {
     // Other util functions
     Connection*        get_con(const char*, const char*);
     Stack*             get_stack();
-  protected:
   private:
     friend class       AcceptRequestCallback;
-
-    Service(const Service& service) {}
-    Service&           operator=(const Service &service) { return *this; }
 
     Stack              *stack;
     Proactor           *proactor;

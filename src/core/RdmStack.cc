@@ -4,12 +4,14 @@
 #include <stdio.h>
 #include <iostream>
 
-RdmStack::RdmStack(int buffer_num_, bool is_server_) : buffer_num(buffer_num_), is_server(is_server_), domain(NULL), fabric(NULL), info(NULL), server_info(NULL), cq(NULL), initialized(false) {}
+RdmStack::RdmStack(int buffer_num_, bool is_server_) : buffer_num(buffer_num_), is_server(is_server_),
+  domain(nullptr), fabric(nullptr), info(nullptr), server_info(nullptr), cq(nullptr),
+  server_con(nullptr), initialized(false) {}
 
 RdmStack::~RdmStack() {
   for (auto con : cons) {
     delete con;
-    con = NULL;
+    con = nullptr;
   }
   if (cq)
     fi_close(&cq->fid);
@@ -36,14 +38,14 @@ int RdmStack::init() {
   hints->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-  if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, is_server ? FI_SOURCE : 0, hints, &info))
+  if (fi_getinfo(FI_VERSION(1, 5), nullptr, nullptr, is_server ? FI_SOURCE : 0, hints, &info))
     perror("fi_getinfo");
   fi_freeinfo(hints);
 
-  if (fi_fabric(info->fabric_attr, &fabric, NULL))
+  if (fi_fabric(info->fabric_attr, &fabric, nullptr))
     perror("fi_fabric");
 
-  if (fi_domain(fabric, info, &domain, NULL))
+  if (fi_domain(fabric, info, &domain, nullptr))
     perror("fi_domain");
 
   struct fi_cq_attr cq_attr = {

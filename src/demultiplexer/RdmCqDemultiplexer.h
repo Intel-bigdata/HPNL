@@ -1,7 +1,9 @@
 #ifndef RDMCQDEMLUTIPLEXER_H
 #define RDMCQDEMLUTIPLEXER_H
 
+#ifdef __linux__
 #include <sys/epoll.h>
+#endif
 #include <unistd.h>
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
@@ -18,11 +20,13 @@ class RdmCqDemultiplexer {
     int wait_event();
   private:
     RdmStack *stack;
+    fid_cq *cq;
+    #ifdef __linux__
+    fid_fabric *fabric;
+    struct epoll_event event;
     int epfd;
     int fd;
-    struct epoll_event event;
-    fid_fabric *fabric;
-    fid_cq *cq;
+    #endif
 };
 
 #endif

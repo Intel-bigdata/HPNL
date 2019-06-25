@@ -5,8 +5,8 @@
 #include "demultiplexer/RdmCqDemultiplexer.h"
 #include "demultiplexer/EventHandler.h"
 
-Proactor::Proactor(EqDemultiplexer *eqDemultiplexer_, CqDemultiplexer **cqDemultiplexer_, int worker_num) : eqDemultiplexer(eqDemultiplexer_) {
-  for (int i = 0; i < worker_num; i++) {
+Proactor::Proactor(EqDemultiplexer *eqDemultiplexer_, CqDemultiplexer **cqDemultiplexer_, int cq_worker_num_) : eqDemultiplexer(eqDemultiplexer_), cq_worker_num(cq_worker_num_) {
+  for (int i = 0; i < cq_worker_num; i++) {
     cqDemultiplexer[i] = *(cqDemultiplexer_+i);
   }
 }

@@ -1,7 +1,9 @@
 #ifndef EQEVENTDEMULTIPLEXER_H
 #define EQEVENTDEMULTIPLEXER_H
 
+#ifdef __linux__
 #include <sys/epoll.h>
+#endif
 #include <unistd.h>
 
 #include <atomic>
@@ -16,11 +18,9 @@
 class EventHandler;
 class MsgStack;
 
-#define MAX_POLL_CNT 8
-
 class EqDemultiplexer {
   public:
-    EqDemultiplexer(MsgStack*);
+    explicit EqDemultiplexer(MsgStack*);
     ~EqDemultiplexer();
     int init();
     int wait_event(std::map<fid*, std::shared_ptr<EventHandler>> eventMap);
@@ -28,9 +28,11 @@ class EqDemultiplexer {
     int remove_event(fid*);
   private:
     MsgStack *stack;
+    #ifdef __linux__
     fid_fabric *fabric;
-    struct epoll_event event;
     int epfd;
+    struct epoll_event event;
+    #endif
 };
 
 #endif

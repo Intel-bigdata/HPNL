@@ -32,17 +32,17 @@ class MsgStack;
 
 class MsgConnection : public Connection {
   public:
-    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, fid_wait*, BufMgr*, bool, int, int);
-    virtual ~MsgConnection();
+    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, BufMgr*, bool, int, int);
+    ~MsgConnection() override;
 
-    virtual int init() override;
-    virtual int sendBuf(const char*, int) override;
-    virtual int send(int, int) override;
-    virtual int read(int, int, uint64_t, uint64_t, uint64_t) override;
-    virtual void activate_send_chunk(Chunk*) override;
-    virtual int activate_recv_chunk(Chunk*) override;
+    int init() override;
+    int sendBuf(const char*, int) override;
+    int send(int, int) override;
+    int read(int, int, uint64_t, uint64_t, uint64_t) override;
+    void activate_send_chunk(Chunk*) override;
+    int activate_recv_chunk(Chunk*) override;
     
-    void shutdown();
+    int shutdown() override;
     int connect();
     int accept();
 
@@ -53,15 +53,15 @@ class MsgConnection : public Connection {
 
     fid* get_fid();
 
-    virtual void set_recv_callback(Callback*) override;
-    virtual void set_send_callback(Callback*) override;
+    void set_recv_callback(Callback*) override;
+    void set_send_callback(Callback*) override;
     void set_read_callback(Callback*);
     void set_shutdown_callback(Callback*);
 
     std::vector<Chunk*> get_send_buffer();
 
-    virtual Callback* get_recv_callback() override;
-    virtual Callback* get_send_callback() override;
+    Callback* get_recv_callback() override;
+    Callback* get_send_callback() override;
     Callback* get_read_callback();
     Callback* get_shutdown_callback();
 
@@ -79,13 +79,10 @@ class MsgConnection : public Connection {
     fid_cq *conCq;
     fid_eq *conEq;
 
-    uint64_t mid;
     BufMgr *buf_mgr;
     std::vector<Chunk*> recv_buffers;
     std::vector<Chunk*> send_buffers;
     std::unordered_map<int, Chunk*> send_buffers_map;
-
-    fid_wait *waitset;
 
     bool is_server;
 

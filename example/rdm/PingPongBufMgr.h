@@ -7,32 +7,32 @@
 
 class PingPongBufMgr : public BufMgr {
   public:
-    PingPongBufMgr() {}
-    virtual ~PingPongBufMgr() {
+    PingPongBufMgr() = default;
+    ~PingPongBufMgr() override {
       for (auto buf : buf_map) {
         delete buf.second; 
         buf.second = NULL;
       } 
     }
-    virtual Chunk* get(int id) override {
+    Chunk* get(int id) override {
       std::lock_guard<std::mutex> l(mtx);
       return buf_map[id];
     }
-    virtual void put(int mid, Chunk* ck) override {
+    void put(int mid, Chunk* ck) override {
       std::lock_guard<std::mutex> l(mtx);
       if (!buf_map.count(mid))
         buf_map[mid] = ck;
       bufs.push_back(ck);
     }
-    virtual Chunk* get() override {
+    Chunk* get() override {
       std::lock_guard<std::mutex> l(mtx);
       if (bufs.empty())
-        return NULL;
+        return nullptr;
       Chunk *ck = bufs.back();
       bufs.pop_back();
       return ck;
     }
-    virtual int free_size() override {
+    int free_size() override {
       std::lock_guard<std::mutex> l(mtx);
       return bufs.size(); 
     }

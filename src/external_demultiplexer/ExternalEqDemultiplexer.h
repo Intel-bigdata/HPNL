@@ -1,7 +1,9 @@
 #ifndef EQEXTERNALMULTIPLEXER_H
 #define EQEXTERNALMULTIPLEXER_H
 
+#ifdef __linux__
 #include <sys/epoll.h>
+#endif
 #include <unistd.h>
 #include <rdma/fi_cm.h>
 
@@ -22,10 +24,12 @@ class ExternalEqDemultiplexer {
     int delete_event(fid_eq*);
   private:
     MsgStack *stack;
-    fid_fabric *fabric;
+    std::mutex mtx;
+    #ifdef __linux__
     struct epoll_event event;
     int epfd;
-    std::mutex mtx;
+    fid_fabric *fabric;
+    #endif
 
     std::unordered_map<fid*, fid_eq*> fid_map;
 };

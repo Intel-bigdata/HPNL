@@ -12,7 +12,7 @@
 class ThreadWrapper {
   public:
     ThreadWrapper() : done(false) {}
-    virtual ~ThreadWrapper() {}
+    virtual ~ThreadWrapper() = default;
     void join() {
       if (thread.joinable()) {
         thread.join(); 
@@ -31,6 +31,7 @@ class ThreadWrapper {
       done.store(true); 
     }
     void set_affinity(int cpu) {
+      #ifdef __linux__
       cpu_set_t cpuset; 
       CPU_ZERO(&cpuset);
       CPU_SET(cpu, &cpuset);
@@ -38,6 +39,7 @@ class ThreadWrapper {
       if (res) {
         abort(); 
       }
+      #endif
     }
     void thread_body() {
       try {

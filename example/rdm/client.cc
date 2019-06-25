@@ -65,7 +65,7 @@ int main() {
 
   client->start();
 
-  Connection *con = client->get_con("172.168.2.106", "12345");
+  Connection *con = client->get_con("127.0.0.1", "12345");
   assert(con);
   char* buffer = (char*)std::malloc(SIZE);
   memset(buffer, '0', SIZE);
