@@ -11,12 +11,15 @@
 ExternalRdmCqDemultiplexer::ExternalRdmCqDemultiplexer(RdmStack *stack_) : stack(stack_), start(0), end(0) {}
 
 ExternalRdmCqDemultiplexer::~ExternalRdmCqDemultiplexer() {
+  #ifdef __linux__
   close(epfd);
+  #endif
 }
 
 int ExternalRdmCqDemultiplexer::init() {
-  fabric = stack->get_fabric();
   cq = stack->get_cq();
+  #ifdef __linux__
+  fabric = stack->get_fabric();
   epfd = epoll_create1(0);
   memset((void*)&event, 0, sizeof event);
   int ret = fi_control(&cq->fid, FI_GETWAIT, (void*)&fd);
@@ -31,6 +34,7 @@ int ExternalRdmCqDemultiplexer::init() {
     std::cout << "epoll add error." << std::endl; 
     return -1;
   }
+  #endif
   return 0;
 }
 
@@ -38,6 +42,7 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
+  #ifdef __linux__
   if (end - start >= 2000000) {
     if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
       int epoll_ret = epoll_wait(epfd, &event, 1, 2000);
@@ -50,6 +55,7 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
     }
     start = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
   }
+  #endif
   fi_cq_msg_entry entry;
   ret = fi_cq_read(cq, &entry, 1);
   if (ret == -FI_EAVAIL) {

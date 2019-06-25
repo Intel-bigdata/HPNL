@@ -10,9 +10,9 @@ class fid_eq;
 
 class EventHandler {
   public:
-    virtual ~EventHandler() {}
+    virtual ~EventHandler() = default;
     virtual int handle_event(EventType, void*) = 0;
-    virtual fid_eq* get_handle(void) const = 0;
+    virtual fid_eq* get_handle() const = 0;
     virtual void set_accept_request_callback(Callback *callback) = 0;
     virtual void set_connected_callback(Callback *callback) = 0;
     virtual void set_shutdown_callback(Callback *callback) = 0;

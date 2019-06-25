@@ -7,7 +7,7 @@
 
 class PmemBufMgr : public BufMgr {
   public:
-    PmemBufMgr() {}
+    PmemBufMgr() = default;
     virtual ~PmemBufMgr() {
       for (auto buf : buf_map) {
         delete buf.second; 

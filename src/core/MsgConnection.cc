@@ -5,12 +5,21 @@
 #include "core/MsgConnection.h"
 
 MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_, 
-    fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
-    fid_wait *waitset_, BufMgr *buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
-  stack(stack_), fabric(fabric_), info(info_), domain(domain_), ep(NULL),
-  conCq(cq_), conEq(NULL), buf_mgr(buf_mgr_),
-  waitset(waitset_), is_server(is_server_), buffer_num(buffer_num_), cq_index(cq_index_),
-  recv_callback(NULL), send_callback(NULL), shutdown_callback(NULL) {}
+  fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
+  BufMgr *buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
+  stack(stack_), fabric(fabric_), info(info_), domain(domain_),
+  conCq(cq_), buf_mgr(buf_mgr_), is_server(is_server_), buffer_num(buffer_num_), cq_index(cq_index_),
+  dest_addr(""), src_addr("") {
+  conEq = nullptr;
+  ep = nullptr;
+  status = IDLE;
+  dest_port = 0;
+  src_port = 0;
+  recv_callback = nullptr;
+  send_callback = nullptr;
+  read_callback = nullptr;
+  shutdown_callback = nullptr;
+ }
 
 MsgConnection::~MsgConnection() {
   for (auto buffer: send_buffers_map) {
@@ -18,7 +27,7 @@ MsgConnection::~MsgConnection() {
     fi_close(&((fid_mr*)ck->mr)->fid);
     buf_mgr->put(ck->buffer_id, ck);
   }
-  while (recv_buffers.size() > 0) {
+  while (!recv_buffers.empty()) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
@@ -46,15 +55,15 @@ int MsgConnection::init() {
     .flags = 0,
     .wait_obj = FI_WAIT_UNSPEC,
     .signaling_vector = 0,
-    .wait_set = NULL
+    .wait_set = nullptr
   };
 
-  if (fi_endpoint(domain, info, &ep, NULL)) {
+  if (fi_endpoint(domain, info, &ep, nullptr)) {
     perror("fi_endpoint");
     goto free_ep;
   }
 
-  if (fi_eq_open(fabric, &eq_attr, &conEq, NULL)) {
+  if (fi_eq_open(fabric, &eq_attr, &conEq, nullptr)) {
     perror("fi_eq_open");
     goto free_eq;
   }
@@ -73,7 +82,7 @@ int MsgConnection::init() {
   while (size < buffer_num) {
     fid_mr *mr;
     Chunk *ck = buf_mgr->get();
-    if (ck == NULL) {
+    if (!ck) {
       return -1; 
     }
     if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
@@ -86,7 +95,7 @@ int MsgConnection::init() {
       perror("fi_recv");
       goto free_recv_buf;
     }
-    mr = NULL;
+    mr = nullptr;
     recv_buffers.push_back(ck);
     size++;
   }
@@ -94,7 +103,7 @@ int MsgConnection::init() {
   while (size < buffer_num) {
     fid_mr *mr;
     Chunk *ck = buf_mgr->get();
-    if (ck == NULL) {
+    if (ck == nullptr) {
       return -1; 
     }
     if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
@@ -103,7 +112,7 @@ int MsgConnection::init() {
     }
     ck->con = this;
     ck->mr = mr;
-    mr = NULL;
+    mr = nullptr;
     send_buffers.push_back(ck);
     send_buffers_map.insert(std::pair<int, Chunk*>(ck->buffer_id, ck));
     size++;
@@ -118,7 +127,7 @@ free_send_buf:
     buf_mgr->put(ck->buffer_id, ck);
   }
 free_recv_buf:
-  while (recv_buffers.size() > 0) {
+  while (!recv_buffers.empty()) {
     Chunk *ck = recv_buffers.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
     recv_buffers.pop_back();
@@ -141,11 +150,11 @@ free_ep:
 int MsgConnection::sendBuf(const char *buffer, int buffer_size) {
   Chunk *ck = send_buffers.back();
   send_buffers.pop_back();
-  if (buffer_size > ck->capacity) {
+  if ((uint64_t)buffer_size > ck->capacity) {
     return -1; 
   }
-  memcpy(ck->buffer, buffer, buffer_size);
-  if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+  memcpy(ck->buffer, buffer, (size_t)buffer_size);
+  if (fi_send(ep, ck->buffer, (size_t)buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
     return -1;
   }
@@ -154,7 +163,7 @@ int MsgConnection::sendBuf(const char *buffer, int buffer_size) {
 
 int MsgConnection::send(int buffer_size, int buffer_id) {
   Chunk *ck = send_buffers_map[buffer_id];
-  if (fi_send(ep, ck->buffer, buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+  if (fi_send(ep, ck->buffer, (size_t)buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
     return -1;
   }
@@ -168,7 +177,7 @@ int MsgConnection::read(int buffer_id, int local_offset, uint64_t len, uint64_t 
 }
 
 int MsgConnection::connect() {
-  int res = fi_connect(ep, info->dest_addr, NULL, 0);
+  int res = fi_connect(ep, info->dest_addr, nullptr, 0);
   if (res) {
     if (res == EAGAIN) {
       return EAGAIN;
@@ -181,7 +190,7 @@ int MsgConnection::connect() {
 }
 
 int MsgConnection::accept() {
-  if (fi_accept(ep, NULL, 0)) {
+  if (fi_accept(ep, nullptr, 0)) {
     perror("fi_accept");
     return -1;
   }
@@ -193,15 +202,15 @@ void MsgConnection::shutdown() {
 }
 
 void MsgConnection::init_addr() {
-  if (info->dest_addr != NULL) {
-    struct sockaddr_in *dest_addr_in = (struct sockaddr_in*)info->dest_addr;
+  if (!info->dest_addr) {
+    auto dest_addr_in = (struct sockaddr_in*)info->dest_addr;
     dest_port = dest_addr_in->sin_port;
     char *addr = inet_ntoa(dest_addr_in->sin_addr);
     strcpy(dest_addr, addr);
   }
 
-  if (info->src_addr != NULL) {
-    struct sockaddr_in *src_addr_in = (struct sockaddr_in*)info->src_addr;
+  if (!info->src_addr) {
+    auto src_addr_in = (struct sockaddr_in*)info->src_addr;
     src_port = src_addr_in->sin_port;
     char *addr = inet_ntoa(src_addr_in->sin_addr);
     strcpy(src_addr, addr);

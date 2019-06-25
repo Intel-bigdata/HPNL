@@ -19,9 +19,12 @@ class MsgConnection;
 class MsgStack : public Stack {
   public:
     MsgStack(uint64_t, int, int, bool);
-    virtual ~MsgStack();
-    virtual int init() override;
-    virtual void* bind(const char*, const char*, BufMgr*) override;
+    ~MsgStack() override;
+    MsgStack(const MsgStack& stack) = delete;
+    MsgStack& operator=(const MsgStack& stack) = delete;
+
+    int init() override;
+    void* bind(const char*, const char*, BufMgr*) override;
     int listen();
     fid_eq* connect(const char*, const char*, BufMgr*);
     fid_eq* accept(void*, BufMgr*);
@@ -34,14 +37,11 @@ class MsgStack : public Stack {
     fid_cq** get_cqs();
 
   private:
-    MsgStack(const MsgStack& stack) {}
-    MsgStack& operator=(const MsgStack& stack) { return *this; }
     uint64_t flags;
     int worker_num;
     int buffer_num;
     bool is_server;
     uint64_t seq_num;
-    int total_buffer_num;
     fid_fabric *fabric;
     fid_domain *domain;
     fi_info *hints, *info;
@@ -51,8 +51,7 @@ class MsgStack : public Stack {
 
     std::map<fid*, MsgConnection*> conMap;
 
-    fid_cq *cqs[MAX_WORKERS];
-    fid_wait *waitset;
+    fid_cq *cqs[MAX_WORKERS]{};
 
     std::map<int, Chunk*> chunkMap;
     std::mutex mtx;

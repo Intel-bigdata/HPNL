@@ -3,13 +3,13 @@
 
 #include "HPNL/BufMgr.h"
 
-class fid_eq;
+struct fid_eq;
 
 class Stack {
   public:
-    virtual ~Stack() {}
-    virtual int init() { return 0; }
-    virtual void* bind(const char*, const char*, BufMgr*) { return nullptr; }
+    virtual ~Stack() = default;
+    virtual int init() = 0;
+    virtual void* bind(const char*, const char*, BufMgr*) = 0;
 };
 
 #endif

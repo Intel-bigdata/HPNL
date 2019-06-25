@@ -11,11 +11,6 @@ enum ChunkType {
 };
 
 struct Chunk {
-  ~Chunk() {
-    buffer = NULL;
-    con    = NULL;
-    mr     = NULL;
-  }
   void        *buffer;
   uint64_t    capacity;
   uint32_t    size;
@@ -28,16 +23,16 @@ struct Chunk {
 
 class BufMgr {
   public:
+    BufMgr() : id(0) {}
     virtual        ~BufMgr() {}
-
     // not thread safe
     virtual Chunk* get(int id) = 0;
     virtual Chunk* get() = 0;
     virtual void   put(int, Chunk*) = 0;
     virtual int    free_size() = 0;
-    int            get_id() { return id++; }
+    virtual int    get_id() { return id++; }
   private:
-    int     id     = 0;
+    int id;
 };
 
 #endif

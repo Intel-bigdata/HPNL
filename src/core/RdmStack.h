@@ -18,9 +18,9 @@ class RdmConnection;
 class RdmStack : public Stack {
   public:
     RdmStack(int, bool);
-    virtual ~RdmStack();
-    virtual int init() override;
-    virtual void* bind(const char*, const char*, BufMgr*) override;
+    ~RdmStack() override;
+    int init() override;
+    void* bind(const char*, const char*, BufMgr*) override;
 
     RdmConnection* get_con(const char*, const char*, BufMgr*);
     fid_fabric* get_fabric();

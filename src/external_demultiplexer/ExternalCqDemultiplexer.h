@@ -1,7 +1,9 @@
 #ifndef CQEXTERNALMULTIPLEXER_H
 #define CQEXTERNALMULTIPLEXER_H
 
+#ifdef __linux__
 #include <sys/epoll.h>
+#endif
 #include <unistd.h>
 #include <rdma/fi_cm.h>
 
@@ -18,12 +20,14 @@ class ExternalCqDemultiplexer {
   private:
     MsgStack *stack;
     fid_cq *cq;
+    uint64_t start;
+    uint64_t end;
+    #ifdef __linux__
     fid_fabric *fabric;
     struct epoll_event event;
     int epfd;
     int fd;
-    uint64_t start;
-    uint64_t end;
+    #endif
 };
 
 #endif

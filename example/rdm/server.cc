@@ -44,7 +44,7 @@ int main() {
   RecvCallback *recvCallback = new RecvCallback(bufMgr);
   server->set_recv_callback(recvCallback);
 
-  server->listen("172.168.2.106", "12345");
+  server->listen("127.0.0.1", "12345");
   server->start();
 
   server->wait();

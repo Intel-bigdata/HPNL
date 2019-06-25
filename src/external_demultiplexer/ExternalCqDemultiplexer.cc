@@ -6,10 +6,13 @@
 ExternalCqDemultiplexer::ExternalCqDemultiplexer(MsgStack *stack_, fid_cq *cq_) : stack(stack_), cq(cq_), start(0), end(0) {}
 
 ExternalCqDemultiplexer::~ExternalCqDemultiplexer() {
+  #ifdef __linux__
   close(epfd);
+  #endif
 }
 
 int ExternalCqDemultiplexer::init() {
+  #ifdef __linux__
   fabric = stack->get_fabric();
   if ((epfd = epoll_create1(0)) == -1) {
     perror("epoll_create1");
@@ -26,6 +29,7 @@ int ExternalCqDemultiplexer::init() {
     perror("epoll_ctl");
     return -1;
   }
+  #endif
   return 0;
 }
 
@@ -33,6 +37,7 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
   struct fid *fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
+  #ifdef __linux__
   if (end - start >= 200) {
     if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
       int epoll_ret = epoll_wait(epfd, &event, 1, 200);
@@ -50,6 +55,7 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
     }
     start = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
   }
+  #endif
   fi_cq_msg_entry entry;
   ret = fi_cq_read(cq, &entry, 1);
   if (ret == -FI_EAVAIL) {

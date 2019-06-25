@@ -6,9 +6,10 @@
 
 EqDemultiplexer::EqDemultiplexer(MsgStack *stack_) : stack(stack_) {}
 
-EqDemultiplexer::~EqDemultiplexer() {}
+EqDemultiplexer::~EqDemultiplexer() = default;
 
 int EqDemultiplexer::init() {
+  #ifdef __linux__
   fabric = stack->get_fabric();
   epfd = epoll_create1(0);
   if (epfd == -1) {
@@ -16,18 +17,22 @@ int EqDemultiplexer::init() {
     return -1;
   }
   memset((void*)&event, 0, sizeof event);
+  #endif
   return 0;
 }
 
 int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> event_map) {
   if (event_map.empty()) return 0;
+  uint32_t event_type;
+  fi_eq_cm_entry entry;
+  fid_eq *eq = nullptr;
+  #ifdef __linux__
   struct fid *fids[event_map.size()];
   int i = 0;
   for (auto iter: event_map) {
     fids[i++] = iter.first;
   }
-  fid_eq *eq = NULL;
-  if (fi_trywait(fabric, fids, event_map.size()) == FI_SUCCESS) {
+  if (fi_trywait(fabric, fids, i) == FI_SUCCESS) {
     int epoll_ret = epoll_wait(epfd, &event, 1, 200);
     if (epoll_ret > 0) {
       eq = event_map[(fid*)event.data.ptr]->get_handle();
@@ -44,30 +49,56 @@ int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> ev
   if (!eq) {
     return 0; 
   }
-  uint32_t event;
-  fi_eq_cm_entry entry;
-  int ret = fi_eq_read(eq, &event, &entry, sizeof(entry), 0);
+  int ret = fi_eq_read(eq, &event_type, &entry, sizeof(entry), 0);
   if (ret == -FI_EAGAIN) {
     return 0; 
   } else if (ret < 0) {
     fi_eq_err_entry err_entry;
-    fi_eq_readerr(eq, &err_entry, event);
+    fi_eq_readerr(eq, &err_entry, event_type);
     return 0; 
   } else {
     entry.fid = &eq->fid;
-    if (event == FI_CONNREQ) {
+    if (event_type == FI_CONNREQ) {
       event_map[&(eq->fid)]->handle_event(ACCEPT_EVENT, &entry); 
-    } else if (event == FI_CONNECTED)  {
+    } else if (event_type == FI_CONNECTED)  {
       event_map[&(eq->fid)]->handle_event(CONNECTED_EVENT, &entry);
-    } else if (event == FI_SHUTDOWN) {
+    } else if (event_type == FI_SHUTDOWN) {
       event_map[&(eq->fid)]->handle_event(CLOSE_EVENT, &entry); 
     } else {
     }
   }
+  #elif __APPLE__
+  std::unordered_map<fid*, std::shared_ptr<EventHandler>> wait_map;
+  for (auto e : event_map) {
+    wait_map[e.first]  = e.second;
+  }
+  for (auto e : wait_map) {
+    eq = wait_map[e.first]->get_handle();
+    int ret = fi_eq_read(eq, &event_type, &entry, sizeof(entry), 2000);
+    if (ret == -FI_EAGAIN) {
+      return 0; 
+    } else if (ret < 0) {
+      fi_eq_err_entry err_entry{};
+      fi_eq_readerr(eq, &err_entry, event_type);
+      return 0; 
+    } else {
+      entry.fid = &eq->fid;
+      if (event_type == FI_CONNREQ) {
+        wait_map[&(eq->fid)]->handle_event(ACCEPT_EVENT, &entry); 
+      } else if (event_type == FI_CONNECTED)  {
+        wait_map[&(eq->fid)]->handle_event(CONNECTED_EVENT, &entry);
+      } else if (event_type == FI_SHUTDOWN) {
+        wait_map[&(eq->fid)]->handle_event(CLOSE_EVENT, &entry); 
+      } else {
+      }
+    }
+  }
+  #endif
   return 0;
 }
 
 int EqDemultiplexer::register_event(fid* id) {
+  #ifdef __linux__
   int fd;
   if (fi_control(id, FI_GETWAIT, (void*)&fd)) {
     perror("fi_control");
@@ -79,13 +110,17 @@ int EqDemultiplexer::register_event(fid* id) {
     perror("epoll_ctl");
     goto quit_add_event;
   }
+  #endif
   return 0;
+#ifdef __linux__
 quit_add_event:
   close(fd);
   return -1;
+#endif
 }
 
 int EqDemultiplexer::remove_event(fid* id) {
+  #ifdef __linux__
   int fd;
   if (fi_control(id, FI_GETWAIT, (void*)&fd)) {
     perror("fi_control");
@@ -97,9 +132,12 @@ int EqDemultiplexer::remove_event(fid* id) {
     perror("epoll_ctl");
     goto quit_delete_event;
   }
+  #endif
   return 0;
+#ifdef __linux__
 quit_delete_event:
   close(fd);
   return -1;
+#endif
 }
 
