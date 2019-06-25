@@ -55,17 +55,16 @@ class Service {
 
     // Other util functions
     Connection*        get_con(const char*, const char*);
-    Stack*             get_stack();
   private:
     friend class       AcceptRequestCallback;
 
     Stack              *stack;
     Proactor           *proactor;
-    EqDemultiplexer    *eq_demulti_plexer;
-    CqDemultiplexer    *cq_demulti_plexer[MAX_WORKERS];
-    RdmCqDemultiplexer *rdm_cq_demulti_plexer;
+    EqDemultiplexer    *eq_demultiplexer;
+    CqDemultiplexer    *cq_demultiplexer[MAX_WORKERS]{};
+    RdmCqDemultiplexer *rdm_cq_demultiplexer;
 
-    BufMgr             *bufMgr;
+    BufMgr             *bufMgr{};
 
     Callback           *recvCallback;
     Callback           *sendCallback;
@@ -80,18 +79,17 @@ class Service {
     bool               msg;
 
     EqThread           *eqThread;
-    CqThread           *cqThread[MAX_WORKERS];
+    CqThread           *cqThread[MAX_WORKERS]{};
     RdmCqThread        *rdmCqThread;
 };
 
 class AcceptRequestCallback : public Callback {
   public:
-    AcceptRequestCallback(Service *ioService_) : ioService(ioService_) {}
-    virtual ~AcceptRequestCallback() {}
-    virtual void operator()(void *param_1, void *param_2) override {
+    explicit AcceptRequestCallback(Service *ioService_) : ioService(ioService_) {}
+    ~AcceptRequestCallback() override = default;
+    void operator()(void *param_1, void *param_2) override {
       assert(ioService->bufMgr);
-      BufMgr **bufMgr = (BufMgr**)param_1;
-
+      auto bufMgr = (BufMgr**)param_1;
       *bufMgr = ioService->bufMgr;
     }
   private:

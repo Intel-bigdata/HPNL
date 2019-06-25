@@ -52,9 +52,16 @@ if(WITH_VERBS)
   add_definitions(-DVERBS)
 endif(WITH_VERBS)
 
+set(SUPPORT_JAVA TRUE)
+option(WITH_JAVA "enable java interface" ON)
+if(WITH_JAVA)
+  add_subdirectory(java)
+else()
+  set(SUPPORT_JAVA FALSE)
+endif()
+
 add_subdirectory(src)
 add_subdirectory(example)
-add_subdirectory(java)
 
 enable_testing()
 add_test(NAME CORE_TEST COMMAND core_test)

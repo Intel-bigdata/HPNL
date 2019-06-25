@@ -8,7 +8,8 @@
  * Signature: (J)V
  */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Utils_set_1affinity(JNIEnv *env, jclass cls, jlong affinity) {
-	int i;
+#ifdef __linux__
+  int i;
 	cpu_set_t mask;
 	CPU_ZERO(&mask);
 	for(i=0;i<sizeof(affinity)*8;i++){
@@ -17,4 +18,5 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Utils_set_1affinity(JNIEnv *env,
 		}
 	}
 	sched_setaffinity(0, sizeof(mask), &mask);
+#endif
 }

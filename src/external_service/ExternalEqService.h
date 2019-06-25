@@ -34,7 +34,6 @@ class ExternalEqService {
     Connection* get_connection(fid_eq*);
     void reap(fid*);
     MsgStack* get_stack();
-    Chunk* get_chunk(int, int);
     int get_worker_num();
   private:
     MsgStack *stack;
@@ -43,14 +42,9 @@ class ExternalEqService {
     int buffer_num;
     bool is_server;
 
-    char *recvBuffer;
-    char *sendBuffer;
-    uint64_t recvSize;
-    uint64_t sendSize;
     ExternalEqServiceBufMgr *bufMgr;
-    std::map<int, Chunk*> chunkMap;
 
-    ExternalEqDemultiplexer *eq_demulti_plexer;
+    ExternalEqDemultiplexer *eq_demultiplexer;
 };
 
 #endif

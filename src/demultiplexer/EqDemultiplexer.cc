@@ -28,6 +28,8 @@ int EqDemultiplexer::init() {
 int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> event_map) {
   // We didn't add exclusive lock here because linear consistency is not a must.
   if (event_map.empty()) return 0;
+  uint32_t event_type;
+  fi_eq_cm_entry entry{};
   fid_eq *eq = nullptr;
   #ifdef __linux__
   struct fid *fids[event_map.size()];
@@ -52,8 +54,7 @@ int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> ev
   if (!eq) {
     return 0; 
   }
-  uint32_t event_type;
-  fi_eq_cm_entry entry;
+
   int ret = fi_eq_read(eq, &event_type, &entry, sizeof(entry), 0);
   if (ret == -FI_EAGAIN) {
     return 0; 
