@@ -1,5 +1,6 @@
 package com.intel.hpnl.core;
 
+import com.intel.hpnl.api.HpnlFactory;
 import org.junit.Test;
 
 public class UtilsTest {
@@ -21,6 +22,13 @@ public class UtilsTest {
     }catch (Exception e){
 
     }
+  }
+
+  @Test
+  public void testGetPid()throws Exception{
+    HpnlFactory.loadLib();
+    int pid = Utils.getPid();
+    System.out.println(pid);
   }
 
 }

@@ -1,10 +1,8 @@
 package com.intel.hpnl.core;
 
+import com.intel.hpnl.api.HpnlConfig;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.runner.RunWith;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.powermock.reflect.Whitebox;
@@ -22,7 +20,7 @@ public class PortGeneratorTest {
     @Before
     public void setup(){
         String tmp = System.getProperty("java.io.tmpdir");
-        tmpDir = new File(tmp+"/hpnl");
+        tmpDir = new File(tmp+"/hpnl/"+ HpnlConfig.getInstance().getAppId());
     }
 
     @Test(expected = IllegalStateException.class)
@@ -344,6 +342,33 @@ public class PortGeneratorTest {
         }
     }
 
+    @Test
+    public void testFindFreePort()throws Exception{
+        PortGenerator generator = PortGenerator.getInstance();
+        int port = generator.getFreePort();
+        System.out.println(port);
+    }
+
+    @Test
+    public void testReclaimPort()throws Exception{
+        PortGenerator generator = PortGenerator.getInstance();
+        int port = generator.getFreePort();
+        System.out.println(port);
+        generator.reclaimPort(port);
+        int batchSize = HpnlConfig.getInstance().getPortBatchSize();
+        int i = 0;
+        int finalPort = -1;
+        while(i++ < batchSize){
+            finalPort = generator.getFreePort();
+        }
+        Assert.assertEquals(port, finalPort);
+    }
+
+    @Test
+    public void testGetPortFromRecycled()throws Exception{
+
+    }
+
     @After
     public void teardown()throws Exception{
         if(portFile != null){
@@ -352,5 +377,10 @@ public class PortGeneratorTest {
         if(tmpDir != null){
             FileUtils.deleteDirectory(tmpDir);
         }
+    }
+
+    @AfterClass
+    public static void afterClass(){
+        Runtime.getRuntime().removeShutdownHook(PortGenerator.shutdownHook);
     }
 }

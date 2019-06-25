@@ -14,6 +14,14 @@ extern "C" {
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Utils_set_1affinity
   (JNIEnv *, jclass, jlong);
 
+/*
+ * Class:     com_intel_hpnl_core_Utils
+ * Method:    get_pid
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_Utils_get_1pid
+  (JNIEnv *, jclass);
+
 #ifdef __cplusplus
 }
 #endif

@@ -11,14 +11,14 @@ public class HpnlConfig {
 
   private String providerName;
   private String fabricFilename;
-  private String endpointType;
+  private HpnlService.EndpointType endpointType;
   private String nic;
   private String appId;
   private int portBatchSize;
 
   public static final String DEFAULT_ENDPOINT_TYPE = "RDM";
   public static final String DEFAULT_APP_ID = "default";
-  public static final int DEFAULT_PORT_BATCH_SIZE = 50;
+  public static final String DEFAULT_PORT_BATCH_SIZE = "50";
   public static final String DEFAULT_PROVIDER_NAME = "sockets";
   public static final String DEFAULT_LIBFABRIC_FILE_NAME = "libfabric.so";
 
@@ -32,38 +32,30 @@ public class HpnlConfig {
     try(InputStream is = HpnlConfig.class.getResourceAsStream(path)){
       Properties properties = new Properties();
       properties.load(is);
-      providerName = properties.getProperty("provider_name");
-      if (!hasValue(providerName)) {
-        providerName = DEFAULT_PROVIDER_NAME;
-      }
+      providerName = getValue(properties, Constants.CONFIG_ITEM_PROVIDER_NAME, DEFAULT_PROVIDER_NAME);
 
-      fabricFilename = properties.getProperty("libfabric_file_name");
-      if (!hasValue(fabricFilename)) {
-        fabricFilename = DEFAULT_LIBFABRIC_FILE_NAME;
-      }
+      fabricFilename = getValue(properties, Constants.CONFIG_ITEM_LIBFABRIC_FILE_NAME, DEFAULT_LIBFABRIC_FILE_NAME);
 
-      endpointType = properties.getProperty("endpoint_type");
-      if (!hasValue(endpointType)) {
-        endpointType = DEFAULT_ENDPOINT_TYPE;
-      }
+      String endPointValue = getValue(properties, Constants.CONFIG_ITEM_END_POINT_TYPE, DEFAULT_ENDPOINT_TYPE);
+      endpointType = HpnlService.EndpointType.valueOf(endPointValue);
 
-      nic = properties.getProperty("nic_name");
+      nic = getValue(properties, Constants.CONFIG_ITEM_NIC_NAME, null);
 
-      appId = properties.getProperty("app_id");
-      if(!hasValue(appId)){
-        appId = DEFAULT_APP_ID;
-      }
+      appId = getValue(properties, Constants.CONFIG_ITEM_APP_ID, DEFAULT_APP_ID);
 
-      String tmp = properties.getProperty("port_batch_size");
-      if(!hasValue(tmp)){
-        portBatchSize = DEFAULT_PORT_BATCH_SIZE;
-      }else{
-        portBatchSize = Integer.valueOf(tmp);
-      }
-
+      String tmp = getValue(properties, Constants.CONFIG_ITEM_PORT_BATCH_SIZE, DEFAULT_PORT_BATCH_SIZE);
+      portBatchSize = Integer.valueOf(tmp);
     } catch (IOException e) {
       log.error("failed to read hpnl config from "+path, e);
     }
+  }
+
+  private String getValue(Properties properties, String key, String defaultValue){
+    String value = System.getProperty(key, properties.getProperty(key));
+    if (!hasValue(value)) {
+      value = defaultValue;
+    }
+    return value;
   }
 
   private static boolean hasValue(String value){
@@ -75,7 +67,7 @@ public class HpnlConfig {
   }
 
   public HpnlService.EndpointType getEndpointType() {
-    return HpnlService.EndpointType.valueOf(endpointType);
+    return endpointType;
   }
 
   public String getLibfabricProviderName() {

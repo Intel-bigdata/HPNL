@@ -1,5 +1,7 @@
 package com.intel.hpnl.core;
 
+import com.intel.hpnl.api.HpnlFactory;
+
 import java.io.IOException;
 import java.net.*;
 import java.util.Enumeration;
@@ -9,6 +11,10 @@ import java.util.regex.Pattern;
 public class Utils {
 
   public static final Pattern IP_PTN = Pattern.compile("\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
+
+  static{
+    HpnlFactory.loadLib();
+  }
 
   private Utils() {}
 
@@ -54,5 +60,19 @@ public class Utils {
     InetAddress address = InetAddress.getByName(hostname);
     return address.getHostAddress();
   }
+
+  public static void setAffinitiy(long affinitiy){
+    if(affinitiy > 0L){
+      set_affinity(affinitiy);
+    }
+  }
+
+  private static native void set_affinity(long affinity);
+
+  public static int getPid(){
+    return get_pid();
+  }
+
+  private static native int get_pid();
 
 }

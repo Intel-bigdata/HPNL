@@ -20,10 +20,19 @@ public class HpnlFactory {
 
   private static HpnlConfig config = HpnlConfig.getInstance();
 
+  private static boolean loaded;
+
   private static final Logger log = LoggerFactory.getLogger(HpnlFactory.class);
 
 
   static {
+    loadLib();
+  }
+
+  public static void loadLib(){
+    if(loaded){
+      return;
+    }
     try {
       log.info("loading libhpnl.so");
       System.loadLibrary("hpnl");
@@ -31,7 +40,7 @@ public class HpnlFactory {
       log.info("failed to load from lib directory. loading from jar instead");
       loadFromJar();
     }
-
+    loaded = true;
   }
 
   private static void loadFromJar() {

@@ -1,6 +1,7 @@
 #include "com_intel_hpnl_core_Utils.h"
 
- #include <sched.h>
+#include <sched.h>
+#include <unistd.h>
 
  /*
  * Class:     com_intel_hpnl_core_Utils
@@ -17,4 +18,13 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Utils_set_1affinity(JNIEnv *env,
 		}
 	}
 	sched_setaffinity(0, sizeof(mask), &mask);
+}
+
+/*
+ * Class:     com_intel_hpnl_core_Utils
+ * Method:    get_pid
+ * Signature: ()I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_Utils_get_1pid(JNIEnv *, jclass){
+	return ::getpid();
 }

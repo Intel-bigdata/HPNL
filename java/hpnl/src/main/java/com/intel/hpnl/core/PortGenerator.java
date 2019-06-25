@@ -1,22 +1,27 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.HpnlConfig;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.Queue;
-import java.util.Random;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class PortGenerator {
 
+    private File appDir;
+
     private File dir;
 
-    private File lockFile;
+    private File globalLockFile;
 
-    private File portFile;
+    private File globalAssignedPortFile;
 
-    private File recycleFile;
+    private File recycledPortFile;
+
+    private File assignedPortFile;
 
     private int portBatchSize;
 
@@ -24,53 +29,88 @@ public class PortGenerator {
 
     private TreeSet<Range> ranges = new TreeSet<>();
 
-    private static final String RECYCLE_PREFIX = "recycled-";
+    private int pid;
+
+    private static final String RECYCLED = "recycled";
+    private static final String ASSIGNED = "assigned";
+    private static final String PID_PREFIX = "pid-";
 
     private static final int MAX_PORT = 65535;
 
     private static final PortGenerator _INSTANCE = new PortGenerator();
 
+    private static final Logger log = LoggerFactory.getLogger(PortGenerator.class);
+
+    protected static final Thread shutdownHook = new Thread(() -> _INSTANCE.release());
+
     static{
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {_INSTANCE.release();}));
+        Runtime.getRuntime().addShutdownHook(shutdownHook);
+    }
+
+    public static PortGenerator getInstance(){
+        return _INSTANCE;
     }
 
     private PortGenerator(){
         String tmpDir = System.getProperty("java.io.tmpdir");
         String appId = HpnlConfig.getInstance().getAppId();
-        File dir = new File(tmpDir+"/hpnl/"+appId);
-        if(!dir.exists()){
-            dir.mkdirs();
+        pid = Utils.getPid();
+        appDir = new File(tmpDir, "hpnl/"+ appId);
+        if(!appDir.exists()){
+            appDir.mkdirs();
         }
-        lockFile = new File(dir, ".lock");
-        portFile = new File(dir, "ports");
-        if(!portFile.exists()){
-            try {
-                portFile.createNewFile();
-            }catch (IOException e){
-                throw new RuntimeException("cannot create port file, "+portFile.getAbsolutePath(), e);
-            }
-        }
-        //recycle
-        Random random = new Random();
-        int bound = 10000;
-        int suffix = random.nextInt(bound);
-        recycleFile = new File(dir, RECYCLE_PREFIX+suffix);
+        globalLockFile = new File(appDir, ".lock");
+        createGlobalPortFile(appDir);
+        //own folder
+        createProcessFolder(appDir, pid, globalLockFile, globalAssignedPortFile);
+
         try {
-            while (!recycleFile.createNewFile()) {
-                suffix = random.nextInt(bound);
-                recycleFile = new File(dir, RECYCLE_PREFIX+suffix);
-            }
+            recycledPortFile = new File(dir, RECYCLED);
+            recycledPortFile.createNewFile();
+            assignedPortFile = new File(dir, ASSIGNED);
+            assignedPortFile.createNewFile();
         }catch (IOException e){
-            throw new RuntimeException("cannot create port recycle file, "+recycleFile.getAbsolutePath(), e);
+            throw new RuntimeException("failed to create recycled file or assigned file", e);
         }
+
         portBatchSize = HpnlConfig.getInstance().getPortBatchSize();
         if(portBatchSize > MAX_PORT){
             throw new RuntimeException("port batch size should be less than max port number, "+MAX_PORT);
         }
     }
 
-    public static PortGenerator getInstance(){
-        return _INSTANCE;
+    private void createGlobalPortFile(File appDir) {
+        globalAssignedPortFile = new File(appDir, "ports");
+        if (globalAssignedPortFile.exists()) {
+            return;
+        }
+        putLock();
+        try {
+            if (globalAssignedPortFile.exists()) {
+                return;
+            }
+            try {
+                globalAssignedPortFile.createNewFile();
+            } catch (IOException e) {
+                throw new RuntimeException("cannot create port file, " + globalAssignedPortFile.getAbsolutePath(), e);
+            }
+        }finally {
+            removeLock();
+        }
+    }
+
+    private void createProcessFolder(File appDir, int pid, File globalLockFile, File globalPortFile) {
+        dir = new File(appDir, PID_PREFIX + pid);
+        putLock();
+        try {
+            if (dir.exists()) {
+                recyclePorts(dir);
+                deleteDir(dir);
+            }
+            dir.mkdir();
+        }finally {
+            removeLock();
+        }
     }
 
     public int getFreePort(){
@@ -87,36 +127,103 @@ public class PortGenerator {
         return port;
     }
 
+    private void deleteDir(File dir) {
+        try {
+            FileUtils.deleteDirectory(dir);
+        }catch (IOException e){
+            throw new RuntimeException("failed to delete old dir, "+dir.getAbsolutePath(), e);
+        }
+    }
+
+    /**
+     * recycle ports from old died process
+     * @param dir
+     */
+    private void recyclePorts(File dir) {
+        TreeSet<Range> recycledRanges = null;
+        File recycled = new File(dir, RECYCLED);
+        if(recycled.exists() && recycled.length() > 0){
+            recycledRanges = getPortsFromFile(recycled);
+        }
+        File assigned = new File(dir, ASSIGNED);
+        if(assigned.exists() && assigned.length() > 0){
+            TreeSet<Range> assignedRanges = getPortsFromFile(assigned);
+            if(recycledRanges == null){
+                recycledRanges = assignedRanges;
+            }else{
+                mergeRange(recycledRanges, assignedRanges);
+            }
+        }
+        if(recycledRanges != null && !recycledRanges.isEmpty()){
+            TreeSet<Range> allAssignedRanges = getPortsFromGlobalAssignedPortFile();
+            for(Range r : recycledRanges){
+                Range containingRange = allAssignedRanges.floor(r);
+                if(containingRange == null){
+                    throw new IllegalStateException(
+                            String.format("there should be ranges in %s to cover assigned ports under %s",
+                                    globalAssignedPortFile.getAbsolutePath(), dir.getAbsolutePath()));
+                }
+                if(r.end > containingRange.end){
+                    throw new IllegalStateException(
+                            String.format("containing range (%s) should cover assigned ports (%s) under %s",
+                                    containingRange.toString(), r.toString(), dir.getAbsolutePath()));
+                }
+                allAssignedRanges.remove(containingRange);
+                if(r.start == containingRange.start && r.end < containingRange.end){
+                    allAssignedRanges.add(new Range(r.end+1, containingRange.end));
+                    continue;
+                }
+                //r.start > containingRange.start
+                allAssignedRanges.add(new Range(containingRange.start, r.start - 1));
+                if(r.end < containingRange.end){
+                    allAssignedRanges.add(new Range(r.end+1, containingRange.end));
+                }
+            }
+            writeGlobalAssignedPortFile(allAssignedRanges);
+        }
+    }
+
     private void assignPorts(){
         putLock();
-        File[] recycledFiles = null;
+        List<File> recycledFiles = null;
         try{
             //non-consecutive ranges
-            TreeSet<Range> rangeSet = new TreeSet<>();
-            getPortsFromPortFile(rangeSet);
-            Range range = findSlot(rangeSet);
+            TreeSet<Range> allAssignedRanges = getPortsFromGlobalAssignedPortFile();
+            Range range = findSlot(allAssignedRanges);
+            if(allAssignedRanges.size() != 1){
+                throw new RuntimeException("there should be only one range 1-65535");
+            }
             if(range == null){//find ranges from recycled and merge them
                 TreeSet<Range> recycledSet = new TreeSet<>();
                 recycledFiles = getPortsFromRecycled(recycledSet);
                 if(recycledSet.isEmpty()){
-                    throw new RuntimeException("cannot find recycled ports whilst all other ports are occupied.");
+                    throw new RuntimeException("cannot find recycled ports from died process");
                 }
                 //clear range of 1-65535 and get occupied port by reverting recycled
-                revert(rangeSet, recycledSet);
+                revert(allAssignedRanges, recycledSet);
             }
             //try again after recycling
-            range = findSlot(rangeSet);
+            range = findSlot(allAssignedRanges);
             if(range == null){
                 throw new RuntimeException("all ports are occupied");
             }
             addRanges(range);
-            writePortFile(rangeSet);
+            writeToFile(ranges, assignedPortFile);
+            writeGlobalAssignedPortFile(allAssignedRanges);
         }finally{
             removeLock();
             if(recycledFiles != null){
                 for(File f : recycledFiles){
-                    if(!f.delete()){
-                        throw new RuntimeException("cannot delete recycled file, "+f.getAbsolutePath());
+                    if(f.isFile()) {
+                        if (!f.delete()) {
+                            throw new RuntimeException("cannot delete recycled file, " + f.getAbsolutePath());
+                        }
+                    }else{
+                        try {
+                            FileUtils.deleteDirectory(f);
+                        }catch (IOException e){
+                            throw new RuntimeException("cannot delete dir, " + f.getAbsolutePath());
+                        }
                     }
                 }
             }
@@ -181,8 +288,8 @@ public class PortGenerator {
         return retSet;
     }
 
-    private void writePortFile(TreeSet<Range> rangeSet){
-        writeToFile(rangeSet, portFile);
+    private void writeGlobalAssignedPortFile(TreeSet<Range> rangeSet){
+        writeToFile(rangeSet, globalAssignedPortFile);
     }
 
     private void writeToFile(TreeSet<Range> rangeSet, File file) {
@@ -257,44 +364,85 @@ public class PortGenerator {
 
     private void putLock(){
         try {
-            while (!lockFile.createNewFile()) {
-                Thread.sleep(50);
+            while (!globalLockFile.createNewFile()) {
+                Thread.sleep(10);
             }
         }catch (IOException | InterruptedException e){
-            throw new RuntimeException("failed to create lock file, "+lockFile.getAbsolutePath(), e);
+            throw new RuntimeException("failed to create lock file, "+globalLockFile.getAbsolutePath(), e);
         }
     }
 
     private void removeLock(){
         try{
-            if(!lockFile.delete()){
+            if(!globalLockFile.delete()){
                 Thread.sleep(10);
-                if(!lockFile.delete()){
-                    throw new RuntimeException("cannot delete lock file, "+lockFile.getAbsolutePath());
+                if(!globalLockFile.delete()){
+                    throw new RuntimeException("cannot delete lock file, "+globalLockFile.getAbsolutePath());
                 }
             }
         }catch (InterruptedException e){
-            if(!lockFile.delete()){
-                throw new RuntimeException("cannot delete lock file after interruption, "+lockFile.getAbsolutePath(), e);
+            if(!globalLockFile.delete()){
+                throw new RuntimeException("cannot delete lock file after interruption, "+globalLockFile.getAbsolutePath(), e);
             }
         }
     }
 
-    private TreeSet<Range> getPortsFromPortFile(TreeSet<Range> rangeSet){
-        rangeSet.addAll(getPortsFromFile(portFile));
-        return rangeSet;
+    private TreeSet<Range> getPortsFromGlobalAssignedPortFile(){
+        return getPortsFromFile(globalAssignedPortFile);
     }
 
-    private File[] getPortsFromRecycled(TreeSet<Range> rangeSet){
-        File[] recycledFiles = dir.listFiles((f, name) -> name.startsWith(RECYCLE_PREFIX));
-        if(recycledFiles == null){
+    /**
+     * get ports from both recycled, and assigned of died process
+     * @param rangeSet
+     * @return
+     */
+    private List<File> getPortsFromRecycled(TreeSet<Range> rangeSet){
+        File[] processDirs = dir.listFiles((f, name) -> name.startsWith(RECYCLED));
+
+        if(processDirs == null || processDirs.length == 0){
             return null;
         }
+        Set<Integer> javaProcesses = getJavaProcesses();
+        List<File> recycledFiles = new ArrayList<>();
+        for(File pdir : processDirs){
+            recycledFiles.add(new File(pdir, RECYCLED));
+            int start = pdir.getName().indexOf(PID_PREFIX) + 4;
+            int pid = Integer.valueOf(pdir.getName().substring(start));
+            if(!javaProcesses.contains(pid)){
+                recycledFiles.add(new File(pdir, ASSIGNED));
+                recycledFiles.add(pdir);
+            }
+        }
         for(File f : recycledFiles){
-            TreeSet<Range> fileRanges = getPortsFromFile(f);
-            mergeRange(rangeSet, fileRanges);
+            if(f.isFile()) {
+                TreeSet<Range> fileRanges = getPortsFromFile(f);
+                mergeRange(rangeSet, fileRanges);
+            }
         }
         return recycledFiles;
+    }
+
+    private Set<Integer> getJavaProcesses() {
+        Set<Integer> pids = new HashSet<>();
+        List<String> commands = new ArrayList<>();
+        commands.add("/bin/bash");
+        commands.add("-c");
+        commands.add("pgrep -f java");
+        ProcessBuilder pb = new ProcessBuilder(commands);
+        try {
+            Process shell = pb.start();
+            try(BufferedReader reader = new BufferedReader(new InputStreamReader(shell.getInputStream()))){
+                String line;
+                while((line=reader.readLine()) != null){
+                    pids.add(Integer.valueOf(line.trim()));
+                }
+            }
+            int status = shell.waitFor();
+            log.info("exit result of get java processes shell. "+status);
+        }catch (IOException | InterruptedException e){
+            throw new RuntimeException("cannot run shell command to get running java processes. "+commands.toString(), e);
+        }
+        return pids;
     }
 
     private void mergeRange(TreeSet<Range> rangeSet, TreeSet<Range> fileRanges){
@@ -381,9 +529,7 @@ public class PortGenerator {
     }
 
     public void release(){
-        if(recycleFile.exists()) {
-            writeToFile(ranges, recycleFile);
-        }
+        writeToFile(ranges, recycledPortFile);
     }
 
     protected static class Range implements Comparable<Range>{
