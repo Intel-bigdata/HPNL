@@ -1,7 +1,12 @@
 set(NATIVE ${PROJECT_SOURCE_DIR}/java/native)
 set(NATIVE_FILE ${NATIVE}/com_intel_hpnl_core_EqService.cc ${NATIVE}/com_intel_hpnl_core_Connection.cc ${NATIVE}/com_intel_hpnl_core_CqService.cc ${NATIVE}/com_intel_hpnl_core_Utils.cc ${NATIVE}/com_intel_hpnl_core_RdmService.cc ${NATIVE}/com_intel_hpnl_core_RdmConnection.cc)
 
-set(JNI_INCLUDE "$ENV{JAVA_HOME}/include" "$ENV{JAVA_HOME}/include/linux")
+if(APPLE)
+  set(JNI_INCLUDE "$ENV{JAVA_HOME}/include" "$ENV{JAVA_HOME}/include/darwin")
+endif()
+if(LINUX)
+  set(JNI_INCLUDE "$ENV{JAVA_HOME}/include" "$ENV{JAVA_HOME}/include/linux")
+endif()
 include_directories(${JNI_INCLUDE})
 
 add_library(hpnl SHARED ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE} ${NATIVE_FILE})

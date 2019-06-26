@@ -12,22 +12,26 @@
 
 Service::Service(int worker_num_, int buffer_num_, bool is_server_) 
   : worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_), msg(true) {
-  eqThread = NULL;
-  rdmCqThread = NULL;
-  recvCallback = NULL;
-  sendCallback = NULL;
-  readCallback = NULL;
-  acceptRequestCallback = NULL;
-  connectedCallback = NULL;
-  shutdownCallback = NULL;
+  stack = nullptr;
+  proactor = nullptr;
+  eq_demultiplexer = nullptr;
+  rdm_cq_demultiplexer = nullptr;
+  eqThread = nullptr;
+  rdmCqThread = nullptr;
+  recvCallback = nullptr;
+  sendCallback = nullptr;
+  readCallback = nullptr;
+  acceptRequestCallback = nullptr;
+  connectedCallback = nullptr;
+  shutdownCallback = nullptr;
 }
 
 Service::~Service() {
   // TODO: IOService deconstruction
   delete stack;
-  delete eq_demulti_plexer;
+  delete eq_demultiplexer;
   for (int i = 0; i < worker_num; i++) {
-    delete cq_demulti_plexer[i]; 
+    delete cq_demultiplexer[i];
     if (!is_server) break;
   }
   delete proactor;
@@ -47,21 +51,21 @@ int Service::init(bool msg_) {
     if ((res = stack->init())) {
       return res;
     }
-    eq_demulti_plexer = new EqDemultiplexer((MsgStack*)stack);
-    eq_demulti_plexer->init();
+    eq_demultiplexer = new EqDemultiplexer((MsgStack*)stack);
+    eq_demultiplexer->init();
     for (int i = 0; i < worker_num; i++) {
-      cq_demulti_plexer[i] = new CqDemultiplexer((MsgStack*)stack, i);
-      cq_demulti_plexer[i]->init();
+      cq_demultiplexer[i] = new CqDemultiplexer((MsgStack*)stack, i);
+      cq_demultiplexer[i]->init();
     }
-    proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, worker_num);
+    proactor = new Proactor(eq_demultiplexer, cq_demultiplexer, worker_num);
   } else {
     stack = new RdmStack(buffer_num, is_server);
     if ((res = stack->init())) {
       return res;
     }
-    rdm_cq_demulti_plexer = new RdmCqDemultiplexer((RdmStack*)stack);
-    rdm_cq_demulti_plexer->init();
-    proactor = new Proactor(rdm_cq_demulti_plexer);
+    rdm_cq_demultiplexer = new RdmCqDemultiplexer((RdmStack*)stack);
+    rdm_cq_demultiplexer->init();
+    proactor = new Proactor(rdm_cq_demultiplexer);
   }
   
   return 0;
@@ -83,7 +87,7 @@ void Service::start() {
 
 int Service::listen(const char* addr, const char* port) {
   if (msg) {
-    fid_eq* eq = (fid_eq*)stack->bind(addr, port, bufMgr);
+    auto* eq = (fid_eq*)stack->bind(addr, port, bufMgr);
     ((MsgStack*)stack)->listen();
     std::shared_ptr<EqHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
     acceptRequestCallback = new AcceptRequestCallback(this);
@@ -95,7 +99,7 @@ int Service::listen(const char* addr, const char* port) {
     handler->set_shutdown_callback(shutdownCallback);
     proactor->register_handler(handler);
   } else {
-    RdmConnection* con = (RdmConnection*)stack->bind(addr, port, bufMgr);
+    auto* con = (RdmConnection*)stack->bind(addr, port, bufMgr);
     con->set_recv_callback(recvCallback);
     con->set_send_callback(sendCallback);
   }
@@ -122,15 +126,11 @@ int Service::connect(const char* addr, const char* port) {
 Connection* Service::get_con(const char* addr, const char* port) {
   RdmConnection *con = ((RdmStack*)stack)->get_con(addr, port, bufMgr);
   if (!con) {
-    return NULL; 
+    return nullptr;
   }
   con->set_recv_callback(recvCallback);
   con->set_send_callback(sendCallback);
   return (Connection*)con;
-}
-
-Stack* Service::get_stack() {
-  return this->stack;
 }
 
 void Service::shutdown() {
@@ -155,7 +155,7 @@ void Service::shutdown(Connection *con) {
   ((MsgConnection*)con)->shutdown();
   ((MsgStack*)stack)->reap(((MsgConnection*)con)->get_fid());
   if (shutdownCallback) {
-    shutdownCallback->operator()(NULL, NULL);
+    shutdownCallback->operator()(nullptr, nullptr);
   }
   delete con;
 }
@@ -169,8 +169,8 @@ void Service::wait() {
   }
 }
 
-void Service::set_buf_mgr(BufMgr* bufMgr) {
-  this->bufMgr = bufMgr;
+void Service::set_buf_mgr(BufMgr* bufMgr_) {
+  this->bufMgr = bufMgr_;
 }
 
 void Service::set_recv_callback(Callback *callback) {

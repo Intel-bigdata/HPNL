@@ -24,7 +24,7 @@ class ExternalRdmService {
     void set_buffer(char*, uint64_t, int);
   private:
     RdmStack *stack;
-    ExternalRdmCqDemultiplexer *demulti_plexer;
+    ExternalRdmCqDemultiplexer *demultiplexer;
     int buffer_num;
     bool is_server;
     BufMgr *bufMgr;

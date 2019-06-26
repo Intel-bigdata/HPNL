@@ -12,7 +12,7 @@ class MsgStack;
 
 class CqDemultiplexer {
   public:
-    explicit CqDemultiplexer(MsgStack*, int);
+    CqDemultiplexer(MsgStack*, int);
     ~CqDemultiplexer();
     int init();
     int wait_event();
