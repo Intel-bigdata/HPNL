@@ -44,20 +44,20 @@ public abstract class EventTask implements Runnable {
           this.completed.countDown();
         }
       }
-
       this.stop(false);
     }
-
   }
 
   protected void runPendingTasks() {
-
-    Runnable task = this.pendingTasks.poll();
-
-    if(task != null){
+    Runnable task;
+    int taskCnt = 0;
+    while((task = this.pendingTasks.poll()) != null){
       task.run();
+      taskCnt++;
+      if(taskCnt >= 64){
+        break;
+      }
     }
-
   }
 
   public void addPendingTask(Runnable task) {

@@ -50,7 +50,6 @@ public class MemPool {
     } else {
       this.service.setRecvBuffer(byteBuffer, (long)this.bufferSize, seq);
     }
-
   }
 
   public enum Type {

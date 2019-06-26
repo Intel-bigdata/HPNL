@@ -9,6 +9,7 @@ import org.powermock.reflect.Whitebox;
 
 import java.io.File;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.util.TreeSet;
 
@@ -25,7 +26,7 @@ public class PortGeneratorTest {
 
     @Test(expected = IllegalStateException.class)
     public void testReadPortFileFailed()throws Exception{
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         portFile = Files.createTempFile("unit-test", ".port").toFile();
         try(FileWriter writer = new FileWriter(portFile)){
             writer.write("1-50");
@@ -40,7 +41,7 @@ public class PortGeneratorTest {
 
     @Test
     public void testReadPortFromFileSucceed()throws Exception{
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         portFile = Files.createTempFile("unit-test", ".port").toFile();
         try(FileWriter writer = new FileWriter(portFile)){
             writer.write("1-50");
@@ -95,7 +96,7 @@ public class PortGeneratorTest {
         TreeSet<PortGenerator.Range> ranges = new TreeSet<>();
         ranges.add(new PortGenerator.Range(2, 30));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         Whitebox.invokeMethod(generator, "mergeRange", base, ranges);
     }
 
@@ -109,7 +110,7 @@ public class PortGeneratorTest {
         TreeSet<PortGenerator.Range> ranges = new TreeSet<>();
         ranges.add(new PortGenerator.Range(50, 70));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         Whitebox.invokeMethod(generator, "mergeRange", base, ranges);
     }
 
@@ -127,7 +128,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(51, 99));
         ranges.add(new PortGenerator.Range(301, 349));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         Whitebox.invokeMethod(generator, "mergeRange", base, ranges);
         Assert.assertEquals(4, base.size());
         int i = 0;
@@ -150,7 +151,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(51, 99));
         ranges.add(new PortGenerator.Range(301, 349));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         Whitebox.invokeMethod(generator, "mergeRange", base, ranges);
         Assert.assertEquals(2, base.size());
     }
@@ -170,7 +171,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(301, 349));
         ranges.add(new PortGenerator.Range(600, 700));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         Whitebox.invokeMethod(generator, "mergeRange", base, ranges);
         Assert.assertEquals(5, base.size());
         int i = 0;
@@ -194,7 +195,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(51, 99));
         ranges.add(new PortGenerator.Range(301, 349));
         ranges.add(new PortGenerator.Range(600, 700));
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         Whitebox.invokeMethod(generator, "revert", base, ranges);
         Assert.assertEquals(4, base.size());
 
@@ -217,7 +218,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(51, 99));
         ranges.add(new PortGenerator.Range(301, 349));
         ranges.add(new PortGenerator.Range(600, 65535));
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         Whitebox.invokeMethod(generator, "revert", base, ranges);
         Assert.assertEquals(3, base.size());
 
@@ -239,7 +240,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(301, 349));
         ranges.add(new PortGenerator.Range(600, 65535));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         PortGenerator.Range range = Whitebox.invokeMethod(generator, "findSlot", ranges);
         Assert.assertEquals(3, ranges.size());
         Assert.assertEquals("1-50", range.toString());
@@ -253,7 +254,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(301, 349));
         ranges.add(new PortGenerator.Range(600, 65535));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         PortGenerator.Range range = Whitebox.invokeMethod(generator, "findSlot", ranges);
         Assert.assertEquals(3, ranges.size());
         Assert.assertEquals("100-149", range.toString());
@@ -267,7 +268,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(150, 349));
         ranges.add(new PortGenerator.Range(600, 65535));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         PortGenerator.Range range = Whitebox.invokeMethod(generator, "findSlot", ranges);
         Assert.assertEquals(2, ranges.size());
         Assert.assertEquals("100-149", range.toString());
@@ -280,7 +281,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(1, 99));
         ranges.add(new PortGenerator.Range(110, 65535));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         PortGenerator.Range range = Whitebox.invokeMethod(generator, "findSlot", ranges);
         Assert.assertEquals(1, ranges.size());
         Assert.assertEquals("100-109", range.toString());
@@ -292,7 +293,7 @@ public class PortGeneratorTest {
         TreeSet<PortGenerator.Range> ranges = new TreeSet<>();
         ranges.add(new PortGenerator.Range(1, 60000));
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         PortGenerator.Range range = Whitebox.invokeMethod(generator, "findSlot", ranges);
         Assert.assertEquals(1, ranges.size());
         Assert.assertEquals("60001-60050", range.toString());
@@ -303,7 +304,7 @@ public class PortGeneratorTest {
     public void testFindSlotAtFirstTime()throws Exception{
         TreeSet<PortGenerator.Range> ranges = new TreeSet<>();
 
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         PortGenerator.Range range = Whitebox.invokeMethod(generator, "findSlot", ranges);
         Assert.assertEquals(1, ranges.size());
         Assert.assertEquals("1-50", range.toString());
@@ -314,7 +315,7 @@ public class PortGeneratorTest {
     public void testFindNoSlot()throws Exception{
         TreeSet<PortGenerator.Range> ranges = new TreeSet<>();
         ranges.add(new PortGenerator.Range(1, 65535));
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         PortGenerator.Range range = Whitebox.invokeMethod(generator, "findSlot", ranges);
         Assert.assertNull(range);
     }
@@ -327,7 +328,7 @@ public class PortGeneratorTest {
         ranges.add(new PortGenerator.Range(100, 150));
         ranges.add(new PortGenerator.Range(151, 200));
         ranges.add(new PortGenerator.Range(210, 500));
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         TreeSet<PortGenerator.Range> newRanges = Whitebox.invokeMethod(generator, "mergeSelf", ranges);
         Assert.assertEquals(3, newRanges.size());
 
@@ -344,14 +345,14 @@ public class PortGeneratorTest {
 
     @Test
     public void testFindFreePort()throws Exception{
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         int port = generator.getFreePort();
         System.out.println(port);
     }
 
     @Test
     public void testReclaimPort()throws Exception{
-        PortGenerator generator = PortGenerator.getInstance();
+        PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         int port = generator.getFreePort();
         System.out.println(port);
         generator.reclaimPort(port);
@@ -365,8 +366,70 @@ public class PortGeneratorTest {
     }
 
     @Test
-    public void testGetPortFromRecycled()throws Exception{
+    public void testFindFreePortUntilAllOccupied()throws Exception{
+        if(!tmpDir.exists()){
+            tmpDir.mkdirs();
+        }
+        portFile = new File(tmpDir, PortGenerator.FILE_NAME_PORTS);
+        try(FileWriter writer = new FileWriter(portFile)){
+            writer.write("1-50000\n");
+            writer.write("50010-65535\n");
+        }
+        PortGenerator portGenerator = Whitebox.invokeConstructor(PortGenerator.class);
+        int i = 0;
+        int port = 0;
+        int expected = 50001;
+        while(i++<9){
+            port = portGenerator.getFreePort();
+            Assert.assertEquals(expected++, port);
+        }
+        Exception ee = null;
+        try{
+            portGenerator.getFreePort();
+        }catch (RuntimeException e){
+            ee = e;
+        }
+        Assert.assertNotNull(ee);
+    }
 
+    @Test
+    public void testFindFreePortFromRecycled()throws Exception{
+        if(!tmpDir.exists()){
+            tmpDir.mkdirs();
+        }
+        portFile = new File(tmpDir, PortGenerator.FILE_NAME_PORTS);
+        try(FileWriter writer = new FileWriter(portFile)){
+            writer.write("1-65535\n");
+        }
+        createPidDir("0123", "40-44\n", "150-200\n");
+        createPidDir("0124", "30-39\n", "400-410\n");
+        PortGenerator portGenerator = Whitebox.invokeConstructor(PortGenerator.class);
+        int i = 0;
+        int port;
+        int expected = 30;
+        while(i++<15){
+            port = portGenerator.getFreePort();
+            Assert.assertEquals(expected++, port);
+        }
+        i = 0;
+        expected = 150;
+        while(i++<15){
+            port = portGenerator.getFreePort();
+            Assert.assertEquals(expected++, port);
+        }
+    }
+
+    private void createPidDir(String pid, String recycledPorts, String assignedPorts)throws IOException {
+        File pidDir = new File(tmpDir, PortGenerator.PID_PREFIX+pid);
+        pidDir.mkdir();
+        File recycled = new File(pidDir, PortGenerator.FILE_NAME_RECYCLED);
+        try(FileWriter writer = new FileWriter(recycled)){
+            writer.write(recycledPorts);
+        }
+        File assigned = new File(pidDir, PortGenerator.FILE_NAME_ASSIGNED);
+        try(FileWriter writer = new FileWriter(assigned)){
+            writer.write(assignedPorts);
+        }
     }
 
     @After
