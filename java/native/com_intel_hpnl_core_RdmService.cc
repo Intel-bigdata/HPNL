@@ -2,6 +2,8 @@
 #include "demultiplexer/EventType.h"
 #include "external_service/ExternalRdmService.cc"
 
+#include <iostream>
+
 static jlong selfPtr;
 static jmethodID handleCallback;
 static jmethodID reallocBufferPool;
@@ -48,11 +50,19 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jo
   return res;
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, jobject obj, jstring ip_, jstring port_, jlong nativeHandle) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, jobject obj, jstring ip_, jstring port_, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
   const char *ip = (*env).GetStringUTFChars(ip_, 0);
   const char *port = (*env).GetStringUTFChars(port_, 0);
   RdmConnection *con = service->listen(ip, port);
+  if (!con) {
+    (*env).CallVoidMethod(obj, reallocBufferPool);
+    con = service->listen(ip, port);
+    if (!con) {
+      return -1;
+    } 
+  }
+  
   (*env).CallVoidMethod(obj, establishConnection, *(jlong*)&con);
 
   std::vector<Chunk*> send_buffer = con->get_send_buffer();
@@ -62,6 +72,7 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, j
       (*env).CallVoidMethod(obj, pushSendBuffer, *(jlong*)&con, send_buffer[i]->buffer_id);
     }
   }
+  return 0;
 }
 
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env, jobject obj, jstring ip_, jstring port_, jlong nativeHandle) {
@@ -88,20 +99,21 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
 
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *env, jobject obj, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
-  Chunk *ck = NULL;
+  Chunk *ck = nullptr;
   int block_buffer_size = 0;
   int ret = service->wait_event(&ck, &block_buffer_size);
-  if (ret <= 0)
-    return ret;
-  RdmConnection *con = (RdmConnection*)ck->con;
-  if (!con) {
+  if (ret == 0) {
+    return 0;
+  } else if (ret == CLOSE_EVENT) {
     return -1; 
+  } else {
+    RdmConnection *con = (RdmConnection*)ck->con;
+    (*env).CallVoidMethod(obj, handleCallback, *(jlong*)&con, ret, ck->buffer_id, block_buffer_size);
+    if (ret == RECV_EVENT) {
+      con->activate_recv_chunk(ck);
+    }
+    return ret;
   }
-  (*env).CallVoidMethod(obj, handleCallback, *(jlong*)&con, ret, ck->buffer_id, block_buffer_size);
-  if (ret == RECV_EVENT) {
-    con->activate_recv_chunk(ck);
-  }
-  return ret;
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1buffer1(JNIEnv *env, jobject obj, jobject buffer, jlong size, jint bufferId, jlong nativeHandle) {

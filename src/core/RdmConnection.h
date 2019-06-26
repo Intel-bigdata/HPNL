@@ -10,6 +10,8 @@
 #include <vector>
 #include <map>
 #include <unordered_map>
+#include <atomic>
+#include <mutex>
 
 #include "HPNL/Connection.h"
 #include "HPNL/BufMgr.h"
@@ -31,7 +33,6 @@ class RdmConnection : public Connection {
     char* get_peer_name() override;
     char* get_local_name();
     int get_local_name_length();
-    fid_cq* get_cq();
     void activate_send_chunk(Chunk*) override;
     int activate_recv_chunk(Chunk*) override;
     std::vector<Chunk*> get_send_buffer();
@@ -44,6 +45,11 @@ class RdmConnection : public Connection {
     void decode_peer_name(void*, char*, int) override;
     char* decode_buf(void *buf) override;
     Chunk* encode(void *buf, int size, char*) override;
+
+    void add_chunk_in_flight(Chunk *ck);
+    void delete_chunk_in_flight(Chunk *ck);
+    void get_chunks_in_flight(std::unordered_map<int, Chunk *> &);
+    int chunks_size_in_flight();
   private:
     const char* ip;
     const char* port;
@@ -65,6 +71,8 @@ class RdmConnection : public Connection {
     std::vector<Chunk*> recv_buffers;
     std::vector<Chunk*> send_buffers;
     std::unordered_map<int, Chunk*> send_buffers_map;
+    std::mutex in_flight_mtx;
+    std::unordered_map<int, Chunk*> chunks_in_flight;
 
     Callback* recv_callback;
     Callback* send_callback;

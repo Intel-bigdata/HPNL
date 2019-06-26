@@ -54,7 +54,8 @@ public class RdmConnection {
   }
 
   private HpnlBuffer takeSendBuffer() {
-    return sendBufferList.poll();
+    HpnlBuffer buf = sendBufferList.poll();
+    return buf;
   }
 
   public HpnlBuffer getRecvBuffer(int bufferId) {

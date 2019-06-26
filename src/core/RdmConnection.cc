@@ -7,7 +7,7 @@ RdmConnection::RdmConnection(const char* ip_, const char* port_,
   fi_info* info_, fid_domain* domain_, fid_cq* cq_, 
   BufMgr* buf_mgr_, int buffer_num_, bool is_server_) : 
   ip(ip_), port(port_), info(info_), domain(domain_), conCq(cq_), 
-  buf_mgr(buf_mgr_), buffer_num(buffer_num_), is_server(is_server_), local_name("") {
+  buf_mgr(buf_mgr_), buffer_num(buffer_num_), is_server(is_server_) {
   send_callback = nullptr;
   recv_callback = nullptr;
   av = nullptr;
@@ -89,7 +89,6 @@ int RdmConnection::init() {
       }
       recv_buffers.push_back(rck);
     }
-
     if (buf_mgr->free_size()) {
       Chunk *sck = buf_mgr->get();
       send_buffers.push_back(sck);
@@ -121,10 +120,21 @@ int RdmConnection::send(int buffer_size, int buffer_id) {
   ck->con = this;
   ck->peer_addr = addr_map[tmp];
   ck->ctx.internal[4] = ck;
-  if (fi_send(ep, ck->buffer, buffer_size, nullptr, ck->peer_addr, &ck->ctx)) {
-    perror("fi_send");
+
+  iovec msg_iov;
+  msg_iov.iov_base = ck->buffer;
+  msg_iov.iov_len = buffer_size;
+  fi_msg msg;
+  msg.msg_iov = &msg_iov;
+  msg.desc = NULL;
+  msg.iov_count = 1;
+  msg.addr =  ck->peer_addr;
+  msg.context = &ck->ctx;
+  if (fi_sendmsg(ep, &msg, FI_INJECT_COMPLETE)) {
+    perror("fi_sendmsg");
     return -1;
   }
+  //add_chunk_in_flight(ck);
   return 0;
 }
 
@@ -159,10 +169,22 @@ int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name)
   }
   ck->ctx.internal[4] = ck;
   ck->con = this;
-  if (fi_send(ep, ck->buffer, buffer_size, nullptr, ck->peer_addr, &ck->ctx)) {
-    perror("fi_send");
+
+  iovec msg_iov;
+  msg_iov.iov_base = ck->buffer;
+  msg_iov.iov_len = buffer_size;
+  fi_msg msg;
+  msg.msg_iov = &msg_iov;
+  msg.desc = NULL;
+  msg.iov_count = 1;
+  msg.addr =  ck->peer_addr;
+  msg.context = &ck->ctx;
+  if (fi_sendmsg(ep, &msg, FI_INJECT_COMPLETE)) {
+    perror("fi_sendmsg");
     return -1;
   }
+
+  //add_chunk_in_flight(ck);
   return 0;
 }
 
@@ -246,10 +268,6 @@ char* RdmConnection::decode_buf(void *buf) {
   return (char*)buf+local_name_len;
 }
 
-fid_cq* RdmConnection::get_cq() {
-  return conCq; 
-}
-
 int RdmConnection::activate_recv_chunk(Chunk *ck) {
   ck->con = this;
   ck->ctx.internal[4] = ck;
@@ -282,4 +300,24 @@ Callback* RdmConnection::get_recv_callback() {
 
 Callback* RdmConnection::get_send_callback() {
   return send_callback;
+}
+
+void RdmConnection::add_chunk_in_flight(Chunk *ck) {
+  std::lock_guard<std::mutex> l(in_flight_mtx);
+  chunks_in_flight[ck->buffer_id] = ck;
+}
+
+void RdmConnection::delete_chunk_in_flight(Chunk *ck) {
+  std::lock_guard<std::mutex> l(in_flight_mtx);
+  chunks_in_flight.erase(ck->buffer_id);
+}
+
+void RdmConnection::get_chunks_in_flight(std::unordered_map<int, Chunk *> &swap_chunks) {
+  std::lock_guard<std::mutex> l(in_flight_mtx);
+  chunks_in_flight.swap(swap_chunks);
+}
+
+int RdmConnection::chunks_size_in_flight() {
+  std::lock_guard<std::mutex> l(in_flight_mtx);
+  return chunks_in_flight.size();
 }

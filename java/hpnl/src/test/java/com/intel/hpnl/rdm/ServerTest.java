@@ -40,7 +40,7 @@ public class ServerTest implements Runnable {
     RecvCallback recvCallback = new RecvCallback(true, interval, msgSize);
     service.setRecvCallback(recvCallback);
 
-    service.initBufferPool(bufferNbr*2, bufferSize, bufferNbr);
+    service.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
     service.listen(addr, port);
 

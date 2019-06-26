@@ -20,7 +20,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init
  * Method:    listen
  * Signature: (Ljava/lang/String;Ljava/lang/String;J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_listen
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_listen
   (JNIEnv *, jobject, jstring, jstring, jlong);
 
 /*

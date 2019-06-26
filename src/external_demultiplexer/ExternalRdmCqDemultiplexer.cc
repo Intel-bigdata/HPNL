@@ -64,7 +64,7 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
     end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
     perror("fi_cq_read");
     if (err_entry.err == FI_EOVERRUN) {
-      return -1;
+      return CLOSE_EVENT;
     }
     return 0;
   } else if (ret == -FI_EAGAIN) {
@@ -84,6 +84,7 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
       } else {
         *ck = (Chunk*)ctx->internal[4];
       }
+      //((RdmConnection *) (*ck)->con)->delete_chunk_in_flight(*ck);
       return SEND_EVENT;
     } else if (entry.flags & FI_READ) {
       return READ_EVENT;

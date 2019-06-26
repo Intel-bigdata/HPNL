@@ -42,7 +42,7 @@ int ExternalRdmService::wait_event(Chunk **ck, int *block_buffer_size) {
 }
 
 void ExternalRdmService::set_buffer(char* buffer, uint64_t size, int buffer_id) {
-  auto *ck = new Chunk();
+  Chunk *ck = new Chunk();
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
