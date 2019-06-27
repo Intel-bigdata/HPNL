@@ -27,6 +27,8 @@ public class RecvCallback implements Handler {
     ByteBuffer peerName = ByteBuffer.allocateDirect(peerNameLen);
     peerName.put(peerBytes);
     peerName.limit(peerName.position());
+    peerName.flip();
+    peerName.flip();
 
     HpnlBuffer sendBuffer = con.takeSendBuffer();
     ByteBuffer rawBuffer = sendBuffer.getRawBuffer();
