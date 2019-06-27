@@ -4,8 +4,8 @@ import com.intel.hpnl.api.Connection;
 import com.intel.hpnl.api.Handler;
 
 public class RdmServerService extends RdmService {
-  public RdmServerService(int workNum, int bufferNum, int bufferSize) {
-    super(workNum, bufferNum, bufferSize, true);
+  public RdmServerService(int workNum, int bufferNum, int bufferSize, int ioRatio) {
+    super(workNum, bufferNum, bufferSize,  ioRatio, true);
   }
 
   @Override

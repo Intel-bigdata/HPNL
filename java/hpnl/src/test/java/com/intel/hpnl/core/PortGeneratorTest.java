@@ -26,6 +26,7 @@ public class PortGeneratorTest {
 
     @Test(expected = IllegalStateException.class)
     public void testReadPortFileFailed()throws Exception{
+        System.out.println("1");
         PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         portFile = Files.createTempFile("unit-test", ".port").toFile();
         try(FileWriter writer = new FileWriter(portFile)){
@@ -41,6 +42,7 @@ public class PortGeneratorTest {
 
     @Test
     public void testReadPortFromFileSucceed()throws Exception{
+        System.out.println("2");
         PortGenerator generator = Whitebox.invokeConstructor(PortGenerator.class);
         portFile = Files.createTempFile("unit-test", ".port").toFile();
         try(FileWriter writer = new FileWriter(portFile)){
@@ -89,6 +91,7 @@ public class PortGeneratorTest {
 
     @Test(expected = IllegalStateException.class)
     public void testMergeRangeFailed()throws Exception{
+        System.out.println("4");
         TreeSet<PortGenerator.Range> base = new TreeSet<>();
         base.add(new PortGenerator.Range(1, 30));
         base.add(new PortGenerator.Range(31, 50));
@@ -102,6 +105,7 @@ public class PortGeneratorTest {
 
     @Test(expected = IllegalStateException.class)
     public void testMergeRangeFailed2()throws Exception{
+        System.out.println("5");
         TreeSet<PortGenerator.Range> base = new TreeSet<>();
         base.add(new PortGenerator.Range(1, 30));
         base.add(new PortGenerator.Range(31, 50));
@@ -116,6 +120,7 @@ public class PortGeneratorTest {
 
     @Test
     public void testMergeRange()throws Exception{
+        System.out.println("6");
         TreeSet<PortGenerator.Range> base = new TreeSet<>();
         base.add(new PortGenerator.Range(1, 30));
         base.add(new PortGenerator.Range(32, 50));
@@ -145,6 +150,7 @@ public class PortGeneratorTest {
 
     @Test
     public void testMergeRange2()throws Exception{
+        System.out.println("7");
         TreeSet<PortGenerator.Range> base = new TreeSet<>();
 
         TreeSet<PortGenerator.Range> ranges = new TreeSet<>();

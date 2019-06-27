@@ -29,18 +29,19 @@ public class RdmService extends AbstractService {
     }
   }
 
-  public RdmService(int workNum, int bufferNum, int bufferSize) {
-    this(workNum, bufferNum, bufferSize, false);
+  public RdmService(int workNum, int bufferNum, int bufferSize, int ioRatio) {
+    this(workNum, bufferNum, bufferSize, ioRatio, false);
   }
 
-  protected RdmService(int workNum, int bufferNum, int bufferSize, boolean server) {
-    super(workNum, bufferNum, bufferSize, server);
+  protected RdmService(int workNum, int bufferNum, int bufferSize, int ioRatio, boolean server) {
+    super(workNum, bufferNum, bufferSize, ioRatio, server);
   }
 
   public RdmService init() {
     this.init(this.bufferNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
     this.initBufferPool(this.bufferNum, this.bufferSize, this.bufferNum);
-    this.task = new RdmService.RdmTask();
+    this.task = new RdmService.RdmTask(ioRatio);
+    Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
     return this;
   }
 
@@ -87,23 +88,28 @@ public class RdmService extends AbstractService {
 
   @Override
   public void stop() {
-    if(!stopped) {
+    if(!this.task.isStopped()) {
       synchronized (this) {
-        if (!stopped) {
+        if (!this.task.isStopped()) {
           this.task.stop();
           this.waitToComplete();
-          conMap.forEach((k, v) -> {
-            RdmConnection connection = (RdmConnection)v;
-            if(!connection.isServer()) {
-              portGenerator.reclaimPort(v.getSrcPort());
-            }
-          });
-          conMap.clear();
-          this.free(this.nativeHandle);
-          stopped = true;
         }
       }
     }
+  }
+
+  private void shutdown(){
+    log.info(this+" shutting down");
+    stop();
+    conMap.forEach((k, v) -> {
+      RdmConnection connection = (RdmConnection)v;
+      if(!connection.isServer()) {
+        portGenerator.reclaimPort(v.getSrcPort());
+      }
+    });
+    conMap.clear();
+    this.free(this.nativeHandle);
+    log.info(this+" shut down");
   }
 
   private void waitToComplete() {
@@ -161,13 +167,17 @@ public class RdmService extends AbstractService {
   }
 
   protected class RdmTask extends EventTask {
-    protected RdmTask() {
+    protected RdmTask(int ioRatio) {
+      super(ioRatio);
     }
 
-    public void waitEvent() {
-      if (RdmService.this.wait_event(RdmService.this.nativeHandle) == -1) {
+    @Override
+    public int waitEvent() {
+      int ret = RdmService.this.wait_event(RdmService.this.nativeHandle) ;
+      if(ret == -1) {
         RdmService.log.warn("wait or process event error, ignoring");
       }
+      return ret;
     }
 
     protected Logger getLogger() {

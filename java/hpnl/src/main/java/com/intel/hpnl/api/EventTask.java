@@ -10,18 +10,29 @@ public abstract class EventTask implements Runnable {
   private volatile CountDownLatch completed;
   private final AtomicBoolean running = new AtomicBoolean(false);
   private final Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue();
+  private final int ioRatio ;
 
-  public EventTask() {
+  private long startTime;
+
+  protected static final long DEFAULT_DURATION = 100*1000000;
+  protected static final int CHECK_DEADLINE_INTERVAL = 64;
+
+  public EventTask(int ioRatio) {
+    this.ioRatio = ioRatio;
     this.running.set(true);
   }
 
+  @Override
   public void run() {
     boolean failed = false;
+    running.set(true);
 
     try {
       while(this.running.get()) {
-        this.waitEvent();
-        this.runPendingTasks();
+        startTime = System.nanoTime();
+        processEvents(startTime + DEFAULT_DURATION);
+        long ioTime = System.nanoTime() - startTime;
+        this.runPendingTasks(ioTime * (100 - ioRatio) / ioRatio);
       }
     } catch (Throwable var6) {
       this.getLogger().error("error occurred in event task " + this, var6);
@@ -48,14 +59,37 @@ public abstract class EventTask implements Runnable {
     }
   }
 
-  protected void runPendingTasks() {
+  private void processEvents(long deadline){
+    int ret = 1;
+    int cnt = 0;
+    int interval = CHECK_DEADLINE_INTERVAL;
+    while(ret > 0){
+      ret = this.waitEvent();
+      cnt++;
+      if(cnt >= interval){
+        if(System.nanoTime() >= deadline){
+          return;
+        }
+        interval = interval >> 1;
+        cnt = 0;
+      }
+    }
+  }
+
+  protected void runPendingTasks(long timeout) {
+    long deadline = System.nanoTime() + timeout;
     Runnable task;
     int taskCnt = 0;
+    int interval = CHECK_DEADLINE_INTERVAL;
     while((task = this.pendingTasks.poll()) != null){
       task.run();
       taskCnt++;
-      if(taskCnt >= 64){
-        break;
+      if(taskCnt >= interval){
+        if(System.nanoTime() >= deadline){
+          return;
+        }
+        taskCnt = 0;
+        interval = interval >> 1;
       }
     }
   }
@@ -68,7 +102,7 @@ public abstract class EventTask implements Runnable {
     return !this.running.get();
   }
 
-  protected abstract void waitEvent();
+  protected abstract int waitEvent();
 
   protected abstract Logger getLogger();
 

@@ -21,7 +21,7 @@ public class CqService {
     int workerNum = this.eqService.getWorkerNum();
 
     for(int i = 0; i < workerNum; ++i) {
-      EventTask task = new CqService.CqTask(i);
+      EventTask task = new CqService.CqTask(service.ioRatio, i);
       this.cqTasks.add(task);
     }
 
@@ -78,7 +78,8 @@ public class CqService {
     private int index;
     private String name;
 
-    public CqTask(int index) {
+    public CqTask(int index, int ioRatio) {
+      super(ioRatio);
       this.index = index;
       this.name = "CqTask " + index;
     }
@@ -87,11 +88,12 @@ public class CqService {
       return this.name;
     }
 
-    public void waitEvent() {
-      if (CqService.this.wait_cq_event(this.index, CqService.this.nativeHandle) < 0) {
+    public int waitEvent() {
+      int ret = CqService.this.wait_cq_event(this.index, CqService.this.nativeHandle);
+      if(ret == -1){
         CqService.log.warn("wait or process CQ event error in CQ task {}. ignoring", this.index);
       }
-
+      return ret;
     }
 
     protected void cleanUp() {

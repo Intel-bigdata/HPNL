@@ -19,16 +19,16 @@ public class EqService extends AbstractService {
   private AtomicLong nextConnectId;
   private static final Logger log = LoggerFactory.getLogger("com.intel.hpnl.core.EqService");
 
-  protected EqService(int workerNum, int bufferNum, int bufferSize, boolean server) {
-    super(workerNum, bufferNum, bufferSize, server);
+  protected EqService(int workerNum, int bufferNum, int bufferSize, int ioRatio, boolean server) {
+    super(workerNum, bufferNum, bufferSize, ioRatio, server);
     this.connectedHandlers = new ConcurrentHashMap();
     this.nextConnectId = new AtomicLong();
-    this.eqTask = new EqService.EqTask();
+    this.eqTask = new EqService.EqTask(ioRatio);
     this.nextConnectId.set((new Random()).nextLong());
   }
 
-  public EqService(int workerNum, int bufferNum, int bufferSize) {
-    this(workerNum, bufferNum, bufferSize, false);
+  public EqService(int workerNum, int bufferNum, int bufferSize, int ioRatio) {
+    this(workerNum, bufferNum, bufferSize, ioRatio, false);
   }
 
   public EqService init() {
@@ -193,14 +193,16 @@ public class EqService extends AbstractService {
   }
 
   protected class EqTask extends EventTask {
-    protected EqTask() {
+    protected EqTask(int ioRatio) {
+      super(ioRatio);
     }
 
-    public void waitEvent() {
-      if (EqService.this.wait_eq_event(EqService.this.nativeHandle) == -1) {
+    public int waitEvent() {
+      int ret = EqService.this.wait_eq_event(EqService.this.nativeHandle) ;
+      if( ret == -1) {
         EqService.log.warn("wait or process EQ event error, ignoring");
       }
-
+      return ret;
     }
 
     protected Logger getLogger() {

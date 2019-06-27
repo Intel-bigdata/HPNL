@@ -90,13 +90,13 @@ public class HpnlFactory {
     }
   }
 
-  public static HpnlService getService(int numThreads, int numBuffers, int bufferSize, boolean server) {
+  public static HpnlService getService(int numThreads, int numBuffers, int bufferSize, int ioRatio, boolean server) {
     EndpointType endpointType = config.getEndpointType();
     switch(endpointType) {
       case MSG:
-        return new MsgHpnlService(numThreads, numBuffers, bufferSize, server);
+        return new MsgHpnlService(numThreads, numBuffers, bufferSize, ioRatio, server);
       case RDM:
-        return new RdmHpnlService(numThreads, numBuffers, bufferSize, server);
+        return new RdmHpnlService(numThreads, numBuffers, bufferSize, ioRatio, server);
       default:
         throw new UnsupportedOperationException(endpointType + " is not supported");
     }

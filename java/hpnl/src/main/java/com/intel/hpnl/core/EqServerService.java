@@ -6,8 +6,8 @@ import com.intel.hpnl.api.Handler;
 public class EqServerService extends EqService {
   private Handler connectedCallback;
 
-  public EqServerService(int workerNum, int bufferNum, int bufferSize) {
-    super(workerNum, bufferNum, bufferSize, true);
+  public EqServerService(int workerNum, int bufferNum, int bufferSize, int ioRatio) {
+    super(workerNum, bufferNum, bufferSize, ioRatio, true);
   }
 
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {

@@ -4,10 +4,8 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.intel.hpnl.api.Connection;
-import com.intel.hpnl.api.Handler;
-import com.intel.hpnl.api.HpnlBuffer;
-import com.intel.hpnl.api.HpnlFactory;
+import com.intel.hpnl.api.*;
+import com.intel.hpnl.core.RdmHpnlService;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
@@ -43,13 +41,14 @@ public class ClientTest implements Runnable {
   int[] affinities = null;
 
   public void run(){
-    RdmService sevice = startClient();
+    Object[] ret = startClient();
     try {
       Thread.sleep(5000);
     }catch (Exception e){
       e.printStackTrace();
     }
-//    sevice.stop();
+    ((RdmConnection)ret[1]).shutdown();
+    ((RdmHpnlService)ret[0]).stop();
     try {
       Thread.sleep(5000);
     }catch (Exception e){
@@ -59,16 +58,20 @@ public class ClientTest implements Runnable {
     startClient();
   }
 
-  private RdmService startClient(){
-    RdmService service = new RdmService(1, bufferNbr, bufferSize).init();
-    assert(service != null);
+  private Object[] startClient(){
+    RdmHpnlService hpnlService = new RdmHpnlService(1, bufferNbr, bufferSize, 50, false);
+    assert(hpnlService != null);
 
     ExecutorService es = Executors.newFixedThreadPool(1);
-    es.submit(service.getEventTask());
+    es.submit(hpnlService.getRdmService().getEventTask());
 
-    service.connect(addr, port, 0, new Handler() {
+    Object[] ret = new Object[2];
+
+    ret[0] = hpnlService;
+    hpnlService.connect(addr, Integer.valueOf(port), 0, new Handler() {
       @Override
       public int handle(Connection connection, int bufferId, int bufferSize) {
+        ret[1] = connection;
         connection.setRecvCallback(new RecvCallback(false));
         HpnlBuffer sendBuffer = connection.takeSendBuffer();
         ByteBuffer rawBuffer = sendBuffer.getRawBuffer();
@@ -86,7 +89,7 @@ public class ClientTest implements Runnable {
         return Handler.RESULT_DEFAULT;
       }
     });
-    return service;
+    return ret;
   }
 
   public static void main(String... args) {

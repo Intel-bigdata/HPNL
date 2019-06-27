@@ -14,11 +14,11 @@ public class MsgHpnlService implements HpnlService {
   private boolean server;
   private static final Logger logger = LoggerFactory.getLogger(MsgHpnlService.class);
 
-  public MsgHpnlService(int numThreads, int numBuffers, int bufferSize, boolean server) {
+  public MsgHpnlService(int numThreads, int numBuffers, int bufferSize, int ioRatio, boolean server) {
     if (server) {
-      this.eqService = (new EqServerService(numThreads, numBuffers, bufferSize)).init();
+      this.eqService = (new EqServerService(numThreads, numBuffers, bufferSize, ioRatio)).init();
     } else {
-      this.eqService = (new EqService(numThreads, numBuffers, bufferSize)).init();
+      this.eqService = (new EqService(numThreads, numBuffers, bufferSize, ioRatio)).init();
     }
 
     this.checkInit(this.eqService, "failed to initialize EQ service");

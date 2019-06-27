@@ -12,11 +12,11 @@ public class RdmHpnlService implements HpnlService {
   private boolean server;
   private AtomicLong nextConnectionId = new AtomicLong(0L);
 
-  public RdmHpnlService(int numThreads, int numBuffers, int bufferSize, boolean server) {
+  public RdmHpnlService(int numThreads, int numBuffers, int bufferSize, int ioRatio, boolean server) {
     if (server) {
-      this.service = (new RdmServerService(numThreads, numBuffers, bufferSize)).init();
+      this.service = (new RdmServerService(numThreads, numBuffers, bufferSize, ioRatio)).init();
     } else {
-      this.service = (new RdmService(numThreads, numBuffers, bufferSize)).init();
+      this.service = (new RdmService(numThreads, numBuffers, bufferSize, ioRatio)).init();
     }
 
     this.service.setHpnlService(this);
@@ -41,6 +41,10 @@ public class RdmHpnlService implements HpnlService {
   @Override
   public EventTask getEqTask() {
     return null;
+  }
+
+  public RdmService getRdmService(){
+    return service;
   }
 
   @Override

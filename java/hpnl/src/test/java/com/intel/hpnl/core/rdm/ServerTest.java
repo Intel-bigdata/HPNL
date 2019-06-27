@@ -42,7 +42,7 @@ public class ServerTest implements Runnable {
   int[] affinities = null;
 
   public void run() {
-    RdmService service = new RdmServerService(1, bufferNbr, bufferSize).init();
+    RdmService service = new RdmServerService(1, bufferNbr, bufferSize, 50).init();
     assert(service != null);
 
     ExecutorService es = Executors.newFixedThreadPool(1);

@@ -117,9 +117,7 @@ public abstract class AbstractConnection implements Connection {
     if (buffer == null) {
       throw new IllegalStateException("buffer not found with id: " + bufferId);
     } else {
-      synchronized (this) {
-        this.sendBufferList.offer(buffer);
-      }
+      this.sendBufferList.offer(buffer);
     }
   }
 
@@ -140,9 +138,13 @@ public abstract class AbstractConnection implements Connection {
 
   @Override
   public HpnlBuffer takeSendBuffer() {
-    synchronized (this) {
-      return this.sendBufferList.poll();
-    }
+      HpnlBuffer buffer = this.sendBufferList.poll();
+      if(buffer == null){
+        if(log.isDebugEnabled()){
+          log.debug("Connection ({}) lack of send buffer", this.getConnectionId());
+        }
+      }
+      return buffer;
   }
 
   @Override

@@ -67,7 +67,7 @@ public class RdmConnection extends AbstractConnection {
   protected void doShutdown(boolean proactive) {
     this.service.removeNativeConnection(nativeConnId, this.nativeHandle, proactive);
     this.deleteGlobalRef(this.nativeHandle);
-    this.free(this.nativeHandle);
+//    this.free(this.nativeHandle);
   }
 
   @Override

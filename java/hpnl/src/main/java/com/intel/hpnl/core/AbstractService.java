@@ -17,6 +17,7 @@ public abstract class AbstractService {
   protected int workerNum;
   protected int bufferNum;
   protected int bufferSize;
+  protected int ioRatio;
   protected boolean server;
   protected HpnlService hpnlService;
   protected Map<Long, Connection> conMap;
@@ -25,10 +26,11 @@ public abstract class AbstractService {
   private MemPool recvBufferPool;
   private static final Logger log = LoggerFactory.getLogger(AbstractService.class);
 
-  protected AbstractService(int workerNum, int bufferNum, int bufferSize, boolean server) {
+  protected AbstractService(int workerNum, int bufferNum, int bufferSize, int ioRatio, boolean server) {
     this.workerNum = workerNum;
     this.bufferNum = bufferNum;
     this.bufferSize = bufferSize;
+    this.ioRatio = ioRatio;
     this.server = server;
     this.conMap = new ConcurrentHashMap();
   }
