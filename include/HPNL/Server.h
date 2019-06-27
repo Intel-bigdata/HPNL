@@ -1,9 +1,15 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include "HPNL/Service.h"
+#include <cstdint>
 
-class Server : public Service {
+class Service;
+class Connection;
+class BufMgr;
+class Callback;
+class Chunk;
+
+class Server {
   public:
     Server(int, int);
 
@@ -25,11 +31,15 @@ class Server : public Service {
     void     set_send_callback(Callback *callback);
     void     set_read_callback(Callback *callback);
     void     set_connected_callback(Callback *callback);
+    void     set_shutdown_callback(Callback *callback);
 
     // RMA buffer registration
     uint64_t reg_rma_buffer(char*, uint64_t, int);
     void     unreg_rma_buffer(int);
     Chunk*   get_rma_buffer(int);
+
+  private:
+    Service *service;
 };
 
 #endif

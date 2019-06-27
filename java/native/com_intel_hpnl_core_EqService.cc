@@ -139,7 +139,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event1(JNIEn
     (*env).CallVoidMethod(thisObj, establishConnection, jEq, jCon, con->get_cq_index(), dest_addr_str, dest_port, src_addr_str, src_port);
 
     //set send buffer;
-    std::vector<Chunk*> send_buffer = con->get_send_buffer();
+    std::vector<Chunk*> send_buffer = con->get_send_chunks();
     int chunks_size = send_buffer.size();
     for (int i = 0; i < chunks_size; i++) {
       (*env).CallVoidMethod(thisObj, pushSendBuffer, jEq, send_buffer[i]->buffer_id);

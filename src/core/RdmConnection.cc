@@ -15,10 +15,10 @@ RdmConnection::RdmConnection(const char* ip_, const char* port_,
  }
 
 RdmConnection::~RdmConnection() {
-  for (auto ck: send_buffers) {
+  for (auto ck: send_chunks) {
     buf_mgr->put(ck->buffer_id, ck);
   }
-  for (auto ck: recv_buffers) {
+  for (auto ck: recv_chunks) {
     buf_mgr->put(ck->buffer_id, ck);
   }
   if (!is_server) {
@@ -87,12 +87,12 @@ int RdmConnection::init() {
       if (fi_recv(ep, rck->buffer, rck->capacity, nullptr, FI_ADDR_UNSPEC, &rck->ctx)) {
         perror("fi_recv");
       }
-      recv_buffers.push_back(rck);
+      recv_chunks.push_back(rck);
     }
     if (buf_mgr->free_size()) {
       Chunk *sck = buf_mgr->get();
-      send_buffers.push_back(sck);
-      send_buffers_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
+      send_chunks.push_back(sck);
+      send_chunks_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
     }
     size++;
   }
@@ -112,7 +112,7 @@ int RdmConnection::send(Chunk *ck) {
 }
 
 int RdmConnection::send(int buffer_size, int buffer_id) {
-  Chunk *ck = send_buffers_map[buffer_id];
+  Chunk *ck = send_chunks_map[buffer_id];
   char tmp[32];
   size_t tmp_len = 32;
   fi_av_straddr(av, info->dest_addr, tmp, &tmp_len);
@@ -153,7 +153,7 @@ int RdmConnection::sendBuf(const char* buffer, int buffer_size) {
 }
 
 int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name) {
-  Chunk *ck = send_buffers_map[buffer_id];
+  Chunk *ck = send_chunks_map[buffer_id];
   char tmp[32];
   size_t tmp_len = 32;
   fi_av_straddr(av, peer_name, tmp, &tmp_len);
@@ -228,8 +228,8 @@ int RdmConnection::get_local_name_length() {
 }
 
 Chunk* RdmConnection::encode(void *buf, int size, char* peer_name) {
-  Chunk *ck = send_buffers.back();
-  send_buffers.pop_back();
+  Chunk *ck = send_chunks.back();
+  send_chunks.pop_back();
   ck->ctx.internal[4] = ck;
   ck->con = this;
   if (local_name_len > ck->capacity) {
@@ -279,11 +279,11 @@ int RdmConnection::activate_recv_chunk(Chunk *ck) {
 }
 
 void RdmConnection::activate_send_chunk(Chunk *ck) {
-  send_buffers.push_back(ck);
+  send_chunks.push_back(ck);
 }
 
-std::vector<Chunk*> RdmConnection::get_send_buffer() {
-  return send_buffers;
+std::vector<Chunk*> RdmConnection::get_send_chunk() {
+  return send_chunks;
 }
 
 void RdmConnection::set_recv_callback(Callback *callback) {
