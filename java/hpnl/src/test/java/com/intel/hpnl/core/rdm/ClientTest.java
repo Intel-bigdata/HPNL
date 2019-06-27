@@ -42,7 +42,24 @@ public class ClientTest implements Runnable {
   @Option(names = {"-f", "--affinity"}, required = false, split = ",",  description = "HPNL thread affinity")
   int[] affinities = null;
 
-  public void run() {
+  public void run(){
+    RdmService sevice = startClient();
+    try {
+      Thread.sleep(5000);
+    }catch (Exception e){
+      e.printStackTrace();
+    }
+//    sevice.stop();
+    try {
+      Thread.sleep(5000);
+    }catch (Exception e){
+      e.printStackTrace();
+    }
+    System.out.println("xyz");
+    startClient();
+  }
+
+  private RdmService startClient(){
     RdmService service = new RdmService(1, bufferNbr, bufferSize).init();
     assert(service != null);
 
@@ -69,6 +86,7 @@ public class ClientTest implements Runnable {
         return Handler.RESULT_DEFAULT;
       }
     });
+    return service;
   }
 
   public static void main(String... args) {

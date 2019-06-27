@@ -24,7 +24,6 @@ public class RdmConnection extends AbstractConnection {
     this.localName = ByteBuffer.allocateDirect(this.localNameLength);
     this.get_local_name(this.localName, this.nativeHandle);
     this.localName.limit(this.localNameLength);
-    this.localName.flip();
     this.init(this.nativeHandle);
     this.nativeConnId = get_connection_id(this.nativeHandle);
     this.server = server;
