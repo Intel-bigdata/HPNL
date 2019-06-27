@@ -35,7 +35,7 @@ class RdmConnection : public Connection {
     int get_local_name_length();
     void activate_send_chunk(Chunk*) override;
     int activate_recv_chunk(Chunk*) override;
-    std::vector<Chunk*> get_send_buffer();
+    std::vector<Chunk*> get_send_chunk();
 
     void set_recv_callback(Callback*) override;
     void set_send_callback(Callback*) override;
@@ -68,9 +68,9 @@ class RdmConnection : public Connection {
     size_t local_name_len = 64;
     std::map<std::string, fi_addr_t> addr_map;
 
-    std::vector<Chunk*> recv_buffers;
-    std::vector<Chunk*> send_buffers;
-    std::unordered_map<int, Chunk*> send_buffers_map;
+    std::vector<Chunk*> recv_chunks;
+    std::vector<Chunk*> send_chunks;
+    std::unordered_map<int, Chunk*> send_chunks_map;
     std::mutex in_flight_mtx;
     std::unordered_map<int, Chunk*> chunks_in_flight;
 

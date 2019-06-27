@@ -58,7 +58,7 @@ class MsgConnection : public Connection {
     void set_read_callback(Callback*);
     void set_shutdown_callback(Callback*);
 
-    std::vector<Chunk*> get_send_buffer();
+    std::vector<Chunk*> get_send_chunks();
 
     Callback* get_recv_callback() override;
     Callback* get_send_callback() override;
@@ -80,9 +80,9 @@ class MsgConnection : public Connection {
     fid_eq *conEq;
 
     BufMgr *buf_mgr;
-    std::vector<Chunk*> recv_buffers;
-    std::vector<Chunk*> send_buffers;
-    std::unordered_map<int, Chunk*> send_buffers_map;
+    std::vector<Chunk*> recv_chunks;
+    std::vector<Chunk*> send_chunks;
+    std::unordered_map<int, Chunk*> send_chunks_map;
 
     bool is_server;
 

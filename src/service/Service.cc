@@ -1,4 +1,4 @@
-#include "HPNL/Service.h"
+#include "Service.h"
 #include "core/Stack.h"
 #include "core/MsgStack.h"
 #include "core/MsgConnection.h"

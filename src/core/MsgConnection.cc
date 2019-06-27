@@ -21,15 +21,15 @@ MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_,
  }
 
 MsgConnection::~MsgConnection() {
-  for (auto buffer: send_buffers_map) {
+  for (auto buffer: send_chunks_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
     buf_mgr->put(ck->buffer_id, ck);
   }
-  while (!recv_buffers.empty()) {
-    Chunk *ck = recv_buffers.back();
+  while (!recv_chunks.empty()) {
+    Chunk *ck = recv_chunks.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
-    recv_buffers.pop_back();
+    recv_chunks.pop_back();
     buf_mgr->put(ck->buffer_id, ck);
   }
   if (ep) {
@@ -95,7 +95,7 @@ int MsgConnection::init() {
       goto free_recv_buf;
     }
     mr = nullptr;
-    recv_buffers.push_back(ck);
+    recv_chunks.push_back(ck);
     size++;
   }
   size = 0;
@@ -112,24 +112,24 @@ int MsgConnection::init() {
     ck->con = this;
     ck->mr = mr;
     mr = nullptr;
-    send_buffers.push_back(ck);
-    send_buffers_map.insert(std::pair<int, Chunk*>(ck->buffer_id, ck));
+    send_chunks.push_back(ck);
+    send_chunks_map.insert(std::pair<int, Chunk*>(ck->buffer_id, ck));
     size++;
   }
 
   return 0;
 
 free_send_buf:
-  for (auto buffer: send_buffers_map) {
+  for (auto buffer: send_chunks_map) {
     Chunk *ck = buffer.second;
     fi_close(&((fid_mr*)ck->mr)->fid);
     buf_mgr->put(ck->buffer_id, ck);
   }
 free_recv_buf:
-  while (!recv_buffers.empty()) {
-    Chunk *ck = recv_buffers.back();
+  while (!recv_chunks.empty()) {
+    Chunk *ck = recv_chunks.back();
     fi_close(&((fid_mr*)ck->mr)->fid);
-    recv_buffers.pop_back();
+    recv_chunks.pop_back();
     buf_mgr->put(ck->buffer_id, ck);
   }
 free_eq:
@@ -147,8 +147,8 @@ free_ep:
 }
 
 int MsgConnection::sendBuf(const char *buffer, int buffer_size) {
-  Chunk *ck = send_buffers.back();
-  send_buffers.pop_back();
+  Chunk *ck = send_chunks.back();
+  send_chunks.pop_back();
   if ((uint64_t)buffer_size > ck->capacity) {
     return -1; 
   }
@@ -161,7 +161,7 @@ int MsgConnection::sendBuf(const char *buffer, int buffer_size) {
 }
 
 int MsgConnection::send(int buffer_size, int buffer_id) {
-  Chunk *ck = send_buffers_map[buffer_id];
+  Chunk *ck = send_chunks_map[buffer_id];
   if (fi_send(ep, ck->buffer, (size_t)buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
     return -1;
@@ -229,11 +229,11 @@ int MsgConnection::get_cq_index() {
 }
 
 void MsgConnection::activate_send_chunk(Chunk *ck) {
-  send_buffers.push_back(ck);
+  send_chunks.push_back(ck);
 }
 
-std::vector<Chunk*> MsgConnection::get_send_buffer() {
-  return send_buffers;
+std::vector<Chunk*> MsgConnection::get_send_chunks() {
+  return send_chunks;
 }
 
 void MsgConnection::set_recv_callback(Callback *callback) {

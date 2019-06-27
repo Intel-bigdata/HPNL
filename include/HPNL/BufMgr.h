@@ -5,11 +5,6 @@
 
 #include <memory>
 
-enum ChunkType {
-  RECV_CHUNK = 1,
-  SEND_CHUNK = 2
-};
-
 struct Chunk {
   void        *buffer;
   uint64_t    capacity;
