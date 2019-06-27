@@ -2,7 +2,7 @@
 #include "HPNL/Server.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "PingPongBufMgr.h"
+#include "HPNL/HpnlBufMgr.h"
 
 #define SIZE 4096
 #define BUFFER_SIZE 65536
@@ -47,7 +47,7 @@ class SendCallback : public Callback {
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new PingPongBufMgr();
+  BufMgr *bufMgr = new HpnlBufMgr();
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();

@@ -5,10 +5,10 @@
 #include <iostream>
 #include <mutex>
 
-class PmemBufMgr : public BufMgr {
+class HpnlBufMgr : public BufMgr {
   public:
-    PmemBufMgr() = default;
-    virtual ~PmemBufMgr() {
+    HpnlBufMgr() {}
+    virtual ~HpnlBufMgr() {
       for (auto buf : buf_map) {
         delete buf.second; 
         buf.second = NULL;

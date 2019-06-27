@@ -38,15 +38,22 @@ int RdmStack::init() {
   hints->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-  if (fi_getinfo(FI_VERSION(1, 5), nullptr, nullptr, is_server ? FI_SOURCE : 0, hints, &info))
+  if (fi_getinfo(FI_VERSION(1, 5), nullptr, nullptr, is_server ? FI_SOURCE : 0, hints, &info)) {
+    fi_freeinfo(hints);
     perror("fi_getinfo");
+    return -1;
+  }
   fi_freeinfo(hints);
 
-  if (fi_fabric(info->fabric_attr, &fabric, nullptr))
+  if (fi_fabric(info->fabric_attr, &fabric, nullptr)) {
     perror("fi_fabric");
+    return -1;
+  }
 
-  if (fi_domain(fabric, info, &domain, nullptr))
+  if (fi_domain(fabric, info, &domain, nullptr)) {
     perror("fi_domain");
+    return -1;
+  }
 
   struct fi_cq_attr cq_attr = {
     .size = 0,
@@ -57,8 +64,10 @@ int RdmStack::init() {
     .wait_cond = FI_CQ_COND_NONE,
     .wait_set = NULL
   };
+
   if (fi_cq_open(domain, &cq_attr, &cq, NULL)) {
     perror("fi_cq_open");
+    return -1;
   }
   initialized = true;
   return 0;
@@ -82,8 +91,11 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* buf_mgr) {
   hints->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-  if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &server_info))
+  if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &server_info)) {
+    fi_freeinfo(hints);
     perror("fi_getinfo");
+    return nullptr;
+  }
   fi_freeinfo(hints);
   server_con = new RdmConnection(ip, port, server_info, domain, cq, buf_mgr, buffer_num, true);
   server_con->init();

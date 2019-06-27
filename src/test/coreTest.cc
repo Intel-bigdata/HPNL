@@ -7,7 +7,7 @@
 #include "core/RdmStack.h"
 #include "core/MsgConnection.h"
 #include "HPNL/Common.h"
-#include "TestBufMgr.h"
+#include "HPNL/HpnlBufMgr.h"
 
 TEST_CASE("msg server") {
   MsgStack *stack = new MsgStack(1, 6, true);
@@ -67,7 +67,7 @@ TEST_CASE("msg connect operation") {
   MsgStack *stack = new MsgStack(1, buffer_num_per_connection, false);
   REQUIRE(stack->init() == 0);
 
-  TestBufMgr *mgr = new TestBufMgr();
+  HpnlBufMgr *mgr = new HpnlBufMgr();
   for (int i = 0; i < total_buffer_num; i++) {
     Chunk *ck = new Chunk();
     ck->buffer_id = mgr->get_id();

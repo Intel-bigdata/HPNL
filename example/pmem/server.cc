@@ -2,7 +2,7 @@
 #include "HPNL/Server.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "PmemBufMgr.h"
+#include "HPNL/HpnlBufMgr.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -114,7 +114,7 @@ class SendCallback : public Callback {
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new PmemBufMgr();
+  BufMgr *bufMgr = new HpnlBufMgr();
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();

@@ -52,10 +52,14 @@ int Service::init(bool msg_) {
       return res;
     }
     eq_demultiplexer = new EqDemultiplexer((MsgStack*)stack);
-    eq_demultiplexer->init();
+    if ((res = eq_demultiplexer->init())) {
+      return res;
+    }
     for (int i = 0; i < worker_num; i++) {
       cq_demultiplexer[i] = new CqDemultiplexer((MsgStack*)stack, i);
-      cq_demultiplexer[i]->init();
+      if ((res = cq_demultiplexer[i]->init())) {
+        return res;
+      }
     }
     proactor = new Proactor(eq_demultiplexer, cq_demultiplexer, worker_num);
   } else {
@@ -64,7 +68,9 @@ int Service::init(bool msg_) {
       return res;
     }
     rdm_cq_demultiplexer = new RdmCqDemultiplexer((RdmStack*)stack);
-    rdm_cq_demultiplexer->init();
+    if ((res = rdm_cq_demultiplexer->init())) {
+      return res;
+    }
     proactor = new Proactor(rdm_cq_demultiplexer);
   }
   
@@ -72,6 +78,8 @@ int Service::init(bool msg_) {
 }
 
 void Service::start() {
+  if (proactor == nullptr)
+    return;
   if (msg) {
     eqThread = new EqThread(proactor);
     eqThread->start();
@@ -86,9 +94,14 @@ void Service::start() {
 }
 
 int Service::listen(const char* addr, const char* port) {
+  int res = 0;
   if (msg) {
-    auto* eq = (fid_eq*)stack->bind(addr, port, bufMgr);
-    ((MsgStack*)stack)->listen();
+    auto eq = (fid_eq*)stack->bind(addr, port, bufMgr);
+    if (!eq)
+      return -1;
+    if ((res = ((MsgStack*)stack)->listen())) {
+      return res;
+    }
     std::shared_ptr<EqHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
     acceptRequestCallback = new AcceptRequestCallback(this);
     handler->set_recv_callback(recvCallback);
@@ -97,19 +110,26 @@ int Service::listen(const char* addr, const char* port) {
     handler->set_accept_request_callback(acceptRequestCallback);
     handler->set_connected_callback(connectedCallback);
     handler->set_shutdown_callback(shutdownCallback);
-    proactor->register_handler(handler);
+    if (!proactor)
+      return -1;
+    if ((res = proactor->register_handler(handler))) {
+      return res;
+    }
   } else {
-    auto* con = (RdmConnection*)stack->bind(addr, port, bufMgr);
+    auto con = (RdmConnection*)stack->bind(addr, port, bufMgr);
+    if (!con)
+      return -1;
     con->set_recv_callback(recvCallback);
     con->set_send_callback(sendCallback);
   }
-
   return 0;
 }
 
 int Service::connect(const char* addr, const char* port) {
+  int res = 0;
   fid_eq *eq = ((MsgStack*)stack)->connect(addr, port, bufMgr);
-
+  if (!eq)
+    return -1;
   std::shared_ptr<EventHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
   acceptRequestCallback = new AcceptRequestCallback(this);
   handler->set_recv_callback(recvCallback);
@@ -118,8 +138,11 @@ int Service::connect(const char* addr, const char* port) {
   handler->set_accept_request_callback(acceptRequestCallback);
   handler->set_connected_callback(connectedCallback);
   handler->set_shutdown_callback(shutdownCallback);
-  proactor->register_handler(handler);
-
+  if (!proactor)
+    return -1;
+  if ((res = proactor->register_handler(handler))) {
+    return res;
+  }
   return 0;
 }
 

@@ -2,7 +2,7 @@
 #include "HPNL/Client.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "ConBufMgr.h"
+#include "HPNL/HpnlBufMgr.h"
 
 #define SIZE 4096
 #define BUFFER_SIZE 65536
@@ -40,7 +40,7 @@ class ConnectedCallback : public Callback {
 };
 
 void connect() {
-  BufMgr *bufMgr = new ConBufMgr();
+  BufMgr *bufMgr = new HpnlBufMgr();
   Chunk *ck;
   for (int i = 0; i < MEM_SIZE*2; i++) {
     ck = new Chunk();

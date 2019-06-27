@@ -1,4 +1,4 @@
-add_executable(core_test ${PROJECT_SOURCE_DIR}/src/test/coreTest.cc ${CORE_FILE})
+add_executable(core_test ${PROJECT_SOURCE_DIR}/src/test/coreTest.cc ${CORE_FILE} test/serviceTest.cc)
 target_link_libraries(core_test fabric)
 set_target_properties(core_test
   PROPERTIES
