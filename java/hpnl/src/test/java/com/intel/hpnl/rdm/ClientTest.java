@@ -49,7 +49,7 @@ public class ClientTest implements Runnable {
     RecvCallback recvCallback = new RecvCallback(false, interval, msgSize);
     service.setRecvCallback(recvCallback);
 
-    service.initBufferPool(bufferNbr*2, bufferSize, bufferNbr);
+    service.initBufferPool(bufferNbr, bufferSize, bufferNbr);
 
     RdmConnection[] con = new RdmConnection[50];
     for (int i = 0; i < 50; i++) {

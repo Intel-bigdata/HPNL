@@ -67,6 +67,9 @@ int RdmStack::init() {
 void* RdmStack::bind(const char* ip, const char* port, BufMgr* buf_mgr) {
   if (!initialized || !ip || !port || !buf_mgr)
     return NULL;
+  if (buf_mgr->free_size() < buffer_num*2) {
+    return NULL; 
+  }
   fi_info* hints = fi_allocinfo();
   hints->ep_attr->type = FI_EP_RDM;
   hints->caps = FI_MSG;
@@ -82,7 +85,6 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* buf_mgr) {
   if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &server_info))
     perror("fi_getinfo");
   fi_freeinfo(hints);
-
   server_con = new RdmConnection(ip, port, server_info, domain, cq, buf_mgr, buffer_num, true);
   server_con->init();
   cons.push_back(server_con);

@@ -10,7 +10,11 @@ public class MemPool {
     this.rdmService = null;
     this.initBufferNum = initBufferNum;
     this.bufferSize = bufferSize;
-    this.nextBufferNum = nextBufferNum;
+    if (nextBufferNum >= initBufferNum*2) {
+      this.nextBufferNum = nextBufferNum; 
+    } else {
+      this.nextBufferNum = this.initBufferNum*2;
+    }
     this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
     this.seqId = new AtomicInteger(0);
     for (int i = 0; i < this.initBufferNum; i++) {
@@ -23,7 +27,11 @@ public class MemPool {
     this.rdmService = rdmService;
     this.initBufferNum = initBufferNum;
     this.bufferSize = bufferSize;
-    this.nextBufferNum = nextBufferNum;
+    if (nextBufferNum >= initBufferNum*2) {
+      this.nextBufferNum = nextBufferNum; 
+    } else {
+      this.nextBufferNum = this.initBufferNum*2;
+    }
     this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
     this.seqId = new AtomicInteger(0);
     for (int i = 0; i < this.initBufferNum; i++) {

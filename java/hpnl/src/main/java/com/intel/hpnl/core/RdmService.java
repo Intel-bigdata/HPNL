@@ -24,8 +24,8 @@ public class RdmService {
     return this;
   }
 
-  public void listen(String ip, String port) {
-    listen(ip, port, nativeHandle);
+  public int listen(String ip, String port) {
+    return listen(ip, port, nativeHandle);
   }
 
   public void join() {
@@ -105,7 +105,7 @@ public class RdmService {
   }
 
   private native int init(int buffer_num, boolean is_server);
-  private native void listen(String ip, String port, long nativeHandle);
+  private native int listen(String ip, String port, long nativeHandle);
   private native long get_con(String ip, String port, long nativeHandle);
   private native int wait_event(long nativeHandle);
   private native void set_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
