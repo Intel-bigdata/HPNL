@@ -221,15 +221,19 @@ Chunk* RdmConnection::encode(void *buf, int size, char* peer_name) {
   }
   return ck;
 }
+
 void RdmConnection::decode_peer_name(void *buf, char* peer_name) {
   memcpy(peer_name, buf, local_name_len);
 }
+
 char* RdmConnection::decode_buf(void *buf) {
   return (char*)buf+local_name_len;
 }
+
 fid_cq* RdmConnection::get_cq() {
   return conCq; 
 }
+
 int RdmConnection::activate_chunk(Chunk *ck) {
   ck->con = this;
   ck->ctx.internal[4] = ck;
@@ -239,6 +243,12 @@ int RdmConnection::activate_chunk(Chunk *ck) {
   }
   return 0;
 }
+
+int RdmConnection::activate_chunk(int bufferId) {
+  Chunk *ck = rbuf_mgr->get(bufferId);
+  return activate_chunk(ck);
+}
+
 void RdmConnection::reclaim_chunk(Chunk *ck) {
   send_buffers.push_back(ck);
 }

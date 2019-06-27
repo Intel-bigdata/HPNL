@@ -35,6 +35,7 @@ class RdmConnection : public Connection {
     fid_cq* get_cq();
     virtual void reclaim_chunk(Chunk*) override;
     virtual int activate_chunk(Chunk*) override;
+    virtual int activate_chunk(int) override;
     std::vector<Chunk*> get_send_buffer();
     std::vector<Chunk*> get_recv_buffer();
 
