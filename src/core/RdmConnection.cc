@@ -43,28 +43,41 @@ int RdmConnection::init() {
 #endif
 
     assert(info == nullptr);
-    if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &info))
+    if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &info)) {
       perror("fi_getinfo");
+      fi_freeinfo(hints);
+      return -1;
+    }
     fi_freeinfo(hints);
   }
 
-  if (fi_endpoint(domain, info, &ep, nullptr))
+  if (fi_endpoint(domain, info, &ep, nullptr)) {
     perror("fi_endpoint");
-  
+    return -1;
+  }
+
   fi_av_attr	av_attr;
   memset(&av_attr, 0, sizeof(av_attr));
   av_attr.type = FI_AV_UNSPEC;
-  if (fi_av_open(domain, &av_attr, &av, nullptr))
+  if (fi_av_open(domain, &av_attr, &av, nullptr)) {
     perror("fi_av_open");
-  
-  if (fi_ep_bind(ep, &conCq->fid, FI_SEND | FI_RECV))
+    return -1;
+  }
+
+  if (fi_ep_bind(ep, &conCq->fid, FI_SEND | FI_RECV)) {
     perror("fi_ep_bind cq");
+    return -1;
+  }
 
-  if (fi_ep_bind(ep, (fid_t)av, 0))
+  if (fi_ep_bind(ep, (fid_t)av, 0)) {
     perror("fi_ep_bind av");
+    return -1;
+  }
 
-  if (fi_enable(ep))
+  if (fi_enable(ep)) {
     perror("fi_enable");
+    return -1;
+  }
 
   fi_getname((fid_t)ep, local_name, &local_name_len);
 
@@ -86,6 +99,7 @@ int RdmConnection::init() {
       rck->ctx.internal[4] = rck;
       if (fi_recv(ep, rck->buffer, rck->capacity, nullptr, FI_ADDR_UNSPEC, &rck->ctx)) {
         perror("fi_recv");
+        return -1;
       }
       recv_chunks.push_back(rck);
     }
@@ -107,6 +121,7 @@ int RdmConnection::shutdown() {
 int RdmConnection::send(Chunk *ck) {
   if (fi_send(ep, ck->buffer, ck->size, nullptr, ck->peer_addr, &ck->ctx) < 0) {
     perror("fi_send");
+    return -1;
   }
   return 0;
 }

@@ -6,10 +6,9 @@
 #include "HPNL/Callback.h"
 #include "HPNL/HpnlBufMgr.h"
 
-#define SIZE 4096
+#define MSG_SIZE 4096
 #define BUFFER_SIZE 65536
-#define MEM_SIZE 65536
-#define MAX_WORKERS 10
+#define BUFFER_NUM 65536
 
 int count = 0;
 uint64_t start, end = 0;
@@ -21,9 +20,9 @@ uint64_t timestamp_now() {
 
 class ShutdownCallback : public Callback {
   public:
-    ShutdownCallback(Client *_clt) : clt(_clt) {}
-    virtual ~ShutdownCallback() {}
-    virtual void operator()(void *param_1, void *param_2) override {
+    explicit ShutdownCallback(Client *_clt) : clt(_clt) {}
+    ~ShutdownCallback() override = default;
+    void operator()(void *param_1, void *param_2) override {
       std::cout << "connection shutdown..." << std::endl;
       clt->shutdown();
     }
@@ -33,13 +32,13 @@ class ShutdownCallback : public Callback {
 
 class ConnectedCallback : public Callback {
   public:
-    ConnectedCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
-    virtual ~ConnectedCallback() {}
-    virtual void operator()(void *param_1, void *param_2) override {
-      Connection *con = (Connection*)param_1;
-      char* buffer = (char*)std::malloc(SIZE);
-      memset(buffer, '0', SIZE);
-      con->sendBuf(buffer, SIZE);
+    explicit ConnectedCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    ~ConnectedCallback() override = default;
+    void operator()(void *param_1, void *param_2) override {
+      auto con = (Connection*)param_1;
+      char* buffer = (char*)std::malloc(MSG_SIZE);
+      memset(buffer, '0', MSG_SIZE);
+      con->sendBuf(buffer, MSG_SIZE);
       std::free(buffer);
     }
   private:
@@ -49,13 +48,13 @@ class ConnectedCallback : public Callback {
 class RecvCallback : public Callback {
   public:
     RecvCallback(Client *client_, BufMgr *bufMgr_) : client(client_), bufMgr(bufMgr_) {}
-    virtual ~RecvCallback() {}
-    virtual void operator()(void *param_1, void *param_2) override {
+    ~RecvCallback() override = default;
+    void operator()(void *param_1, void *param_2) override {
       std::lock_guard<std::mutex> lk(mtx);
       count++;
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
-      Connection *con = (Connection*)ck->con;
+      auto con = (Connection*)ck->con;
       if (count >= 1000000) {
         end = timestamp_now();
         printf("finished, totally consumes %f s, message round trip time is %f us.\n", (end-start)/1000.0, (end-start)*1000/1000000.0);
@@ -67,7 +66,7 @@ class RecvCallback : public Callback {
       if (count == 1) {
         start = timestamp_now(); 
       }
-      con->sendBuf((char*)ck->buffer, SIZE);
+      con->sendBuf((char*)ck->buffer, MSG_SIZE);
     }
   private:
     Client *client;
@@ -76,37 +75,31 @@ class RecvCallback : public Callback {
 
 class SendCallback : public Callback {
   public:
-    SendCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
-    virtual ~SendCallback() {}
-    virtual void operator()(void *param_1, void *param_2) override {
-      int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->get(mid);
-      Connection *con = (Connection*)ck->con;
-      con->activate_send_chunk(ck);
-    }
+    explicit SendCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    ~SendCallback() override = default;
+    void operator()(void *param_1, void *param_2) override;
   private:
     BufMgr *bufMgr;
 };
 
-int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new HpnlBufMgr();
-  Chunk *ck;
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    ck = new Chunk();
-    ck->buffer_id = bufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    bufMgr->put(ck->buffer_id, ck);
-  }
+void SendCallback::operator()(void *param_1, void *) {
+  int mid = *(int*)param_1;
+  Chunk *ck = bufMgr->get(mid);
+  auto con = (Connection*)ck->con;
+  con->activate_send_chunk(ck);
+}
 
-  Client *client = new Client(1, 16);
+int main(int argc, char *argv[]) {
+  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
+
+  auto client = new Client(1, 16);
   client->init();
   client->set_buf_mgr(bufMgr);
 
-  RecvCallback *recvCallback = new RecvCallback(client, bufMgr);
-  SendCallback *sendCallback = new SendCallback(bufMgr);
-  ConnectedCallback *connectedCallback = new ConnectedCallback(bufMgr);
-  ShutdownCallback *shutdownCallback = new ShutdownCallback(client);
+  auto recvCallback = new RecvCallback(client, bufMgr);
+  auto sendCallback = new SendCallback(bufMgr);
+  auto connectedCallback = new ConnectedCallback(bufMgr);
+  auto shutdownCallback = new ShutdownCallback(client);
 
   client->set_recv_callback(recvCallback);
   client->set_send_callback(sendCallback);
@@ -123,21 +116,6 @@ int main(int argc, char *argv[]) {
   delete sendCallback;
   delete recvCallback;
   delete client;
-
-  int recv_chunk_size = bufMgr->get_id();
-  assert(recv_chunk_size == MEM_SIZE*2);
-  for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = bufMgr->get(i);
-    free(ck->buffer);
-  }
   delete bufMgr;
-
-  shutdownCallback = NULL;
-  connectedCallback = NULL;
-  sendCallback = NULL;
-  recvCallback = NULL;
-  client = NULL;
-  bufMgr = NULL;
-
   return 0;
 }

@@ -8,7 +8,7 @@ uint64_t start, end = 0;
 std::mutex mtx;
 
 #define BUFFER_SIZE 65536
-#define BUFFER_NUM 128
+#define BUFFER_NUM 65536
 
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
@@ -45,17 +45,9 @@ class RecvCallback : public Callback {
 };
 
 int main() {
-  BufMgr *bufMgr = new HpnlBufMgr();
-  Chunk *ck;
-  for (int i = 0; i < BUFFER_NUM*2; i++) {
-    ck = new Chunk();
-    ck->buffer_id = bufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    bufMgr->put(ck->buffer_id, ck);
-  }
+  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
 
-  Client *client = new Client(1, BUFFER_NUM/2);
+  Client *client = new Client(1, 16);
   client->init(false);
 
   client->set_buf_mgr(bufMgr);
@@ -71,20 +63,13 @@ int main() {
   memset(buffer, '0', BUFFER_SIZE);
   
   char* peer_name = con->get_peer_name();
-  ck = con->encode(buffer, BUFFER_SIZE, peer_name);
+  auto ck = con->encode(buffer, BUFFER_SIZE, peer_name);
   con->send(ck);
 
   client->wait();
 
   delete recvCallback;
   delete client;
-
-  int recv_chunk_size = bufMgr->get_id();
-  assert(recv_chunk_size == MEM_SIZE*2);
-  for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = bufMgr->get(i);
-    free(ck->buffer);
-  }
   delete bufMgr;
 
   return 0;

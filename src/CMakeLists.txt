@@ -1,6 +1,12 @@
-add_executable(core_test ${PROJECT_SOURCE_DIR}/src/test/coreTest.cc ${CORE_FILE} test/serviceTest.cc)
+add_executable(core_test ${PROJECT_SOURCE_DIR}/src/test/coreTest.cc ${CORE_FILE})
 target_link_libraries(core_test fabric)
 set_target_properties(core_test
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/test")
+
+add_executable(service_test ${PROJECT_SOURCE_DIR}/src/test/serviceTest.cc ${CORE_FILE} ${SERVICE_FILE} ${DEMULTIPLEXER_FILE})
+target_link_libraries(service_test fabric)
+set_target_properties(service_test
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/test")
 

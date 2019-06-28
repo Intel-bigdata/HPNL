@@ -23,10 +23,8 @@
 /* name of our layout in the pool */
 #define LAYOUT_NAME "pmem_spark_shuffle"
 
-#define SIZE 4096
 #define BUFFER_SIZE 65536
-#define MEM_SIZE 65536
-#define MAX_WORKERS 10
+#define BUFFER_NUM 65536
 
 int count = 0;
 std::string local_addr, local_rkey, local_len;
@@ -114,15 +112,7 @@ class SendCallback : public Callback {
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new HpnlBufMgr();
-  Chunk *ck;
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    ck = new Chunk();
-    ck->buffer_id = bufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    bufMgr->put(ck->buffer_id, ck);
-  }
+  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
 
   Server *server = new Server(1, 16);
   server->init();
@@ -145,17 +135,7 @@ int main(int argc, char *argv[]) {
   delete sendCallback;
   delete recvCallback;
   delete server;
-
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    Chunk *ck = bufMgr->get(i);
-    free(ck->buffer);
-  }
   delete bufMgr;
-
-  sendCallback = NULL;
-  recvCallback = NULL;
-  server = NULL;
-  bufMgr = NULL;
 
   return 0;
 }

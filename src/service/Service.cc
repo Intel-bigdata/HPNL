@@ -94,6 +94,8 @@ void Service::start() {
 }
 
 int Service::listen(const char* addr, const char* port) {
+  if (!is_server)
+    return -1;
   int res = 0;
   if (msg) {
     auto eq = (fid_eq*)stack->bind(addr, port, bufMgr);
@@ -126,6 +128,8 @@ int Service::listen(const char* addr, const char* port) {
 }
 
 int Service::connect(const char* addr, const char* port) {
+  if (is_server)
+    return -1;
   int res = 0;
   fid_eq *eq = ((MsgStack*)stack)->connect(addr, port, bufMgr);
   if (!eq)
@@ -147,6 +151,9 @@ int Service::connect(const char* addr, const char* port) {
 }
 
 Connection* Service::get_con(const char* addr, const char* port) {
+  if (is_server) {
+    return nullptr;
+  }
   RdmConnection *con = ((RdmStack*)stack)->get_con(addr, port, bufMgr);
   if (!con) {
     return nullptr;
