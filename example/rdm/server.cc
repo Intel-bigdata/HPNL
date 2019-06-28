@@ -1,13 +1,14 @@
 #include "core/RdmStack.h"
 #include "core/RdmConnection.h"
 #include "HPNL/Server.h"
-#include "PingPongBufMgr.h"
-#include "common.h"
+#include "HPNL/HpnlBufMgr.h"
 
 #include <chrono>
 #include <thread>
 
-#define MEM_SIZE 65536
+#define BUFFER_SIZE 65536
+#define BUFFER_NUM 65536
+
 class RecvCallback : public Callback {
   public:
     RecvCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
@@ -18,7 +19,7 @@ class RecvCallback : public Callback {
       Connection *con = (Connection*)ck->con;
       char peer_name[16];
       con->decode_peer_name(ck->buffer, peer_name, 16);
-      Chunk *sck = con->encode(ck->buffer, SIZE, peer_name);
+      Chunk *sck = con->encode(ck->buffer, BUFFER_SIZE, peer_name);
       con->send(sck);
     }
   private:
@@ -26,15 +27,7 @@ class RecvCallback : public Callback {
 };
 
 int main() {
-  BufMgr *bufMgr = new PingPongBufMgr();
-  Chunk *ck;
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    ck = new Chunk();
-    ck->buffer_id = bufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    bufMgr->put(ck->buffer_id, ck);
-  }
+  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
 
   Server *server = new Server(1, 16);
   server->init(false);
@@ -51,14 +44,6 @@ int main() {
 
   delete recvCallback;
   delete server;
-
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    Chunk *ck = bufMgr->get(i);
-    free(ck->buffer);
-  }
   delete bufMgr;
-
-  delete bufMgr;
-
   return 0;
 }

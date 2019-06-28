@@ -2,11 +2,11 @@
 #include "HPNL/Server.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "ConBufMgr.h"
+#include "HPNL/HpnlBufMgr.h"
 
-#define SIZE 3
+#define MSG_SIZE 3
 #define BUFFER_SIZE 65536
-#define MEM_SIZE 65536
+#define BUFFER_NUM 65536
 #define MAX_WORKERS 10
 
 class ShutdownCallback : public Callback {
@@ -19,15 +19,7 @@ class ShutdownCallback : public Callback {
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new ConBufMgr();
-  Chunk *ck;
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    ck = new Chunk();
-    ck->buffer_id = bufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    bufMgr->put(ck->buffer_id, ck);
-  }
+  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
 
   Server *server = new Server(1, 16);
   server->init();
@@ -46,11 +38,6 @@ int main(int argc, char *argv[]) {
   server->wait();
 
   delete server;
-
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    Chunk *ck = bufMgr->get(i);
-    free(ck->buffer);
-  }
   delete bufMgr;
 
   server = NULL;

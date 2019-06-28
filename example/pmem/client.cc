@@ -5,12 +5,11 @@
 #include "HPNL/Client.h"
 #include "HPNL/BufMgr.h"
 #include "HPNL/Callback.h"
-#include "PmemBufMgr.h"
+#include "HPNL/HpnlBufMgr.h"
 
 #define SIZE 4096
 #define BUFFER_SIZE 65536
-#define MEM_SIZE 65536
-#define MAX_WORKERS 10
+#define BUFFER_NUM 65536
 
 int count = 0;
 long addr, rkey, len;
@@ -104,15 +103,7 @@ class ReadCallback : public Callback {
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new PmemBufMgr();
-  Chunk *ck;
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    ck = new Chunk();
-    ck->buffer_id = bufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    bufMgr->put(ck->buffer_id, ck);
-  }
+  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
 
   Client *client = new Client(1, 16);
   client->init();
@@ -140,21 +131,7 @@ int main(int argc, char *argv[]) {
   delete sendCallback;
   delete recvCallback;
   delete client;
-
-  int recv_chunk_size = bufMgr->get_id();
-  assert(recv_chunk_size == MEM_SIZE*2);
-  for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = bufMgr->get(i);
-    free(ck->buffer);
-  }
   delete bufMgr;
-
-  shutdownCallback = NULL;
-  connectedCallback = NULL;
-  sendCallback = NULL;
-  recvCallback = NULL;
-  client = NULL;
-  bufMgr = NULL;
 
   return 0;
 }

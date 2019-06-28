@@ -220,6 +220,7 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* buf_mgr) {
 
   if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, is_server ? FI_SOURCE : 0, hints_tmp, &info_tmp)) {
     perror("fi_getinfo");
+    return nullptr;
   }
 
   MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], buf_mgr, false, buffer_num, seq_num%worker_num);

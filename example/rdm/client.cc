@@ -1,14 +1,14 @@
 #include "core/RdmStack.h"
 #include "core/RdmConnection.h"
 #include "HPNL/Client.h"
-#include "PingPongBufMgr.h"
-#include "common.h"
+#include "HPNL/HpnlBufMgr.h"
 
 int count = 0;
 uint64_t start, end = 0;
 std::mutex mtx;
 
-#define MEM_SIZE 65536
+#define BUFFER_SIZE 65536
+#define BUFFER_NUM 65536
 
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
@@ -37,7 +37,7 @@ class RecvCallback : public Callback {
       }
       char peer_name[16];
       con->decode_peer_name(ck->buffer, peer_name, 16);
-      Chunk *sck = con->encode(ck->buffer, SIZE, peer_name);
+      Chunk *sck = con->encode(ck->buffer, BUFFER_SIZE, peer_name);
       con->send(sck);
     }
   private:
@@ -45,15 +45,7 @@ class RecvCallback : public Callback {
 };
 
 int main() {
-  BufMgr *bufMgr = new PingPongBufMgr();
-  Chunk *ck;
-  for (int i = 0; i < MEM_SIZE*2; i++) {
-    ck = new Chunk();
-    ck->buffer_id = bufMgr->get_id();
-    ck->buffer = std::malloc(BUFFER_SIZE);
-    ck->capacity = BUFFER_SIZE;
-    bufMgr->put(ck->buffer_id, ck);
-  }
+  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
 
   Client *client = new Client(1, 16);
   client->init(false);
@@ -67,24 +59,17 @@ int main() {
 
   Connection *con = client->get_con("127.0.0.1", "12345");
   assert(con);
-  char* buffer = (char*)std::malloc(SIZE);
-  memset(buffer, '0', SIZE);
+  char* buffer = (char*)std::malloc(BUFFER_SIZE);
+  memset(buffer, '0', BUFFER_SIZE);
   
   char* peer_name = con->get_peer_name();
-  ck = con->encode(buffer, SIZE, peer_name);
+  auto ck = con->encode(buffer, BUFFER_SIZE, peer_name);
   con->send(ck);
 
   client->wait();
 
   delete recvCallback;
   delete client;
-
-  int recv_chunk_size = bufMgr->get_id();
-  assert(recv_chunk_size == MEM_SIZE*2);
-  for (int i = 0; i < recv_chunk_size; i++) {
-    Chunk *ck = bufMgr->get(i);
-    free(ck->buffer);
-  }
   delete bufMgr;
 
   return 0;

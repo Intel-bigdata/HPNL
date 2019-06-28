@@ -4,6 +4,12 @@ set_target_properties(core_test
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/test")
 
+add_executable(service_test ${PROJECT_SOURCE_DIR}/src/test/serviceTest.cc ${CORE_FILE} ${SERVICE_FILE} ${DEMULTIPLEXER_FILE})
+target_link_libraries(service_test fabric)
+set_target_properties(service_test
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/test")
+
 if(NOT ${SUPPORT_JAVA})
   add_library(hpnl SHARED ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE})
   target_link_libraries(hpnl fabric)
