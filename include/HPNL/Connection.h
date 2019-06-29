@@ -1,7 +1,7 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
 
 class Connection {

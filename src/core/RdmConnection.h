@@ -14,11 +14,11 @@
 #include <mutex>
 
 #include "HPNL/Connection.h"
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 
 class RdmConnection : public Connection {
   public:
-    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, int, bool);
+    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, ChunkMgr*, int, bool);
     ~RdmConnection() override;
 
     int init() override;
@@ -60,7 +60,7 @@ class RdmConnection : public Connection {
     fid_av *av;
     fid_cq *conCq;
 
-    BufMgr *buf_mgr;
+    ChunkMgr *buf_mgr;
     int buffer_num;
     bool is_server;
     

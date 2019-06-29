@@ -12,7 +12,7 @@ int EqHandler::handle_event(EventType et, void *context) {
   auto *entry = (fi_eq_cm_entry*)context;
   if (et == ACCEPT_EVENT) {
     assert(acceptRequestCallback);
-    BufMgr *buf_mgr;
+    ChunkMgr *buf_mgr;
     (*acceptRequestCallback)(&buf_mgr, nullptr);
 
     fid_eq *local_eq = stack->accept(entry->info, buf_mgr);

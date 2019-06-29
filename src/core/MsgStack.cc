@@ -149,7 +149,7 @@ free_hints:
   return -1;
 }
 
-void* MsgStack::bind(const char *ip_, const char *port_, BufMgr*) {
+void* MsgStack::bind(const char *ip_, const char *port_, ChunkMgr*) {
   if (!initialized || !ip_ || !port_)
     return nullptr;
   if ((hints_tmp = fi_allocinfo()) == nullptr) {
@@ -197,7 +197,7 @@ int MsgStack::listen() {
   return 0;
 }
 
-fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* buf_mgr) {
+fid_eq* MsgStack::connect(const char *ip_, const char *port_, ChunkMgr* buf_mgr) {
   if (!initialized || !ip_ || !port_ || !buf_mgr)
     return nullptr;
   if ((hints_tmp = fi_allocinfo()) == nullptr) {
@@ -242,7 +242,7 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, BufMgr* buf_mgr) {
   return con->get_eq();
 }
 
-fid_eq* MsgStack::accept(void *info_, BufMgr* buf_mgr) {
+fid_eq* MsgStack::accept(void *info_, ChunkMgr* buf_mgr) {
   if (!initialized || !info_)
     return nullptr;
   MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], buf_mgr, true, buffer_num, seq_num%worker_num);

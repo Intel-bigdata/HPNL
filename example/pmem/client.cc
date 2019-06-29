@@ -3,9 +3,8 @@
 
 #include "HPNL/Connection.h"
 #include "HPNL/Client.h"
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/HpnlBufMgr.h"
 
 #define SIZE 4096
 #define BUFFER_SIZE 65536

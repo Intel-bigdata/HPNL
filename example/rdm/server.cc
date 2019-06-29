@@ -1,40 +1,42 @@
 #include "core/RdmStack.h"
 #include "core/RdmConnection.h"
 #include "HPNL/Server.h"
-#include "HPNL/HpnlBufMgr.h"
 
 #include <chrono>
 #include <thread>
 
+#include <iostream>
+
 #define BUFFER_SIZE 65536
-#define BUFFER_NUM 65536
+#define BUFFER_NUM 1024
+#define MSG_SIZE 4096
 
 class RecvCallback : public Callback {
   public:
-    RecvCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
-    virtual ~RecvCallback() {}
-    virtual void operator()(void *param_1, void *param_2) override {
+    explicit RecvCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    ~RecvCallback() override = default;
+    void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
-      Connection *con = (Connection*)ck->con;
+      auto con = (Connection*)ck->con;
       char peer_name[16];
       con->decode_peer_name(ck->buffer, peer_name, 16);
-      Chunk *sck = con->encode(ck->buffer, BUFFER_SIZE, peer_name);
+      Chunk *sck = con->encode(ck->buffer, MSG_SIZE, peer_name);
       con->send(sck);
     }
   private:
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
 };
 
 int main() {
-  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
+  ChunkMgr *bufMgr = new ChunkPool(BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
 
-  Server *server = new Server(1, 16);
+  auto server = new Server(1, 16);
   server->init(false);
 
   server->set_buf_mgr(bufMgr);
 
-  RecvCallback *recvCallback = new RecvCallback(bufMgr);
+  auto recvCallback = new RecvCallback(bufMgr);
   server->set_recv_callback(recvCallback);
 
   server->listen("127.0.0.1", "12345");

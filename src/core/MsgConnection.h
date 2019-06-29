@@ -16,7 +16,7 @@
 #include <condition_variable>
 
 #include "HPNL/Connection.h"
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
 
 enum ConStatus {
@@ -32,7 +32,7 @@ class MsgStack;
 
 class MsgConnection : public Connection {
   public:
-    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, BufMgr*, bool, int, int);
+    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, ChunkMgr*, bool, int, int);
     ~MsgConnection() override;
 
     int init() override;
@@ -79,7 +79,7 @@ class MsgConnection : public Connection {
     fid_cq *conCq;
     fid_eq *conEq;
 
-    BufMgr *buf_mgr;
+    ChunkMgr *buf_mgr;
     std::vector<Chunk*> recv_chunks;
     std::vector<Chunk*> send_chunks;
     std::unordered_map<int, Chunk*> send_chunks_map;

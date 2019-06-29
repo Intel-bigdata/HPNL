@@ -199,7 +199,7 @@ void Service::wait() {
   }
 }
 
-void Service::set_buf_mgr(BufMgr* bufMgr_) {
+void Service::set_buf_mgr(ChunkMgr* bufMgr_) {
   this->bufMgr = bufMgr_;
 }
 

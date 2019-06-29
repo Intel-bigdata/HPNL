@@ -5,7 +5,7 @@
 
 class Service;
 class Connection;
-class BufMgr;
+class ChunkMgr;
 class Callback;
 class Chunk;
 
@@ -25,7 +25,7 @@ class Client {
     void        wait();
 
     // Buffer management
-    void        set_buf_mgr(BufMgr*);
+    void        set_buf_mgr(ChunkMgr*);
 
     // Initialize event callback
     void        set_recv_callback(Callback *callback);

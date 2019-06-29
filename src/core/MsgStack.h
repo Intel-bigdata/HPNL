@@ -10,7 +10,7 @@
 #include <assert.h>
 #include <mutex>
 
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Common.h"
 #include "core/Stack.h"
 
@@ -25,10 +25,10 @@ class MsgStack : public Stack {
 
     // not thread safe
     int init() override;
-    void* bind(const char*, const char*, BufMgr*) override;
+    void* bind(const char*, const char*, ChunkMgr*) override;
     int listen();
-    fid_eq* connect(const char*, const char*, BufMgr*);
-    fid_eq* accept(void*, BufMgr*);
+    fid_eq* connect(const char*, const char*, ChunkMgr*);
+    fid_eq* accept(void*, ChunkMgr*);
 
     // thread safe
     uint64_t reg_rma_buffer(char*, uint64_t, int);

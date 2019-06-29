@@ -1,5 +1,5 @@
 #include "HPNL/Client.h"
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Connection.h"
 #include "HPNL/Callback.h"
 #include "service/Service.h"
@@ -36,7 +36,7 @@ void Client::wait() {
   service->wait();
 }
 
-void Client::set_buf_mgr(BufMgr* bufMgr) {
+void Client::set_buf_mgr(ChunkMgr* bufMgr) {
   service->set_buf_mgr(bufMgr);
 }
 
