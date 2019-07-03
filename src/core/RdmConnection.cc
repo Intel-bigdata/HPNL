@@ -31,10 +31,20 @@ RdmConnection::~RdmConnection() {
 int RdmConnection::init() {
   if (!is_server) {
     fi_info *hints = fi_allocinfo();
-    hints->ep_attr->type = FI_EP_RDM;
-    hints->caps = FI_MSG;
-    hints->mode = FI_CONTEXT;
-    if (prov_name != nullptr){
+  hints->ep_attr->type = FI_EP_RDM;
+  hints->caps = FI_MSG;
+  hints->mode = FI_CONTEXT;
+
+  hints->tx_attr->msg_order = FI_ORDER_SAS;
+  hints->tx_attr->comp_order = FI_ORDER_NONE;
+  hints->tx_attr->op_flags = FI_INJECT_COMPLETE | FI_COMPLETION;
+  hints->rx_attr->op_flags = FI_COMPLETION;
+  hints->rx_attr->msg_order = FI_ORDER_SAS;  
+  hints->domain_attr->av_type         = FI_AV_MAP;
+  hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
+  hints->domain_attr->threading = FI_THREAD_SAFE;
+ 
+   if (prov_name != nullptr){
       hints->fabric_attr->prov_name = strdup(prov_name);
     }
 
@@ -68,7 +78,7 @@ int RdmConnection::init() {
     addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
   }
   int size = 0;
-  while (size < 2*buffer_num) {
+  while (size < 2*buffer_num ) {
     Chunk *rck = rbuf_mgr->get();
     rck->con = this;
     rck->ctx.internal[4] = rck;
@@ -115,6 +125,7 @@ int RdmConnection::send(int buffer_size, int buffer_id) {
   ck->con = this;
   ck->peer_addr = addr_map[tmp];
   ck->ctx.internal[4] = ck;
+  //std::cout<<ck->buffer_id<<":"<<buffer_size<<std::endl;
   if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
     perror("fi_send");
     return -1;

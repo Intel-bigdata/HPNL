@@ -52,6 +52,33 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
   }
   fi_cq_msg_entry entry;
   ret = fi_cq_read(cq, &entry, 1);
+  if(ret > 0){
+    end = start;
+    if (entry.flags & FI_RECV) {
+      fi_context2 *ctx = (fi_context2*)entry.op_context;
+      *ck = (Chunk*)ctx->internal[4];
+      *block_buffer_size = entry.len;
+      //std::cout<<(*ck)->buffer_id<<":"<< (*block_buffer_size)<<std::endl;
+      return RECV_EVENT;
+    }
+    if (entry.flags & FI_SEND) {
+      fi_context2 *ctx = (fi_context2*)entry.op_context;
+      if (ctx->internal[4] == NULL) {
+        std::free(ctx);
+      } else {
+        *ck = (Chunk*)ctx->internal[4];
+      }
+      return SEND_EVENT;
+    } 
+    if (entry.flags & FI_READ) {
+      return READ_EVENT;
+    } 
+    if (entry.flags & FI_WRITE) {
+      return WRITE_EVENT;
+    }
+    return 0;
+  }
+
   if (ret == -FI_EAVAIL) {
     fi_cq_err_entry err_entry;
     fi_cq_readerr(cq, &err_entry, entry.flags); 
@@ -61,31 +88,11 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
       return -1;
     }
     return 0;
-  } else if (ret == -FI_EAGAIN) {
+  }
+  if (ret == -FI_EAGAIN) {
     end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
     return 0;
-  } else {
-    end = start;
-    if (entry.flags & FI_RECV) {
-      fi_context2 *ctx = (fi_context2*)entry.op_context;
-      *ck = (Chunk*)ctx->internal[4];
-      *block_buffer_size = entry.len;
-      return RECV_EVENT;
-    } else if (entry.flags & FI_SEND) {
-      fi_context2 *ctx = (fi_context2*)entry.op_context;
-      if (ctx->internal[4] == NULL) {
-        std::free(ctx);
-      } else {
-        *ck = (Chunk*)ctx->internal[4];
-      }
-      return SEND_EVENT;
-    } else if (entry.flags & FI_READ) {
-      return READ_EVENT;
-    } else if (entry.flags & FI_WRITE) {
-      return WRITE_EVENT;
-    } else {
-      return 0;
-    }
-  }
+  } 
+  std::cout<<"unexpected return: "<<ret<<std::endl;
   return 0;
 }

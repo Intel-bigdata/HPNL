@@ -41,6 +41,16 @@ int RdmStack::init() {
   hints->ep_attr->type = FI_EP_RDM;
   hints->caps = FI_MSG;
   hints->mode = FI_CONTEXT;
+
+  hints->tx_attr->msg_order = FI_ORDER_SAS;
+  hints->tx_attr->comp_order = FI_ORDER_NONE;
+  hints->tx_attr->op_flags = FI_INJECT_COMPLETE | FI_COMPLETION;
+  hints->rx_attr->op_flags = FI_COMPLETION;
+  hints->rx_attr->msg_order = FI_ORDER_SAS;
+  hints->domain_attr->av_type         = FI_AV_MAP;
+  hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
+  hints->domain_attr->threading = FI_THREAD_SAFE;
+
   if (prov_name != nullptr){
     hints->fabric_attr->prov_name = strdup(prov_name);
   }
@@ -52,7 +62,10 @@ int RdmStack::init() {
     perror("fi_fabric");
   if (fi_domain(fabric, info, &domain, NULL))
     perror("fi_domain");
-  struct fi_cq_attr cq_attr = {
+
+  std::cout<<"prov version: "<<info->fabric_attr->prov_version<<std::endl;   
+  
+struct fi_cq_attr cq_attr = {
     .size = 0,
     .flags = 0,
     .format = FI_CQ_FORMAT_MSG,
@@ -70,14 +83,8 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
   if (rbuf_mgr->free_size() < 2*buffer_num || sbuf_mgr->free_size() < buffer_num) {
     return NULL;
   }
-  fi_info* hints = fi_allocinfo();
-  hints->ep_attr->type = FI_EP_RDM;
-  hints->caps = FI_MSG;
-  hints->mode = FI_CONTEXT;
-  if (prov_name != nullptr){
-    hints->fabric_attr->prov_name = strdup(prov_name);
-  }
-
+  fi_info* hints = fi_dupinfo(info);
+ 
   if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &server_info))
     perror("fi_getinfo");
   fi_freeinfo(hints);

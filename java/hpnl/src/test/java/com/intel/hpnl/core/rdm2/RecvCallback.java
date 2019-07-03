@@ -1,14 +1,20 @@
-package com.intel.hpnl.core.rdm;
-
-import java.nio.ByteBuffer;
+package com.intel.hpnl.core.rdm2;
 
 import com.intel.hpnl.api.Connection;
 import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlBuffer;
 
+import java.nio.ByteBuffer;
+
 public class RecvCallback implements Handler {
+  private int sleep;
   public RecvCallback(boolean is_server) {
+    this(is_server, 5);
+  }
+
+  public RecvCallback(boolean is_server, int sleep) {
     this.is_server = is_server;
+    this.sleep = sleep;
   }
   public int handle(Connection con, int bufferId, int blockBufferSize) {
     HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
@@ -24,6 +30,13 @@ public class RecvCallback implements Handler {
     if(len != msgBuffer.remaining()){
       System.out.println(len + " != "+msgBuffer.remaining());
     }
+
+    try {
+      Thread.sleep(sleep);
+    }catch (InterruptedException e)
+    {}
+
+    con.releaseRecvBuffer(bufferId);
 
     //read peer name
 //    int peerNameLen = msgBuffer.getInt();
@@ -44,7 +57,7 @@ public class RecvCallback implements Handler {
 //    rawBuffer.flip();
 //
 //    con.sendTo(sendBuffer.remaining(), sendBuffer.getBufferId(), peerName);
-    return Handler.RESULT_DEFAULT;
+    return Handler.RESULT_BUF_RELEASED;
   }
   private long count = 0;
   private long startTime;

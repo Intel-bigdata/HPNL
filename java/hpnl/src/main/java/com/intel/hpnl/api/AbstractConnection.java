@@ -182,8 +182,6 @@ public abstract class AbstractConnection implements Connection {
       default:
         e = 1;
     }
-
-    this.executeCallback(this.generalCallback, -1, -1);
     return e;
   }
 

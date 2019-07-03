@@ -75,10 +75,10 @@ public class RdmService extends AbstractService {
   @Override
   public void removeConnection(long nativeConnectionId, long connHandle, boolean proactive) {
     remove_connection(nativeConnectionId, nativeHandle);
-    RdmConnection connection = (RdmConnection)this.conMap.remove(connHandle);
-    if(!connection.isServer()){
-      portGenerator.reclaimPort(connection.getSrcPort());
-    }
+//    RdmConnection connection = (RdmConnection)this.conMap.remove(connHandle);
+//    if(!connection.isServer()){
+//      portGenerator.reclaimPort(connection.getSrcPort());
+//    }
   }
 
   @Override
@@ -92,7 +92,7 @@ public class RdmService extends AbstractService {
       synchronized (this) {
         if (!this.task.isStopped()) {
           this.task.stop();
-          this.waitToComplete();
+//          this.waitToComplete();
         }
       }
     }

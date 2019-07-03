@@ -1,10 +1,14 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractHpnlBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.ByteBuffer;
 
 public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
+  private static final Logger log = LoggerFactory.getLogger(HpnlRdmBuffer.class);
   private long connectionId;
 
   public HpnlRdmBuffer(int bufferId, ByteBuffer byteBuffer) {
@@ -33,8 +37,8 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
     this.byteBuffer.position(0);
     this.byteBuffer.limit(blockBufferSize);
     this.frameType = this.byteBuffer.get();
-    this.seq = this.byteBuffer.getLong();
     this.byteBuffer.getLong();
+    this.seq = this.byteBuffer.getLong();
     return this.byteBuffer.slice();
   }
 
@@ -45,9 +49,14 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
     this.byteBuffer.putLong(seqId);
     this.byteBuffer.limit(limit);
     this.byteBuffer.position(limit);
+//    log.info("buffer-> {}, {} {}, {}, {}", getBufferId(), frameType, connectionId, seqId, limit);
   }
 
   public void setConnectionId(long connectionId) {
     this.connectionId = connectionId;
+  }
+
+  public long getConnectionId() {
+    return connectionId;
   }
 }
