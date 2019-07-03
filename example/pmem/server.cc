@@ -1,8 +1,7 @@
 #include "HPNL/Connection.h"
 #include "HPNL/Server.h"
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/HpnlBufMgr.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <errno.h>

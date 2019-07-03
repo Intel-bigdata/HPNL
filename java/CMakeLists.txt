@@ -9,8 +9,8 @@ if(LINUX)
 endif()
 include_directories(${JNI_INCLUDE})
 
-add_library(hpnl SHARED ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE} ${NATIVE_FILE})
-target_link_libraries(hpnl fabric)
+add_library(hpnl SHARED ${DEMULTIPLEXER_FILE} ${CORE_FILE} ${SERVICE_FILE} ${EXTERNAL_DEMULTIPLEXER_FILE} ${EXTERNAL_SERVICE_FILE} ${NATIVE_FILE} ${CHUNK_FILE})
+target_link_libraries(hpnl fabric boost_system)
 set_target_properties(hpnl PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
 set(CMAKE_INSTALL_PREFIX "/usr/local")

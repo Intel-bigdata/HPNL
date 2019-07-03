@@ -73,7 +73,7 @@ int RdmStack::init() {
   return 0;
 }
 
-void* RdmStack::bind(const char* ip, const char* port, BufMgr* buf_mgr) {
+void* RdmStack::bind(const char* ip, const char* port, ChunkMgr* buf_mgr) {
   if (!initialized || !ip || !port || !buf_mgr)
     return nullptr;
   if (buf_mgr->free_size() < buffer_num*2) {
@@ -103,7 +103,7 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* buf_mgr) {
   return server_con;
 }
 
-RdmConnection* RdmStack::get_con(const char* ip, const char* port, BufMgr* buf_mgr) {
+RdmConnection* RdmStack::get_con(const char* ip, const char* port, ChunkMgr* buf_mgr) {
   if (!initialized || !ip || !port || !buf_mgr)
     return nullptr;
   std::lock_guard<std::mutex> lk(mtx);

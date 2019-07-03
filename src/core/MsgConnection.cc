@@ -6,7 +6,7 @@
 
 MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_, 
   fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
-  BufMgr *buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
+  ChunkMgr *buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
   stack(stack_), fabric(fabric_), info(info_), domain(domain_),
   conCq(cq_), buf_mgr(buf_mgr_), is_server(is_server_), buffer_num(buffer_num_), cq_index(cq_index_) {
   conEq = nullptr;

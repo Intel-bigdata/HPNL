@@ -8,7 +8,7 @@
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
 
-#include <HPNL/BufMgr.h>
+#include <HPNL/ChunkMgr.h>
 
 class RdmStack;
 

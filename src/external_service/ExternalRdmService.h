@@ -5,7 +5,7 @@
 
 class RdmStack;
 class RdmConnection;
-class BufMgr;
+class ChunkMgr;
 class Chunk;
 class ExternalRdmCqDemultiplexer;
 
@@ -27,7 +27,7 @@ class ExternalRdmService {
     ExternalRdmCqDemultiplexer *demultiplexer;
     int buffer_num;
     bool is_server;
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
 };
 
 #endif

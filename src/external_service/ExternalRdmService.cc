@@ -2,7 +2,6 @@
 
 #include "HPNL/Connection.h"
 #include "core/RdmConnection.h"
-#include "external_service/ExternalEqServiceBufMgr.h"
 #include "external_demultiplexer/ExternalRdmCqDemultiplexer.h"
 #include "core/RdmStack.h"
 
@@ -11,7 +10,7 @@ ExternalRdmService::ExternalRdmService(int buffer_num, bool is_server) {
   this->demultiplexer = nullptr;
   this->buffer_num = buffer_num;
   this->is_server = is_server;
-  this->bufMgr = new ExternalEqServiceBufMgr();
+  this->bufMgr = new DefaultChunkMgr();
 }
 
 ExternalRdmService::~ExternalRdmService() {

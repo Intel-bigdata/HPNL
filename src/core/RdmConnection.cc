@@ -5,7 +5,7 @@
 
 RdmConnection::RdmConnection(const char* ip_, const char* port_, 
   fi_info* info_, fid_domain* domain_, fid_cq* cq_, 
-  BufMgr* buf_mgr_, int buffer_num_, bool is_server_) : 
+  ChunkMgr* buf_mgr_, int buffer_num_, bool is_server_) : 
   ip(ip_), port(port_), info(info_), domain(domain_), conCq(cq_), 
   buf_mgr(buf_mgr_), buffer_num(buffer_num_), is_server(is_server_) {
   send_callback = nullptr;

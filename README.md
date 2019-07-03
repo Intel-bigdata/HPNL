@@ -10,16 +10,32 @@ HPNL is a **Fast**, **CPU-Efficient** network library designed for modern networ
 ## Introduction
 Nowadays data is growing at a faster rate than ever before and large-scale data analytics present new challenge. HPNL is 
 a light-weight network library built on Libfabric for big data application. It provides C/JAVA API and high level abstraction 
-to let developer easily replace other TCP/IP based network library, like ASIO or Netty, without knowing the low level details of RDMA programing model.
+to let developer easily replace other TCP/IP based network library, like ASIO or Netty, without knowing the low level 
+details of RDMA programing model. Ease to use API, functionality and performance is of primary design concern. 
 
 ### High level design
 
 ## Installation
 
 ### Build prerequisites
-HPNL is based on [Libfabri](https://github.com/ofiwg/libfabric). Ease to use API, functionality and performance is of primary design concern. Please make sure the Libfabric is installed in your setup.
+Library dependencies:
+- C++ 11
+- Libfabric 1.6+
+- Boost 1.58+
+- PMDK (optional)
+- JDK 1.8+ (optional)
+
+HPNL depends on [Libfabri](https://github.com/ofiwg/libfabric). Please make sure the Libfabric is installed in your setup.
 Persistent Memory over Fabric is another targeting feature of HPNL with which you can use HPNL interface to communicate with Persistent Memory over different kinds of network fabrics. If you want to try
 the PMoF example, please install [PMDK](https://github.com/pmem/pmdk), a library to manage and access persistent memory devices. 
+
+On Ubuntu/Debian, install other requirements with:
+
+```shell
+sudo apt-get install cmake \
+                     libboost-dev \
+                     libboost-system-dev \
+```
 
 ### Build for C/C++
 This project supports CMake out of box.

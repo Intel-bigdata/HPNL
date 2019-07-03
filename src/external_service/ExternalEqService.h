@@ -4,12 +4,12 @@
 #include <map>
 
 #include <rdma/fi_domain.h>
-
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Connection.h"
 
 class MsgStack;
 class MsgConnection;
-class ExternalEqServiceBufMgr;
+class DefaultChunkMgr;
 class ExternalEqDemultiplexer;
 
 class ExternalEqService {
@@ -42,7 +42,7 @@ class ExternalEqService {
     int buffer_num;
     bool is_server;
 
-    ExternalEqServiceBufMgr *bufMgr;
+    DefaultChunkMgr *chkMgr;
 
     ExternalEqDemultiplexer *eq_demultiplexer;
 };

@@ -1,6 +1,5 @@
 #include "external_service/ExternalEqService.h"
 #include "external_demultiplexer/ExternalEqDemultiplexer.h"
-#include "external_service/ExternalEqServiceBufMgr.h"
 #include "core/MsgStack.h"
 #include "core/MsgConnection.h"
 
@@ -8,7 +7,7 @@ ExternalEqService::ExternalEqService(int worker_num_, int buffer_num_, bool is_s
   worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
   stack = nullptr;
   eq_demultiplexer = nullptr;
-  bufMgr = new ExternalEqServiceBufMgr();
+  chkMgr = new DefaultChunkMgr();
 }
 
 ExternalEqService::~ExternalEqService() {
@@ -20,9 +19,9 @@ ExternalEqService::~ExternalEqService() {
     delete eq_demultiplexer;
     eq_demultiplexer = nullptr;
   }
-  if (bufMgr) {
-    delete bufMgr;
-    bufMgr = nullptr;
+  if (chkMgr) {
+    delete chkMgr;
+    chkMgr = nullptr;
   }
 }
 
@@ -55,10 +54,10 @@ free_stack:
 
 fid_eq* ExternalEqService::accept(fi_info* info) {
   fid_eq *eq = nullptr;
-  if (bufMgr->free_size() < buffer_num*2) {
+  if (chkMgr->free_size() < buffer_num*2) {
     return nullptr;
   }
-  eq = stack->accept(info, bufMgr);
+  eq = stack->accept(info, chkMgr);
   if (!eq)
     return nullptr;
   return eq;
@@ -67,17 +66,17 @@ fid_eq* ExternalEqService::accept(fi_info* info) {
 fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
   fid_eq *eq = nullptr;
   if (is_server) {
-    eq = (fid_eq*)stack->bind(ip, port, bufMgr);
+    eq = (fid_eq*)stack->bind(ip, port, chkMgr);
     if (!eq)
       return nullptr;
     if (stack->listen()) {
       return nullptr;
     }
   } else {
-    if (bufMgr->free_size() < buffer_num*2) {
+    if (chkMgr->free_size() < buffer_num*2) {
       return nullptr;
     }
-    eq = stack->connect(ip, port, bufMgr);
+    eq = stack->connect(ip, port, chkMgr);
     if (!eq)
       return nullptr;
   }
@@ -101,7 +100,7 @@ void ExternalEqService::set_buffer(char* buffer, uint64_t size, int buffer_id) {
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
-  bufMgr->put(ck->buffer_id, ck);
+  chkMgr->put(ck->buffer_id, ck);
 }
 
 int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, MsgConnection** con) {

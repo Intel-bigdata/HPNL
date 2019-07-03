@@ -7,7 +7,7 @@
 #include "core/RdmStack.h"
 #include "core/MsgConnection.h"
 #include "HPNL/Common.h"
-#include "HPNL/HpnlBufMgr.h"
+#include "HPNL/ChunkMgr.h"
 
 TEST_CASE("msg server") {
   auto stack = new MsgStack(1, 6, true);
@@ -65,7 +65,7 @@ TEST_CASE("msg connect operation") {
   int total_buffer_num = parallel_num*buffer_num_per_connection*2;
   int buffer_size = 65536;
 
-  auto mgr = new HpnlBufMgr(total_buffer_num, buffer_size);
+  auto mgr = new DefaultChunkMgr(total_buffer_num, buffer_size);
   auto stack = new MsgStack(1, buffer_num_per_connection, false);
   REQUIRE(stack->init() == 0);
 

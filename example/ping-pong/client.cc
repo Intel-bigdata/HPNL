@@ -2,9 +2,10 @@
 
 #include "HPNL/Connection.h"
 #include "HPNL/Client.h"
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
-#include "HPNL/HpnlBufMgr.h"
+
+#include <iostream>
 
 #define MSG_SIZE 4096
 #define BUFFER_SIZE 65536
@@ -32,7 +33,7 @@ class ShutdownCallback : public Callback {
 
 class ConnectedCallback : public Callback {
   public:
-    explicit ConnectedCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    explicit ConnectedCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
     ~ConnectedCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       auto con = (Connection*)param_1;
@@ -42,12 +43,12 @@ class ConnectedCallback : public Callback {
       std::free(buffer);
     }
   private:
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
 };
 
 class RecvCallback : public Callback {
   public:
-    RecvCallback(Client *client_, BufMgr *bufMgr_) : client(client_), bufMgr(bufMgr_) {}
+    RecvCallback(Client *client_, ChunkMgr *bufMgr_) : client(client_), bufMgr(bufMgr_) {}
     ~RecvCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       std::lock_guard<std::mutex> lk(mtx);
@@ -70,16 +71,16 @@ class RecvCallback : public Callback {
     }
   private:
     Client *client;
-    BufMgr *bufMgr; 
+    ChunkMgr *bufMgr;
 };
 
 class SendCallback : public Callback {
   public:
-    explicit SendCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    explicit SendCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
     ~SendCallback() override = default;
     void operator()(void *param_1, void *param_2) override;
   private:
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
 };
 
 void SendCallback::operator()(void *param_1, void *) {
@@ -90,7 +91,7 @@ void SendCallback::operator()(void *param_1, void *) {
 }
 
 int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
+  ChunkMgr *bufMgr = new DefaultChunkMgr(BUFFER_NUM, BUFFER_SIZE);
 
   auto client = new Client(1, 16);
   client->init();

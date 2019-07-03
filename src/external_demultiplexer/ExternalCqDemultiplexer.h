@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <rdma/fi_cm.h>
 
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 
 class MsgStack;
 

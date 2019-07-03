@@ -4,7 +4,7 @@
 #include <assert.h>
 
 #include "HPNL/Callback.h"
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Common.h"
 
 class AcceptRequestCallback;
@@ -39,7 +39,7 @@ class Service {
     void               wait();
 
     // Initialize buffer container
-    void               set_buf_mgr(BufMgr*);
+    void               set_buf_mgr(ChunkMgr*);
 
     // Initialize event callback
     void               set_send_callback(Callback*);
@@ -64,7 +64,7 @@ class Service {
     CqDemultiplexer    *cq_demultiplexer[MAX_WORKERS]{};
     RdmCqDemultiplexer *rdm_cq_demultiplexer;
 
-    BufMgr             *bufMgr{};
+    ChunkMgr             *bufMgr{};
 
     Callback           *recvCallback;
     Callback           *sendCallback;
@@ -89,7 +89,7 @@ class AcceptRequestCallback : public Callback {
     ~AcceptRequestCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       assert(ioService->bufMgr);
-      auto bufMgr = (BufMgr**)param_1;
+      auto bufMgr = (ChunkMgr**)param_1;
       *bufMgr = ioService->bufMgr;
     }
   private:

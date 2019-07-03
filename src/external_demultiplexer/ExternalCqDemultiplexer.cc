@@ -3,6 +3,8 @@
 #include "core/MsgConnection.h"
 #include "demultiplexer/EventType.h"
 
+#include <iostream>
+
 ExternalCqDemultiplexer::ExternalCqDemultiplexer(MsgStack *stack_, fid_cq *cq_) : stack(stack_), cq(cq_), start(0), end(0) {}
 
 ExternalCqDemultiplexer::~ExternalCqDemultiplexer() {
@@ -58,19 +60,16 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
   #endif
   fi_cq_msg_entry entry;
   ret = fi_cq_read(cq, &entry, 1);
-  if (ret == -FI_EAVAIL) {
-    fi_cq_err_entry err_entry;
-    fi_cq_readerr(cq, &err_entry, entry.flags);
-    end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-    perror("fi_cq_read");
-    if (err_entry.err == FI_EOVERRUN) {
-      return -1;
+  if (ret < 0 && ret != -FI_EAGAIN) {
+    fi_cq_err_entry err_entry{};
+    int err_res = fi_cq_readerr(cq, &err_entry, entry.flags);
+    if (err_res < 0) {
+      perror("fi_cq_read");
+    } else {
+      const char *err_str = fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, nullptr, 0);
+      std::cerr << "fi_cq_read: " << err_str << std::endl;
     }
-    return 0;
-  } else if (ret == -FI_EAGAIN) {
-    end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-    return 0;
-  } else {
+  } else if (ret > 0) {
     end = start;
     *ck = (Chunk*)entry.op_context;
     *buffer_id = (*ck)->buffer_id;
@@ -99,5 +98,6 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
       return 0;
     }
   }
+  end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
   return 0;
 }

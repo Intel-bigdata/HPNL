@@ -10,7 +10,7 @@
 #include <mutex>
 #include <vector>
 
-#include "HPNL/BufMgr.h"
+#include "HPNL/ChunkMgr.h"
 #include "core/Stack.h"
 
 class RdmConnection;
@@ -20,9 +20,9 @@ class RdmStack : public Stack {
     RdmStack(int, bool);
     ~RdmStack() override;
     int init() override;
-    void* bind(const char*, const char*, BufMgr*) override;
+    void* bind(const char*, const char*, ChunkMgr*) override;
 
-    RdmConnection* get_con(const char*, const char*, BufMgr*);
+    RdmConnection* get_con(const char*, const char*, ChunkMgr*);
     fid_fabric* get_fabric();
     fid_cq* get_cq();
   private:
