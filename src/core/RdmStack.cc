@@ -77,7 +77,6 @@ void* RdmStack::bind(const char* ip, const char* port, ChunkMgr* buf_mgr) {
   if (!initialized || !ip || !port || !buf_mgr)
     return nullptr;
   if (buf_mgr->free_size() < buffer_num*2) {
-    std::cout << buf_mgr->free_size() << std::endl;
     return nullptr;
   }
   fi_info* hints = fi_allocinfo();

@@ -58,19 +58,16 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
   #endif
   fi_cq_msg_entry entry;
   ret = fi_cq_read(cq, &entry, 1);
-  if (ret == -FI_EAVAIL) {
-    fi_cq_err_entry err_entry;
-    fi_cq_readerr(cq, &err_entry, entry.flags); 
-    end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-    perror("fi_cq_read");
-    if (err_entry.err == FI_EOVERRUN) {
-      return CLOSE_EVENT;
+  if (ret < 0 && ret != -FI_EAGAIN) {
+    fi_cq_err_entry err_entry{};
+    int err_res = fi_cq_readerr(cq, &err_entry, entry.flags);
+    if (err_res < 0) {
+      perror("fi_cq_read");
+    } else {
+      const char *err_str = fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, nullptr, 0);
+      std::cerr << "fi_cq_read: " << err_str << std::endl;
     }
-    return 0;
-  } else if (ret == -FI_EAGAIN) {
-    end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
-    return 0;
-  } else {
+  } else if (ret > 0) {
     end = start;
     if (entry.flags & FI_RECV) {
       fi_context2 *ctx = (fi_context2*)entry.op_context;
@@ -94,5 +91,6 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
       return 0;
     }
   }
+  end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
   return 0;
 }

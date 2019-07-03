@@ -57,13 +57,17 @@ int RdmCqDemultiplexer::wait_event() {
   do {
     fi_cq_msg_entry entry;
     int ret = fi_cq_read(cq, &entry, 1);
-    if (ret == -FI_EAVAIL) {
-      fi_cq_err_entry err_entry;
-      fi_cq_readerr(cq, &err_entry, entry.flags); 
-      std::cout << "fi_cq_read ERROR." << std::endl;
+    if (ret < 0 && ret != -FI_EAGAIN) {
+      fi_cq_err_entry err_entry{};
+      int err_res = fi_cq_readerr(cq, &err_entry, entry.flags);
+      if (err_res < 0) {
+        perror("fi_cq_read");
+      } else {
+        const char *err_str = fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, nullptr, 0);
+        std::cerr << "fi_cq_read: " << err_str << std::endl;
+      }
       break;
-    } else if (ret == -FI_EAGAIN) {
-    } else {
+    } else if (ret > 0) {
       if (entry.flags & FI_RECV) {
         fi_context2 *ctx = (fi_context2*)entry.op_context;
         Chunk *ck = (Chunk*)ctx->internal[4];
