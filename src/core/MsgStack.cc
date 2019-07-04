@@ -12,7 +12,7 @@ MsgStack::~MsgStack() {
   for (auto iter : conMap) {
     delete iter.second;
   }
-  conMap.erase(conMap.begin(), conMap.end());
+  conMap.clear();
   if (peq) {
     fi_close(&peq->fid);
     peq = nullptr;
@@ -283,6 +283,7 @@ void MsgStack::unreg_rma_buffer(int buffer_id) {
     return;
   }
   fi_close(&((fid_mr*)ck->mr)->fid);
+  delete(chunkMap[buffer_id]);
   chunkMap.erase(buffer_id);
 }
 

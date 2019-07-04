@@ -12,6 +12,7 @@ class Chunk;
 class Client {
   public:
     Client(int, int);
+    ~Client();
 
     // Connection management
     int         init(bool msg = true);

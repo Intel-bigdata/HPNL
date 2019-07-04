@@ -18,7 +18,6 @@ char* PoolAllocator::malloc(const size_type bytes) {
 }
 
 void PoolAllocator::free(char* const block) {
-  std::cout << "pool allocator free." << std::endl;
   auto memory = reinterpret_cast<Chunk*>(block);
   std::free(memory);
 }
@@ -38,7 +37,6 @@ ChunkPool::ChunkPool(const int request_buffer_size,
 
 ChunkPool::~ChunkPool() {
   PoolAllocator::chunk_map.clear();
-  std::cout << "chunk pool destructor." << std::endl;
 }
 
 void* ChunkPool::malloc() {
@@ -55,7 +53,6 @@ void ChunkPool::free(void * const ck) {
 Chunk* ChunkPool::get(int id) {
   std::lock_guard<std::mutex> l(PoolAllocator::mtx);
   if (!PoolAllocator::chunk_map.count(id)) {
-    std::cout << "request id " << id << " nullptr" << std::endl;
     return nullptr;
   }
   return PoolAllocator::chunk_map[id];
@@ -92,9 +89,11 @@ DefaultChunkMgr::DefaultChunkMgr(int buffer_num_, uint64_t buffer_size_) : buffe
 
 DefaultChunkMgr::~DefaultChunkMgr() {
   for (auto buf : buf_map) {
+    std::free(buf.second->buffer);
     delete buf.second;
     buf.second = nullptr;
   }
+  buf_map.clear();
 }
 
 Chunk* DefaultChunkMgr::get(int id) {
