@@ -87,6 +87,10 @@ void reg_rma_buffer(MsgStack *stack, char* test, int i) {
   stack->reg_rma_buffer(test, i*10, i);
 }
 
+void unreg_rma_buffer(MsgStack *stack, int i) {
+  stack->unreg_rma_buffer(i);
+}
+
 TEST_CASE("rma buffer registration") {
   char test[10] = "12345";
   int parallel_num = 100;

@@ -28,17 +28,26 @@ Service::Service(int worker_num_, int buffer_num_, bool is_server_)
 
 Service::~Service() {
   // TODO: IOService deconstruction
-  delete stack;
-  delete eq_demultiplexer;
+  if (stack)
+    delete stack;
+  if (eq_demultiplexer)
+    delete eq_demultiplexer;
   for (int i = 0; i < worker_num; i++) {
-    delete cq_demultiplexer[i];
+    if (cq_demultiplexer[i])
+      delete cq_demultiplexer[i];
     if (!is_server) break;
   }
-  delete proactor;
-  delete acceptRequestCallback;
-  delete eqThread;
+  if (rdm_cq_demultiplexer)
+    delete rdm_cq_demultiplexer;
+  if (proactor)
+    delete proactor;
+  if (acceptRequestCallback)
+    delete acceptRequestCallback;
+  if (eqThread)
+    delete eqThread;
   for (int i = 0; i < worker_num; i++) {
-    delete cqThread[i];
+    if (cqThread[i])
+      delete cqThread[i];
     if (!is_server) break;
   }
 }

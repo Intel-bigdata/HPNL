@@ -23,9 +23,16 @@ RdmConnection::~RdmConnection() {
   }
   if (!is_server) {
     fi_freeinfo(info);
+    info = nullptr;
   }
-  fi_close(&av->fid);
-  fi_close(&ep->fid);
+  if (ep) {
+    fi_close(&ep->fid);
+    ep = nullptr;
+  }
+  if (av) {
+    fi_close(&av->fid);
+    av = nullptr;
+  }
 }
 
 int RdmConnection::init() {
@@ -41,7 +48,6 @@ int RdmConnection::init() {
 #else
   hints->fabric_attr->prov_name = strdup("sockets");
 #endif
-
     assert(info == nullptr);
     if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &info)) {
       perror("fi_getinfo");

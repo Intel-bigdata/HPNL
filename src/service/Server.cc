@@ -8,6 +8,10 @@ Server::Server(int worker_num, int buffer_num) {
   service = new Service(worker_num, buffer_num, true);
 }
 
+Server::~Server() {
+  delete service;
+}
+
 int Server::init(bool msg) {
   return service->init(msg);
 }

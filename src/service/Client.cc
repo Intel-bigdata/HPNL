@@ -8,6 +8,10 @@ Client::Client(int worker_num, int buffer_num) {
   service = new Service(worker_num, buffer_num, false);
 }
 
+Client::~Client() {
+  delete service;
+}
+
 int Client::init(bool msg) {
   return service->init(msg);
 }

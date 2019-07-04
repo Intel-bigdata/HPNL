@@ -13,16 +13,26 @@ RdmStack::~RdmStack() {
     delete con;
     con = nullptr;
   }
-  if (cq)
+  if (cq) {
     fi_close(&cq->fid);
-  if (domain)
-    fi_close(&domain->fid);
-  if (fabric)
-    fi_close(&fabric->fid);
-  if (info)
+    cq = nullptr;
+  }
+  if (info) {
     fi_freeinfo(info);
-  if (is_server && server_info)
+    info = nullptr;
+  }
+  if (is_server && server_info) {
     fi_freeinfo(server_info);
+    server_info = nullptr;
+  }
+  if (domain) {
+    fi_close(&domain->fid);
+    domain = nullptr;
+  }
+  if (fabric) {
+    fi_close(&fabric->fid);
+    fabric = nullptr;
+  }
 }
 
 int RdmStack::init() {

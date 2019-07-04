@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
 
   delete sendCallback;
   delete recvCallback;
+  delete shutdownCallback;
   delete server;
   delete bufMgr;
   return 0;
