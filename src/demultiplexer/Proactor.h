@@ -26,7 +26,9 @@ class Proactor {
     int remove_handler(fid*);
     int handle_events(int timeout = 0);
   private:
+    std::mutex mtx;
     std::map<fid*, std::shared_ptr<EventHandler>> eventMap;
+    std::map<fid*, std::shared_ptr<EventHandler>> curEventMap;
     EqDemultiplexer *eqDemultiplexer;
     CqDemultiplexer *cqDemultiplexer[MAX_WORKERS];
     RdmCqDemultiplexer *rdmCqDemultiplexer;
