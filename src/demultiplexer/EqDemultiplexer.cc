@@ -26,7 +26,6 @@ int EqDemultiplexer::init() {
 }
 
 int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> event_map) {
-  // We didn't add exclusive lock here because linear consistency is not a must.
   if (event_map.empty()) return 0;
   uint32_t event_type;
   fi_eq_cm_entry entry{};
@@ -74,27 +73,21 @@ int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> ev
     }
   }
   #elif __APPLE__
-  std::unordered_map<fid*, std::shared_ptr<EventHandler>> wait_map;
   for (auto e : event_map) {
-    wait_map[e.first]  = e.second;
-  }
-  for (auto e : wait_map) {
-    eq = wait_map[e.first]->get_handle();
+    eq = e.second->get_handle();
     int ret = fi_eq_read(eq, &event_type, &entry, sizeof(entry), 2000);
     if (ret == -FI_EAGAIN) {
-      return 0; 
     } else if (ret < 0) {
       fi_eq_err_entry err_entry{};
       fi_eq_readerr(eq, &err_entry, event_type);
-      return 0; 
     } else {
       entry.fid = &eq->fid;
       if (event_type == FI_CONNREQ) {
-        wait_map[&(eq->fid)]->handle_event(ACCEPT_EVENT, &entry); 
+        event_map[&(eq->fid)]->handle_event(ACCEPT_EVENT, &entry);
       } else if (event_type == FI_CONNECTED)  {
-        wait_map[&(eq->fid)]->handle_event(CONNECTED_EVENT, &entry);
+        event_map[&(eq->fid)]->handle_event(CONNECTED_EVENT, &entry);
       } else if (event_type == FI_SHUTDOWN) {
-        wait_map[&(eq->fid)]->handle_event(CLOSE_EVENT, &entry); 
+        event_map[&(eq->fid)]->handle_event(CLOSE_EVENT, &entry);
       } else {
       }
     }

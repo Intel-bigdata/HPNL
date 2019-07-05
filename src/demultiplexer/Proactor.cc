@@ -5,27 +5,39 @@
 #include "demultiplexer/RdmCqDemultiplexer.h"
 #include "demultiplexer/EventHandler.h"
 
-Proactor::Proactor(EqDemultiplexer *eqDemultiplexer_, CqDemultiplexer **cqDemultiplexer_, int cq_worker_num_) : eqDemultiplexer(eqDemultiplexer_), cq_worker_num(cq_worker_num_) {
+Proactor::Proactor(EqDemultiplexer *eqDemultiplexer_, CqDemultiplexer **cqDemultiplexer_, int cq_worker_num_) :
+  eqDemultiplexer(eqDemultiplexer_), cq_worker_num(cq_worker_num_), rdmCqDemultiplexer(nullptr) {
   for (int i = 0; i < cq_worker_num; i++) {
     cqDemultiplexer[i] = *(cqDemultiplexer_+i);
   }
 }
 
-Proactor::Proactor(RdmCqDemultiplexer *rdmCqDemultiplexer_) : rdmCqDemultiplexer(rdmCqDemultiplexer_) {}
+Proactor::Proactor(RdmCqDemultiplexer *rdmCqDemultiplexer_) : rdmCqDemultiplexer(rdmCqDemultiplexer_) {
+  eqDemultiplexer = nullptr;
+  cq_worker_num = 0;
+}
 
 Proactor::~Proactor() {
   eventMap.erase(eventMap.begin(), eventMap.end()); 
 }
 
 int Proactor::eq_service() {
-  if (eqDemultiplexer != NULL) {
-    return eqDemultiplexer->wait_event(eventMap);
+  int res = 0;
+  if (eqDemultiplexer != nullptr) {
+    {
+      std::lock_guard<std::mutex> l(mtx);
+      for (const auto& event : eventMap) {
+        curEventMap[event.first] = event.second;
+      }
+    }
+    res = eqDemultiplexer->wait_event(curEventMap);
+    curEventMap.clear();
   }
-  return 0;
+  return res;
 }
 
 int Proactor::cq_service(int index) {
-  if (cqDemultiplexer[index] != NULL) {
+  if (cqDemultiplexer[index] != nullptr) {
     return cqDemultiplexer[index]->wait_event();
   }
   return 0;
@@ -36,6 +48,7 @@ int Proactor::rdm_cq_service() {
 }
 
 int Proactor::register_handler(std::shared_ptr<EventHandler> eh) {
+  std::lock_guard<std::mutex> l(mtx);
   fid_eq *eq = eh->get_handle();
   if (eventMap.find(&eq->fid) == eventMap.end()) {
     eventMap.insert(std::make_pair(&eq->fid, eh)); 
@@ -49,7 +62,8 @@ int Proactor::remove_handler(std::shared_ptr<EventHandler> eh) {
 }
 
 int Proactor::remove_handler(fid* id) {
-  std::map<fid*, std::shared_ptr<EventHandler>>::iterator iter = eventMap.find(id);
+  std::lock_guard<std::mutex> l(mtx);
+  auto iter = eventMap.find(id);
   if (iter != eventMap.end()) {
     eventMap.erase(iter);
     return eqDemultiplexer->remove_event(id);

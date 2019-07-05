@@ -13,6 +13,11 @@ MsgStack::~MsgStack() {
     delete iter.second;
   }
   conMap.clear();
+  for (auto iter : chunkMap) {
+    iter.second->buffer = nullptr;
+    delete iter.second;
+  }
+  chunkMap.clear();
   if (peq) {
     fi_close(&peq->fid);
     peq = nullptr;
