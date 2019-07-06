@@ -1,20 +1,25 @@
 #include "HPNL/ChunkMgr.h"
-
-#include <iostream>
+#include <rdma/fi_domain.h>
 
 char* PoolAllocator::malloc(const size_type bytes) {
   int chunk_size = buffer_size+sizeof(Chunk);
   int buffer_num = bytes/chunk_size;
-  auto *memory = static_cast<Chunk*>(std::malloc(bytes));
-  Chunk *ret = memory;
-  for (int i = 0; i < buffer_num; i++) {
-    memory->buffer = memory->data;
-    memory->buffer_id = id++;
-    memory->capacity = buffer_size;
-    chunk_map[memory->buffer_id] = memory;
-    memory = reinterpret_cast<Chunk*>(reinterpret_cast<char*>(memory)+chunk_size);
+  auto memory = static_cast<char*>(std::malloc(bytes));
+  if (PoolAllocator::domain) {
+    if (fi_mr_reg(domain, memory, bytes, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, nullptr)) {
+      perror("fi_mr_reg");
+      return nullptr; 
+    }
   }
-  return reinterpret_cast<char *>(ret);
+  auto first = reinterpret_cast<Chunk*>(memory);
+  auto memory_ptr = first;
+  for (int i = 0; i < buffer_num; i++) {
+    chunk_to_id_map[memory_ptr] = id;
+    id_to_chunk_map[id] = memory_ptr;
+    id++;
+    memory_ptr = reinterpret_cast<Chunk*>(reinterpret_cast<char*>(memory_ptr)+chunk_size);
+  }
+  return reinterpret_cast<char *>(first);
 }
 
 void PoolAllocator::free(char* const block) {
@@ -23,20 +28,33 @@ void PoolAllocator::free(char* const block) {
 }
 
 int PoolAllocator::buffer_size = 0;
+fid_domain* PoolAllocator::domain = nullptr;
+fid_mr* PoolAllocator::mr = nullptr;
 int PoolAllocator::id = 0;
-std::map<int, Chunk*> PoolAllocator::chunk_map;
+std::map<int, Chunk*> PoolAllocator::id_to_chunk_map;
+std::map<Chunk*, int> PoolAllocator::chunk_to_id_map;
 std::mutex PoolAllocator::mtx;
 
-ChunkPool::ChunkPool(const int request_buffer_size,
+ChunkPool::ChunkPool(FabricService* service, const int request_buffer_size,
   const int next_request_buffer_number, const int max_buffer_number) :
     pool(request_buffer_size+sizeof(Chunk), next_request_buffer_number, max_buffer_number),
-    buffer_size(request_buffer_size) {
+    buffer_size(request_buffer_size), used_buffers(0) {
+
   PoolAllocator::buffer_size = buffer_size;
+  if (service) {
+    PoolAllocator::domain = service->get_domain();
+  }
   PoolAllocator::id = 0;
 }
 
 ChunkPool::~ChunkPool() {
-  PoolAllocator::chunk_map.clear();
+  for (auto ck : PoolAllocator::id_to_chunk_map) {
+    if (ck.second->mr) {
+      fi_close(&((fid_mr*)ck.second->mr)->fid);
+    }
+  }
+  PoolAllocator::id_to_chunk_map.clear();
+  PoolAllocator::chunk_to_id_map.clear();
 }
 
 void* ChunkPool::malloc() {
@@ -52,18 +70,28 @@ void ChunkPool::free(void * const ck) {
 
 Chunk* ChunkPool::get(int id) {
   std::lock_guard<std::mutex> l(PoolAllocator::mtx);
-  if (!PoolAllocator::chunk_map.count(id)) {
+  if (!PoolAllocator::id_to_chunk_map.count(id)) {
     return nullptr;
   }
-  return PoolAllocator::chunk_map[id];
+  return PoolAllocator::id_to_chunk_map[id];
 }
 
 Chunk* ChunkPool::get() {
-  return reinterpret_cast<Chunk*>(malloc());
+  std::lock_guard<std::mutex> l(PoolAllocator::mtx);
+  auto ck = reinterpret_cast<Chunk*>(pool::malloc());
+  used_buffers++;
+  ck->mr = PoolAllocator::mr;
+  ck->capacity = buffer_size;
+  ck->buffer_id = PoolAllocator::chunk_to_id_map[ck];
+  ck->buffer = ck->data;
+  ck->size = 0;
+  return ck;
 }
 
-void ChunkPool::put(int, Chunk*) {
-  // pass
+void ChunkPool::reclaim(int, Chunk* ck) {
+  std::lock_guard<std::mutex> l(PoolAllocator::mtx);
+  pool::free(ck);
+  used_buffers--; 
 }
 
 int ChunkPool::free_size() {
@@ -71,57 +99,5 @@ int ChunkPool::free_size() {
 }
 
 void* ChunkPool::system_malloc() {
-  std::lock_guard<std::mutex> l(PoolAllocator::mtx);
   return boost::pool<PoolAllocator>::malloc();
-}
-
-DefaultChunkMgr::DefaultChunkMgr() : buffer_num(0), buffer_size(0), buffer_id(0) {}
-
-DefaultChunkMgr::DefaultChunkMgr(int buffer_num_, uint64_t buffer_size_) : buffer_num(buffer_num_), buffer_size(buffer_size_), buffer_id(0) {
-  for (int i = 0; i < buffer_num*2; i++) {
-    auto ck = new Chunk();
-    ck->buffer = std::malloc(buffer_size);
-    ck->capacity = buffer_size;
-    ck->buffer_id = this->get_id();
-    this->put(ck->buffer_id, ck);
-  }
-}
-
-DefaultChunkMgr::~DefaultChunkMgr() {
-  for (auto buf : buf_map) {
-    std::free(buf.second->buffer);
-    delete buf.second;
-    buf.second = nullptr;
-  }
-  buf_map.clear();
-}
-
-Chunk* DefaultChunkMgr::get(int id) {
-  std::lock_guard<std::mutex> l(mtx);
-  return buf_map[id];
-}
-
-void DefaultChunkMgr::put(int mid, Chunk* ck) {
-  std::lock_guard<std::mutex> l(mtx);
-  if (!buf_map.count(mid))
-    buf_map[mid] = ck;
-  bufs.push_back(ck);
-}
-
-Chunk* DefaultChunkMgr::get() {
-  std::lock_guard<std::mutex> l(mtx);
-  if (bufs.empty())
-    return nullptr;
-  Chunk *ck = bufs.back();
-  bufs.pop_back();
-  return ck;
-}
-
-int DefaultChunkMgr::free_size() {
-  std::lock_guard<std::mutex> l(mtx);
-  return bufs.size();
-}
-
-uint32_t DefaultChunkMgr::get_id() {
-  return buffer_id++;
 }

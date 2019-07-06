@@ -40,8 +40,8 @@ void Client::wait() {
   service->wait();
 }
 
-void Client::set_buf_mgr(ChunkMgr* bufMgr) {
-  service->set_buf_mgr(bufMgr);
+void Client::set_buf_mgr(ChunkMgr* chunkMgr) {
+  service->set_buf_mgr(chunkMgr);
 }
 
 void Client::set_send_callback(Callback *callback) {
@@ -70,4 +70,8 @@ uint64_t Client::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_i
 
 void Client::unreg_rma_buffer(int buffer_id) {
   service->unreg_rma_buffer(buffer_id);
+}
+
+fid_domain* Client::get_domain() {
+  return service->get_domain();
 }

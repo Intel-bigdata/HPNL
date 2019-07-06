@@ -3,8 +3,8 @@
 
 #include <iostream>
 
-MsgStack::MsgStack(int worker_num_, int buffer_num_, bool is_server_) : worker_num(worker_num_), 
-  seq_num(0), buffer_num(buffer_num_), is_server(is_server_), fabric(nullptr), 
+MsgStack::MsgStack(int worker_num_, int buffer_num_, bool is_server_, bool external_service_) : worker_num(worker_num_), 
+  seq_num(0), buffer_num(buffer_num_), is_server(is_server_), external_ervice(external_service_), fabric(nullptr), 
   domain(nullptr), hints(nullptr), info(nullptr), hints_tmp(nullptr), info_tmp(nullptr),
   peq(nullptr), pep(nullptr), initialized(false) {}
 
@@ -228,7 +228,7 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, ChunkMgr* buf_mgr)
     return nullptr;
   }
 
-  MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], buf_mgr, false, buffer_num, seq_num%worker_num);
+  MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], buf_mgr, false, buffer_num, seq_num%worker_num, external_ervice);
   if (con->init()) {
     delete con;
     return nullptr;
@@ -250,7 +250,7 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, ChunkMgr* buf_mgr)
 fid_eq* MsgStack::accept(void *info_, ChunkMgr* buf_mgr) {
   if (!initialized || !info_)
     return nullptr;
-  MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], buf_mgr, true, buffer_num, seq_num%worker_num);
+  MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], buf_mgr, true, buffer_num, seq_num%worker_num, external_ervice);
   if (con->init()) {
     delete con;
     return nullptr;
@@ -258,8 +258,9 @@ fid_eq* MsgStack::accept(void *info_, ChunkMgr* buf_mgr) {
   con->status = ACCEPT_REQ;
   seq_num++;
   conMap.insert(std::pair<fid*, MsgConnection*>(con->get_fid(), con));
-  if (con->accept())
+  if (con->accept()) {
     return nullptr;
+  }
   return con->get_eq();
 }
 
@@ -321,3 +322,6 @@ fid_cq** MsgStack::get_cqs() {
   return cqs;
 }
 
+fid_domain* MsgStack::get_domain() {
+  return domain;
+}

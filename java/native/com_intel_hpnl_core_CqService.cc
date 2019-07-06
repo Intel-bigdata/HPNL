@@ -71,6 +71,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(JNIEnv
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_init(JNIEnv *env, jobject thisObj, jlong eqService) {
   ExternalEqService *externalEqService = *(ExternalEqService**)&eqService;
+  assert(externalEqService);
   ExternalCqService *externalCqService = new ExternalCqService(externalEqService, externalEqService->get_stack());
   _set_self(env, thisObj, externalCqService);
   return externalCqService->init();

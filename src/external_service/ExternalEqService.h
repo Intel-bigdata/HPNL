@@ -9,7 +9,7 @@
 
 class MsgStack;
 class MsgConnection;
-class DefaultChunkMgr;
+class ExternalChunkMgr;
 class ExternalEqDemultiplexer;
 
 class ExternalEqService {
@@ -42,7 +42,7 @@ class ExternalEqService {
     int buffer_num;
     bool is_server;
 
-    DefaultChunkMgr *chkMgr;
+    ExternalChunkMgr *chkMgr;
 
     ExternalEqDemultiplexer *eq_demultiplexer;
 };

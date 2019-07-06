@@ -7,7 +7,7 @@
 
 #define MSG_SIZE 3
 #define BUFFER_SIZE 65536
-#define BUFFER_NUM 65536
+#define BUFFER_NUM 128
 #define MAX_WORKERS 10
 
 class ShutdownCallback : public Callback {
@@ -20,10 +20,10 @@ class ShutdownCallback : public Callback {
 };
 
 int main(int argc, char *argv[]) {
-  ChunkMgr *bufMgr = new DefaultChunkMgr(BUFFER_NUM, BUFFER_SIZE);
-
   auto server = new Server(1, 16);
   server->init();
+
+  ChunkMgr *bufMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
   server->set_buf_mgr(bufMgr);
 
   auto shutdownCallback = new ShutdownCallback();
@@ -31,8 +31,7 @@ int main(int argc, char *argv[]) {
   server->set_shutdown_callback(shutdownCallback);
 
   server->start();
-  server->listen("172.168.2.106", "123456");
-
+  server->listen("172.168.2.106", "12345");
   server->wait();
 
   delete server;

@@ -47,7 +47,7 @@ set(EXTERNAL_DEMULTIPLEXER_FILE ${EXTERNAL_DEMULTIPLEXER}/ExternalEqDemultiplexe
 set(CORE_FILE ${CORE}/MsgConnection.cc ${CORE}/MsgStack.cc ${CORE}/RdmConnection.cc ${CORE}/RdmStack.cc)
 set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc)
 set(EXTERNAL_SERVICE_FILE ${EXTERNAL_SERVICE}/ExternalEqService.cc)
-set(CHUNK_FILE ${CHUNK}/ChunkMgr.cc)
+set(CHUNK_FILE ${CHUNK}/ChunkMgr.cc ${CHUNK}/ExternalChunkMgr.cc)
 
 option(WITH_PSM2 "enable PSM2 provider" OFF)
 if(WITH_PSM2)

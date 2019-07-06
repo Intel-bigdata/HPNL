@@ -8,8 +8,8 @@
 #include <iostream>
 
 #define MSG_SIZE 4096
-#define BUFFER_SIZE 65536
-#define BUFFER_NUM 65536
+#define BUFFER_SIZE (65536*2)
+#define BUFFER_NUM 128
 
 int count = 0;
 uint64_t start, end = 0;
@@ -37,10 +37,11 @@ class ConnectedCallback : public Callback {
     ~ConnectedCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       auto con = (Connection*)param_1;
-      char* buffer = (char*)std::malloc(MSG_SIZE);
-      memset(buffer, '0', MSG_SIZE);
-      con->sendBuf(buffer, MSG_SIZE);
-      std::free(buffer);
+      Chunk *ck = bufMgr->get();
+      con->log_used_chunk(ck);
+      ck->size = MSG_SIZE;
+      memset(ck->buffer, '0', MSG_SIZE);
+      con->send(ck);
     }
   private:
     ChunkMgr *bufMgr;
@@ -67,7 +68,12 @@ class RecvCallback : public Callback {
       if (count == 1) {
         start = timestamp_now(); 
       }
-      con->sendBuf((char*)ck->buffer, MSG_SIZE);
+      ck->size = MSG_SIZE;
+      con->send(ck);
+
+      Chunk *new_ck = bufMgr->get();
+      con->log_used_chunk(new_ck);
+      con->activate_recv_chunk(new_ck);
     }
   private:
     Client *client;
@@ -78,23 +84,22 @@ class SendCallback : public Callback {
   public:
     explicit SendCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
     ~SendCallback() override = default;
-    void operator()(void *param_1, void *param_2) override;
+    void operator()(void *param_1, void *param_2) override {
+      int mid = *(int*)param_1;
+      Chunk *ck = bufMgr->get(mid);
+      bufMgr->reclaim(mid, ck);
+      auto con = (Connection*)ck->con;
+      con->remove_used_chunk(ck);
+    }
   private:
     ChunkMgr *bufMgr;
 };
 
-void SendCallback::operator()(void *param_1, void *) {
-  int mid = *(int*)param_1;
-  Chunk *ck = bufMgr->get(mid);
-  auto con = (Connection*)ck->con;
-  con->activate_send_chunk(ck);
-}
-
 int main(int argc, char *argv[]) {
-  ChunkMgr *bufMgr = new DefaultChunkMgr(BUFFER_NUM, BUFFER_SIZE);
-
   auto client = new Client(1, 16);
   client->init();
+
+  ChunkMgr *bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
   client->set_buf_mgr(bufMgr);
 
   auto recvCallback = new RecvCallback(client, bufMgr);

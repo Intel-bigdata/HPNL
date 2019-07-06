@@ -5,8 +5,8 @@
 
 #include <iostream>
 
-#define MSG_SIZE 4000
-#define BUFFER_SIZE 65536
+#define MSG_SIZE 4096
+#define BUFFER_SIZE (65536*2)
 #define BUFFER_NUM 128
 
 class ShutdownCallback : public Callback {
@@ -25,8 +25,13 @@ class RecvCallback : public Callback {
     void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
       auto ck = bufMgr->get(mid);
+      ck->size = MSG_SIZE;
       auto con = (Connection*)ck->con;
-      con->sendBuf((char*)ck->buffer, MSG_SIZE);
+      con->send(ck);
+
+      auto new_ck = bufMgr->get();
+      con->log_used_chunk(new_ck);
+      con->activate_recv_chunk(new_ck);
     }
   private:
     ChunkMgr *bufMgr;
@@ -39,18 +44,20 @@ class SendCallback : public Callback {
     void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
+      bufMgr->reclaim(mid, ck);
       auto con = (Connection*)ck->con;
-      con->activate_send_chunk(ck);
+      con->remove_used_chunk(ck);
     }
   private:
     ChunkMgr *bufMgr;
 };
 
 int main(int argc, char *argv[]) {
-  ChunkMgr *bufMgr = new DefaultChunkMgr(BUFFER_NUM, BUFFER_SIZE);
 
   auto server = new Server(1, 16);
   server->init();
+
+  ChunkMgr *bufMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
   server->set_buf_mgr(bufMgr);
 
   auto recvCallback = new RecvCallback(bufMgr);

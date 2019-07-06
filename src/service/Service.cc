@@ -56,7 +56,7 @@ int Service::init(bool msg_) {
   int res = 0;
   msg = msg_;
   if (msg) {
-    stack = new MsgStack(worker_num, buffer_num, is_server);
+    stack = new MsgStack(worker_num, buffer_num, is_server, false);
     if ((res = stack->init())) {
       return res;
     }
@@ -244,3 +244,6 @@ Chunk* Service::get_rma_buffer(int buffer_id) {
   return ((MsgStack*)stack)->get_rma_chunk(buffer_id);
 }
 
+fid_domain* Service::get_domain() {
+  return ((MsgStack*)stack)->get_domain();
+}

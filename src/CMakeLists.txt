@@ -11,7 +11,7 @@ set_target_properties(service_test
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/test")
 
-add_executable(chunk_test ${PROJECT_SOURCE_DIR}/src/test/ChunkPoolTest.cc ${CHUNK_FILE})
+add_executable(chunk_test ${PROJECT_SOURCE_DIR}/src/test/ChunkPoolTest.cc ${CHUNK_FILE} chunk/ExternalChunkMgr.cc)
 target_link_libraries(chunk_test fabric boost_system)
 set_target_properties(chunk_test
         PROPERTIES

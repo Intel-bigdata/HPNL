@@ -16,10 +16,10 @@ RdmConnection::RdmConnection(const char* ip_, const char* port_,
 
 RdmConnection::~RdmConnection() {
   for (auto ck: send_chunks) {
-    buf_mgr->put(ck->buffer_id, ck);
+    buf_mgr->reclaim(ck->buffer_id, ck);
   }
   for (auto ck: recv_chunks) {
-    buf_mgr->put(ck->buffer_id, ck);
+    buf_mgr->reclaim(ck->buffer_id, ck);
   }
   if (!is_server) {
     fi_freeinfo(info);

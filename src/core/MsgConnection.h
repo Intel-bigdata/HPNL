@@ -32,23 +32,24 @@ class MsgStack;
 
 class MsgConnection : public Connection {
   public:
-    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, ChunkMgr*, bool, int, int);
+    MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, ChunkMgr*, bool, int, int, bool);
     ~MsgConnection() override;
 
     int init() override;
-    int sendBuf(const char*, int) override;
+    int send(Chunk*) override;
     int send(int, int) override;
     int read(int, int, uint64_t, uint64_t, uint64_t) override;
-    void activate_send_chunk(Chunk*) override;
-    int activate_recv_chunk(Chunk*) override;
     
     int shutdown() override;
     int connect();
     int accept();
 
+    int activate_recv_chunk(Chunk*) override;
+
     void init_addr();
     void get_addr(char**, size_t*, char**, size_t*);
     int get_cq_index();
+    bool external_ervice;
     fid_eq* get_eq();
 
     fid* get_fid();
@@ -58,13 +59,15 @@ class MsgConnection : public Connection {
     void set_read_callback(Callback*);
     void set_shutdown_callback(Callback*);
 
-    std::vector<Chunk*> get_send_chunks();
-
     Callback* get_recv_callback() override;
     Callback* get_send_callback() override;
     Callback* get_read_callback();
     Callback* get_shutdown_callback();
 
+    void log_used_chunk(Chunk*) override;
+    void remove_used_chunk(Chunk*) override;
+
+    std::vector<Chunk*> get_send_chunks();
   public:
     ConStatus status;
     std::mutex con_mtx;
@@ -80,9 +83,6 @@ class MsgConnection : public Connection {
     fid_eq *conEq;
 
     ChunkMgr *buf_mgr;
-    std::vector<Chunk*> recv_chunks;
-    std::vector<Chunk*> send_chunks;
-    std::unordered_map<int, Chunk*> send_chunks_map;
 
     bool is_server;
 
@@ -98,6 +98,11 @@ class MsgConnection : public Connection {
     Callback* send_callback;
     Callback* read_callback;
     Callback* shutdown_callback;
+
+    std::mutex chunk_mtx;
+    std::map<int, Chunk*> used_chunks;
+    // for Java interface
+    std::vector<Chunk*> send_chunks;
 };
 
 #endif

@@ -8,7 +8,7 @@ TEST_CASE("msg server") {
   int total_buffer_num = 512;
   int single_buffer_num = 16;
   int buffer_size = 65536;
-  auto bufMgr = new DefaultChunkMgr(total_buffer_num, buffer_size);
+  auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
   auto service = new Service(1, single_buffer_num, true);
   SECTION("init") {
     REQUIRE(service->init(true) == 0);
@@ -35,7 +35,7 @@ TEST_CASE("msg client") {
   int total_buffer_num = 512;
   int single_buffer_num = 16;
   int buffer_size = 65536;
-  auto bufMgr = new DefaultChunkMgr(total_buffer_num, buffer_size);
+  auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
   auto service = new Service(1, single_buffer_num, false);
   SECTION("init") {
     REQUIRE(service->init(true) == 0);
@@ -62,7 +62,7 @@ TEST_CASE("rdm server") {
   int total_buffer_num = 512;
   int single_buffer_num = 16;
   int buffer_size = 65536;
-  auto bufMgr = new DefaultChunkMgr(total_buffer_num, buffer_size);
+  auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
   auto service = new Service(1, single_buffer_num, true);
   SECTION("init") {
     REQUIRE(service->init(false) == 0);
@@ -89,7 +89,7 @@ TEST_CASE("rdm client") {
   int total_buffer_num = 512;
   int single_buffer_num = 16;
   int buffer_size = 65536;
-  auto bufMgr = new DefaultChunkMgr(total_buffer_num, buffer_size);
+  auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
   auto service = new Service(1, single_buffer_num, false);
   SECTION("init") {
     REQUIRE(service->init(false) == 0);

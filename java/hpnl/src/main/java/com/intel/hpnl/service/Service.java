@@ -9,10 +9,10 @@ import com.intel.hpnl.core.Handler;
 public abstract class Service {
   public Service(int workNbr, int bufferNbr, boolean isServer) {
     this.eqService = new EqService(workNbr, bufferNbr, isServer);
-    this.cqService = new CqService(this.eqService);
     assert(this.eqService != null);
-    assert(this.cqService != null);
     this.eqService.init();
+    this.cqService = new CqService(this.eqService);
+    assert(this.cqService != null);
     this.cqService.init();
   }
 

@@ -3,6 +3,7 @@
 #include "HPNL/Connection.h"
 #include "HPNL/Callback.h"
 #include "service/Service.h"
+#include <rdma/fi_domain.h>
 
 Server::Server(int worker_num, int buffer_num) {
   service = new Service(worker_num, buffer_num, true);
@@ -36,8 +37,8 @@ void Server::wait() {
   service->wait();
 }
 
-void Server::set_buf_mgr(ChunkMgr* bufMgr) {
-  service->set_buf_mgr(bufMgr);
+void Server::set_buf_mgr(ChunkMgr *chunkMgr) {
+  service->set_buf_mgr(chunkMgr);
 }
 
 void Server::set_send_callback(Callback *callback) {
@@ -70,4 +71,8 @@ void Server::unreg_rma_buffer(int buffer_id) {
 
 Chunk* Server::get_rma_buffer(int buffer_id) {
   return service->get_rma_buffer(buffer_id);
+}
+
+fid_domain* Server::get_domain() {
+  return service->get_domain();
 }
