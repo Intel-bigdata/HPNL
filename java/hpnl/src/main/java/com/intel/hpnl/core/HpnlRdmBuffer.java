@@ -10,6 +10,7 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
   private static final Logger log = LoggerFactory.getLogger(HpnlRdmBuffer.class);
   private long connectionId;
+  private long peerConnectionId;
 
   public HpnlRdmBuffer(int bufferId, ByteBuffer byteBuffer) {
     super(bufferId, byteBuffer);
@@ -37,7 +38,7 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
     this.byteBuffer.position(0);
     this.byteBuffer.limit(blockBufferSize);
     this.frameType = this.byteBuffer.get();
-    this.byteBuffer.getLong();
+    peerConnectionId = this.byteBuffer.getLong();
     this.seq = this.byteBuffer.getLong();
     return this.byteBuffer.slice();
   }
@@ -52,11 +53,21 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
 //    log.info("buffer-> {}, {} {}, {}, {}", getBufferId(), frameType, connectionId, seqId, limit);
   }
 
+  @Override
+  public void clear(){
+    super.clear();
+    peerConnectionId = -1;
+  }
+
   public void setConnectionId(long connectionId) {
     this.connectionId = connectionId;
   }
 
   public long getConnectionId() {
     return connectionId;
+  }
+
+  public long getPeerConnectionId(){
+    return peerConnectionId;
   }
 }

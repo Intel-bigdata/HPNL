@@ -22,4 +22,6 @@ public interface HpnlBuffer {
   void insertMetadata(byte frameType, long seqId, int bufferLimit);
 
   int getMetadataSize();
+
+  void clear();
 }

@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
+import com.intel.hpnl.core.RdmConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -164,6 +165,15 @@ public abstract class AbstractConnection implements Connection {
         e = this.executeCallback(this.recvCallback, bufferId, bufferSize);
         break;
       case EventType.SEND_EVENT:
+        RdmConnection connection = (RdmConnection)this;
+        HpnlBuffer buffer = connection.getSendBuffer(bufferId);
+        long seqId = -1;
+        if(buffer.getRawBuffer().limit() >= 17 ) {
+            buffer.getRawBuffer().position(9);
+            seqId = buffer.getRawBuffer().getLong();
+        }
+        log.info("{}, {}, {}, {}, {}", connection.getConnectionId(), bufferId, seqId,
+                buffer.getRawBuffer().limit(), bufferSize);
         e = this.executeCallback(this.sendCallback, bufferId, bufferSize);
         if (e == Handler.RESULT_DEFAULT) {
           this.reclaimSendBuffer(bufferId);

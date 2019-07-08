@@ -14,31 +14,43 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
     this.byteBuffer = byteBuffer;
   }
 
+  @Override
   public int getBufferId() {
     return this.bufferId;
   }
 
+  @Override
   public byte getFrameType() {
     return this.frameType;
   }
 
+  @Override
   public long getSeq() {
     return this.seq;
   }
 
+  @Override
   public ByteBuffer getRawBuffer() {
     return this.byteBuffer;
   }
 
+  @Override
   public int getMetadataSize() {
-    return 9;
+    return BASE_METADATA_SIZE;
   }
 
+  @Override
   public int remaining() {
     return this.byteBuffer.remaining();
   }
 
+  @Override
   public int capacity() {
     return this.byteBuffer.capacity();
+  }
+
+  @Override
+  public void clear(){
+    this.byteBuffer.clear();
   }
 }

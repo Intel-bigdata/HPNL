@@ -63,7 +63,7 @@ public abstract class EventTask implements Runnable {
     int ret = 1;
     int cnt = 0;
     int interval = CHECK_DEADLINE_INTERVAL;
-    while(ret > 0){
+    while(this.running.get() && ret > 0){
       ret = this.waitEvent();
       cnt++;
       if(cnt >= interval){
@@ -81,7 +81,7 @@ public abstract class EventTask implements Runnable {
     Runnable task;
     int taskCnt = 0;
     int interval = CHECK_DEADLINE_INTERVAL;
-    while((task = this.pendingTasks.poll()) != null){
+    while(this.running.get() && ((task = this.pendingTasks.poll()) != null)){
       task.run();
       taskCnt++;
       if(taskCnt >= interval){

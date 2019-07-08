@@ -68,6 +68,7 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
       } else {
         *ck = (Chunk*)ctx->internal[4];
       }
+      *block_buffer_size = entry.len;
       return SEND_EVENT;
     } 
     if (entry.flags & FI_READ) {
