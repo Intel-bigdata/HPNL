@@ -44,7 +44,7 @@ class ShutdownCallback : public Callback {
 
 class RecvCallback : public Callback {
   public:
-    RecvCallback(BufMgr *bufMgr_, Server *server_) : bufMgr(bufMgr_), server(server_) {
+    RecvCallback(ChunkMgr *bufMgr_, Server *server_) : bufMgr(bufMgr_), server(server_) {
       const char path[] = "/dev/dax0.0";
       /* create the pmemobj pool or open it if it already exists */
       pop = pmemobj_open(path, LAYOUT_NAME);
@@ -89,7 +89,7 @@ class RecvCallback : public Callback {
       count++;
     }
   private:
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
     Server *server;
     PMEMobjpool *pop;
     struct my_root *rootp;
@@ -98,7 +98,7 @@ class RecvCallback : public Callback {
 
 class SendCallback : public Callback {
   public:
-    SendCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    SendCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
     virtual ~SendCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
@@ -107,13 +107,13 @@ class SendCallback : public Callback {
       con->activate_send_chunk(ck);
     }
   private:
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
-
   Server *server = new Server(1, 16);
+  ChunkMgr *bufMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
+
   server->init();
   server->set_buf_mgr(bufMgr);
 

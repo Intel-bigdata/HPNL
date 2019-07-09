@@ -4,11 +4,14 @@
 #include "core/MsgStack.h"
 #include "core/MsgConnection.h"
 
+#include <iostream>
+
 MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_, 
   fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
-  ChunkMgr *buf_mgr_, bool is_server_, int buffer_num_, int cq_index_) : 
+  ChunkMgr *buf_mgr_, bool is_server_, int buffer_num_, int cq_index_, bool external_ervice_) : 
   stack(stack_), fabric(fabric_), info(info_), domain(domain_),
-  conCq(cq_), buf_mgr(buf_mgr_), is_server(is_server_), buffer_num(buffer_num_), cq_index(cq_index_) {
+  conCq(cq_), buf_mgr(buf_mgr_), is_server(is_server_), buffer_num(buffer_num_), 
+  cq_index(cq_index_), external_ervice(external_ervice_) {
   conEq = nullptr;
   ep = nullptr;
   status = IDLE;
@@ -21,16 +24,13 @@ MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_,
  }
 
 MsgConnection::~MsgConnection() {
-  for (auto buffer: send_chunks_map) {
-    Chunk *ck = buffer.second;
-    fi_close(&((fid_mr*)ck->mr)->fid);
-    buf_mgr->put(ck->buffer_id, ck);
+  for (auto ck : used_chunks) {
+    buf_mgr->reclaim(ck.first, ck.second);
   }
-  while (!recv_chunks.empty()) {
-    Chunk *ck = recv_chunks.back();
-    fi_close(&((fid_mr*)ck->mr)->fid);
-    recv_chunks.pop_back();
-    buf_mgr->put(ck->buffer_id, ck);
+  if (external_ervice) {
+    for (auto ck : send_chunks) {
+      buf_mgr->reclaim(ck->buffer_id, ck);
+    }
   }
   if (ep) {
     shutdown();
@@ -79,59 +79,45 @@ int MsgConnection::init() {
   
   fi_enable(ep);
   while (size < buffer_num) {
-    fid_mr *mr;
     Chunk *ck = buf_mgr->get();
     if (!ck) {
       return -1; 
     }
-    if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
-      perror("fi_mr_reg");
-      goto free_recv_buf;
+    if (external_ervice) {
+      fid_mr *mr = nullptr;
+      if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
+        perror("fi_mr_reg");
+        return -1;
+      } 
+      ck->mr = mr;
+      mr = nullptr;
     }
     ck->con = this;
-    ck->mr = mr;
-    if (fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc(mr), 0, ck)) {
+    if (fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
       perror("fi_recv");
-      goto free_recv_buf;
+      return -1;
     }
-    mr = nullptr;
-    recv_chunks.push_back(ck);
-    size++;
-  }
-  size = 0;
-  while (size < buffer_num) {
-    fid_mr *mr;
-    Chunk *ck = buf_mgr->get();
-    if (ck == nullptr) {
-      return -1; 
-    }
-    if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
-      perror("fi_mr_reg");
-      goto free_send_buf;
-    }
-    ck->con = this;
-    ck->mr = mr;
-    mr = nullptr;
-    send_chunks.push_back(ck);
-    send_chunks_map.insert(std::pair<int, Chunk*>(ck->buffer_id, ck));
-    size++;
-  }
+    log_used_chunk(ck);
 
+    if (external_ervice) {
+      ck = buf_mgr->get();
+      if (!ck) {
+        return -1; 
+      }
+      fid_mr *mr = nullptr;
+      if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
+        perror("fi_mr_reg");
+        return -1;
+      } 
+      ck->mr = mr;
+      mr = nullptr;
+      ck->con = this;
+      send_chunks.push_back(ck);
+    }
+    size++;
+  }
   return 0;
 
-free_send_buf:
-  for (auto buffer: send_chunks_map) {
-    Chunk *ck = buffer.second;
-    fi_close(&((fid_mr*)ck->mr)->fid);
-    buf_mgr->put(ck->buffer_id, ck);
-  }
-free_recv_buf:
-  while (!recv_chunks.empty()) {
-    Chunk *ck = recv_chunks.back();
-    fi_close(&((fid_mr*)ck->mr)->fid);
-    recv_chunks.pop_back();
-    buf_mgr->put(ck->buffer_id, ck);
-  }
 free_eq:
   if (conEq) {
     fi_close(&conEq->fid);
@@ -146,22 +132,21 @@ free_ep:
   return -1;
 }
 
-int MsgConnection::sendBuf(const char *buffer, int buffer_size) {
-  Chunk *ck = send_chunks.back();
-  send_chunks.pop_back();
-  if ((uint64_t)buffer_size > ck->capacity) {
-    return -1; 
-  }
-  memcpy(ck->buffer, buffer, (size_t)buffer_size);
-  if (fi_send(ep, ck->buffer, (size_t)buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+int MsgConnection::send(Chunk* ck) {
+  ck->con = this;
+  if (fi_send(ep, ck->buffer, (size_t)ck->size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
     return -1;
   }
   return 0;
 }
 
-int MsgConnection::send(int buffer_size, int buffer_id) {
-  Chunk *ck = send_chunks_map[buffer_id];
+int MsgConnection::send(int buffer_size, int id) {
+  Chunk *ck = buf_mgr->get(id);
+  ck->size = buffer_size;
+  if (ck == nullptr)
+    return -1;
+  ck->con = this;
   if (fi_send(ep, ck->buffer, (size_t)buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_send");
     return -1;
@@ -228,14 +213,6 @@ int MsgConnection::get_cq_index() {
   return cq_index;
 }
 
-void MsgConnection::activate_send_chunk(Chunk *ck) {
-  send_chunks.push_back(ck);
-}
-
-std::vector<Chunk*> MsgConnection::get_send_chunks() {
-  return send_chunks;
-}
-
 void MsgConnection::set_recv_callback(Callback *callback) {
   recv_callback = callback;
 }
@@ -268,12 +245,35 @@ Callback* MsgConnection::get_shutdown_callback() {
   return shutdown_callback;
 }
 
+void MsgConnection::log_used_chunk(Chunk* ck) {
+  std::lock_guard<std::mutex> l(chunk_mtx);
+  used_chunks[ck->buffer_id] = (Chunk*)ck;
+}
+
+void MsgConnection::remove_used_chunk(Chunk* ck) {
+  std::lock_guard<std::mutex> l(chunk_mtx);
+  used_chunks.erase(ck->buffer_id);
+}
+
+std::vector<Chunk*> MsgConnection::get_send_chunks() {
+  return send_chunks;
+}
+
 fid* MsgConnection::get_fid() {
   return &conEq->fid;
 }
 
 int MsgConnection::activate_recv_chunk(Chunk *ck) {
   ck->con = this;
+  //if (!ck->mr) {
+  //  fid_mr *mr = nullptr;
+  //  if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
+  //    perror("fi_mr_reg");
+  //    return -1;
+  //  }
+  //  ck->mr = mr;
+  //  mr = nullptr;
+  //}
   if (fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_recv");
     return -1; 

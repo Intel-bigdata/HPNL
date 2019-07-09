@@ -18,7 +18,7 @@ class MsgConnection;
 
 class MsgStack : public Stack {
   public:
-    MsgStack(int, int, bool);
+    MsgStack(int, int, bool, bool);
     ~MsgStack() override;
     MsgStack(const MsgStack& stack) = delete;
     MsgStack& operator=(const MsgStack& stack) = delete;
@@ -40,10 +40,12 @@ class MsgStack : public Stack {
     fid_fabric* get_fabric();
     fid_cq** get_cqs();
 
+    fid_domain* get_domain();
   private:
     int worker_num;
     int buffer_num;
     bool is_server;
+    bool external_ervice;
     uint64_t seq_num;
     fid_fabric *fabric;
     fid_domain *domain;

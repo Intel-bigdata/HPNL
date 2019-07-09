@@ -10,7 +10,7 @@
 #include "HPNL/ChunkMgr.h"
 
 TEST_CASE("msg server") {
-  auto stack = new MsgStack(1, 6, true);
+  auto stack = new MsgStack(1, 6, true, true);
   SECTION("init") {
     REQUIRE(stack->init() == 0);
   }
@@ -36,7 +36,7 @@ TEST_CASE("msg server") {
 
 TEST_CASE("msg client") {
   int buffer_num_per_connection = 16;
-  auto stack = new MsgStack(1, buffer_num_per_connection, false);
+  auto stack = new MsgStack(1, buffer_num_per_connection, false, true);
   SECTION("init") {
     REQUIRE(stack->init() == 0);
   }
@@ -65,8 +65,8 @@ TEST_CASE("msg connect operation") {
   int total_buffer_num = parallel_num*buffer_num_per_connection*2;
   int buffer_size = 65536;
 
-  auto mgr = new DefaultChunkMgr(total_buffer_num, buffer_size);
-  auto stack = new MsgStack(1, buffer_num_per_connection, false);
+  auto mgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
+  auto stack = new MsgStack(1, buffer_num_per_connection, false, true);
   REQUIRE(stack->init() == 0);
 
 #if defined(LOCAL_IP) && defined(LOCAL_PORT)
@@ -94,7 +94,7 @@ void unreg_rma_buffer(MsgStack *stack, int i) {
 TEST_CASE("rma buffer registration") {
   char test[10] = "12345";
   int parallel_num = 100;
-  auto stack = new MsgStack(1, 6, false);
+  auto stack = new MsgStack(1, 6, false, true);
   stack->init();
 
   SECTION("async rma buffer registration") {

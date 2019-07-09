@@ -29,11 +29,11 @@ class RecvCallback : public Callback {
 };
 
 int main() {
-  ChunkMgr *bufMgr = new ChunkPool(BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
 
   auto server = new Server(1, 16);
   server->init(false);
 
+  ChunkMgr *bufMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
   server->set_buf_mgr(bufMgr);
 
   auto recvCallback = new RecvCallback(bufMgr);

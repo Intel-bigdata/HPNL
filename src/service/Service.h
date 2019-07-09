@@ -55,6 +55,7 @@ class Service {
 
     // Other util functions
     Connection*        get_con(const char*, const char*);
+    fid_domain*        get_domain();
   private:
     friend class       AcceptRequestCallback;
 

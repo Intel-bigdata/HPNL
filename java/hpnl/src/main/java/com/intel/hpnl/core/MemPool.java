@@ -13,7 +13,7 @@ public class MemPool {
     if (nextBufferNum >= initBufferNum*2) {
       this.nextBufferNum = nextBufferNum; 
     } else {
-      this.nextBufferNum = this.initBufferNum*2;
+      this.nextBufferNum = initBufferNum*2;
     }
     this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
     this.seqId = new AtomicInteger(0);

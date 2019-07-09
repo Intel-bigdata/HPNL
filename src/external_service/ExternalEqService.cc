@@ -3,11 +3,13 @@
 #include "core/MsgStack.h"
 #include "core/MsgConnection.h"
 
+#include <iostream>
+
 ExternalEqService::ExternalEqService(int worker_num_, int buffer_num_, bool is_server_) :
   worker_num(worker_num_), buffer_num(buffer_num_), is_server(is_server_) {
   stack = nullptr;
   eq_demultiplexer = nullptr;
-  chkMgr = new DefaultChunkMgr();
+  chkMgr = new ExternalChunkMgr();
 }
 
 ExternalEqService::~ExternalEqService() {
@@ -26,11 +28,10 @@ ExternalEqService::~ExternalEqService() {
 }
 
 int ExternalEqService::init() {
-  stack = new MsgStack(worker_num, buffer_num, is_server);
+  stack = new MsgStack(worker_num, buffer_num, is_server, true);
   assert(stack);
   if (stack->init() == -1)
     goto free_stack;
-
   eq_demultiplexer = new ExternalEqDemultiplexer(stack);
   assert(eq_demultiplexer);
   if (eq_demultiplexer->init() == -1)
@@ -58,8 +59,9 @@ fid_eq* ExternalEqService::accept(fi_info* info) {
     return nullptr;
   }
   eq = stack->accept(info, chkMgr);
-  if (!eq)
+  if (!eq) {
     return nullptr;
+  }
   return eq;
 }
 
@@ -100,7 +102,8 @@ void ExternalEqService::set_buffer(char* buffer, uint64_t size, int buffer_id) {
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
-  chkMgr->put(ck->buffer_id, ck);
+  ck->mr = nullptr;
+  chkMgr->reclaim(ck->buffer_id, ck);
 }
 
 int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, MsgConnection** con) {

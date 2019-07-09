@@ -6,6 +6,8 @@
 #include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
 
+#include <iostream>
+
 #define SIZE 4096
 #define BUFFER_SIZE 65536
 #define BUFFER_NUM 65536
@@ -32,7 +34,7 @@ class ShutdownCallback : public Callback {
 
 class ConnectedCallback : public Callback {
   public:
-    ConnectedCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    ConnectedCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
     virtual ~ConnectedCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       Connection *con = (Connection*)param_1;
@@ -42,12 +44,12 @@ class ConnectedCallback : public Callback {
       std::free(buffer);
     }
   private:
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
 };
 
 class RecvCallback : public Callback {
   public:
-    RecvCallback(BufMgr *bufMgr_, Client *client_) : bufMgr(bufMgr_), client(client_) {}
+    RecvCallback(ChunkMgr *bufMgr_, Client *client_) : bufMgr(bufMgr_), client(client_) {}
     virtual ~RecvCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
@@ -74,13 +76,13 @@ class RecvCallback : public Callback {
       count++;
     }
   private:
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
     Client *client;
 };
 
 class SendCallback : public Callback {
   public:
-    SendCallback(BufMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    SendCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
     virtual ~SendCallback() {}
     virtual void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
@@ -89,7 +91,7 @@ class SendCallback : public Callback {
       con->activate_send_chunk(ck);
     }
   private:
-    BufMgr *bufMgr;
+    ChunkMgr *bufMgr;
 };
 
 class ReadCallback : public Callback {
@@ -102,9 +104,9 @@ class ReadCallback : public Callback {
 };
 
 int main(int argc, char *argv[]) {
-  BufMgr *bufMgr = new HpnlBufMgr(BUFFER_NUM, BUFFER_SIZE);
-
   Client *client = new Client(1, 16);
+  ChunkMgr *bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
+
   client->init();
   client->set_buf_mgr(bufMgr);
 

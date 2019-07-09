@@ -5,14 +5,12 @@
 
 TEST_CASE("chunk pool") {
   int request_chunk_number = 32;
-  std::vector<Chunk*> vec;
-  auto cp = new ChunkPool(4096, request_chunk_number, 1024);
-  for (int i = 0; i < request_chunk_number*2; i++) {
-    auto ck = reinterpret_cast<Chunk*>(cp->malloc());
+  auto cp = new ChunkPool(nullptr, 4096, request_chunk_number*2, 1024);
+  for (int i = 0; i < request_chunk_number; i++) {
+    auto ck = reinterpret_cast<Chunk*>(cp->get());
     REQUIRE(ck != nullptr);
     REQUIRE(ck->buffer_id == i);
     REQUIRE(cp->get(ck->buffer_id) == ck);
-    vec.push_back(ck);
   }
   delete cp;
 }

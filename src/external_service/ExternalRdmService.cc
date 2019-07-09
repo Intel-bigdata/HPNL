@@ -10,7 +10,7 @@ ExternalRdmService::ExternalRdmService(int buffer_num, bool is_server) {
   this->demultiplexer = nullptr;
   this->buffer_num = buffer_num;
   this->is_server = is_server;
-  this->bufMgr = new DefaultChunkMgr();
+  this->bufMgr = new ExternalChunkMgr();
 }
 
 ExternalRdmService::~ExternalRdmService() {
@@ -45,6 +45,6 @@ void ExternalRdmService::set_buffer(char* buffer, uint64_t size, int buffer_id) 
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
-  bufMgr->put(ck->buffer_id, ck);
+  bufMgr->reclaim(ck->buffer_id, ck);
 }
 
