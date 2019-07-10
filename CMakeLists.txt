@@ -23,6 +23,7 @@ endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include/Catch2/single_include)
 include_directories(/usr/local/include)
 
 if (JNI_FOUND)

@@ -14,8 +14,10 @@ MsgStack::~MsgStack() {
   }
   conMap.clear();
   for (auto iter : chunkMap) {
-    iter.second->buffer = nullptr;
-    delete iter.second;
+    if (iter.second) {
+      iter.second->buffer = nullptr;
+      delete iter.second;
+    }
   }
   chunkMap.clear();
   if (peq) {
