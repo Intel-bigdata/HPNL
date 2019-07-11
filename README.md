@@ -42,8 +42,9 @@ This project supports CMake out of box.
 
 ```shell
 git clone https://github.com/Intel-bigdata/HPNL.git
-cd HPNL; mkdir build; cd build; cmake ..
-make && make install
+cd HPNL
+git submodule update --init --recursive
+mkdir build; cd build;
 ```
 
 By default, HPNL runs over TCP/IP protocol, in this mode, you may expect similar performance to other sockets based network library. Thanks to Libfabric, HPNL also supports 
@@ -52,6 +53,7 @@ RDMA, Omni-Path protocol, you can switch between different protocols by adding c
 ```shell
 cmake -DWITH_VERBS=ON ..     // for RDMA Protocol
 cmake -DWITH_PSM2=ON ..      // for Omni-Path Protocol
+make && make install
 ```
 
 ### Build for Java
@@ -59,6 +61,7 @@ The HPNL Java API comes with HPNL C/C++ shared library, the native code won't be
 
 ```shell
 cmake -DWITH_JAVA=ON ..      // to include native code for Java API
+make && make install
 cd ${project_root_path}/java/hpnl; mvn package
 ```
 
@@ -69,7 +72,7 @@ ctest                        // cmake ctest is binded to Catch2 unit-test framew
 ```
 
 ## Usage
-To get started, refer to the mini tutorial. Simple C/S examples can be found in [HPNL/example](https://github.com/Intel-bigdata/HPNL/tree/master/example) directory. 
+To get started, refer to the mini tutorial. Simple C/S examples can be found in [HPNL/examples](https://github.com/Intel-bigdata/HPNL/tree/master/examples) directory. 
 
 ## Contact
 jian.zhang@intel.com
