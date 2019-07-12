@@ -21,7 +21,6 @@
 
 #include <assert.h>
 
-#include "HPNL/Connection.h"
 #include "demultiplexer/EventType.h"
 #include "core/MsgConnection.h"
 #include "external_service/ExternalEqService.h"

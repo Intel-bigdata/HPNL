@@ -34,7 +34,7 @@ class RdmConnection;
 
 class RdmStack : public Stack {
   public:
-    RdmStack(int, bool);
+    RdmStack(int, bool, bool);
     ~RdmStack() override;
     int init() override;
     void* bind(const char*, const char*, ChunkMgr*) override;
@@ -42,6 +42,8 @@ class RdmStack : public Stack {
     RdmConnection* get_con(const char*, const char*, ChunkMgr*);
     fid_fabric* get_fabric();
     fid_cq* get_cq();
+
+    fid_domain* get_domain() override;
   private:
     fi_info *info;
     fi_info *server_info;
@@ -50,6 +52,7 @@ class RdmStack : public Stack {
     fid_cq *cq;
     int buffer_num;
     bool is_server;
+    bool external_service;
 
     std::mutex mtx;
     std::vector<RdmConnection*> cons;

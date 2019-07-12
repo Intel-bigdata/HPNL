@@ -88,16 +88,18 @@ int RdmCqDemultiplexer::wait_event() {
       if (entry.flags & FI_RECV) {
         fi_context2 *ctx = (fi_context2*)entry.op_context;
         Chunk *ck = (Chunk*)ctx->internal[4];
+        ck->size = entry.len;
         RdmConnection *con = (RdmConnection*)ck->con;
         if (con->get_recv_callback()) {
           (*con->get_recv_callback())(&ck->buffer_id, &entry.len);
         }
-        con->activate_recv_chunk(ck);
+        con->activate_recv_chunk();
       } else if (entry.flags & FI_SEND) {
         fi_context2 *ctx = (fi_context2*)entry.op_context;
         Chunk *ck = (Chunk*)ctx->internal[4];
         RdmConnection *con = (RdmConnection*)ck->con;
-        con->activate_send_chunk(ck);
+        assert(con->get_send_callback() != nullptr);
+        (*con->get_send_callback())(&ck->buffer_id, nullptr);
       } else if (entry.flags & FI_READ) {
       } else if (entry.flags & FI_WRITE) {
       } else {

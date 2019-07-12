@@ -19,6 +19,8 @@
 #include "core/RdmConnection.h"
 #include "HPNL/Client.h"
 
+#include <iostream>
+
 int count = 0;
 uint64_t start, end = 0;
 std::mutex mtx;
@@ -53,16 +55,29 @@ class RecvCallback : public Callback {
         start = timestamp_now(); 
       }
       char peer_name[16];
-      con->decode_peer_name(ck->buffer, peer_name, 16);
-      Chunk *sck = con->encode(ck->buffer, MSG_SIZE, peer_name);
-      con->send(sck);
+      con->decode_(ck, nullptr, nullptr, peer_name);
+      con->encode_(ck, ck->buffer, MSG_SIZE, peer_name);
+      con->send(ck);
+    }
+  private:
+    ChunkMgr *bufMgr;
+};
+
+class SendCallback : public Callback {
+  public:
+    explicit SendCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    ~SendCallback() override = default;
+    void operator()(void *param_1, void *param_2) override {
+      int mid = *(int*)param_1;
+      Chunk *ck = bufMgr->get(mid);
+      auto con = (Connection*)ck->con;
+      bufMgr->reclaim(ck, con);
     }
   private:
     ChunkMgr *bufMgr;
 };
 
 int main() {
-
   auto client = new Client(1, 16);
   client->init(false);
 
@@ -70,7 +85,9 @@ int main() {
   client->set_buf_mgr(bufMgr);
 
   auto recvCallback = new RecvCallback(bufMgr);
+  auto sendCallback = new SendCallback(bufMgr);
   client->set_recv_callback(recvCallback);
+  client->set_send_callback(sendCallback);
 
   client->start();
 
@@ -80,13 +97,14 @@ int main() {
   memset(buffer, '0', MSG_SIZE);
   
   char* peer_name = con->get_peer_name();
-  auto ck = con->encode(buffer, MSG_SIZE, peer_name);
-  assert(ck != nullptr);
+  auto ck = bufMgr->get(con);
+  con->encode_(ck, buffer, MSG_SIZE, peer_name);
   con->send(ck);
 
   client->wait();
 
   delete recvCallback;
+  delete sendCallback;
   delete client;
   delete bufMgr;
 

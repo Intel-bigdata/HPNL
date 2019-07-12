@@ -57,12 +57,12 @@ class MsgStack : public Stack {
     fid_fabric* get_fabric();
     fid_cq** get_cqs();
 
-    fid_domain* get_domain();
+    fid_domain* get_domain() override;
   private:
     int worker_num;
     int buffer_num;
     bool is_server;
-    bool external_ervice;
+    bool external_service;
     uint64_t seq_num;
     fid_fabric *fabric;
     fid_domain *domain;

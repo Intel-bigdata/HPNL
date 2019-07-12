@@ -37,9 +37,23 @@ class RecvCallback : public Callback {
       Chunk *ck = bufMgr->get(mid);
       auto con = (Connection*)ck->con;
       char peer_name[16];
-      con->decode_peer_name(ck->buffer, peer_name, 16);
-      Chunk *sck = con->encode(ck->buffer, MSG_SIZE, peer_name);
-      con->send(sck);
+      con->decode_(ck, nullptr, nullptr, peer_name);
+      con->encode_(ck, ck->buffer, MSG_SIZE, peer_name);
+      con->send(ck);
+    }
+  private:
+    ChunkMgr *bufMgr;
+};
+
+class SendCallback : public Callback {
+  public:
+    explicit SendCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    ~SendCallback() override = default;
+    void operator()(void *param_1, void *param_2) override {
+      int mid = *(int*)param_1;
+      Chunk *ck = bufMgr->get(mid);
+      auto con = (Connection*)ck->con;
+      bufMgr->reclaim(ck, con);
     }
   private:
     ChunkMgr *bufMgr;
@@ -54,7 +68,9 @@ int main() {
   server->set_buf_mgr(bufMgr);
 
   auto recvCallback = new RecvCallback(bufMgr);
+  auto sendCallback = new SendCallback(bufMgr);
   server->set_recv_callback(recvCallback);
+  server->set_send_callback(sendCallback);
 
   server->listen("127.0.0.1", "12345");
   server->start();
@@ -62,6 +78,7 @@ int main() {
   server->wait();
 
   delete recvCallback;
+  delete sendCallback;
   delete server;
   delete bufMgr;
   return 0;

@@ -21,7 +21,7 @@
 #include <iostream>
 
 MsgStack::MsgStack(int worker_num_, int buffer_num_, bool is_server_, bool external_service_) : worker_num(worker_num_), 
-  seq_num(0), buffer_num(buffer_num_), is_server(is_server_), external_ervice(external_service_), fabric(nullptr), 
+  seq_num(0), buffer_num(buffer_num_), is_server(is_server_), external_service(external_service_), fabric(nullptr), 
   domain(nullptr), hints(nullptr), info(nullptr), hints_tmp(nullptr), info_tmp(nullptr),
   peq(nullptr), pep(nullptr), initialized(false) {}
 
@@ -247,7 +247,7 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, ChunkMgr* buf_mgr)
     return nullptr;
   }
 
-  MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], buf_mgr, false, buffer_num, seq_num%worker_num, external_ervice);
+  MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], buf_mgr, false, buffer_num, seq_num%worker_num, external_service);
   if (con->init()) {
     delete con;
     return nullptr;
@@ -269,7 +269,7 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, ChunkMgr* buf_mgr)
 fid_eq* MsgStack::accept(void *info_, ChunkMgr* buf_mgr) {
   if (!initialized || !info_)
     return nullptr;
-  MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], buf_mgr, true, buffer_num, seq_num%worker_num, external_ervice);
+  MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], buf_mgr, true, buffer_num, seq_num%worker_num, external_service);
   if (con->init()) {
     delete con;
     return nullptr;

@@ -21,6 +21,7 @@
 #include "core/MsgConnection.h"
 #include "core/RdmConnection.h"
 #include "core/RdmStack.h"
+#include "core/ConnectionImpl.h"
 #include "demultiplexer/EqDemultiplexer.h"
 #include "demultiplexer/CqDemultiplexer.h"
 #include "demultiplexer/RdmCqDemultiplexer.h"
@@ -77,23 +78,23 @@ int Service::init(bool msg_) {
     if ((res = stack->init())) {
       return res;
     }
-    eq_demultiplexer = new EqDemultiplexer((MsgStack*)stack);
+    eq_demultiplexer = new EqDemultiplexer(dynamic_cast<MsgStack*>(stack));
     if ((res = eq_demultiplexer->init())) {
       return res;
     }
     for (int i = 0; i < worker_num; i++) {
-      cq_demultiplexer[i] = new CqDemultiplexer((MsgStack*)stack, i);
+      cq_demultiplexer[i] = new CqDemultiplexer(dynamic_cast<MsgStack*>(stack), i);
       if ((res = cq_demultiplexer[i]->init())) {
         return res;
       }
     }
     proactor = new Proactor(eq_demultiplexer, cq_demultiplexer, worker_num);
   } else {
-    stack = new RdmStack(buffer_num, is_server);
+    stack = new RdmStack(buffer_num, is_server, false);
     if ((res = stack->init())) {
       return res;
     }
-    rdm_cq_demultiplexer = new RdmCqDemultiplexer((RdmStack*)stack);
+    rdm_cq_demultiplexer = new RdmCqDemultiplexer(dynamic_cast<RdmStack*>(stack));
     if ((res = rdm_cq_demultiplexer->init())) {
       return res;
     }
@@ -130,7 +131,7 @@ int Service::listen(const char* addr, const char* port) {
     if ((res = ((MsgStack*)stack)->listen())) {
       return res;
     }
-    std::shared_ptr<EqHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
+    std::shared_ptr<EqHandler> handler(new EqHandler(dynamic_cast<MsgStack*>(stack), proactor, eq));
     acceptRequestCallback = new AcceptRequestCallback(this);
     handler->set_recv_callback(recvCallback);
     handler->set_send_callback(sendCallback);
@@ -144,7 +145,7 @@ int Service::listen(const char* addr, const char* port) {
       return res;
     }
   } else {
-    auto con = (RdmConnection*)stack->bind(addr, port, bufMgr);
+    auto con = reinterpret_cast<RdmConnection*>(stack->bind(addr, port, bufMgr));
     if (!con)
       return -1;
     con->set_recv_callback(recvCallback);
@@ -157,10 +158,10 @@ int Service::connect(const char* addr, const char* port) {
   if (is_server)
     return -1;
   int res = 0;
-  fid_eq *eq = ((MsgStack*)stack)->connect(addr, port, bufMgr);
+  fid_eq *eq = dynamic_cast<MsgStack*>(stack)->connect(addr, port, bufMgr);
   if (!eq)
     return -1;
-  std::shared_ptr<EventHandler> handler(new EqHandler((MsgStack*)stack, proactor, eq));
+  std::shared_ptr<EventHandler> handler(new EqHandler(dynamic_cast<MsgStack*>(stack), proactor, eq));
   acceptRequestCallback = new AcceptRequestCallback(this);
   handler->set_recv_callback(recvCallback);
   handler->set_send_callback(sendCallback);
@@ -176,17 +177,17 @@ int Service::connect(const char* addr, const char* port) {
   return 0;
 }
 
-Connection* Service::get_con(const char* addr, const char* port) {
+RdmConnection* Service::get_con(const char* addr, const char* port) {
   if (is_server) {
     return nullptr;
   }
-  RdmConnection *con = ((RdmStack*)stack)->get_con(addr, port, bufMgr);
+  RdmConnection *con = dynamic_cast<RdmStack*>(stack)->get_con(addr, port, bufMgr);
   if (!con) {
     return nullptr;
   }
   con->set_recv_callback(recvCallback);
   con->set_send_callback(sendCallback);
-  return (Connection*)con;
+  return dynamic_cast<RdmConnection*>(con);
 }
 
 void Service::shutdown() {
@@ -207,13 +208,14 @@ void Service::shutdown() {
 }
 
 void Service::shutdown(Connection *con) {
-  proactor->remove_handler(((MsgConnection*)con)->get_fid());
-  ((MsgConnection*)con)->shutdown();
-  ((MsgStack*)stack)->reap(((MsgConnection*)con)->get_fid());
+  MsgConnection *msgCon = dynamic_cast<MsgConnection*>(con);
+  proactor->remove_handler(msgCon->get_fid());
+  msgCon->shutdown();
+  dynamic_cast<MsgStack*>(stack)->reap(msgCon->get_fid());
   if (shutdownCallback) {
     shutdownCallback->operator()(nullptr, nullptr);
   }
-  delete con;
+  delete msgCon;
 }
 
 void Service::wait() {
@@ -250,17 +252,17 @@ void Service::set_shutdown_callback(Callback *callback) {
 }
 
 uint64_t Service::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
-  return ((MsgStack*)stack)->reg_rma_buffer(buffer, buffer_size, buffer_id);
+  return dynamic_cast<MsgStack*>(stack)->reg_rma_buffer(buffer, buffer_size, buffer_id);
 }
 
 void Service::unreg_rma_buffer(int buffer_id) {
-  ((MsgStack*)stack)->unreg_rma_buffer(buffer_id);
+  dynamic_cast<MsgStack*>(stack)->unreg_rma_buffer(buffer_id);
 }
 
 Chunk* Service::get_rma_buffer(int buffer_id) {
-  return ((MsgStack*)stack)->get_rma_chunk(buffer_id);
+  return dynamic_cast<MsgStack*>(stack)->get_rma_chunk(buffer_id);
 }
 
 fid_domain* Service::get_domain() {
-  return ((MsgStack*)stack)->get_domain();
+  return stack->get_domain();
 }

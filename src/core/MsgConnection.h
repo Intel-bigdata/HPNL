@@ -32,7 +32,7 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "HPNL/Connection.h"
+#include "core/ConnectionImpl.h"
 #include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
 
@@ -47,7 +47,7 @@ enum ConStatus {
 
 class MsgStack;
 
-class MsgConnection : public Connection {
+class MsgConnection : public ConnectionImpl {
   public:
     MsgConnection(MsgStack*, fid_fabric*, fi_info*, fid_domain*, fid_cq*, ChunkMgr*, bool, int, int, bool);
     ~MsgConnection() override;
@@ -61,7 +61,7 @@ class MsgConnection : public Connection {
     int connect();
     int accept();
 
-    int activate_recv_chunk(Chunk*) override;
+    int activate_recv_chunk(Chunk* = nullptr) override;
 
     void init_addr();
     void get_addr(char**, size_t*, char**, size_t*);
@@ -81,10 +81,14 @@ class MsgConnection : public Connection {
     Callback* get_read_callback();
     Callback* get_shutdown_callback();
 
-    void log_used_chunk(Chunk*) override;
-    void remove_used_chunk(Chunk*) override;
-
     std::vector<Chunk*> get_send_chunks();
+
+    void log_used_chunk(Chunk *ck) override {
+      used_chunks[ck->buffer_id] = (Chunk*)ck;
+    }
+    void remove_used_chunk(Chunk *ck) override {
+      used_chunks.erase(ck->buffer_id);
+    }
   public:
     ConStatus status;
     std::mutex con_mtx;
@@ -99,12 +103,12 @@ class MsgConnection : public Connection {
     fid_cq *conCq;
     fid_eq *conEq;
 
-    ChunkMgr *buf_mgr;
-
     bool is_server;
 
     int buffer_num;
     int cq_index;
+
+    ChunkMgr *chunk_mgr;
 
     size_t dest_port;
     char dest_addr[20];
@@ -115,11 +119,9 @@ class MsgConnection : public Connection {
     Callback* send_callback;
     Callback* read_callback;
     Callback* shutdown_callback;
-
-    std::mutex chunk_mtx;
-    std::map<int, Chunk*> used_chunks;
     // for Java interface
     std::vector<Chunk*> send_chunks;
+    std::map<int, Chunk*> used_chunks;
 };
 
 #endif

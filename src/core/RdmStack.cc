@@ -21,8 +21,8 @@
 #include <stdio.h>
 #include <iostream>
 
-RdmStack::RdmStack(int buffer_num_, bool is_server_) : buffer_num(buffer_num_), is_server(is_server_),
-  domain(nullptr), fabric(nullptr), info(nullptr), server_info(nullptr), cq(nullptr),
+RdmStack::RdmStack(int buffer_num_, bool is_server_, bool external_service_) : buffer_num(buffer_num_), is_server(is_server_),
+  external_service(external_service_), domain(nullptr), fabric(nullptr), info(nullptr), server_info(nullptr), cq(nullptr),
   server_con(nullptr), initialized(false) {}
 
 RdmStack::~RdmStack() {
@@ -124,7 +124,7 @@ void* RdmStack::bind(const char* ip, const char* port, ChunkMgr* buf_mgr) {
     return nullptr;
   }
   fi_freeinfo(hints);
-  server_con = new RdmConnection(ip, port, server_info, domain, cq, buf_mgr, buffer_num, true);
+  server_con = new RdmConnection(ip, port, server_info, domain, cq, buf_mgr, buffer_num, true, external_service);
   server_con->init();
   cons.push_back(server_con);
   return server_con;
@@ -137,7 +137,7 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, ChunkMgr* buf
   if (buf_mgr->free_size() < buffer_num*2) {
     return nullptr;
   }
-  RdmConnection *con = new RdmConnection(ip, port, nullptr, domain, cq, buf_mgr, buffer_num, false);
+  RdmConnection *con = new RdmConnection(ip, port, nullptr, domain, cq, buf_mgr, buffer_num, false, external_service);
   con->init();
   cons.push_back(con);
   return con;
@@ -149,4 +149,8 @@ fid_fabric* RdmStack::get_fabric() {
 
 fid_cq* RdmStack::get_cq() {
   return cq;
+}
+
+fid_domain* RdmStack::get_domain() {
+  return nullptr;
 }

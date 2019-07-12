@@ -54,8 +54,7 @@ class ConnectedCallback : public Callback {
     ~ConnectedCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       auto con = (Connection*)param_1;
-      Chunk *ck = bufMgr->get();
-      con->log_used_chunk(ck);
+      Chunk *ck = bufMgr->get(con);
       ck->size = MSG_SIZE;
       memset(ck->buffer, '0', MSG_SIZE);
       con->send(ck);
@@ -87,10 +86,6 @@ class RecvCallback : public Callback {
       }
       ck->size = MSG_SIZE;
       con->send(ck);
-
-      Chunk *new_ck = bufMgr->get();
-      con->log_used_chunk(new_ck);
-      con->activate_recv_chunk(new_ck);
     }
   private:
     Client *client;
@@ -104,9 +99,8 @@ class SendCallback : public Callback {
     void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
-      bufMgr->reclaim(mid, ck);
       auto con = (Connection*)ck->con;
-      con->remove_used_chunk(ck);
+      bufMgr->reclaim(ck, con);
     }
   private:
     ChunkMgr *bufMgr;

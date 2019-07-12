@@ -21,47 +21,58 @@
 #include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
 
+#include <iostream>
+
 class Connection {
   public:
-    virtual ~Connection() = default;;
+    /// Need to call initialize connection after constructor
     virtual int init() = 0;
+
+    /// Shutdown this connection
+    /// \return return 0 if on success and return -1 if on error.
     virtual int shutdown() = 0;
-    // Message Interface
-    // For connection endpoint.
-    virtual int send(Chunk* ck) { return 0; }
-    virtual int send(int buffer_size, int id) { return 0; }
-    virtual int sendBuf(const char* buffer, int buffer_size) { return 0; }
-    // Peer_address got from get_peer_name
-    virtual int sendTo(int buffer_size, int buffer_id, const char* peer_address) { return 0; }
-    virtual int sendBufTo(const char* buffer, int buffer_size, const char* peer_address) { return 0; }
-    virtual fi_addr_t recv(const char* buffer, int buffer_id) { return 0; }
 
-    // For non-connection endpoint.
-    virtual char* get_peer_name() { return nullptr; }
-    virtual void decode_peer_name(void* buffer, char* peer_name, int peer_name_length) {}
-    virtual char* decode_buf(void *buffer) { return nullptr; }
-    virtual Chunk* encode(void* buffer, int size, char* peer_name) { return nullptr; }
+    /// Send chunk to peer endpoint
+    /// \param if the chunk get from chunk pool, the buffer in chunk should be registered as RDMA buffer
+    ///        if buffer need to be a RDMA buffer depends on which Libfabric provider you're using.
+    virtual int send(Chunk *ck) = 0;
 
-    virtual void activate_send_chunk(Chunk* ck) {}
-    // HPNL supports asynchronous event handling, and is based on the Proactor design pattern.
-    // User need to post chunk to recv queue before sending/receiving message. When recv event happened,
-    // event handling thread will get the chunk in the recv queue with message received from peer endpoint.
-    // User need to activate the chunk that received in recv callback
-    virtual int activate_recv_chunk(Chunk* ck) { return 0; }
-    virtual void set_recv_callback(Callback*) {}
-    virtual void set_send_callback(Callback*) {}
-    virtual Callback* get_recv_callback() = 0;
-    virtual Callback* get_send_callback() = 0;
+    /// For non-connection endpoint
+    /// \return This function return the address of peer endpoint.
+    virtual char *get_peer_name() = 0;
 
-    // Remote Memory Access Interface
-    // Both local and remote buffer need to be previously registered as RDMA buffer
-    // before using remote memory access semantics.
+    /// For non-connection endpoint
+    /// The structure of buffer is
+    /// struct buffer {
+    ///     int peer_name_length;
+    ///     char* peer_name;
+    ///     char* buffer;
+    /// }
+    /// \param ck encode given buffer to a chunk
+    /// \param buffer a pointer to a piece of contiguous memory
+    /// \param buffer_length the number of bytes that are valid
+    /// \param peer_name peer endpoint address
+    virtual void encode_(Chunk *ck, void *buffer, int buffer_length, char* peer_name) = 0;
+
+    /// For non-connection endpoint
+    /// \param ck encode given buffer to a chunk
+    /// \param buffer a pointer to a piece of contiguous memory
+    /// \param buffer_length the number of bytes that are valid
+    /// \param peer_name peer endpoint address
+    virtual void decode_(Chunk *ck, void *buffer, int *buffer_length, char* peer_name) = 0;
+
+    /// Remote Memory Access Interface
+    /// Both local and remote buffer need to be previously registered as RDMA buffer
+    /// before using remote memory access semantics.
+    /// \return return 0 on success and return -1 on error
     virtual int read(int local_buffer_id, int local_buffer_offset, uint64_t local_buffer_length,
-                     uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) { return 0; }
-    
-    // Buffer management
-    virtual void log_used_chunk(Chunk*) {}
-    virtual void remove_used_chunk(Chunk*) {}
+                     uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) = 0;
+
+    /// Call this function when user activate recv chunk
+    virtual void log_used_chunk(Chunk *ck) = 0;
+
+    /// Call this function when user no longer need the chunk
+    virtual void remove_used_chunk(Chunk *ck) = 0;
 };
 
 #endif
