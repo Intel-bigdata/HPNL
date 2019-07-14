@@ -92,12 +92,14 @@ int CqDemultiplexer::wait_event() {
           con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
           l.unlock();
         }
+        ck->size = entry.len;
         con->recv((char*)ck->buffer, entry.len);
         if (con->get_recv_callback()) {
           (*con->get_recv_callback())(&ck->buffer_id, &entry.len);
         }
+        con->activate_recv_chunk();
       } else if (entry.flags & FI_SEND) {
-        assert(con->get_send_callback());
+        assert(con->get_send_callback() != nullptr);
         (*con->get_send_callback())(&ck->buffer_id, nullptr);
       } else if (entry.flags & FI_READ) {
         if (con->get_read_callback()) {

@@ -35,6 +35,7 @@ class EqHandler;
 class EqThread;
 class CqThread;
 class RdmCqThread;
+class RdmConnection;
 class Connection;
 
 class Service {
@@ -71,7 +72,7 @@ class Service {
     Chunk*             get_rma_buffer(int);
 
     // Other util functions
-    Connection*        get_con(const char*, const char*);
+    RdmConnection*        get_con(const char*, const char*);
     fid_domain*        get_domain();
   private:
     friend class       AcceptRequestCallback;

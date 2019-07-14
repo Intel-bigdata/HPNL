@@ -45,10 +45,6 @@ class RecvCallback : public Callback {
       ck->size = MSG_SIZE;
       auto con = (Connection*)ck->con;
       con->send(ck);
-
-      auto new_ck = bufMgr->get();
-      con->log_used_chunk(new_ck);
-      con->activate_recv_chunk(new_ck);
     }
   private:
     ChunkMgr *bufMgr;
@@ -61,9 +57,8 @@ class SendCallback : public Callback {
     void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
-      bufMgr->reclaim(mid, ck);
       auto con = (Connection*)ck->con;
-      con->remove_used_chunk(ck);
+      bufMgr->reclaim(ck, con);
     }
   private:
     ChunkMgr *bufMgr;
@@ -89,8 +84,8 @@ int main(int argc, char *argv[]) {
   server->listen("172.168.2.106", "12345");
   server->wait();
 
-  delete sendCallback;
   delete recvCallback;
+  delete sendCallback;
   delete shutdownCallback;
   delete server;
   delete bufMgr;

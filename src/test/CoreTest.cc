@@ -160,7 +160,7 @@ TEST_CASE("rma buffer registration") {
 }
 
 TEST_CASE("rdm server") {
-  auto stack = new RdmStack(16, true);
+  auto stack = new RdmStack(16, true, false);
   SECTION("init->init") {
     REQUIRE(stack->init() == 0);
     REQUIRE(stack->bind(nullptr, nullptr, nullptr) == nullptr);
@@ -172,7 +172,7 @@ TEST_CASE("rdm server") {
 }
 
 TEST_CASE("rdm client") {
-  auto stack = new RdmStack(16, false);
+  auto stack = new RdmStack(16, false, false);
   SECTION("init->get_con") {
     REQUIRE(stack->init() == 0);
     REQUIRE(stack->get_con(nullptr, nullptr, nullptr) == nullptr);

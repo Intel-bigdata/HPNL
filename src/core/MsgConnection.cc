@@ -27,7 +27,7 @@ MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_,
   fi_info *info_, fid_domain *domain_, fid_cq* cq_, 
   ChunkMgr *buf_mgr_, bool is_server_, int buffer_num_, int cq_index_, bool external_ervice_) : 
   stack(stack_), fabric(fabric_), info(info_), domain(domain_),
-  conCq(cq_), buf_mgr(buf_mgr_), is_server(is_server_), buffer_num(buffer_num_), 
+  conCq(cq_), chunk_mgr(buf_mgr_), is_server(is_server_), buffer_num(buffer_num_), 
   cq_index(cq_index_), external_ervice(external_ervice_) {
   conEq = nullptr;
   ep = nullptr;
@@ -42,11 +42,11 @@ MsgConnection::MsgConnection(MsgStack *stack_, fid_fabric *fabric_,
 
 MsgConnection::~MsgConnection() {
   for (auto ck : used_chunks) {
-    buf_mgr->reclaim(ck.first, ck.second);
+    chunk_mgr->reclaim(ck.second, this);
   }
   if (external_ervice) {
     for (auto ck : send_chunks) {
-      buf_mgr->reclaim(ck->buffer_id, ck);
+      chunk_mgr->reclaim(ck, this);
     }
   }
   if (ep) {
@@ -96,7 +96,7 @@ int MsgConnection::init() {
   
   fi_enable(ep);
   while (size < buffer_num) {
-    Chunk *ck = buf_mgr->get();
+    Chunk *ck = chunk_mgr->get(this);
     if (!ck) {
       return -1; 
     }
@@ -114,10 +114,9 @@ int MsgConnection::init() {
       perror("fi_recv");
       return -1;
     }
-    log_used_chunk(ck);
 
     if (external_ervice) {
-      ck = buf_mgr->get();
+      ck = chunk_mgr->get(this);
       if (!ck) {
         return -1; 
       }
@@ -159,7 +158,7 @@ int MsgConnection::send(Chunk* ck) {
 }
 
 int MsgConnection::send(int buffer_size, int id) {
-  Chunk *ck = buf_mgr->get(id);
+  Chunk *ck = chunk_mgr->get(id);
   ck->size = buffer_size;
   if (ck == nullptr)
     return -1;
@@ -262,16 +261,6 @@ Callback* MsgConnection::get_shutdown_callback() {
   return shutdown_callback;
 }
 
-void MsgConnection::log_used_chunk(Chunk* ck) {
-  std::lock_guard<std::mutex> l(chunk_mtx);
-  used_chunks[ck->buffer_id] = (Chunk*)ck;
-}
-
-void MsgConnection::remove_used_chunk(Chunk* ck) {
-  std::lock_guard<std::mutex> l(chunk_mtx);
-  used_chunks.erase(ck->buffer_id);
-}
-
 std::vector<Chunk*> MsgConnection::get_send_chunks() {
   return send_chunks;
 }
@@ -281,16 +270,10 @@ fid* MsgConnection::get_fid() {
 }
 
 int MsgConnection::activate_recv_chunk(Chunk *ck) {
+  if (ck == nullptr) {
+    ck = chunk_mgr->get(this);
+  }
   ck->con = this;
-  //if (!ck->mr) {
-  //  fid_mr *mr = nullptr;
-  //  if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
-  //    perror("fi_mr_reg");
-  //    return -1;
-  //  }
-  //  ck->mr = mr;
-  //  mr = nullptr;
-  //}
   if (fi_recv(ep, ck->buffer, ck->capacity, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
     perror("fi_recv");
     return -1; 

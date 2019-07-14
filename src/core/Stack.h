@@ -25,6 +25,7 @@ class Stack {
     virtual ~Stack() = default;
     virtual int init() = 0;
     virtual void* bind(const char*, const char*, ChunkMgr*) = 0;
+    virtual fid_domain* get_domain() = 0;
 };
 
 #endif

@@ -16,6 +16,7 @@
 // under the License.
 
 #include "HPNL/ChunkMgr.h"
+#include "HPNL/Connection.h"
 
 ExternalChunkMgr::ExternalChunkMgr() : buffer_num(0), buffer_size(0), buffer_id(0) {}
 
@@ -26,7 +27,7 @@ ExternalChunkMgr::ExternalChunkMgr(int buffer_num_, uint64_t buffer_size_) : buf
     ck->capacity = buffer_size;
     ck->buffer_id = this->get_id();
     ck->mr = nullptr;
-    this->reclaim(ck->buffer_id, ck);
+    this->reclaim(ck, nullptr);
   }
 }
 
@@ -44,20 +45,23 @@ Chunk* ExternalChunkMgr::get(int id) {
   return buf_map[id];
 }
 
-void ExternalChunkMgr::reclaim(int mid, Chunk* ck) {
-  std::lock_guard<std::mutex> l(mtx);
-  if (!buf_map.count(mid))
-    buf_map[mid] = ck;
-  bufs.push_back(ck);
-}
-
-Chunk* ExternalChunkMgr::get() {
+Chunk* ExternalChunkMgr::get(Connection* con) {
   std::lock_guard<std::mutex> l(mtx);
   if (bufs.empty())
     return nullptr;
   Chunk *ck = bufs.back();
   bufs.pop_back();
+  if (!con)
+    con->log_used_chunk(ck);
   return ck;
+}
+
+void ExternalChunkMgr::reclaim(Chunk* ck, Connection* con) {
+  std::lock_guard<std::mutex> l(mtx);
+  if (!buf_map.count(ck->buffer_id))
+    buf_map[ck->buffer_id] = ck;
+  bufs.push_back(ck);
+  con->remove_used_chunk(ck);
 }
 
 int ExternalChunkMgr::free_size() {

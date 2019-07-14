@@ -16,6 +16,7 @@
 // under the License.
 
 #include "HPNL/ChunkMgr.h"
+#include "HPNL/Connection.h"
 #include <rdma/fi_domain.h>
 
 char* PoolAllocator::malloc(const size_type bytes) {
@@ -93,22 +94,27 @@ Chunk* ChunkPool::get(int id) {
   return PoolAllocator::id_to_chunk_map[id];
 }
 
-Chunk* ChunkPool::get() {
+Chunk* ChunkPool::get(Connection* con) {
   std::lock_guard<std::mutex> l(PoolAllocator::mtx);
   auto ck = reinterpret_cast<Chunk*>(pool::malloc());
+  if (con) {
+    con->log_used_chunk(ck);
+  }
   used_buffers++;
   ck->mr = PoolAllocator::mr;
   ck->capacity = buffer_size;
   ck->buffer_id = PoolAllocator::chunk_to_id_map[ck];
   ck->buffer = ck->data;
   ck->size = 0;
+  ck->ctx.internal[4] = ck;
   return ck;
 }
 
-void ChunkPool::reclaim(int, Chunk* ck) {
+void ChunkPool::reclaim(Chunk* ck, Connection* con) {
   std::lock_guard<std::mutex> l(PoolAllocator::mtx);
+  con->remove_used_chunk(ck);
   pool::free(ck);
-  used_buffers--; 
+  used_buffers--;
 }
 
 int ChunkPool::free_size() {

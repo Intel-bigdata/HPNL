@@ -120,7 +120,7 @@ void ExternalEqService::set_buffer(char* buffer, uint64_t size, int buffer_id) {
   ck->buffer_id = buffer_id;
   ck->capacity = size;
   ck->mr = nullptr;
-  chkMgr->reclaim(ck->buffer_id, ck);
+  chkMgr->reclaim(ck, nullptr);
 }
 
 int ExternalEqService::wait_eq_event(fi_info** info, fid_eq** eq, MsgConnection** con) {

@@ -50,7 +50,7 @@ void Client::shutdown(Connection* con) {
 }
 
 Connection* Client::get_con(const char *addr, const char *port) {
-  return service->get_con(addr, port);
+  return (Connection*)service->get_con(addr, port);
 }
 
 void Client::wait() {

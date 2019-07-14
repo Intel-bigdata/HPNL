@@ -37,7 +37,7 @@ ExternalRdmService::~ExternalRdmService() {
 }
 
 int ExternalRdmService::init() {
-  this->stack = new RdmStack(this->buffer_num, this->is_server);
+  this->stack = new RdmStack(this->buffer_num, this->is_server, true);
   this->stack->init();
   this->demultiplexer = new ExternalRdmCqDemultiplexer(stack);
   this->demultiplexer->init();
@@ -62,6 +62,6 @@ void ExternalRdmService::set_buffer(char* buffer, uint64_t size, int buffer_id) 
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
-  bufMgr->reclaim(ck->buffer_id, ck);
+  bufMgr->reclaim(ck, nullptr);
 }
 
