@@ -15,15 +15,27 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "core/MsgStack.h"
 #include "core/MsgConnection.h"
+#include "core/MsgStack.h"
 
 #include <iostream>
 
-MsgStack::MsgStack(int worker_num_, int buffer_num_, bool is_server_, bool external_service_) : worker_num(worker_num_), 
-  seq_num(0), buffer_num(buffer_num_), is_server(is_server_), external_service(external_service_), fabric(nullptr), 
-  domain(nullptr), hints(nullptr), info(nullptr), hints_tmp(nullptr), info_tmp(nullptr),
-  peq(nullptr), pep(nullptr), initialized(false) {}
+MsgStack::MsgStack(int worker_num_, int buffer_num_, bool is_server_,
+                   bool external_service_)
+    : worker_num(worker_num_),
+      seq_num(0),
+      buffer_num(buffer_num_),
+      is_server(is_server_),
+      external_service(external_service_),
+      fabric(nullptr),
+      domain(nullptr),
+      hints(nullptr),
+      info(nullptr),
+      hints_tmp(nullptr),
+      info_tmp(nullptr),
+      peq(nullptr),
+      pep(nullptr),
+      initialized(false) {}
 
 MsgStack::~MsgStack() {
   for (auto iter : conMap) {
@@ -74,13 +86,11 @@ MsgStack::~MsgStack() {
 }
 
 int MsgStack::init() {
-  struct fi_eq_attr eq_attr = {
-    .size = 0,
-    .flags = 0,
-    .wait_obj = FI_WAIT_UNSPEC,
-    .signaling_vector = 0,
-    .wait_set = nullptr
-  };
+  struct fi_eq_attr eq_attr = {.size = 0,
+                               .flags = 0,
+                               .wait_obj = FI_WAIT_UNSPEC,
+                               .signaling_vector = 0,
+                               .wait_set = nullptr};
 
   if ((hints = fi_allocinfo()) == nullptr) {
     perror("fi_allocinfo");
@@ -100,7 +110,8 @@ int MsgStack::init() {
   hints->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-  if (fi_getinfo(FI_VERSION(1, 5), nullptr, nullptr, is_server ? FI_SOURCE : 0, hints, &info)) {
+  if (fi_getinfo(FI_VERSION(1, 5), nullptr, nullptr, is_server ? FI_SOURCE : 0, hints,
+                 &info)) {
     perror("fi_getinfo");
     goto free_info;
   }
@@ -121,15 +132,13 @@ int MsgStack::init() {
   }
 
   for (int i = 0; i < worker_num; i++) {
-    struct fi_cq_attr cq_attr = {
-      .size = 0,
-      .flags = 0,
-      .format = FI_CQ_FORMAT_MSG,
-      .wait_obj = FI_WAIT_FD,
-      .signaling_vector = 0,
-      .wait_cond = FI_CQ_COND_NONE,
-      .wait_set = nullptr
-    };
+    struct fi_cq_attr cq_attr = {.size = 0,
+                                 .flags = 0,
+                                 .format = FI_CQ_FORMAT_MSG,
+                                 .wait_obj = FI_WAIT_FD,
+                                 .signaling_vector = 0,
+                                 .wait_cond = FI_CQ_COND_NONE,
+                                 .wait_set = nullptr};
 
     if (fi_cq_open(domain, &cq_attr, &cqs[i], nullptr)) {
       perror("fi_cq_open");
@@ -141,8 +150,7 @@ int MsgStack::init() {
 
 free_cq:
   for (int i = 0; i < worker_num; i++) {
-    if (cqs[i])
-      fi_close(&cqs[i]->fid); 
+    if (cqs[i]) fi_close(&cqs[i]->fid);
   }
 free_domain:
   if (domain) {
@@ -173,9 +181,8 @@ free_hints:
   return -1;
 }
 
-void* MsgStack::bind(const char *ip_, const char *port_, ChunkMgr*) {
-  if (!initialized || !ip_ || !port_)
-    return nullptr;
+void* MsgStack::bind(const char* ip_, const char* port_, ChunkMgr*) {
+  if (!initialized || !ip_ || !port_) return nullptr;
   if ((hints_tmp = fi_allocinfo()) == nullptr) {
     perror("fi_allocinfo");
     return nullptr;
@@ -194,7 +201,8 @@ void* MsgStack::bind(const char *ip_, const char *port_, ChunkMgr*) {
   hints_tmp->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-  if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, is_server ? FI_SOURCE : 0, hints_tmp, &info_tmp)) {
+  if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, is_server ? FI_SOURCE : 0, hints_tmp,
+                 &info_tmp)) {
     perror("fi_getinfo");
     return nullptr;
   }
@@ -212,18 +220,16 @@ void* MsgStack::bind(const char *ip_, const char *port_, ChunkMgr*) {
 }
 
 int MsgStack::listen() {
-  if (!initialized || !pep)
-    return -1;
+  if (!initialized || !pep) return -1;
   if (fi_listen(pep)) {
     perror("fi_listen");
-    return -1; 
+    return -1;
   }
   return 0;
 }
 
-fid_eq* MsgStack::connect(const char *ip_, const char *port_, ChunkMgr* buf_mgr) {
-  if (!initialized || !ip_ || !port_ || !buf_mgr)
-    return nullptr;
+fid_eq* MsgStack::connect(const char* ip_, const char* port_, ChunkMgr* buf_mgr) {
+  if (!initialized || !ip_ || !port_ || !buf_mgr) return nullptr;
   if ((hints_tmp = fi_allocinfo()) == nullptr) {
     perror("fi_allocinfo");
     return nullptr;
@@ -242,19 +248,22 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, ChunkMgr* buf_mgr)
   hints_tmp->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-  if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, is_server ? FI_SOURCE : 0, hints_tmp, &info_tmp)) {
+  if (fi_getinfo(FI_VERSION(1, 5), ip_, port_, is_server ? FI_SOURCE : 0, hints_tmp,
+                 &info_tmp)) {
     perror("fi_getinfo");
     return nullptr;
   }
 
-  MsgConnection *con = new MsgConnection(this, fabric, info_tmp, domain, cqs[seq_num%worker_num], buf_mgr, false, buffer_num, seq_num%worker_num, external_service);
+  MsgConnection* con = new MsgConnection(
+      this, fabric, info_tmp, domain, cqs[seq_num % worker_num], buf_mgr, false,
+      buffer_num, seq_num % worker_num, external_service);
   if (con->init()) {
     delete con;
     return nullptr;
   }
   if (int res = con->connect()) {
     if (res == EAGAIN) {
-      // TODO: try again  
+      // TODO: try again
     } else {
       delete con;
       return nullptr;
@@ -266,10 +275,11 @@ fid_eq* MsgStack::connect(const char *ip_, const char *port_, ChunkMgr* buf_mgr)
   return con->get_eq();
 }
 
-fid_eq* MsgStack::accept(void *info_, ChunkMgr* buf_mgr) {
-  if (!initialized || !info_)
-    return nullptr;
-  MsgConnection *con = new MsgConnection(this, fabric, (fi_info*)info_, domain, cqs[seq_num%worker_num], buf_mgr, true, buffer_num, seq_num%worker_num, external_service);
+fid_eq* MsgStack::accept(void* info_, ChunkMgr* buf_mgr) {
+  if (!initialized || !info_) return nullptr;
+  MsgConnection* con = new MsgConnection(
+      this, fabric, (fi_info*)info_, domain, cqs[seq_num % worker_num], buf_mgr, true,
+      buffer_num, seq_num % worker_num, external_service);
   if (con->init()) {
     delete con;
     return nullptr;
@@ -284,14 +294,15 @@ fid_eq* MsgStack::accept(void *info_, ChunkMgr* buf_mgr) {
 }
 
 uint64_t MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
-  if (!initialized || !buffer || buffer_size <= 0)
-    return -1;
-  auto *ck = new Chunk();
+  if (!initialized || !buffer || buffer_size <= 0) return -1;
+  auto* ck = new Chunk();
   ck->buffer = buffer;
   ck->capacity = buffer_size;
   ck->buffer_id = buffer_id;
-  fid_mr *mr;
-  if (fi_mr_reg(domain, ck->buffer, ck->capacity, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, NULL)) {
+  fid_mr* mr;
+  if (fi_mr_reg(domain, ck->buffer, ck->capacity,
+                FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr,
+                NULL)) {
     delete ck;
     perror("fi_mr_reg");
     return -1;
@@ -303,12 +314,12 @@ uint64_t MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer
 }
 
 void MsgStack::unreg_rma_buffer(int buffer_id) {
-  Chunk *ck = get_rma_chunk(buffer_id);
+  Chunk* ck = get_rma_chunk(buffer_id);
   if (!ck) {
     return;
   }
   fi_close(&((fid_mr*)ck->mr)->fid);
-  delete(chunkMap[buffer_id]);
+  delete (chunkMap[buffer_id]);
   chunkMap.erase(buffer_id);
 }
 
@@ -317,8 +328,8 @@ Chunk* MsgStack::get_rma_chunk(int buffer_id) {
   return chunkMap[buffer_id];
 }
 
-void MsgStack::reap(void *con_id) {
-  fid *id = (fid*)con_id;
+void MsgStack::reap(void* con_id) {
+  fid* id = (fid*)con_id;
   auto iter = conMap.find(id);
   if (iter == conMap.end()) {
     assert("connection reap failure." == nullptr);
@@ -328,19 +339,13 @@ void MsgStack::reap(void *con_id) {
 
 MsgConnection* MsgStack::get_connection(fid* id) {
   if (conMap.find(id) != conMap.end()) {
-    return conMap[id]; 
+    return conMap[id];
   }
   return nullptr;
 }
 
-fid_fabric* MsgStack::get_fabric() {
-  return fabric;
-}
+fid_fabric* MsgStack::get_fabric() { return fabric; }
 
-fid_cq** MsgStack::get_cqs() {
-  return cqs;
-}
+fid_cq** MsgStack::get_cqs() { return cqs; }
 
-fid_domain* MsgStack::get_domain() {
-  return domain;
-}
+fid_domain* MsgStack::get_domain() { return domain; }

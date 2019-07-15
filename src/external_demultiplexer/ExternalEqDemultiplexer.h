@@ -21,8 +21,8 @@
 #ifdef __linux__
 #include <sys/epoll.h>
 #endif
-#include <unistd.h>
 #include <rdma/fi_cm.h>
+#include <unistd.h>
 
 #include <mutex>
 
@@ -32,23 +32,24 @@ class MsgStack;
 class MsgConnection;
 
 class ExternalEqDemultiplexer {
-  public:
-    ExternalEqDemultiplexer(MsgStack*);
-    ~ExternalEqDemultiplexer();
-    int init();
-    int wait_event(fi_info**, fid_eq**, MsgConnection**);
-    int add_event(fid_eq*);
-    int delete_event(fid_eq*);
-  private:
-    MsgStack *stack;
-    std::mutex mtx;
-    #ifdef __linux__
-    struct epoll_event event;
-    int epfd;
-    fid_fabric *fabric;
-    #endif
+ public:
+  ExternalEqDemultiplexer(MsgStack*);
+  ~ExternalEqDemultiplexer();
+  int init();
+  int wait_event(fi_info**, fid_eq**, MsgConnection**);
+  int add_event(fid_eq*);
+  int delete_event(fid_eq*);
 
-    std::unordered_map<fid*, fid_eq*> fid_map;
+ private:
+  MsgStack* stack;
+  std::mutex mtx;
+#ifdef __linux__
+  struct epoll_event event;
+  int epfd;
+  fid_fabric* fabric;
+#endif
+
+  std::unordered_map<fid*, fid_eq*> fid_map;
 };
 
 #endif

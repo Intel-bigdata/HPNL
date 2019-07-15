@@ -15,32 +15,37 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "core/MsgStack.h"
 #include "core/MsgConnection.h"
+#include "core/MsgStack.h"
 #include "demultiplexer/EqHandler.h"
 #include "demultiplexer/Proactor.h"
 
-EqHandler::EqHandler(MsgStack *stack_, Proactor *proactor_, fid_eq *eq_) : stack(stack_), proactor(proactor_),
-  eq(eq_), recvCallback(nullptr), sendCallback(nullptr),
-  acceptRequestCallback(nullptr), connectedCallback(nullptr),
-  shutdownCallback(nullptr) {}
+EqHandler::EqHandler(MsgStack* stack_, Proactor* proactor_, fid_eq* eq_)
+    : stack(stack_),
+      proactor(proactor_),
+      eq(eq_),
+      recvCallback(nullptr),
+      sendCallback(nullptr),
+      acceptRequestCallback(nullptr),
+      connectedCallback(nullptr),
+      shutdownCallback(nullptr) {}
 
-int EqHandler::handle_event(EventType et, void *context) {
-  auto *entry = (fi_eq_cm_entry*)context;
+int EqHandler::handle_event(EventType et, void* context) {
+  auto* entry = (fi_eq_cm_entry*)context;
   if (et == ACCEPT_EVENT) {
     assert(acceptRequestCallback);
-    ChunkMgr *buf_mgr;
+    ChunkMgr* buf_mgr;
     (*acceptRequestCallback)(&buf_mgr, nullptr);
 
-    fid_eq *local_eq = stack->accept(entry->info, buf_mgr);
-    std::shared_ptr<EqHandler> eqHandler = std::make_shared<EqHandler>(stack, proactor, local_eq);
-    if (!eqHandler)
-      return -1;
+    fid_eq* local_eq = stack->accept(entry->info, buf_mgr);
+    std::shared_ptr<EqHandler> eqHandler =
+        std::make_shared<EqHandler>(stack, proactor, local_eq);
+    if (!eqHandler) return -1;
     if (connectedCallback) {
-      eqHandler->set_connected_callback(connectedCallback); 
+      eqHandler->set_connected_callback(connectedCallback);
     }
     if (recvCallback) {
-      eqHandler->set_recv_callback(recvCallback); 
+      eqHandler->set_recv_callback(recvCallback);
     }
     if (sendCallback) {
       eqHandler->set_send_callback(sendCallback);
@@ -67,7 +72,7 @@ int EqHandler::handle_event(EventType et, void *context) {
     if (readCallback) {
       con->set_read_callback(readCallback);
     }
-   
+
     {
       std::lock_guard<std::mutex> l(con->con_mtx);
       con->status = CONNECTED;
@@ -95,33 +100,20 @@ int EqHandler::handle_event(EventType et, void *context) {
   return 0;
 }
 
-fid_eq* EqHandler::get_handle() const {
-  return eq;
-}
+fid_eq* EqHandler::get_handle() const { return eq; }
 
-void EqHandler::set_accept_request_callback(Callback *callback) {
+void EqHandler::set_accept_request_callback(Callback* callback) {
   acceptRequestCallback = callback;
 }
 
-void EqHandler::set_connected_callback(Callback *callback) {
+void EqHandler::set_connected_callback(Callback* callback) {
   connectedCallback = callback;
 }
 
-void EqHandler::set_shutdown_callback(Callback *callback) {
-  shutdownCallback = callback;
-}
+void EqHandler::set_shutdown_callback(Callback* callback) { shutdownCallback = callback; }
 
-void EqHandler::set_send_callback(Callback *callback) {
-  sendCallback = callback;
-}
+void EqHandler::set_send_callback(Callback* callback) { sendCallback = callback; }
 
-void EqHandler::set_recv_callback(Callback *callback) {
-  recvCallback = callback;
-}
+void EqHandler::set_recv_callback(Callback* callback) { recvCallback = callback; }
 
-void EqHandler::set_read_callback(Callback *callback) {
-  readCallback = callback;
-}
-
-
-
+void EqHandler::set_read_callback(Callback* callback) { readCallback = callback; }

@@ -19,8 +19,8 @@
 
 #include "HPNL/Connection.h"
 #include "core/RdmConnection.h"
-#include "external_demultiplexer/ExternalRdmCqDemultiplexer.h"
 #include "core/RdmStack.h"
+#include "external_demultiplexer/ExternalRdmCqDemultiplexer.h"
 
 ExternalRdmService::ExternalRdmService(int buffer_num, bool is_server) {
   this->stack = nullptr;
@@ -49,19 +49,18 @@ RdmConnection* ExternalRdmService::listen(const char* ip, const char* port) {
 }
 
 RdmConnection* ExternalRdmService::get_con(const char* ip, const char* port) {
-  RdmConnection *con = ((RdmStack*)stack)->get_con(ip, port, bufMgr);
+  RdmConnection* con = ((RdmStack*)stack)->get_con(ip, port, bufMgr);
   return (RdmConnection*)con;
 }
 
-int ExternalRdmService::wait_event(Chunk **ck, int *block_buffer_size) {
+int ExternalRdmService::wait_event(Chunk** ck, int* block_buffer_size) {
   return this->demultiplexer->wait_event(ck, block_buffer_size);
 }
 
 void ExternalRdmService::set_buffer(char* buffer, uint64_t size, int buffer_id) {
-  Chunk *ck = new Chunk();
+  Chunk* ck = new Chunk();
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
   bufMgr->reclaim(ck, nullptr);
 }
-

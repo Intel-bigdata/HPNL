@@ -18,13 +18,13 @@
 #ifndef RDMSTACK_H
 #define RDMSTACK_H
 
+#include <assert.h>
 #include <rdma/fabric.h>
 #include <rdma/fi_domain.h>
 #include <string.h>
-#include <assert.h>
 
-#include <thread>
 #include <mutex>
+#include <thread>
 #include <vector>
 
 #include "HPNL/ChunkMgr.h"
@@ -33,33 +33,34 @@
 class RdmConnection;
 
 class RdmStack : public Stack {
-  public:
-    RdmStack(int, bool, bool);
-    ~RdmStack() override;
-    int init() override;
-    void* bind(const char*, const char*, ChunkMgr*) override;
+ public:
+  RdmStack(int, bool, bool);
+  ~RdmStack() override;
+  int init() override;
+  void* bind(const char*, const char*, ChunkMgr*) override;
 
-    RdmConnection* get_con(const char*, const char*, ChunkMgr*);
-    fid_fabric* get_fabric();
-    fid_cq* get_cq();
+  RdmConnection* get_con(const char*, const char*, ChunkMgr*);
+  fid_fabric* get_fabric();
+  fid_cq* get_cq();
 
-    fid_domain* get_domain() override;
-  private:
-    fi_info *info;
-    fi_info *server_info;
-    fid_fabric *fabric;
-    fid_domain *domain;
-    fid_cq *cq;
-    int buffer_num;
-    bool is_server;
-    bool external_service;
+  fid_domain* get_domain() override;
 
-    std::mutex mtx;
-    std::vector<RdmConnection*> cons;
+ private:
+  fi_info* info;
+  fi_info* server_info;
+  fid_fabric* fabric;
+  fid_domain* domain;
+  fid_cq* cq;
+  int buffer_num;
+  bool is_server;
+  bool external_service;
 
-    RdmConnection *server_con;
+  std::mutex mtx;
+  std::vector<RdmConnection*> cons;
 
-    bool initialized;
+  RdmConnection* server_con;
+
+  bool initialized;
 };
 
 #endif
