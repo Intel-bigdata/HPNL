@@ -19,18 +19,16 @@
 
 #include <vector>
 
+#include "HPNL/ChunkMgr.h"
+#include "HPNL/Common.h"
 #include "catch2/catch.hpp"
+#include "core/MsgConnection.h"
 #include "core/MsgStack.h"
 #include "core/RdmStack.h"
-#include "core/MsgConnection.h"
-#include "HPNL/Common.h"
-#include "HPNL/ChunkMgr.h"
 
 TEST_CASE("msg server") {
   auto stack = new MsgStack(1, 6, true, true);
-  SECTION("init") {
-    REQUIRE(stack->init() == 0);
-  }
+  SECTION("init") { REQUIRE(stack->init() == 0); }
   SECTION("init->bind->listen") {
     REQUIRE(stack->init() == 0);
     REQUIRE(stack->bind(nullptr, nullptr, nullptr) == nullptr);
@@ -44,9 +42,7 @@ TEST_CASE("msg server") {
     REQUIRE(stack->bind(nullptr, nullptr, nullptr) == nullptr);
     REQUIRE(stack->listen() == -1);
   }
-  SECTION("listen") {
-    REQUIRE(stack->listen() == -1);
-  }
+  SECTION("listen") { REQUIRE(stack->listen() == -1); }
 
   delete stack;
 }
@@ -54,23 +50,19 @@ TEST_CASE("msg server") {
 TEST_CASE("msg client") {
   int buffer_num_per_connection = 16;
   auto stack = new MsgStack(1, buffer_num_per_connection, false, true);
-  SECTION("init") {
-    REQUIRE(stack->init() == 0);
-  }
+  SECTION("init") { REQUIRE(stack->init() == 0); }
   SECTION("init->connect") {
     REQUIRE(stack->init() == 0);
     REQUIRE(stack->connect(nullptr, nullptr, nullptr) == nullptr);
   }
-  SECTION("connect") {
-    REQUIRE(stack->connect(nullptr, nullptr, nullptr) == nullptr);
-  }
+  SECTION("connect") { REQUIRE(stack->connect(nullptr, nullptr, nullptr) == nullptr); }
   delete stack;
 }
 
 #if defined(LOCAL_IP) && defined(LOCAL_PORT)
-void connect(MsgStack *stack, TestBufMgr *mgr, int buffer_num_per_connection) {
-  fid_eq *eq = stack->connect(LOCAL_IP, LOCAL_PORT, mgr);
-  MsgConnection *con = stack->get_connection(&eq->fid);
+void connect(MsgStack* stack, TestBufMgr* mgr, int buffer_num_per_connection) {
+  fid_eq* eq = stack->connect(LOCAL_IP, LOCAL_PORT, mgr);
+  MsgConnection* con = stack->get_connection(&eq->fid);
   REQUIRE(con != nullptr);
   REQUIRE(con->get_send_buffer().size() == buffer_num_per_connection);
 }
@@ -79,7 +71,7 @@ void connect(MsgStack *stack, TestBufMgr *mgr, int buffer_num_per_connection) {
 TEST_CASE("msg connect operation") {
   int parallel_num = 10;
   int buffer_num_per_connection = 16;
-  int total_buffer_num = parallel_num*buffer_num_per_connection*2;
+  int total_buffer_num = parallel_num * buffer_num_per_connection * 2;
   int buffer_size = 65536;
 
   auto mgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
@@ -100,13 +92,11 @@ TEST_CASE("msg connect operation") {
   delete mgr;
 }
 
-void reg_rma_buffer(MsgStack *stack, char* test, int i) {
-  stack->reg_rma_buffer(test, i*10, i);
+void reg_rma_buffer(MsgStack* stack, char* test, int i) {
+  stack->reg_rma_buffer(test, i * 10, i);
 }
 
-void unreg_rma_buffer(MsgStack *stack, int i) {
-  stack->unreg_rma_buffer(i);
-}
+void unreg_rma_buffer(MsgStack* stack, int i) { stack->unreg_rma_buffer(i); }
 
 TEST_CASE("rma buffer registration") {
   char test[10] = "12345";
@@ -165,9 +155,7 @@ TEST_CASE("rdm server") {
     REQUIRE(stack->init() == 0);
     REQUIRE(stack->bind(nullptr, nullptr, nullptr) == nullptr);
   }
-  SECTION("bind") {
-    REQUIRE(stack->bind(nullptr, nullptr, nullptr) == nullptr);
-  }
+  SECTION("bind") { REQUIRE(stack->bind(nullptr, nullptr, nullptr) == nullptr); }
   delete stack;
 }
 
@@ -177,10 +165,6 @@ TEST_CASE("rdm client") {
     REQUIRE(stack->init() == 0);
     REQUIRE(stack->get_con(nullptr, nullptr, nullptr) == nullptr);
   }
-  SECTION("get_con") {
-    REQUIRE(stack->get_con(nullptr, nullptr, nullptr) == nullptr);
-  }
+  SECTION("get_con") { REQUIRE(stack->get_con(nullptr, nullptr, nullptr) == nullptr); }
   delete stack;
 }
-
-

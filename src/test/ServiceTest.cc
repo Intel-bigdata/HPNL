@@ -17,8 +17,8 @@
 
 #define CATCH_CONFIG_MAIN
 
-#include "catch2/catch.hpp"
 #include "HPNL/ChunkMgr.h"
+#include "catch2/catch.hpp"
 #include "service/Service.h"
 
 TEST_CASE("msg server") {
@@ -27,9 +27,7 @@ TEST_CASE("msg server") {
   int buffer_size = 65536;
   auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
   auto service = new Service(1, single_buffer_num, true);
-  SECTION("init") {
-    REQUIRE(service->init(true) == 0);
-  }
+  SECTION("init") { REQUIRE(service->init(true) == 0); }
   SECTION("init->start->listen") {
     REQUIRE(service->init(true) == 0);
     service->set_buf_mgr(bufMgr);
@@ -54,9 +52,7 @@ TEST_CASE("msg client") {
   int buffer_size = 65536;
   auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
   auto service = new Service(1, single_buffer_num, false);
-  SECTION("init") {
-    REQUIRE(service->init(true) == 0);
-  }
+  SECTION("init") { REQUIRE(service->init(true) == 0); }
   SECTION("init->start->connect") {
     REQUIRE(service->init(true) == 0);
     service->set_buf_mgr(bufMgr);
@@ -81,9 +77,7 @@ TEST_CASE("rdm server") {
   int buffer_size = 65536;
   auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
   auto service = new Service(1, single_buffer_num, true);
-  SECTION("init") {
-    REQUIRE(service->init(false) == 0);
-  }
+  SECTION("init") { REQUIRE(service->init(false) == 0); }
   SECTION("init->start->listen") {
     REQUIRE(service->init(false) == 0);
     service->set_buf_mgr(bufMgr);
@@ -108,9 +102,7 @@ TEST_CASE("rdm client") {
   int buffer_size = 65536;
   auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
   auto service = new Service(1, single_buffer_num, false);
-  SECTION("init") {
-    REQUIRE(service->init(false) == 0);
-  }
+  SECTION("init") { REQUIRE(service->init(false) == 0); }
   SECTION("init->start->connect") {
     REQUIRE(service->init(false) == 0);
     service->set_buf_mgr(bufMgr);

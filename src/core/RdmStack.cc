@@ -15,15 +15,23 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "core/RdmStack.h"
 #include "core/RdmConnection.h"
+#include "core/RdmStack.h"
 
 #include <stdio.h>
 #include <iostream>
 
-RdmStack::RdmStack(int buffer_num_, bool is_server_, bool external_service_) : buffer_num(buffer_num_), is_server(is_server_),
-  external_service(external_service_), domain(nullptr), fabric(nullptr), info(nullptr), server_info(nullptr), cq(nullptr),
-  server_con(nullptr), initialized(false) {}
+RdmStack::RdmStack(int buffer_num_, bool is_server_, bool external_service_)
+    : buffer_num(buffer_num_),
+      is_server(is_server_),
+      external_service(external_service_),
+      domain(nullptr),
+      fabric(nullptr),
+      info(nullptr),
+      server_info(nullptr),
+      cq(nullptr),
+      server_con(nullptr),
+      initialized(false) {}
 
 RdmStack::~RdmStack() {
   for (auto con : cons) {
@@ -65,7 +73,8 @@ int RdmStack::init() {
   hints->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-  if (fi_getinfo(FI_VERSION(1, 5), nullptr, nullptr, is_server ? FI_SOURCE : 0, hints, &info)) {
+  if (fi_getinfo(FI_VERSION(1, 5), nullptr, nullptr, is_server ? FI_SOURCE : 0, hints,
+                 &info)) {
     fi_freeinfo(hints);
     perror("fi_getinfo");
     return -1;
@@ -82,15 +91,13 @@ int RdmStack::init() {
     return -1;
   }
 
-  struct fi_cq_attr cq_attr = {
-    .size = 0,
-    .flags = 0,
-    .format = FI_CQ_FORMAT_MSG,
-    .wait_obj = FI_WAIT_FD,
-    .signaling_vector = 0,
-    .wait_cond = FI_CQ_COND_NONE,
-    .wait_set = nullptr
-  };
+  struct fi_cq_attr cq_attr = {.size = 0,
+                               .flags = 0,
+                               .format = FI_CQ_FORMAT_MSG,
+                               .wait_obj = FI_WAIT_FD,
+                               .signaling_vector = 0,
+                               .wait_cond = FI_CQ_COND_NONE,
+                               .wait_set = nullptr};
 
   if (fi_cq_open(domain, &cq_attr, &cq, nullptr)) {
     perror("fi_cq_open");
@@ -101,9 +108,8 @@ int RdmStack::init() {
 }
 
 void* RdmStack::bind(const char* ip, const char* port, ChunkMgr* buf_mgr) {
-  if (!initialized || !ip || !port || !buf_mgr)
-    return nullptr;
-  if (buf_mgr->free_size() < buffer_num*2) {
+  if (!initialized || !ip || !port || !buf_mgr) return nullptr;
+  if (buf_mgr->free_size() < buffer_num * 2) {
     return nullptr;
   }
   fi_info* hints = fi_allocinfo();
@@ -118,39 +124,35 @@ void* RdmStack::bind(const char* ip, const char* port, ChunkMgr* buf_mgr) {
   hints->fabric_attr->prov_name = strdup("sockets");
 #endif
 
-  if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &server_info)) {
+  if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints,
+                 &server_info)) {
     fi_freeinfo(hints);
     perror("fi_getinfo");
     return nullptr;
   }
   fi_freeinfo(hints);
-  server_con = new RdmConnection(ip, port, server_info, domain, cq, buf_mgr, buffer_num, true, external_service);
+  server_con = new RdmConnection(ip, port, server_info, domain, cq, buf_mgr, buffer_num,
+                                 true, external_service);
   server_con->init();
   cons.push_back(server_con);
   return server_con;
 }
 
 RdmConnection* RdmStack::get_con(const char* ip, const char* port, ChunkMgr* buf_mgr) {
-  if (!initialized || !ip || !port || !buf_mgr)
-    return nullptr;
+  if (!initialized || !ip || !port || !buf_mgr) return nullptr;
   std::lock_guard<std::mutex> lk(mtx);
-  if (buf_mgr->free_size() < buffer_num*2) {
+  if (buf_mgr->free_size() < buffer_num * 2) {
     return nullptr;
   }
-  RdmConnection *con = new RdmConnection(ip, port, nullptr, domain, cq, buf_mgr, buffer_num, false, external_service);
+  RdmConnection* con = new RdmConnection(ip, port, nullptr, domain, cq, buf_mgr,
+                                         buffer_num, false, external_service);
   con->init();
   cons.push_back(con);
   return con;
 }
 
-fid_fabric* RdmStack::get_fabric() {
-  return fabric;
-}
+fid_fabric* RdmStack::get_fabric() { return fabric; }
 
-fid_cq* RdmStack::get_cq() {
-  return cq;
-}
+fid_cq* RdmStack::get_cq() { return cq; }
 
-fid_domain* RdmStack::get_domain() {
-  return nullptr;
-}
+fid_domain* RdmStack::get_domain() { return nullptr; }

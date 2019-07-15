@@ -15,51 +15,52 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include <assert.h>
+#include <cassert>
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
 
-#include "external_demultiplexer/ExternalRdmCqDemultiplexer.h"
-#include "core/RdmStack.h"
 #include "core/RdmConnection.h"
+#include "core/RdmStack.h"
 #include "demultiplexer/EventType.h"
+#include "external_demultiplexer/ExternalRdmCqDemultiplexer.h"
 
-ExternalRdmCqDemultiplexer::ExternalRdmCqDemultiplexer(RdmStack *stack_) : stack(stack_), start(0), end(0) {}
+ExternalRdmCqDemultiplexer::ExternalRdmCqDemultiplexer(RdmStack* stack_)
+    : stack(stack_), start(0), end(0) {}
 
 ExternalRdmCqDemultiplexer::~ExternalRdmCqDemultiplexer() {
-  #ifdef __linux__
+#ifdef __linux__
   close(epfd);
-  #endif
+#endif
 }
 
 int ExternalRdmCqDemultiplexer::init() {
   cq = stack->get_cq();
-  #ifdef __linux__
+#ifdef __linux__
   fabric = stack->get_fabric();
   epfd = epoll_create1(0);
   memset((void*)&event, 0, sizeof event);
   int ret = fi_control(&cq->fid, FI_GETWAIT, (void*)&fd);
   if (ret) {
-    std::cout << "fi_controll error." << std::endl; 
+    std::cout << "fi_controll error." << std::endl;
     return -1;
   }
   event.events = EPOLLIN;
   event.data.ptr = &cq->fid;
   ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
   if (ret) {
-    std::cout << "epoll add error." << std::endl; 
+    std::cout << "epoll add error." << std::endl;
     return -1;
   }
-  #endif
+#endif
   return 0;
 }
 
-int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
-  struct fid *fids[1];
+int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int* block_buffer_size) {
+  struct fid* fids[1];
   fids[0] = &cq->fid;
   int ret = 0;
-  #ifdef __linux__
+#ifdef __linux__
   if (end - start >= 2000000) {
     if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
       int epoll_ret = epoll_wait(epfd, &event, 1, 2000);
@@ -70,9 +71,10 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
         return 0;
       }
     }
-    start = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
+    start = std::chrono::high_resolution_clock::now().time_since_epoch() /
+            std::chrono::microseconds(1);
   }
-  #endif
+#endif
   fi_cq_msg_entry entry;
   ret = fi_cq_read(cq, &entry, 1);
   if (ret < 0 && ret != -FI_EAGAIN) {
@@ -81,18 +83,19 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
     if (err_res < 0) {
       perror("fi_cq_read");
     } else {
-      const char *err_str = fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, nullptr, 0);
+      const char* err_str =
+          fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, nullptr, 0);
       std::cerr << "fi_cq_read: " << err_str << std::endl;
     }
   } else if (ret > 0) {
     end = start;
     if (entry.flags & FI_RECV) {
-      fi_context2 *ctx = (fi_context2*)entry.op_context;
+      fi_context2* ctx = (fi_context2*)entry.op_context;
       *ck = (Chunk*)ctx->internal[4];
       *block_buffer_size = entry.len;
       return RECV_EVENT;
     } else if (entry.flags & FI_SEND) {
-      fi_context2 *ctx = (fi_context2*)entry.op_context;
+      fi_context2* ctx = (fi_context2*)entry.op_context;
       if (ctx->internal[4] == NULL) {
         std::free(ctx);
       } else {
@@ -108,6 +111,7 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
       return 0;
     }
   }
-  end = std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::microseconds(1);
+  end = std::chrono::high_resolution_clock::now().time_since_epoch() /
+        std::chrono::microseconds(1);
   return 0;
 }

@@ -36,8 +36,8 @@ import ycm_core
 flags = [
     '-x',
     'c++',
-    '-I/root/rdma_messenger',
-    '-I/root/rdma_messenger/include',
+    '-I./include',
+    '-I./src',
     '-std=c++11'
 ]
 

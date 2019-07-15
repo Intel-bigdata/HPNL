@@ -19,22 +19,22 @@
 
 #include <iostream>
 
+#include "core/MsgConnection.h"
+#include "core/MsgStack.h"
 #include "demultiplexer/EventType.h"
 #include "external_demultiplexer/ExternalEqDemultiplexer.h"
-#include "core/MsgStack.h"
-#include "core/MsgConnection.h"
 
-ExternalEqDemultiplexer::ExternalEqDemultiplexer(MsgStack *stack_) : stack(stack_) {}
+ExternalEqDemultiplexer::ExternalEqDemultiplexer(MsgStack* stack_) : stack(stack_) {}
 
 ExternalEqDemultiplexer::~ExternalEqDemultiplexer() {
-  #ifdef __linux__
+#ifdef __linux__
   fid_map.clear();
   close(epfd);
-  #endif
+#endif
 }
 
 int ExternalEqDemultiplexer::init() {
-  #ifdef __linux__
+#ifdef __linux__
   fabric = stack->get_fabric();
   epfd = epoll_create1(0);
   if (epfd == -1) {
@@ -42,18 +42,19 @@ int ExternalEqDemultiplexer::init() {
     return -1;
   }
   memset((void*)&event, 0, sizeof event);
-  #endif
+#endif
   return 0;
 }
 
-int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnection** con) {
+int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq,
+                                        MsgConnection** con) {
   if (fid_map.empty()) return 0;
-  struct fid *fids[fid_map.size()];
+  struct fid* fids[fid_map.size()];
   int i = 0;
-  for (auto iter: fid_map) {
+  for (auto iter : fid_map) {
     fids[i++] = iter.first;
   }
-  #ifdef __linux__
+#ifdef __linux__
   if (fi_trywait(fabric, fids, fid_map.size()) == FI_SUCCESS) {
     int epoll_ret = epoll_wait(epfd, &event, 1, 200);
     if (epoll_ret > 0) {
@@ -65,17 +66,17 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnecti
       }
       return 0;
     } else {
-      return 0; 
+      return 0;
     }
   }
   if (!*eq) {
-    return 0; 
+    return 0;
   }
   uint32_t event;
   fi_eq_cm_entry entry;
   int ret = fi_eq_read(*eq, &event, &entry, sizeof(entry), 0);
   if (ret == -FI_EAGAIN || ret == 0) {
-    return 0; 
+    return 0;
   } else if (ret < 0) {
     fi_eq_err_entry err_entry;
     fi_eq_readerr(*eq, &err_entry, event);
@@ -89,10 +90,10 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnecti
     if (event == FI_CONNREQ) {
       *info = entry.info;
       return ACCEPT_EVENT;
-    } else if (event == FI_CONNECTED)  {
+    } else if (event == FI_CONNECTED) {
       *con = stack->get_connection(entry.fid);
       if (!*con) {
-        return -1; 
+        return -1;
       }
       (*con)->init_addr();
       return CONNECTED_EVENT;
@@ -108,13 +109,13 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnecti
       return 0;
     }
   }
-  #elif __APPLE__
+#elif __APPLE__
   for (auto fid : fids) {
     uint32_t event;
     fi_eq_cm_entry entry;
     int ret = fi_eq_read(fid_map[fid], &event, &entry, sizeof(entry), 0);
     if (ret == -FI_EAGAIN || ret == 0) {
-      return 0; 
+      return 0;
     } else if (ret < 0) {
       fi_eq_err_entry err_entry;
       fi_eq_readerr(*eq, &err_entry, event);
@@ -129,10 +130,10 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnecti
       if (event == FI_CONNREQ) {
         *info = entry.info;
         return ACCEPT_EVENT;
-      } else if (event == FI_CONNECTED)  {
+      } else if (event == FI_CONNECTED) {
         *con = stack->get_connection(entry.fid);
         if (!*con) {
-          return -1; 
+          return -1;
         }
         (*con)->init_addr();
         return CONNECTED_EVENT;
@@ -149,17 +150,17 @@ int ExternalEqDemultiplexer::wait_event(fi_info** info, fid_eq** eq, MsgConnecti
       }
     }
   }
-  #endif
+#endif
   return 0;
 }
 
-int ExternalEqDemultiplexer::add_event(fid_eq *eq) {
+int ExternalEqDemultiplexer::add_event(fid_eq* eq) {
   std::lock_guard<std::mutex> lk(mtx);
   if (fid_map.count(&eq->fid) != 0) {
     std::cerr << __func__ << "got unknown eq fd" << std::endl;
     return -1;
   }
-  #ifdef __linux__
+#ifdef __linux__
   int fd;
   if (fi_control(&eq->fid, FI_GETWAIT, (void*)&fd)) {
     perror("fi_control");
@@ -171,7 +172,7 @@ int ExternalEqDemultiplexer::add_event(fid_eq *eq) {
     perror("epoll_ctl");
     goto quit_add_event;
   }
-  #endif
+#endif
   fid_map.insert(std::make_pair(&eq->fid, eq));
   return 0;
 #ifdef __linux__
@@ -181,13 +182,13 @@ quit_add_event:
 #endif
 }
 
-int ExternalEqDemultiplexer::delete_event(fid_eq *eq) {
+int ExternalEqDemultiplexer::delete_event(fid_eq* eq) {
   std::lock_guard<std::mutex> lk(mtx);
   if (fid_map.count(&eq->fid) == 0) {
     std::cerr << __func__ << "got unknown eq fd" << std::endl;
     return -1;
   }
-  #ifdef __linux__
+#ifdef __linux__
   int fd;
   if (fi_control(&eq->fid, FI_GETWAIT, (void*)&fd)) {
     perror("fi_control");
@@ -199,7 +200,7 @@ int ExternalEqDemultiplexer::delete_event(fid_eq *eq) {
     perror("epoll_ctl");
     goto quit_delete_event;
   }
-  #endif
+#endif
   fid_map.erase(&eq->fid);
   return 0;
 #ifdef __linux__

@@ -17,11 +17,10 @@
 
 #include "com_intel_hpnl_core_Connection.h"
 
-#include  "core/ConnectionImpl.h"
+#include "core/ConnectionImpl.h"
 #include "core/MsgStack.h"
 
-static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
-{
+static jfieldID _get_self_id(JNIEnv* env, jobject thisObj) {
   static int init = 0;
   static jfieldID fidSelfPtr;
   if (!init) {
@@ -32,24 +31,29 @@ static jfieldID _get_self_id(JNIEnv *env, jobject thisObj)
   return fidSelfPtr;
 }
 
-static void _set_self(JNIEnv *env, jobject thisObj, long nativeCon)
-{
+static void _set_self(JNIEnv* env, jobject thisObj, long nativeCon) {
   env->SetLongField(thisObj, _get_self_id(env, thisObj), nativeCon);
 }
 
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv(JNIEnv *env, jobject thisObj, jobject bufferObj, jint mid, jlong conPtr) {
-  ConnectionImpl *con = *(ConnectionImpl**)&conPtr;
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_recv(JNIEnv* env,
+                                                                jobject thisObj,
+                                                                jobject bufferObj,
+                                                                jint mid, jlong conPtr) {
+  ConnectionImpl* con = *(ConnectionImpl**)&conPtr;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(bufferObj);
   con->recv((char*)buffer, mid);
 }
 
-JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_send(JNIEnv *env, jobject thisObj, jint blockBufferSize, jint bufferId, jlong conPtr) {
-  ConnectionImpl *con = *(ConnectionImpl**)&conPtr;
+JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_send(
+    JNIEnv* env, jobject thisObj, jint blockBufferSize, jint bufferId, jlong conPtr) {
+  ConnectionImpl* con = *(ConnectionImpl**)&conPtr;
   return con->send(blockBufferSize, bufferId);
 }
 
-JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobject thisObj, jint bufferId, jint localOffset, jlong len, jlong remoteAddr, jlong remoteMr, jlong conPtr) {
-  ConnectionImpl *con = *(ConnectionImpl**)&conPtr;
+JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read(
+    JNIEnv* env, jobject thisObj, jint bufferId, jint localOffset, jlong len,
+    jlong remoteAddr, jlong remoteMr, jlong conPtr) {
+  ConnectionImpl* con = *(ConnectionImpl**)&conPtr;
   return con->read(bufferId, localOffset, len, remoteAddr, remoteMr);
 }
 
@@ -58,7 +62,9 @@ JNIEXPORT int JNICALL Java_com_intel_hpnl_core_Connection_read(JNIEnv *env, jobj
  * Method:    init
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init(JNIEnv *env, jobject thisObj, jlong nativeCon) {
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init(JNIEnv* env,
+                                                                jobject thisObj,
+                                                                jlong nativeCon) {
   _set_self(env, thisObj, nativeCon);
 }
 
@@ -67,10 +73,12 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_init(JNIEnv *env, job
  * Method:    finalize
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize(JNIEnv *env, jobject thisObj) {
-}
-JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_free(JNIEnv *env, jobject thisObj, jlong conPtr) {
-  ConnectionImpl *con = *(ConnectionImpl**)&conPtr;
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_finalize(JNIEnv* env,
+                                                                    jobject thisObj) {}
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_Connection_free(JNIEnv* env,
+                                                                jobject thisObj,
+                                                                jlong conPtr) {
+  ConnectionImpl* con = *(ConnectionImpl**)&conPtr;
   if (con != NULL) {
     delete con;
     con = NULL;
