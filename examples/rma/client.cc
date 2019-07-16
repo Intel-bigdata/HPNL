@@ -24,6 +24,9 @@
 
 #include <iostream>
 
+#include "flatbuffers/flatbuffers.h"
+#include "format_generated.h"
+
 #define MSG_SIZE 4096
 #define BUFFER_SIZE (65536 * 2)
 #define BUFFER_NUM 128
@@ -31,6 +34,11 @@
 int count = 0;
 uint64_t start, end = 0;
 std::mutex mtx;
+
+char* rma_buffer = nullptr;
+uint64_t rkey = 0;
+uint64_t remote_buffer = 0;
+uint64_t remote_rkey = 0;
 
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() /
@@ -52,9 +60,14 @@ class ShutdownCallback : public Callback {
 
 class ConnectedCallback : public Callback {
  public:
-  explicit ConnectedCallback(ChunkMgr* bufMgr_) : bufMgr(bufMgr_) {}
+  explicit ConnectedCallback(Client* client_, ChunkMgr* bufMgr_)
+      : client(client_), bufMgr(bufMgr_) {}
   ~ConnectedCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
+    rma_buffer = static_cast<char*>(std::malloc(4096));
+    memset(rma_buffer, '0', 4096);
+    rkey = client->reg_rma_buffer(rma_buffer, 4096, 0);
+
     auto con = static_cast<Connection*>(param_1);
     Chunk* ck = bufMgr->get(con);
     ck->size = MSG_SIZE;
@@ -63,6 +76,7 @@ class ConnectedCallback : public Callback {
   }
 
  private:
+  Client* client;
   ChunkMgr* bufMgr;
 };
 
@@ -72,24 +86,17 @@ class RecvCallback : public Callback {
   ~RecvCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
     std::lock_guard<std::mutex> lk(mtx);
-    count++;
     int mid = *static_cast<int*>(param_1);
     Chunk* ck = bufMgr->get(mid);
+
+    flatbuffers::FlatBufferBuilder builder;
+    builder.PushFlatBuffer(static_cast<unsigned char*>(ck->buffer), ck->size);
+    auto msg = flatbuffers::GetRoot<rma_msg>(builder.GetBufferPointer());
+
     auto con = static_cast<Connection*>(ck->con);
-    if (count >= 1000000) {
-      end = timestamp_now();
-      printf("finished, totally consumes %f s, message round trip time is %f us.\n",
-             (end - start) / 1000.0, (end - start) * 1000 / 1000000.0);
-      return;
-    }
-    if (count == 1) {
-      printf("start ping-pong.\n");
-    }
-    if (count == 1) {
-      start = timestamp_now();
-    }
-    ck->size = MSG_SIZE;
-    con->send(ck);
+    remote_buffer = msg->buffer();
+    remote_rkey = msg->rkey();
+    con->read(0, 0, 4096, msg->buffer(), msg->rkey());
   }
 
  private:
@@ -112,6 +119,33 @@ class SendCallback : public Callback {
   ChunkMgr* bufMgr;
 };
 
+class ReadCallback : public Callback {
+ public:
+  explicit ReadCallback(ChunkMgr* bufMgr_) : bufMgr(bufMgr_) {}
+  void operator()(void* param_1, void* param_2) override {
+    count++;
+    if (count >= 10000000) {
+      end = timestamp_now();
+      printf("finished, totally consumes %f s, message round trip time is %f us.\n",
+             (end - start) / 1000.0, (end - start) * 1000 / 1000000.0);
+      return;
+    }
+    if (count == 1) {
+      printf("start ping-pong.\n");
+    }
+    if (count == 1) {
+      start = timestamp_now();
+    }
+    int mid = *static_cast<int*>(param_1);
+    Chunk* ck = bufMgr->get(mid);
+    auto con = static_cast<Connection*>(ck->con);
+    con->read(0, 0, 4096, remote_buffer, remote_rkey);
+  }
+
+ private:
+  ChunkMgr* bufMgr;
+};
+
 int main(int argc, char* argv[]) {
   auto client = new Client(1, 16);
   client->init();
@@ -121,11 +155,13 @@ int main(int argc, char* argv[]) {
 
   auto recvCallback = new RecvCallback(client, bufMgr);
   auto sendCallback = new SendCallback(bufMgr);
-  auto connectedCallback = new ConnectedCallback(bufMgr);
+  auto readCallback = new ReadCallback(bufMgr);
+  auto connectedCallback = new ConnectedCallback(client, bufMgr);
   auto shutdownCallback = new ShutdownCallback(client);
 
   client->set_recv_callback(recvCallback);
   client->set_send_callback(sendCallback);
+  client->set_read_callback(readCallback);
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 

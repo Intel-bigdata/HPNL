@@ -15,10 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "HPNL/Connection.h"
-#include "HPNL/Client.h"
-#include "HPNL/ChunkMgr.h"
 #include "HPNL/Callback.h"
+#include "HPNL/ChunkMgr.h"
+#include "HPNL/Client.h"
+#include "HPNL/Connection.h"
 
 #include <iostream>
 
@@ -30,39 +30,41 @@
 uint64_t start, end = 0;
 
 uint64_t timestamp_now() {
-  return std::chrono::high_resolution_clock::now().time_since_epoch() / std::chrono::milliseconds(1);
+  return std::chrono::high_resolution_clock::now().time_since_epoch() /
+         std::chrono::milliseconds(1);
 }
 
 class ShutdownCallback : public Callback {
-  public:
-    explicit ShutdownCallback(Client *_clt) : clt(_clt) {}
-    ~ShutdownCallback() override = default;
-    void operator()(void *param_1, void *param_2) override {
-      clt->shutdown();
-    }
-  private:
-    Client *clt;
+ public:
+  explicit ShutdownCallback(Client* _clt) : clt(_clt) {}
+  ~ShutdownCallback() override = default;
+  void operator()(void* param_1, void* param_2) override { clt->shutdown(); }
+
+ private:
+  Client* clt;
 };
 
 class ConnectedCallback : public Callback {
-  public:
-    ConnectedCallback(Client *client_, ChunkMgr *bufMgr_) : client(client_), bufMgr(bufMgr_) {}
-    ~ConnectedCallback() override = default;
-    void operator()(void *param_1, void *param_2) override {
-      std::cout << "connected." << std::endl;
-      auto *con = (Connection*)param_1;
-      //client->shutdown(con);
-    }
-  private:
-    Client *client;
-    ChunkMgr *bufMgr;
+ public:
+  ConnectedCallback(Client* client_, ChunkMgr* bufMgr_)
+      : client(client_), bufMgr(bufMgr_) {}
+  ~ConnectedCallback() override = default;
+  void operator()(void* param_1, void* param_2) override {
+    std::cout << "connected." << std::endl;
+    auto* con = (Connection*)param_1;
+    // client->shutdown(con);
+  }
+
+ private:
+  Client* client;
+  ChunkMgr* bufMgr;
 };
 
 void connect() {
   auto client = new Client(1, 16);
   client->init();
 
-  ChunkMgr *bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
+  ChunkMgr* bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM * 10);
   client->set_buf_mgr(bufMgr);
 
   auto connectedCallback = new ConnectedCallback(client, bufMgr);
@@ -84,7 +86,7 @@ void connect() {
   delete bufMgr;
 }
 
-int main(int argc, char *argv[]) {
-  connect();  
+int main(int argc, char* argv[]) {
+  connect();
   return 0;
 }
