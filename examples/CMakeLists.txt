@@ -57,19 +57,34 @@ set_target_properties(rdm_client
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rdm")
 
+set(RMA_TEST ${PROJECT_SOURCE_DIR}/examples/rma)
+
+add_executable(rma_server ${RMA_TEST}/server.cc)
+target_link_libraries(rma_server hpnl flatbuffers)
+set_target_properties(rma_server
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rma")
+
+add_executable(rma_client ${RMA_TEST}/client.cc)
+target_link_libraries(rma_client hpnl flatbuffers)
+set_target_properties(rma_client
+  PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rma")
+
+
 option(WITH_PMEM "enable PMoF code" OFF)
 if(WITH_PMEM)
-  set(PMEM_TEST ${PROJECT_SOURCE_DIR}/examples/pmem)
+  set(PMEM_TEST ${PROJECT_SOURCE_DIR}/examples/pmof)
 
-  add_executable(pmem_server ${PMEM_TEST}/server.cc)
-  target_link_libraries(pmem_server hpnl)
-  set_target_properties(pmem_server
+  add_executable(pmof_server ${PMEM_TEST}/server.cc)
+  target_link_libraries(pmof_server pmemobj hpnl)
+  set_target_properties(pmof_server
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pmem")
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pmof")
 
-  add_executable(pmem_client ${PMEM_TEST}/client.cc)
-  target_link_libraries(pmem_client pmemobj hpnl)
-  set_target_properties(pmem_client
+  add_executable(pmof_client ${PMEM_TEST}/client.cc)
+  target_link_libraries(pmof_client pmemobj hpnl)
+  set_target_properties(pmof_client
     PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pmem")
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pmof")
 endif(WITH_PMEM)

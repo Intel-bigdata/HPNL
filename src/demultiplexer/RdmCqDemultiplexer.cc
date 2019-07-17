@@ -95,7 +95,7 @@ int RdmCqDemultiplexer::wait_event() {
         if (con->get_recv_callback()) {
           (*con->get_recv_callback())(&ck->buffer_id, &entry.len);
         }
-        con->activate_recv_chunk();
+        con->activate_recv_chunk(ck);
       } else if (entry.flags & FI_SEND) {
         fi_context2* ctx = (fi_context2*)entry.op_context;
         Chunk* ck = (Chunk*)ctx->internal[4];

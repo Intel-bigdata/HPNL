@@ -20,11 +20,17 @@
 #include "HPNL/Connection.h"
 #include "HPNL/Server.h"
 
+#include <cstring>
 #include <iostream>
+
+#include "format_generated.h"
 
 #define MSG_SIZE 4096
 #define BUFFER_SIZE (65536 * 2)
 #define BUFFER_NUM 128
+
+char rma_buffer[4096];
+uint64_t rkey = 0;
 
 class ShutdownCallback : public Callback {
  public:
@@ -37,17 +43,31 @@ class ShutdownCallback : public Callback {
 
 class RecvCallback : public Callback {
  public:
-  explicit RecvCallback(ChunkMgr* bufMgr_) : bufMgr(bufMgr_) {}
+  explicit RecvCallback(Server* server_, ChunkMgr* bufMgr_)
+      : server(server_), bufMgr(bufMgr_) {}
   ~RecvCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
+    memset(rma_buffer, '0', 4096);
+    rkey = server->reg_rma_buffer(rma_buffer, 4096, 0);
+
     int mid = *static_cast<int*>(param_1);
     auto ck = bufMgr->get(mid);
     ck->size = MSG_SIZE;
     auto con = static_cast<Connection*>(ck->con);
+
+    flatbuffers::FlatBufferBuilder builder;
+    auto msg =
+        Createrma_msg(builder, reinterpret_cast<uint64_t>(rma_buffer), 4096, 0, rkey);
+    builder.Finish(msg);
+    uint8_t* buf = builder.GetBufferPointer();
+
+    memcpy(ck->buffer, buf, builder.GetSize());
+    ck->size = builder.GetSize();
     con->send(ck);
   }
 
  private:
+  Server* server;
   ChunkMgr* bufMgr;
 };
 
@@ -73,7 +93,7 @@ int main(int argc, char* argv[]) {
   ChunkMgr* bufMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM * 10);
   server->set_buf_mgr(bufMgr);
 
-  auto recvCallback = new RecvCallback(bufMgr);
+  auto recvCallback = new RecvCallback(server, bufMgr);
   auto sendCallback = new SendCallback(bufMgr);
   auto shutdownCallback = new ShutdownCallback();
   server->set_recv_callback(recvCallback);
@@ -83,6 +103,7 @@ int main(int argc, char* argv[]) {
 
   server->start();
   server->listen("172.168.2.106", "12345");
+
   server->wait();
 
   delete recvCallback;

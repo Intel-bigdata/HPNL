@@ -1,0 +1,7 @@
+table rma_msg {
+  buffer: ulong;
+  size: short;
+  id: short;
+  rkey: ulong;
+}
+
