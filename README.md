@@ -1,5 +1,9 @@
 # HPNL
-HPNL is a **Fast**, **CPU-Efficient** network library designed for modern network technology([#1](https://www.intel.com/content/www/us/en/ethernet-products/iwarp-rdma-here-and-now-technology-brief.html) [#2](https://www.intel.com/content/www/us/en/high-performance-computing-fabrics/omni-path-driving-exascale-computing.html))
+
+[![Build Status](https://travis-ci.org/Intel-bigdata/HPNL.svg?branch=master)](https://travis-ci.org/Intel-bigdata/HPNL)
+[![hpnl release](https://img.shields.io/github/release/intel-bigdata/hpnl.svg)](https://github.com/Intel-bigdata/HPNL/releases)
+
+**HPNL** is a **Fast**, **CPU-Efficient** network library designed for modern network technology([#1](https://www.intel.com/content/www/us/en/ethernet-products/iwarp-rdma-here-and-now-technology-brief.html) [#2](https://www.intel.com/content/www/us/en/high-performance-computing-fabrics/omni-path-driving-exascale-computing.html))
 
 ## Contents
 - [Introduction](#introduction)
@@ -24,6 +28,7 @@ Library dependencies:
 - Boost 1.58+
 - PMDK (optional)
 - JDK 1.8+ (optional)
+- FlatBuffers (optional)
 
 HPNL depends on [Libfabri](https://github.com/ofiwg/libfabric). Please make sure the Libfabric is installed in your setup.
 Persistent Memory over Fabric is another targeting feature of HPNL with which you can use HPNL interface to communicate with Persistent Memory over different kinds of network fabrics. If you want to try

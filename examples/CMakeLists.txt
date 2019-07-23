@@ -29,20 +29,6 @@ set_target_properties(pingpong_client
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pingpong")
 
-set(CONNECTION_TEST ${PROJECT_SOURCE_DIR}/examples/connection)
-
-add_executable(connection_server ${CONNECTION_TEST}/server.cc)
-target_link_libraries(connection_server hpnl)
-set_target_properties(connection_server
-  PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/connection")
-
-add_executable(connection_client ${CONNECTION_TEST}/client.cc)
-target_link_libraries(connection_client hpnl)
-set_target_properties(connection_client
-  PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/connection")
-
 set(RDM_TEST ${PROJECT_SOURCE_DIR}/examples/rdm)
 
 add_executable(rdm_server ${RDM_TEST}/server.cc)
@@ -57,23 +43,26 @@ set_target_properties(rdm_client
   PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rdm")
 
-set(RMA_TEST ${PROJECT_SOURCE_DIR}/examples/rma)
+option(WITH_RMA_TEST "enable remote memory access test" OFF)
+if(WITH_RMA_TEST)
+  set(RMA_TEST ${PROJECT_SOURCE_DIR}/examples/rma)
 
-add_executable(rma_server ${RMA_TEST}/server.cc)
-target_link_libraries(rma_server hpnl flatbuffers)
-set_target_properties(rma_server
-  PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rma")
+  add_executable(rma_server ${RMA_TEST}/server.cc)
+  target_link_libraries(rma_server hpnl flatbuffers)
+  set_target_properties(rma_server
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rma")
 
-add_executable(rma_client ${RMA_TEST}/client.cc)
-target_link_libraries(rma_client hpnl flatbuffers)
-set_target_properties(rma_client
-  PROPERTIES
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rma")
+  add_executable(rma_client ${RMA_TEST}/client.cc)
+  target_link_libraries(rma_client hpnl flatbuffers)
+  set_target_properties(rma_client
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rma")
+endif(WITH_RMA_TEST)
 
 
-option(WITH_PMEM "enable PMoF code" OFF)
-if(WITH_PMEM)
+option(WITH_PMEM_TEST "enable PMoF code" OFF)
+if(WITH_PMEM_TEST)
   set(PMEM_TEST ${PROJECT_SOURCE_DIR}/examples/pmof)
 
   add_executable(pmof_server ${PMEM_TEST}/server.cc)
@@ -87,4 +76,4 @@ if(WITH_PMEM)
   set_target_properties(pmof_client
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/pmof")
-endif(WITH_PMEM)
+endif(WITH_PMEM_TEST)
