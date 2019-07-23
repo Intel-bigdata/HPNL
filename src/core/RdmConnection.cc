@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+#include <sys/uio.h>
+
 #include <algorithm>
 #include <cassert>
 #include <iostream>

@@ -1,0 +1,26 @@
+dist: bionic
+language: cpp
+compiler:
+  - gcc
+os:
+  - linux
+addons:
+    apt:
+        sources:
+          - ubuntu-toolchain-r-test
+          - george-edison55-precise-backports
+        packages:
+          - g++-7
+          - cmake-data
+          - cmake
+          - libfabric-dev
+          - build-essential
+          - libboost-dev
+          - libboost-system-dev
+install:
+  - mkdir build
+  - cd build
+  - cmake ..
+  - make -j
+  - make install
+
