@@ -82,7 +82,7 @@ class Service {
   Proactor* proactor;
   EqDemultiplexer* eq_demultiplexer;
   CqDemultiplexer* cq_demultiplexer[MAX_WORKERS]{};
-  RdmCqDemultiplexer* rdm_cq_demultiplexer;
+  RdmCqDemultiplexer* rdm_cq_demultiplexer[MAX_WORKERS]{};
 
   ChunkMgr* bufMgr{};
 
@@ -100,7 +100,7 @@ class Service {
 
   EqThread* eqThread;
   CqThread* cqThread[MAX_WORKERS]{};
-  RdmCqThread* rdmCqThread;
+  RdmCqThread* rdmCqThread[MAX_WORKERS]{};
 };
 
 class AcceptRequestCallback : public Callback {

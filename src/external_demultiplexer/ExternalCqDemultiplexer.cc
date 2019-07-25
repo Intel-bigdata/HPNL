@@ -80,7 +80,9 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
 #endif
   fi_cq_msg_entry entry;
   ret = fi_cq_read(cq, &entry, 1);
+  std::cout << "tring to read" << std::endl;
   if (ret < 0 && ret != -FI_EAGAIN) {
+    std::cout << "again" << std::endl;
     fi_cq_err_entry err_entry{};
     int err_res = fi_cq_readerr(cq, &err_entry, entry.flags);
     if (err_res < 0) {
@@ -101,6 +103,7 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
     fid_eq* eq_tmp = (fid_eq*)con->get_eq();
     *eq = eq_tmp;
     if (entry.flags & FI_RECV) {
+      std::cout << "recv" << std::endl;
       if (con->status < CONNECTED) {
         std::unique_lock<std::mutex> l(con->con_mtx);
         con->con_cv.wait(l, [con] { return con->status >= CONNECTED; });
@@ -110,6 +113,7 @@ int ExternalCqDemultiplexer::wait_event(fid_eq** eq, Chunk** ck, int* buffer_id,
       *block_buffer_size = entry.len;
       return RECV_EVENT;
     } else if (entry.flags & FI_SEND) {
+      std::cout << "send" << std::endl;
       return SEND_EVENT;
     } else if (entry.flags & FI_READ) {
       return READ_EVENT;

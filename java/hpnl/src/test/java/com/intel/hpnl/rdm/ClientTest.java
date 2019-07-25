@@ -61,7 +61,7 @@ public class ClientTest implements Runnable {
     }
     byteBufferTmp.flip();
 
-    RdmService service = new RdmService(bufferNbr, false).init();
+    RdmService service = new RdmService(workNbr, bufferNbr, false).init();
     assert(service != null) ;
     RecvCallback recvCallback = new RecvCallback(false, interval, msgSize);
     service.setRecvCallback(recvCallback);

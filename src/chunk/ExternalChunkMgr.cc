@@ -20,8 +20,9 @@
 
 ExternalChunkMgr::ExternalChunkMgr() : buffer_num(0), buffer_size(0), buffer_id(0) {}
 
-ExternalChunkMgr::ExternalChunkMgr(int buffer_num_, uint64_t buffer_size_) : buffer_num(buffer_num_), buffer_size(buffer_size_), buffer_id(0) {
-  for (int i = 0; i < buffer_num*2; i++) {
+ExternalChunkMgr::ExternalChunkMgr(int buffer_num_, uint64_t buffer_size_)
+    : buffer_num(buffer_num_), buffer_size(buffer_size_), buffer_id(0) {
+  for (int i = 0; i < buffer_num * 2; i++) {
     auto ck = new Chunk();
     ck->buffer = std::malloc(buffer_size);
     ck->capacity = buffer_size;
@@ -47,21 +48,20 @@ Chunk* ExternalChunkMgr::get(int id) {
 
 Chunk* ExternalChunkMgr::get(Connection* con) {
   std::lock_guard<std::mutex> l(mtx);
-  if (bufs.empty())
-    return nullptr;
-  Chunk *ck = bufs.back();
+  if (bufs.empty()) return nullptr;
+  Chunk* ck = bufs.back();
   bufs.pop_back();
-  if (!con)
-    con->log_used_chunk(ck);
+  if (!con) con->log_used_chunk(ck);
   return ck;
 }
 
 void ExternalChunkMgr::reclaim(Chunk* ck, Connection* con) {
   std::lock_guard<std::mutex> l(mtx);
-  if (!buf_map.count(ck->buffer_id))
-    buf_map[ck->buffer_id] = ck;
+  if (!buf_map.count(ck->buffer_id)) buf_map[ck->buffer_id] = ck;
   bufs.push_back(ck);
-  con->remove_used_chunk(ck);
+  if (con != nullptr) {
+    con->remove_used_chunk(ck);
+  }
 }
 
 int ExternalChunkMgr::free_size() {
@@ -69,6 +69,4 @@ int ExternalChunkMgr::free_size() {
   return bufs.size();
 }
 
-uint32_t ExternalChunkMgr::get_id() {
-  return buffer_id++;
-}
+uint32_t ExternalChunkMgr::get_id() { return buffer_id++; }

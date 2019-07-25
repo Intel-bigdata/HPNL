@@ -71,7 +71,8 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_CqService_wait_1cq_1event(
   (*env).CallVoidMethod(thisObj, handleCqCallback, jEq, ret, buffer_id,
                         block_buffer_size);
   if (ret == RECV_EVENT) {
-    if (con->activate_recv_chunk(ck)) {
+    std::cout << "wait event." << std::endl;
+    if (con->activate_recv_chunk(ck, 0)) {
       // TODO: error handler
     }
   } else if (ret == SEND_EVENT) {

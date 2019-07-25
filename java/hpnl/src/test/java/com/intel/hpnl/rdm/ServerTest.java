@@ -42,7 +42,7 @@ public class ServerTest implements Runnable {
   int msgSize = 4096;
 
   @Option(names = {"-w", "--worker_number"}, required = false, description = "worker numbers")
-  int workNbr = 3;
+  int workNbr = 1;
   
   @Option(names = {"-i", "--interval"}, required = false, description = "statistics interval time")
   int interval = 5;
@@ -51,7 +51,7 @@ public class ServerTest implements Runnable {
   int[] affinities = null;
 
   public void run() {
-    RdmService service = new RdmService(bufferNbr, true).init();
+    RdmService service = new RdmService(workNbr, bufferNbr, true).init();
     assert(service != null);
     
     RecvCallback recvCallback = new RecvCallback(true, interval, msgSize);

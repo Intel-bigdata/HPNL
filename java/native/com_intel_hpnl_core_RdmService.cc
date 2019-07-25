@@ -57,9 +57,10 @@ static void _set_self(JNIEnv* env, jobject thisObj, ExternalRdmService* self) {
 }
 
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv* env, jobject obj,
+                                                                jint worker_num,
                                                                 jint buffer_num,
                                                                 jboolean is_server) {
-  ExternalRdmService* service = new ExternalRdmService(buffer_num, is_server);
+  ExternalRdmService* service = new ExternalRdmService(worker_num, buffer_num, is_server);
   int res = service->init();
   _set_self(env, obj, service);
   return res;
@@ -116,11 +117,11 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(
 }
 
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(
-    JNIEnv* env, jobject obj, jlong nativeHandle) {
+    JNIEnv* env, jobject obj, jint index, jlong nativeHandle) {
   ExternalRdmService* service = *(ExternalRdmService**)&nativeHandle;
   Chunk* ck = nullptr;
   int block_buffer_size = 0;
-  int ret = service->wait_event(&ck, &block_buffer_size);
+  int ret = service->wait_event(&ck, &block_buffer_size, index);
   if (ret == 0) {
     return 0;
   } else if (ret == CLOSE_EVENT) {
@@ -130,7 +131,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(
     (*env).CallVoidMethod(obj, handleCallback, *(jlong*)&con, ret, ck->buffer_id,
                           block_buffer_size);
     if (ret == RECV_EVENT) {
-      con->activate_recv_chunk(ck);
+      con->activate_recv_chunk(ck, index);
     }
     return ret;
   }

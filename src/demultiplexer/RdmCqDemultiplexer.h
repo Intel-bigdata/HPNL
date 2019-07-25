@@ -31,14 +31,15 @@ class RdmStack;
 
 class RdmCqDemultiplexer {
  public:
-  RdmCqDemultiplexer(RdmStack*);
+  RdmCqDemultiplexer(RdmStack*, int);
   ~RdmCqDemultiplexer();
   int init();
   int wait_event();
 
  private:
   RdmStack* stack;
-  fid_cq* cq;
+  int index;
+  fid_cq** cqs;
 #ifdef __linux__
   fid_fabric* fabric;
   struct epoll_event event;

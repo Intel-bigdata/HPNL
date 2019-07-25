@@ -28,20 +28,21 @@
 #include <vector>
 
 #include "HPNL/ChunkMgr.h"
+#include "HPNL/Common.h"
 #include "core/Stack.h"
 
 class RdmConnection;
 
 class RdmStack : public Stack {
  public:
-  RdmStack(int, bool, bool);
+  RdmStack(int, int, bool, bool);
   ~RdmStack() override;
   int init() override;
   void* bind(const char*, const char*, ChunkMgr*) override;
 
   RdmConnection* get_con(const char*, const char*, ChunkMgr*);
   fid_fabric* get_fabric();
-  fid_cq* get_cq();
+  fid_cq** get_cqs();
 
   fid_domain* get_domain() override;
 
@@ -50,8 +51,10 @@ class RdmStack : public Stack {
   fi_info* server_info;
   fid_fabric* fabric;
   fid_domain* domain;
-  fid_cq* cq;
+  fid_cq* cqs[MAX_WORKERS];
+  int worker_num;
   int buffer_num;
+  uint64_t seq_num;
   bool is_server;
   bool external_service;
 

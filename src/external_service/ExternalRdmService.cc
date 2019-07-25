@@ -22,9 +22,9 @@
 #include "core/RdmStack.h"
 #include "external_demultiplexer/ExternalRdmCqDemultiplexer.h"
 
-ExternalRdmService::ExternalRdmService(int buffer_num, bool is_server) {
+ExternalRdmService::ExternalRdmService(int worker_num, int buffer_num, bool is_server) {
   this->stack = nullptr;
-  this->demultiplexer = nullptr;
+  this->worker_num = worker_num;
   this->buffer_num = buffer_num;
   this->is_server = is_server;
   this->bufMgr = new ExternalChunkMgr();
@@ -32,15 +32,19 @@ ExternalRdmService::ExternalRdmService(int buffer_num, bool is_server) {
 
 ExternalRdmService::~ExternalRdmService() {
   delete this->stack;
-  delete this->demultiplexer;
+  for (int i = 0; i < this->worker_num; i++) {
+    delete this->demultiplexer[i];
+  }
   delete this->bufMgr;
 }
 
 int ExternalRdmService::init() {
-  this->stack = new RdmStack(this->buffer_num, this->is_server, true);
+  this->stack = new RdmStack(this->worker_num, this->buffer_num, this->is_server, true);
   this->stack->init();
-  this->demultiplexer = new ExternalRdmCqDemultiplexer(stack);
-  this->demultiplexer->init();
+  for (int i = 0; i < this->worker_num; i++) {
+    this->demultiplexer[i] = new ExternalRdmCqDemultiplexer(stack, i);
+    this->demultiplexer[i]->init();
+  }
   return 0;
 }
 
@@ -53,8 +57,8 @@ RdmConnection* ExternalRdmService::get_con(const char* ip, const char* port) {
   return (RdmConnection*)con;
 }
 
-int ExternalRdmService::wait_event(Chunk** ck, int* block_buffer_size) {
-  return this->demultiplexer->wait_event(ck, block_buffer_size);
+int ExternalRdmService::wait_event(Chunk** ck, int* block_buffer_size, int index) {
+  return this->demultiplexer[index]->wait_event(ck, block_buffer_size);
 }
 
 void ExternalRdmService::set_buffer(char* buffer, uint64_t size, int buffer_id) {
@@ -62,5 +66,6 @@ void ExternalRdmService::set_buffer(char* buffer, uint64_t size, int buffer_id) 
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
+  ck->ctx.internal[4] = ck;
   bufMgr->reclaim(ck, nullptr);
 }

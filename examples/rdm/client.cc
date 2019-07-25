@@ -78,7 +78,7 @@ class SendCallback : public Callback {
 };
 
 int main() {
-  auto client = new Client(1, 16);
+  auto client = new Client(3, 16);
   client->init(false);
 
   ChunkMgr *bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
@@ -93,13 +93,18 @@ int main() {
 
   Connection *con = client->get_con("127.0.0.1", "12345");
   assert(con);
-  char* buffer = (char*)std::malloc(MSG_SIZE);
+  auto buffer = static_cast<char*>(std::malloc(MSG_SIZE));
   memset(buffer, '0', MSG_SIZE);
   
   char* peer_name = con->get_peer_name();
   auto ck = bufMgr->get(con);
   con->encode_(ck, buffer, MSG_SIZE, peer_name);
   con->send(ck);
+
+  Connection *con1 = client->get_con("127.0.0.1", "12345");
+  ck = bufMgr->get(con1);
+  con1->encode_(ck, buffer, MSG_SIZE, peer_name);
+  con1->send(ck);
 
   client->wait();
 

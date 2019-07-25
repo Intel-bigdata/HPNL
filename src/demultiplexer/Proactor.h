@@ -33,11 +33,11 @@ class fid;
 class Proactor {
  public:
   Proactor(EqDemultiplexer*, CqDemultiplexer**, int);
-  Proactor(RdmCqDemultiplexer*);
+  Proactor(RdmCqDemultiplexer**, int);
   ~Proactor();
   int eq_service();
   int cq_service(int);
-  int rdm_cq_service();
+  int rdm_cq_service(int);
   int register_handler(std::shared_ptr<EventHandler>);
   int remove_handler(std::shared_ptr<EventHandler>);
   int remove_handler(fid*);
@@ -49,7 +49,7 @@ class Proactor {
   std::map<fid*, std::shared_ptr<EventHandler>> curEventMap;
   EqDemultiplexer* eqDemultiplexer;
   CqDemultiplexer* cqDemultiplexer[MAX_WORKERS];
-  RdmCqDemultiplexer* rdmCqDemultiplexer;
+  RdmCqDemultiplexer* rdmCqDemultiplexer[MAX_WORKERS];
   int cq_worker_num;
 };
 
@@ -78,13 +78,14 @@ class CqThread : public ThreadWrapper {
 
 class RdmCqThread : public ThreadWrapper {
  public:
-  RdmCqThread(Proactor* proactor_) : proactor(proactor_) {}
+  RdmCqThread(Proactor* proactor_, int index_) : proactor(proactor_), index(index_) {}
   virtual ~RdmCqThread() {}
-  virtual int entry() override { return proactor->rdm_cq_service(); }
+  virtual int entry() override { return proactor->rdm_cq_service(index); }
   virtual void abort() override {}
 
  private:
   Proactor* proactor;
+  int index;
 };
 
 #endif

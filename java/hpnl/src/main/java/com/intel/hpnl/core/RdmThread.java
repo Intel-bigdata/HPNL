@@ -20,15 +20,16 @@ package com.intel.hpnl.core;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RdmThread extends Thread {
-  public RdmThread(RdmService rdmService) {
+  public RdmThread(RdmService rdmService, int index) {
     this.rdmService = rdmService;
+    this.index = index;
     running.set(true);
     this.setDaemon(true);
   }
 
   public void run() {
     while (running.get()) {
-      if (this.rdmService.waitEvent() == -1) {
+      if (this.rdmService.waitEvent(index) == -1) {
         shutdown();
       }
     }
@@ -40,5 +41,6 @@ public class RdmThread extends Thread {
   }
 
   private RdmService rdmService;
+  private int index;
   private final AtomicBoolean running = new AtomicBoolean(false);
 }

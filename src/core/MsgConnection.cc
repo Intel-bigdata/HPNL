@@ -259,7 +259,7 @@ std::vector<Chunk*> MsgConnection::get_send_chunks() { return send_chunks; }
 
 fid* MsgConnection::get_fid() { return &conEq->fid; }
 
-int MsgConnection::activate_recv_chunk(Chunk* ck) {
+int MsgConnection::activate_recv_chunk(Chunk* ck, int worker_index) {
   if (ck == nullptr) {
     ck = chunk_mgr->get(this);
   }

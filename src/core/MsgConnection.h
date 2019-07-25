@@ -55,7 +55,7 @@ class MsgConnection : public ConnectionImpl {
   int connect();
   int accept();
 
-  int activate_recv_chunk(Chunk* = nullptr) override;
+  int activate_recv_chunk(Chunk* ck = nullptr, int worker_index = -1) override;
 
   void init_addr();
   void get_addr(char**, size_t*, char**, size_t*);

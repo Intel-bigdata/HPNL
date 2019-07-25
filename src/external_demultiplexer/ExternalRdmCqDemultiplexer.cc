@@ -25,8 +25,8 @@
 #include "demultiplexer/EventType.h"
 #include "external_demultiplexer/ExternalRdmCqDemultiplexer.h"
 
-ExternalRdmCqDemultiplexer::ExternalRdmCqDemultiplexer(RdmStack* stack_)
-    : stack(stack_), start(0), end(0) {}
+ExternalRdmCqDemultiplexer::ExternalRdmCqDemultiplexer(RdmStack* stack_, int index_)
+    : stack(stack_), index(index_), start(0), end(0) {}
 
 ExternalRdmCqDemultiplexer::~ExternalRdmCqDemultiplexer() {
 #ifdef __linux__
@@ -35,18 +35,18 @@ ExternalRdmCqDemultiplexer::~ExternalRdmCqDemultiplexer() {
 }
 
 int ExternalRdmCqDemultiplexer::init() {
-  cq = stack->get_cq();
+  cqs = stack->get_cqs();
 #ifdef __linux__
   fabric = stack->get_fabric();
   epfd = epoll_create1(0);
   memset((void*)&event, 0, sizeof event);
-  int ret = fi_control(&cq->fid, FI_GETWAIT, (void*)&fd);
+  int ret = fi_control(&cqs[index]->fid, FI_GETWAIT, (void*)&fd);
   if (ret) {
     std::cout << "fi_controll error." << std::endl;
     return -1;
   }
   event.events = EPOLLIN;
-  event.data.ptr = &cq->fid;
+  event.data.ptr = &cqs[index]->fid;
   ret = epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
   if (ret) {
     std::cout << "epoll add error." << std::endl;
@@ -58,13 +58,13 @@ int ExternalRdmCqDemultiplexer::init() {
 
 int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int* block_buffer_size) {
   struct fid* fids[1];
-  fids[0] = &cq->fid;
+  fids[0] = &cqs[index]->fid;
   int ret = 0;
 #ifdef __linux__
   if (end - start >= 2000000) {
     if (fi_trywait(fabric, fids, 1) == FI_SUCCESS) {
       int epoll_ret = epoll_wait(epfd, &event, 1, 2000);
-      if (event.data.ptr != (void*)&cq->fid) {
+      if (event.data.ptr != (void*)&cqs[index]->fid) {
         std::cout << "Epoll wait error." << std::endl;
       }
       if (epoll_ret <= 0) {
@@ -76,15 +76,15 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int* block_buffer_size) {
   }
 #endif
   fi_cq_msg_entry entry;
-  ret = fi_cq_read(cq, &entry, 1);
+  ret = fi_cq_read(cqs[index], &entry, 1);
   if (ret < 0 && ret != -FI_EAGAIN) {
     fi_cq_err_entry err_entry{};
-    int err_res = fi_cq_readerr(cq, &err_entry, entry.flags);
+    int err_res = fi_cq_readerr(cqs[index], &err_entry, entry.flags);
     if (err_res < 0) {
       perror("fi_cq_read");
     } else {
       const char* err_str =
-          fi_cq_strerror(cq, err_entry.prov_errno, err_entry.err_data, nullptr, 0);
+          fi_cq_strerror(cqs[index], err_entry.prov_errno, err_entry.err_data, nullptr, 0);
       std::cerr << "fi_cq_read: " << err_str << std::endl;
     }
   } else if (ret > 0) {
@@ -101,7 +101,6 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int* block_buffer_size) {
       } else {
         *ck = (Chunk*)ctx->internal[4];
       }
-      //((RdmConnection *) (*ck)->con)->delete_chunk_in_flight(*ck);
       return SEND_EVENT;
     } else if (entry.flags & FI_READ) {
       return READ_EVENT;

@@ -19,6 +19,7 @@
 #define EXTERNALRDMSERVICE_H
 
 #include <stdint.h>
+#include "HPNL/Common.h"
 
 class RdmStack;
 class RdmConnection;
@@ -28,7 +29,7 @@ class ExternalRdmCqDemultiplexer;
 
 class ExternalRdmService {
  public:
-  ExternalRdmService(int, bool);
+  ExternalRdmService(int, int, bool);
   ~ExternalRdmService();
   ExternalRdmService(ExternalRdmService& service) = delete;
   ExternalRdmService& operator=(const ExternalRdmService& service) = delete;
@@ -36,13 +37,14 @@ class ExternalRdmService {
   int init();
   RdmConnection* listen(const char*, const char*);
   RdmConnection* get_con(const char*, const char*);
-  int wait_event(Chunk**, int*);
+  int wait_event(Chunk**, int*, int);
 
   void set_buffer(char*, uint64_t, int);
 
  private:
   RdmStack* stack;
-  ExternalRdmCqDemultiplexer* demultiplexer;
+  ExternalRdmCqDemultiplexer* demultiplexer[MAX_WORKERS];
+  int worker_num;
   int buffer_num;
   bool is_server;
   ChunkMgr* bufMgr;

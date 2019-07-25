@@ -19,25 +19,34 @@ package com.intel.hpnl.core;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.ArrayList;
 
 public class RdmService {
   static {
     System.loadLibrary("hpnl");
   }
 
-  public RdmService(int buffer_num, boolean is_server) {
+  public RdmService(int worker_num, int buffer_num, boolean is_server) {
+    this.worker_num = worker_num;
     this.buffer_num = buffer_num;
     this.is_server = is_server;
 
+    this.workers = new ArrayList<RdmThread>();
     conMap = new ConcurrentHashMap<Long, RdmConnection>();
   }
 
   public RdmService init() {
-    int res = init(buffer_num, is_server);
+    int res = init(worker_num, buffer_num, is_server);
     if (res < 0)
       return null;
-    this.worker = new RdmThread(this);
-    this.worker.start();
+    for (int i = 0; i < this.worker_num; i++) {
+      RdmThread rdmThread = new RdmThread(this, i);
+      this.workers.add(rdmThread);
+    }
+    for (RdmThread rdmThread : this.workers) {
+      rdmThread.start(); 
+    }
     return this;
   }
 
@@ -47,7 +56,9 @@ public class RdmService {
 
   public void join() {
     try {
-      this.worker.join(); 
+      for (RdmThread rdmThread : this.workers) {
+        rdmThread.join();  
+      }
     } catch (InterruptedException e) {
       e.printStackTrace();
     } finally {
@@ -55,15 +66,17 @@ public class RdmService {
   }
 
   public void shutdown() {
-    this.worker.shutdown();
+    for (RdmThread rdmThread : this.workers) {
+      rdmThread.shutdown(); 
+    }
   }
 
   public RdmConnection getConnection(String ip, String port) {
     return conMap.get(get_con(ip, port, nativeHandle));
   }
 
-  public int waitEvent() {
-    return wait_event(this.nativeHandle);
+  public int waitEvent(int index) {
+    return wait_event(index, this.nativeHandle);
   }
 
   private void handleCallback(long handle, int eventType, int blockId, int blockSize) {
@@ -121,18 +134,19 @@ public class RdmService {
     set_buffer1(buffer, size, bufferId, this.nativeHandle);
   }
 
-  private native int init(int buffer_num, boolean is_server);
+  private native int init(int worker_num, int buffer_num, boolean is_server);
   private native int listen(String ip, String port, long nativeHandle);
   private native long get_con(String ip, String port, long nativeHandle);
-  private native int wait_event(long nativeHandle);
+  private native int wait_event(int index, long nativeHandle);
   private native void set_buffer1(ByteBuffer buffer, long size, int bufferId, long nativeHandle);
   private native void free(long nativeHandle);
 
   private String addr;
   private int port;
+  private int worker_num;
   private int buffer_num;
   private boolean is_server;
-  private RdmThread worker;
+  private List<RdmThread> workers;
   private ConcurrentHashMap<Long, RdmConnection> conMap;
   private RdmHandler recvCallback;
   private RdmHandler sendCallback;

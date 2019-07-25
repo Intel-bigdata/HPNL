@@ -23,8 +23,8 @@
 MsgStack::MsgStack(int worker_num_, int buffer_num_, bool is_server_,
                    bool external_service_)
     : worker_num(worker_num_),
-      seq_num(0),
       buffer_num(buffer_num_),
+      seq_num(0),
       is_server(is_server_),
       external_service(external_service_),
       fabric(nullptr),

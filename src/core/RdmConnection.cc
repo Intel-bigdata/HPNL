@@ -23,8 +23,9 @@
 #include "core/RdmConnection.h"
 
 RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_,
-                             fid_domain* domain_, fid_cq* cq_, ChunkMgr* buf_mgr_,
-                             int buffer_num_, bool is_server_, bool external_service_)
+                             fid_domain* domain_, fid_cq** cq_, ChunkMgr* buf_mgr_,
+                             int worker_num_, int buffer_num_, int cq_index_,
+                             bool is_server_, bool external_service_)
     : ip(ip_),
       port(port_),
       info(info_),
@@ -32,6 +33,8 @@ RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_,
       conCq(cq_),
       chunk_mgr(buf_mgr_),
       buffer_num(buffer_num_),
+      worker_num(worker_num_),
+      cq_index(cq_index_),
       is_server(is_server_),
       external_service(external_service_) {
   send_callback = nullptr;
@@ -85,11 +88,6 @@ int RdmConnection::init() {
     fi_freeinfo(hints);
   }
 
-  if (fi_endpoint(domain, info, &ep, nullptr)) {
-    perror("fi_endpoint");
-    return -1;
-  }
-
   fi_av_attr av_attr;
   memset(&av_attr, 0, sizeof(av_attr));
   av_attr.type = FI_AV_UNSPEC;
@@ -98,20 +96,29 @@ int RdmConnection::init() {
     return -1;
   }
 
-  if (fi_ep_bind(ep, &conCq->fid, FI_SEND | FI_RECV)) {
-    perror("fi_ep_bind cq");
+  if (fi_scalable_ep(domain, info, &ep, nullptr)) {
+    perror("fi_endpoint");
     return -1;
   }
 
-  if (fi_ep_bind(ep, (fid_t)av, 0)) {
-    perror("fi_ep_bind av");
-    return -1;
+  fi_tx_context(ep, 0, nullptr, &tx, nullptr);
+  fi_ep_bind(tx, (fid_t)conCq[0], FI_SEND);
+  fi_enable(tx);
+
+  if (is_server) {
+    for (int i = 0; i < worker_num; i++) {
+      fi_rx_context(ep, 0, nullptr, &rx[i], nullptr);
+      fi_ep_bind(rx[i], (fid_t)conCq[i], FI_RECV);
+      fi_enable(rx[i]);
+    }
+  } else {
+    fi_rx_context(ep, 0, nullptr, &rx[cq_index], nullptr);
+    fi_ep_bind(rx[cq_index], (fid_t)conCq[cq_index], FI_RECV);
+    fi_enable(rx[cq_index]);
   }
 
-  if (fi_enable(ep)) {
-    perror("fi_enable");
-    return -1;
-  }
+  fi_scalable_ep_bind(ep, &av->fid, 0);
+  fi_enable(ep);
 
   fi_getname((fid_t)ep, local_name, &local_name_len);
 
@@ -125,24 +132,52 @@ int RdmConnection::init() {
     address_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
   }
 
-  int size = 0;
-  while (size < buffer_num) {
-    if (chunk_mgr->free_size()) {
-      Chunk* rck = chunk_mgr->get(this);
-      rck->con = this;
-      if (fi_recv(ep, rck->buffer, rck->capacity, nullptr, FI_ADDR_UNSPEC, &rck->ctx)) {
-        perror("fi_recv");
-        return -1;
+  if (is_server) {
+    for (int i = 0; i < worker_num; i++) {
+      int size = 0;
+      while (size < buffer_num / worker_num) {
+        if (chunk_mgr->free_size()) {
+          Chunk* rck = chunk_mgr->get(this);
+          rck->con = this;
+          //rck->ctx.internal[4] = rck;
+          if (fi_recv(rx[i], rck->buffer, rck->capacity, nullptr, FI_ADDR_UNSPEC,
+                      &rck->ctx)) {
+            perror("fi_recv");
+            return -1;
+          }
+        }
+        if (external_service) {
+          if (chunk_mgr->free_size()) {
+            Chunk* sck = chunk_mgr->get(this);
+            send_chunks.push_back(sck);
+            send_chunks_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
+          }
+        }
+        size++;
       }
     }
-    if (external_service) {
+  } else {
+    int size = 0;
+    while (size < buffer_num) {
       if (chunk_mgr->free_size()) {
-        Chunk* sck = chunk_mgr->get(this);
-        send_chunks.push_back(sck);
-        send_chunks_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
+        Chunk* rck = chunk_mgr->get(this);
+        rck->con = this;
+        //rck->ctx.internal[4] = rck;
+        if (fi_recv(rx[cq_index], rck->buffer, rck->capacity, nullptr, FI_ADDR_UNSPEC,
+                    &rck->ctx)) {
+          perror("fi_recv");
+          return -1;
+        }
       }
-    }
-    size++;
+      if (external_service) {
+        if (chunk_mgr->free_size()) {
+          Chunk* sck = chunk_mgr->get(this);
+          send_chunks.push_back(sck);
+          send_chunks_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
+        }
+      }
+      size++;
+    } 
   }
   return 0;
 }
@@ -153,7 +188,7 @@ int RdmConnection::shutdown() {
 }
 
 int RdmConnection::send(Chunk* ck) {
-  if (fi_send(ep, ck->buffer, ck->size, nullptr, ck->peer_addr, &ck->ctx) < 0) {
+  if (fi_send(tx, ck->buffer, ck->size, nullptr, ck->peer_addr, &ck->ctx) < 0) {
     perror("fi_send");
     return -1;
   }
@@ -179,7 +214,7 @@ int RdmConnection::send(int buffer_size, int buffer_id) {
   msg.iov_count = 1;
   msg.addr = ck->peer_addr;
   msg.context = &ck->ctx;
-  if (fi_sendmsg(ep, &msg, FI_INJECT_COMPLETE)) {
+  if (fi_sendmsg(tx, &msg, FI_INJECT_COMPLETE)) {
     perror("fi_sendmsg");
     return -1;
   }
@@ -193,7 +228,7 @@ int RdmConnection::sendBuf(const char* buffer, int buffer_size) {
   char tmp[32];
   size_t tmp_len = 32;
   fi_av_straddr(av, info->dest_addr, tmp, &tmp_len);
-  if (fi_send(ep, buffer, buffer_size, nullptr, address_map[tmp], ctx)) {
+  if (fi_send(tx, buffer, buffer_size, nullptr, address_map[tmp], ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -227,7 +262,7 @@ int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name)
   msg.iov_count = 1;
   msg.addr = ck->peer_addr;
   msg.context = &ck->ctx;
-  if (fi_sendmsg(ep, &msg, FI_INJECT_COMPLETE)) {
+  if (fi_sendmsg(tx, &msg, FI_INJECT_COMPLETE)) {
     perror("fi_sendmsg");
     return -1;
   }
@@ -253,7 +288,7 @@ int RdmConnection::sendBufTo(const char* buffer, int buffer_size, const char* pe
     peer_addr = address_map[tmp];
   }
 
-  if (fi_send(ep, buffer, buffer_size, nullptr, peer_addr, ctx)) {
+  if (fi_send(tx, buffer, buffer_size, nullptr, peer_addr, ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -302,13 +337,13 @@ void RdmConnection::decode_(Chunk* ck, void* buffer, int* buffer_size, char* pee
   }
 }
 
-int RdmConnection::activate_recv_chunk(Chunk* ck) {
+int RdmConnection::activate_recv_chunk(Chunk* ck, int worker_index) {
   if (ck == nullptr) {
     ck = chunk_mgr->get(this);
   }
   ck->con = this;
-  ck->ctx.internal[4] = ck;
-  if (fi_recv(ep, ck->buffer, ck->capacity, nullptr, FI_ADDR_UNSPEC, &ck->ctx)) {
+  //ck->ctx.internal[4] = ck;
+  if (fi_recv(rx[worker_index], ck->buffer, ck->capacity, nullptr, FI_ADDR_UNSPEC, &ck->ctx)) {
     perror("fi_recv");
     return -1;
   }

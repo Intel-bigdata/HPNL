@@ -31,14 +31,15 @@ class RdmStack;
 
 class ExternalRdmCqDemultiplexer {
  public:
-  ExternalRdmCqDemultiplexer(RdmStack*);
+  ExternalRdmCqDemultiplexer(RdmStack*, int);
   ~ExternalRdmCqDemultiplexer();
   int init();
   int wait_event(Chunk**, int*);
 
  private:
   RdmStack* stack;
-  fid_cq* cq;
+  int index;
+  fid_cq** cqs;
   uint64_t start;
   uint64_t end;
 #ifdef __linux__

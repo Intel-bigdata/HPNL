@@ -31,12 +31,13 @@
 #include <vector>
 
 #include "HPNL/ChunkMgr.h"
+#include "HPNL/Common.h"
 #include "core/ConnectionImpl.h"
 
 class RdmConnection : public ConnectionImpl {
  public:
-  RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, ChunkMgr*, int,
-                bool, bool);
+  RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq**, ChunkMgr*, int,
+                int, int, bool, bool);
   ~RdmConnection() override;
 
   int init() override;
@@ -51,7 +52,7 @@ class RdmConnection : public ConnectionImpl {
   char* get_peer_name() override;
   char* get_local_name();
   int get_local_name_length();
-  int activate_recv_chunk(Chunk* ck) override;
+  int activate_recv_chunk(Chunk* ck = nullptr, int worker_index = -1) override;
   std::vector<Chunk*> get_send_chunk();
 
   void set_recv_callback(Callback*) override;
@@ -72,10 +73,14 @@ class RdmConnection : public ConnectionImpl {
   fi_info* info;
   fid_domain* domain;
   fid_ep* ep;
+  fid_ep* rx[MAX_WORKERS];
+  fid_ep* tx;
   fid_av* av;
-  fid_cq* conCq;
+  fid_cq** conCq;
 
+  int worker_num;
   int buffer_num;
+  int cq_index;
   bool is_server;
   bool external_service;
 

@@ -32,7 +32,7 @@ class ConnectionImpl : public Connection {
   void encode_(Chunk* ck, void* buffer, int buffer_length, char* peer_name) override {}
   void decode_(Chunk* ck, void* buffer, int* buffer_length, char* peer_name) override {}
 
-  virtual int activate_recv_chunk(Chunk* ck) { return 0; }
+  virtual int activate_recv_chunk(Chunk* ck, int worker_index) { return 0; }
 
   void log_used_chunk(Chunk* ck) override = 0;
   void remove_used_chunk(Chunk* ck) override{};

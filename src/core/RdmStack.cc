@@ -21,15 +21,17 @@
 #include <stdio.h>
 #include <iostream>
 
-RdmStack::RdmStack(int buffer_num_, bool is_server_, bool external_service_)
-    : buffer_num(buffer_num_),
+RdmStack::RdmStack(int worker_num_, int buffer_num_, bool is_server_,
+                   bool external_service_)
+    : worker_num(worker_num_),
+      buffer_num(buffer_num_),
+      seq_num(0),
       is_server(is_server_),
       external_service(external_service_),
       domain(nullptr),
       fabric(nullptr),
       info(nullptr),
       server_info(nullptr),
-      cq(nullptr),
       server_con(nullptr),
       initialized(false) {}
 
@@ -38,9 +40,11 @@ RdmStack::~RdmStack() {
     delete con;
     con = nullptr;
   }
-  if (cq) {
-    fi_close(&cq->fid);
-    cq = nullptr;
+  for (int i = 0; i < worker_num; i++) {
+    if (cqs[i]) {
+      fi_close(&cqs[i]->fid);
+      cqs[i] = nullptr;
+    }
   }
   if (info) {
     fi_freeinfo(info);
@@ -99,9 +103,11 @@ int RdmStack::init() {
                                .wait_cond = FI_CQ_COND_NONE,
                                .wait_set = nullptr};
 
-  if (fi_cq_open(domain, &cq_attr, &cq, nullptr)) {
-    perror("fi_cq_open");
-    return -1;
+  for (int i = 0; i < worker_num; i++) {
+    if (fi_cq_open(domain, &cq_attr, &cqs[i], nullptr)) {
+      perror("fi_cq_open");
+      return -1;
+    }
   }
   initialized = true;
   return 0;
@@ -131,10 +137,13 @@ void* RdmStack::bind(const char* ip, const char* port, ChunkMgr* buf_mgr) {
     return nullptr;
   }
   fi_freeinfo(hints);
-  server_con = new RdmConnection(ip, port, server_info, domain, cq, buf_mgr, buffer_num,
-                                 true, external_service);
+  server_con =
+      new RdmConnection(ip, port, server_info, domain, cqs, buf_mgr, worker_num,
+                        buffer_num, seq_num % worker_num, true, external_service);
   server_con->init();
   cons.push_back(server_con);
+
+  seq_num++;
   return server_con;
 }
 
@@ -144,15 +153,18 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, ChunkMgr* buf
   if (buf_mgr->free_size() < buffer_num * 2) {
     return nullptr;
   }
-  RdmConnection* con = new RdmConnection(ip, port, nullptr, domain, cq, buf_mgr,
-                                         buffer_num, false, external_service);
+  RdmConnection* con =
+      new RdmConnection(ip, port, nullptr, domain, cqs, buf_mgr, worker_num, buffer_num,
+                        seq_num % worker_num, false, external_service);
   con->init();
   cons.push_back(con);
+
+  seq_num++;
   return con;
 }
 
 fid_fabric* RdmStack::get_fabric() { return fabric; }
 
-fid_cq* RdmStack::get_cq() { return cq; }
+fid_cq** RdmStack::get_cqs() { return cqs; }
 
 fid_domain* RdmStack::get_domain() { return nullptr; }

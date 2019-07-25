@@ -25,15 +25,16 @@
 Proactor::Proactor(EqDemultiplexer* eqDemultiplexer_, CqDemultiplexer** cqDemultiplexer_,
                    int cq_worker_num_)
     : eqDemultiplexer(eqDemultiplexer_),
-      cq_worker_num(cq_worker_num_),
-      rdmCqDemultiplexer(nullptr) {
+      cq_worker_num(cq_worker_num_) {
   for (int i = 0; i < cq_worker_num; i++) {
     cqDemultiplexer[i] = *(cqDemultiplexer_ + i);
   }
 }
 
-Proactor::Proactor(RdmCqDemultiplexer* rdmCqDemultiplexer_)
-    : rdmCqDemultiplexer(rdmCqDemultiplexer_) {
+Proactor::Proactor(RdmCqDemultiplexer** rdmCqDemultiplexer_, int cq_worker_num) {
+  for (int i = 0; i < cq_worker_num; i++) {
+    rdmCqDemultiplexer[i]  = *(rdmCqDemultiplexer_ + i);
+  }
   eqDemultiplexer = nullptr;
   cq_worker_num = 0;
 }
@@ -62,7 +63,7 @@ int Proactor::cq_service(int index) {
   return 0;
 }
 
-int Proactor::rdm_cq_service() { return rdmCqDemultiplexer->wait_event(); }
+int Proactor::rdm_cq_service(int index) { return rdmCqDemultiplexer[index]->wait_event(); }
 
 int Proactor::register_handler(std::shared_ptr<EventHandler> eh) {
   std::lock_guard<std::mutex> l(mtx);

@@ -33,9 +33,7 @@ Service::Service(int worker_num_, int buffer_num_, bool is_server_)
   stack = nullptr;
   proactor = nullptr;
   eq_demultiplexer = nullptr;
-  rdm_cq_demultiplexer = nullptr;
   eqThread = nullptr;
-  rdmCqThread = nullptr;
   recvCallback = nullptr;
   sendCallback = nullptr;
   readCallback = nullptr;
@@ -49,19 +47,15 @@ Service::~Service() {
   delete eq_demultiplexer;
   for (int i = 0; i < worker_num; i++) {
     delete cq_demultiplexer[i];
-    if (!is_server) {
-      break;
-    }
   }
-  delete rdm_cq_demultiplexer;
+  for (int i = 0; i < worker_num; i++) {
+    delete rdm_cq_demultiplexer[i];
+  }
   delete proactor;
   delete acceptRequestCallback;
   delete eqThread;
   for (int i = 0; i < worker_num; i++) {
     delete cqThread[i];
-    if (!is_server) {
-      break;
-    }
   }
 }
 
@@ -85,15 +79,17 @@ int Service::init(bool msg_) {
     }
     proactor = new Proactor(eq_demultiplexer, cq_demultiplexer, worker_num);
   } else {
-    stack = new RdmStack(buffer_num, is_server, false);
+    stack = new RdmStack(worker_num, buffer_num, is_server, false);
     if ((res = stack->init())) {
       return res;
     }
-    rdm_cq_demultiplexer = new RdmCqDemultiplexer(dynamic_cast<RdmStack*>(stack));
-    if ((res = rdm_cq_demultiplexer->init())) {
-      return res;
+    for (int i = 0; i < worker_num; i++) {
+      rdm_cq_demultiplexer[i] = new RdmCqDemultiplexer(dynamic_cast<RdmStack*>(stack), i);
+      if ((res = rdm_cq_demultiplexer[i]->init())) {
+        return res;
+      }
     }
-    proactor = new Proactor(rdm_cq_demultiplexer);
+    proactor = new Proactor(rdm_cq_demultiplexer, worker_num);
   }
 
   return 0;
@@ -111,8 +107,10 @@ void Service::start() {
       cqThread[i]->start();
     }
   } else {
-    rdmCqThread = new RdmCqThread(proactor);
-    rdmCqThread->start();
+    for (int i = 0; i < worker_num; i++) {
+      rdmCqThread[i] = new RdmCqThread(proactor, i);
+      rdmCqThread[i]->start();
+    }
   }
 }
 
@@ -194,9 +192,11 @@ void Service::shutdown() {
     eqThread->stop();
     eqThread->join();
   }
-  if (rdmCqThread) {
-    rdmCqThread->stop();
-    rdmCqThread->join();
+  for (int i = 0; i < worker_num; i++) {
+    if (rdmCqThread[i]) {
+      rdmCqThread[i]->stop();
+      rdmCqThread[i]->join();
+    }
   }
 }
 
@@ -215,8 +215,10 @@ void Service::wait() {
   if (eqThread) {
     eqThread->join();
   }
-  if (rdmCqThread) {
-    rdmCqThread->join();
+  for (int i = 0; i < worker_num; i++) {
+    if (rdmCqThread[i]) {
+      rdmCqThread[i]->join();
+    }
   }
 }
 

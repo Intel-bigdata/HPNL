@@ -61,7 +61,7 @@ class SendCallback : public Callback {
 
 int main() {
 
-  auto server = new Server(1, 16);
+  auto server = new Server(3, 16);
   server->init(false);
 
   ChunkMgr *bufMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
