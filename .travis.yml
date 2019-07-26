@@ -18,4 +18,6 @@ install:
   - cd build
   - cmake ..
 
-script: make
+script: ctest
+before_script: make
+after_script: make clean

@@ -51,7 +51,7 @@ class RdmConnection : public ConnectionImpl {
   char* get_peer_name() override;
   char* get_local_name();
   int get_local_name_length();
-  int activate_recv_chunk(Chunk* ck) override;
+  int activate_recv_chunk(Chunk* ck = nullptr) override;
   std::vector<Chunk*> get_send_chunk();
 
   void set_recv_callback(Callback*) override;

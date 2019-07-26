@@ -62,5 +62,6 @@ void ExternalRdmService::set_buffer(char* buffer, uint64_t size, int buffer_id) 
   ck->buffer = buffer;
   ck->buffer_id = buffer_id;
   ck->capacity = size;
+  ck->ctx.internal[4] = ck;
   bufMgr->reclaim(ck, nullptr);
 }
