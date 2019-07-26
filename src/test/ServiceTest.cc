@@ -107,14 +107,7 @@ TEST_CASE("rdm client") {
     REQUIRE(service->init(false) == 0);
     service->set_buf_mgr(bufMgr);
     service->start();
-    REQUIRE(service->connect(nullptr, nullptr) == -1);
-    service->shutdown();
-  }
-  SECTION("init->connect->start") {
-    REQUIRE(service->init(false) == 0);
-    service->set_buf_mgr(bufMgr);
-    service->start();
-    REQUIRE(service->connect(nullptr, nullptr) == -1);
+    REQUIRE(service->get_con(nullptr, nullptr) == nullptr);
     service->shutdown();
   }
   delete service;

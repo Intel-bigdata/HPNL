@@ -307,7 +307,6 @@ int RdmConnection::activate_recv_chunk(Chunk* ck) {
     ck = chunk_mgr->get(this);
   }
   ck->con = this;
-  ck->ctx.internal[4] = ck;
   if (fi_recv(ep, ck->buffer, ck->capacity, nullptr, FI_ADDR_UNSPEC, &ck->ctx)) {
     perror("fi_recv");
     return -1;

@@ -61,7 +61,9 @@ void ExternalChunkMgr::reclaim(Chunk* ck, Connection* con) {
   if (!buf_map.count(ck->buffer_id))
     buf_map[ck->buffer_id] = ck;
   bufs.push_back(ck);
-  con->remove_used_chunk(ck);
+  if (con) {
+    con->remove_used_chunk(ck);
+  }
 }
 
 int ExternalChunkMgr::free_size() {

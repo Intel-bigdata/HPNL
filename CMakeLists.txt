@@ -88,4 +88,6 @@ add_subdirectory(src)
 add_subdirectory(examples)
 
 enable_testing()
+add_test(NAME CHUNK_TEST COMMAND chunk_test)
 add_test(NAME CORE_TEST COMMAND core_test)
+add_test(NAME SERVICE_TEST COMMAND service_test)
