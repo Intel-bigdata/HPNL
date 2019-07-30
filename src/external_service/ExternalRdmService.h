@@ -39,7 +39,7 @@ class ExternalRdmService {
   int wait_event(Chunk**, int*);
 
   void set_buffer(char*, uint64_t, int);
-
+  int is_buffer_enough();
  private:
   RdmStack* stack;
   ExternalRdmCqDemultiplexer* demultiplexer;

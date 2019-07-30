@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class EqService {
+public class EqService implements MemoryService {
   static {
     System.loadLibrary("hpnl");
   }
@@ -267,8 +267,9 @@ public class EqService {
     free(this.nativeHandle);
   }
 
-  public void set_buffer(ByteBuffer buffer, long size, int bufferId) {
-    set_buffer1(buffer, size, bufferId, this.nativeHandle);
+  @Override
+  public void setBuffer(ByteBuffer byteBuffer, int bufferSize, int bufferId) {
+    set_buffer1(byteBuffer, bufferSize, bufferId, this.nativeHandle);
   }
 
   public int wait_eq_event() {
@@ -339,4 +340,6 @@ public class EqService {
   private EqThread eqThread;
   private final AtomicBoolean needReap = new AtomicBoolean(false);
   private boolean needStop = false;
+
+
 }

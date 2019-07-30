@@ -27,9 +27,9 @@ public class CqService {
   public CqService(EqService service) {
     this.eqService = service;
     this.serviceNativeHandle = eqService.getNativeHandle();
-    this.cqThreads = new ArrayList<CqThread>();
+    this.cqThreads = new ArrayList<>();
     this.indexMap = new HashMap<>();
-    this.externalHandlers = new ArrayList<LinkedBlockingDeque<ExternalHandler>>();
+    this.externalHandlers = new ArrayList<>();
 
     this.eqService.setCqService(this);
   }
@@ -47,7 +47,7 @@ public class CqService {
           CqThread cqThread = new CqThread(this, i, affinities==null ? -1 : 1L<<affinities[i]);
           cqThreads.add(cqThread);
           this.indexMap.put(i, cqThread.getId());
-        this.externalHandlers.add(new LinkedBlockingDeque<ExternalHandler>());
+        this.externalHandlers.add(new LinkedBlockingDeque<>());
       }
     } catch (ArrayIndexOutOfBoundsException ex) {
       System.out.println("try to set thread affinity.");

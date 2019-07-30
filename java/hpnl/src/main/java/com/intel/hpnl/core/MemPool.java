@@ -22,34 +22,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.nio.ByteBuffer;
 
 public class MemPool {
-  public MemPool(EqService eqService, int initBufferNum, int bufferSize, int nextBufferNum) {
-    this.eqService = eqService;
-    this.rdmService = null;
+  public MemPool(MemoryService service, int initBufferNum, int bufferSize, int nextBufferNum) {
+    this.service = service;
     this.initBufferNum = initBufferNum;
     this.bufferSize = bufferSize;
-    if (nextBufferNum >= initBufferNum*2) {
-      this.nextBufferNum = nextBufferNum; 
-    } else {
-      this.nextBufferNum = initBufferNum*2;
-    }
-    this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
-    this.seqId = new AtomicInteger(0);
-    for (int i = 0; i < this.initBufferNum; i++) {
-      alloc();
-    }
-  }
-
-  public MemPool(RdmService rdmService, int initBufferNum, int bufferSize, int nextBufferNum) {
-    this.eqService = null;
-    this.rdmService = rdmService;
-    this.initBufferNum = initBufferNum;
-    this.bufferSize = bufferSize;
-    if (nextBufferNum >= initBufferNum*2) {
-      this.nextBufferNum = nextBufferNum; 
-    } else {
-      this.nextBufferNum = this.initBufferNum*2;
-    }
-    this.bufferMap = new ConcurrentHashMap<Integer, HpnlBuffer>();
+    this.nextBufferNum = nextBufferNum;
+    this.bufferMap = new ConcurrentHashMap<>();
     this.seqId = new AtomicInteger(0);
     for (int i = 0; i < this.initBufferNum; i++) {
       alloc();
@@ -68,18 +46,13 @@ public class MemPool {
 
   private void alloc() {
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferSize);
-    int seq = seqId.getAndIncrement();
-    HpnlBuffer buffer = new HpnlBuffer(seq, byteBuffer);
-    bufferMap.put(seq, buffer);
-    if (eqService!= null) {
-      eqService.set_buffer(byteBuffer, bufferSize, seq);
-    } else {
-      rdmService.set_buffer(byteBuffer, bufferSize, seq);
-    }
+    int bufferId = seqId.getAndIncrement();
+    HpnlBuffer buffer = new HpnlBuffer(bufferId, byteBuffer);
+    bufferMap.put(bufferId, buffer);
+    service.setBuffer(byteBuffer, bufferSize, bufferId);
   }
 
-  private EqService eqService;
-  private RdmService rdmService;
+  private MemoryService service;
   private int initBufferNum;
   private int bufferSize;
   private int nextBufferNum;
