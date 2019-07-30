@@ -52,7 +52,7 @@ class ExternalEqService {
   void reap(fid*);
   MsgStack* get_stack();
   int get_worker_num();
-
+  int is_buffer_enough();
  private:
   MsgStack* stack;
 

@@ -106,14 +106,13 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_native_1connect(
   ExternalEqService* service = *(ExternalEqService**)&eqServicePtr;
   const char* ip = (*env).GetStringUTFChars(ip_, 0);
   const char* port = (*env).GetStringUTFChars(port_, 0);
-
+  
+  while (!service->is_buffer_enough()) {
+    (*env).CallVoidMethod(thisObj, reallocBufferPool);
+  }
   fid_eq* new_eq = service->connect(ip, port);
   if (!new_eq) {
-    (*env).CallVoidMethod(thisObj, reallocBufferPool);
-    new_eq = service->connect(ip, port);
-    if (!new_eq) {
-      return -1;
-    }
+    return -1;
   }
   jlong ret = *(jlong*)&new_eq;
   return ret;
@@ -134,14 +133,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_EqService_wait_1eq_1event1(
   if (ret < 0) return ret;
   if (ret == ACCEPT_EVENT) {
     // accept new connection and register eq id
-    fid_eq* new_eq;
-    new_eq = service->accept(info);
-    if (!new_eq) {
-      assert(reallocBufferPool);
+    while (!service->is_buffer_enough()) {
       (*env).CallVoidMethod(thisObj, reallocBufferPool);
-      new_eq = service->accept(info);
-      assert(new_eq != NULL);
     }
+    fid_eq* new_eq = service->accept(info);
+    assert(new_eq != NULL);
     service->add_eq_event(new_eq);
   } else if (ret == CONNECTED_EVENT) {
     char** dest_addr = (char**)malloc(sizeof(char*));

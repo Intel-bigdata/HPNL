@@ -109,9 +109,6 @@ int RdmStack::init() {
 
 void* RdmStack::bind(const char* ip, const char* port, ChunkMgr* buf_mgr) {
   if (!initialized || !ip || !port || !buf_mgr) return nullptr;
-  if (buf_mgr->free_size() < buffer_num * 2) {
-    return nullptr;
-  }
   fi_info* hints = fi_allocinfo();
   hints->ep_attr->type = FI_EP_RDM;
   hints->caps = FI_MSG;
@@ -141,9 +138,6 @@ void* RdmStack::bind(const char* ip, const char* port, ChunkMgr* buf_mgr) {
 RdmConnection* RdmStack::get_con(const char* ip, const char* port, ChunkMgr* buf_mgr) {
   if (!initialized || !ip || !port || !buf_mgr) return nullptr;
   std::lock_guard<std::mutex> lk(mtx);
-  if (buf_mgr->free_size() < buffer_num * 2) {
-    return nullptr;
-  }
   RdmConnection* con = new RdmConnection(ip, port, nullptr, domain, cq, buf_mgr,
                                          buffer_num, false, external_service);
   con->init();

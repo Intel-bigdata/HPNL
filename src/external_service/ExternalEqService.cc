@@ -69,14 +69,7 @@ free_stack:
 }
 
 fid_eq* ExternalEqService::accept(fi_info* info) {
-  fid_eq* eq = nullptr;
-  if (chkMgr->free_size() < buffer_num * 2) {
-    return nullptr;
-  }
-  eq = stack->accept(info, chkMgr);
-  if (!eq) {
-    return nullptr;
-  }
+  fid_eq* eq = stack->accept(info, chkMgr);
   return eq;
 }
 
@@ -89,9 +82,6 @@ fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
       return nullptr;
     }
   } else {
-    if (chkMgr->free_size() < buffer_num * 2) {
-      return nullptr;
-    }
     eq = stack->connect(ip, port, chkMgr);
     if (!eq) return nullptr;
   }
@@ -135,6 +125,8 @@ void ExternalEqService::reap(fid* con_id) { stack->reap(con_id); }
 MsgStack* ExternalEqService::get_stack() { return stack; }
 
 int ExternalEqService::get_worker_num() { return worker_num; }
+
+int ExternalEqService::is_buffer_enough() { return chkMgr->free_size() >= 2*buffer_num; }
 
 int ExternalEqService::add_eq_event(fid_eq* eq) {
   eq_demultiplexer->add_event(eq);

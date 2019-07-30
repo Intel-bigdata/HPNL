@@ -65,3 +65,5 @@ void ExternalRdmService::set_buffer(char* buffer, uint64_t size, int buffer_id) 
   ck->ctx.internal[4] = ck;
   bufMgr->reclaim(ck, nullptr);
 }
+
+int ExternalRdmService::is_buffer_enough() { return bufMgr->free_size() >= 2*buffer_num; }

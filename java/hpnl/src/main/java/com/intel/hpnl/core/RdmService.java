@@ -20,7 +20,7 @@ package com.intel.hpnl.core;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RdmService {
+public class RdmService implements MemoryService {
   static {
     System.loadLibrary("hpnl");
   }
@@ -117,8 +117,9 @@ public class RdmService {
     return this.bufferPool.getBuffer(bufferId);
   }
 
-  public void set_buffer(ByteBuffer buffer, long size, int bufferId) {
-    set_buffer1(buffer, size, bufferId, this.nativeHandle);
+  @Override
+  public void setBuffer(ByteBuffer byteBuffer, int bufferSize, int bufferId) {
+    set_buffer1(byteBuffer, bufferSize, bufferId, this.nativeHandle);
   }
 
   private native int init(int buffer_num, boolean is_server);

@@ -70,13 +70,12 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_listen(
   ExternalRdmService* service = *(ExternalRdmService**)&nativeHandle;
   const char* ip = (*env).GetStringUTFChars(ip_, 0);
   const char* port = (*env).GetStringUTFChars(port_, 0);
+  while (!service->is_buffer_enough()) {
+    (*env).CallVoidMethod(obj, reallocBufferPool);
+  }
   RdmConnection* con = service->listen(ip, port);
   if (!con) {
-    (*env).CallVoidMethod(obj, reallocBufferPool);
-    con = service->listen(ip, port);
-    if (!con) {
-      return -1;
-    }
+    return -1;
   }
 
   (*env).CallVoidMethod(obj, establishConnection, *(jlong*)&con);
@@ -97,13 +96,12 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(
   ExternalRdmService* service = *(ExternalRdmService**)&nativeHandle;
   const char* ip = (*env).GetStringUTFChars(ip_, 0);
   const char* port = (*env).GetStringUTFChars(port_, 0);
+  while (!service->is_buffer_enough()) {
+    (*env).CallVoidMethod(obj, reallocBufferPool);
+  }
   RdmConnection* con = (RdmConnection*)service->get_con(ip, port);
   if (!con) {
-    (*env).CallVoidMethod(obj, reallocBufferPool);
-    con = (RdmConnection*)service->get_con(ip, port);
-    if (!con) {
-      return -1;
-    }
+    return -1;
   }
   (*env).CallVoidMethod(obj, establishConnection, *(jlong*)&con);
 
