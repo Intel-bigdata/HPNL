@@ -57,7 +57,7 @@ class Service {
   void wait();
 
   // Initialize buffer container
-  void set_buf_mgr(ChunkMgr* /*bufMgr_*/);
+  void set_chunk_mgr(ChunkMgr* /*bufMgr_*/);
 
   // Initialize event callback
   void set_send_callback(Callback* /*callback*/);

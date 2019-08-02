@@ -42,7 +42,7 @@ void Server::shutdown(Connection* con) { service->shutdown(con); }
 
 void Server::wait() { service->wait(); }
 
-void Server::set_buf_mgr(ChunkMgr* chunkMgr) { service->set_buf_mgr(chunkMgr); }
+void Server::set_chunk_mgr(ChunkMgr* chunkMgr) { service->set_chunk_mgr(chunkMgr); }
 
 void Server::set_send_callback(Callback* callback) {
   service->set_send_callback(callback);

@@ -100,7 +100,7 @@ class PoolAllocator {
 class ChunkPool : public boost::pool<PoolAllocator>, public ChunkMgr {
   public:
     ChunkPool(FabricService*, int request_buffer_size,
-              int next_request_buffer_number, int max_buffer_number);
+              int next_request_buffer_number);
     ~ChunkPool() override;
     void *malloc();
     void free(void * const ck);

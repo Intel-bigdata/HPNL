@@ -35,13 +35,13 @@ uint64_t timestamp_now() {
 
 class RecvCallback : public Callback {
   public:
-    explicit RecvCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    explicit RecvCallback(ChunkMgr *chunkMgr_) : chunkMgr(chunkMgr_) {}
     ~RecvCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       std::lock_guard<std::mutex> lk(mtx);
       count++;
       int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->get(mid);
+      Chunk *ck = chunkMgr->get(mid);
       auto con = (Connection*)ck->con;
       if (count >= 1000000) {
         end = timestamp_now();
@@ -60,32 +60,32 @@ class RecvCallback : public Callback {
       con->send(ck);
     }
   private:
-    ChunkMgr *bufMgr;
+    ChunkMgr *chunkMgr;
 };
 
 class SendCallback : public Callback {
   public:
-    explicit SendCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    explicit SendCallback(ChunkMgr *chunkMgr_) : chunkMgr(chunkMgr_) {}
     ~SendCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->get(mid);
+      Chunk *ck = chunkMgr->get(mid);
       auto con = (Connection*)ck->con;
-      bufMgr->reclaim(ck, con);
+      chunkMgr->reclaim(ck, con);
     }
   private:
-    ChunkMgr *bufMgr;
+    ChunkMgr *chunkMgr;
 };
 
 int main() {
   auto client = new Client(1, 16);
   client->init(false);
 
-  ChunkMgr *bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
-  client->set_buf_mgr(bufMgr);
+  ChunkMgr *chunkMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM);
+  client->set_chunk_mgr(chunkMgr);
 
-  auto recvCallback = new RecvCallback(bufMgr);
-  auto sendCallback = new SendCallback(bufMgr);
+  auto recvCallback = new RecvCallback(chunkMgr);
+  auto sendCallback = new SendCallback(chunkMgr);
   client->set_recv_callback(recvCallback);
   client->set_send_callback(sendCallback);
 
@@ -97,7 +97,7 @@ int main() {
   memset(buffer, '0', MSG_SIZE);
   
   char* peer_name = con->get_peer_name();
-  auto ck = bufMgr->get(con);
+  auto ck = chunkMgr->get(con);
   con->encode_(ck, buffer, MSG_SIZE, peer_name);
   con->send(ck);
 
@@ -106,7 +106,7 @@ int main() {
   delete recvCallback;
   delete sendCallback;
   delete client;
-  delete bufMgr;
+  delete chunkMgr;
 
   return 0;
 }

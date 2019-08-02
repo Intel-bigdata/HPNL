@@ -45,7 +45,7 @@ Connection* Client::get_con(const char* addr, const char* port) {
 
 void Client::wait() { service->wait(); }
 
-void Client::set_buf_mgr(ChunkMgr* chunkMgr) { service->set_buf_mgr(chunkMgr); }
+void Client::set_chunk_mgr(ChunkMgr* chunkMgr) { service->set_chunk_mgr(chunkMgr); }
 
 void Client::set_send_callback(Callback* callback) {
   service->set_send_callback(callback);

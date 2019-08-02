@@ -60,8 +60,8 @@ class ShutdownCallback : public Callback {
 
 class ConnectedCallback : public Callback {
  public:
-  explicit ConnectedCallback(Client* client_, ChunkMgr* bufMgr_)
-      : client(client_), bufMgr(bufMgr_) {}
+  explicit ConnectedCallback(Client* client_, ChunkMgr* chunkMgr_)
+      : client(client_), chunkMgr(chunkMgr_) {}
   ~ConnectedCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
     rma_buffer = static_cast<char*>(std::malloc(4096));
@@ -69,7 +69,7 @@ class ConnectedCallback : public Callback {
     rkey = client->reg_rma_buffer(rma_buffer, 4096, 0);
 
     auto con = static_cast<Connection*>(param_1);
-    Chunk* ck = bufMgr->get(con);
+    Chunk* ck = chunkMgr->get(con);
     ck->size = MSG_SIZE;
     memset(ck->buffer, '0', MSG_SIZE);
     con->send(ck);
@@ -77,17 +77,17 @@ class ConnectedCallback : public Callback {
 
  private:
   Client* client;
-  ChunkMgr* bufMgr;
+  ChunkMgr* chunkMgr;
 };
 
 class RecvCallback : public Callback {
  public:
-  RecvCallback(Client* client_, ChunkMgr* bufMgr_) : client(client_), bufMgr(bufMgr_) {}
+  RecvCallback(Client* client_, ChunkMgr* chunkMgr_) : client(client_), chunkMgr(chunkMgr_) {}
   ~RecvCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
     std::lock_guard<std::mutex> lk(mtx);
     int mid = *static_cast<int*>(param_1);
-    Chunk* ck = bufMgr->get(mid);
+    Chunk* ck = chunkMgr->get(mid);
 
     flatbuffers::FlatBufferBuilder builder;
     builder.PushFlatBuffer(static_cast<unsigned char*>(ck->buffer), ck->size);
@@ -101,34 +101,34 @@ class RecvCallback : public Callback {
 
  private:
   Client* client;
-  ChunkMgr* bufMgr;
+  ChunkMgr* chunkMgr;
 };
 
 class SendCallback : public Callback {
  public:
-  explicit SendCallback(ChunkMgr* bufMgr_) : bufMgr(bufMgr_) {}
+  explicit SendCallback(ChunkMgr* chunkMgr_) : chunkMgr(chunkMgr_) {}
   ~SendCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
     int mid = *static_cast<int*>(param_1);
-    Chunk* ck = bufMgr->get(mid);
+    Chunk* ck = chunkMgr->get(mid);
     auto con = static_cast<Connection*>(ck->con);
-    bufMgr->reclaim(ck, con);
+    chunkMgr->reclaim(ck, con);
   }
 
  private:
-  ChunkMgr* bufMgr;
+  ChunkMgr* chunkMgr;
 };
 
 int main(int argc, char* argv[]) {
   auto client = new Client(1, 16);
   client->init();
 
-  ChunkMgr* bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM * 10);
-  client->set_buf_mgr(bufMgr);
+  ChunkMgr* chunkMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM);
+  client->set_chunk_mgr(chunkMgr);
 
-  auto recvCallback = new RecvCallback(client, bufMgr);
-  auto sendCallback = new SendCallback(bufMgr);
-  auto connectedCallback = new ConnectedCallback(client, bufMgr);
+  auto recvCallback = new RecvCallback(client, chunkMgr);
+  auto sendCallback = new SendCallback(chunkMgr);
+  auto connectedCallback = new ConnectedCallback(client, chunkMgr);
   auto shutdownCallback = new ShutdownCallback(client);
 
   client->set_recv_callback(recvCallback);
@@ -146,6 +146,6 @@ int main(int argc, char* argv[]) {
   delete sendCallback;
   delete recvCallback;
   delete client;
-  delete bufMgr;
+  delete chunkMgr;
   return 0;
 }
