@@ -30,14 +30,14 @@ TEST_CASE("msg server") {
   SECTION("init") { REQUIRE(service->init(true) == 0); }
   SECTION("init->start->listen") {
     REQUIRE(service->init(true) == 0);
-    service->set_buf_mgr(bufMgr);
+    service->set_chunk_mgr(bufMgr);
     service->start();
     REQUIRE(service->listen(nullptr, nullptr) == -1);
     service->shutdown();
   }
   SECTION("init->listen->start") {
     REQUIRE(service->init(true) == 0);
-    service->set_buf_mgr(bufMgr);
+    service->set_chunk_mgr(bufMgr);
     REQUIRE(service->listen(nullptr, nullptr) == -1);
     service->start();
     service->shutdown();
@@ -55,14 +55,14 @@ TEST_CASE("msg client") {
   SECTION("init") { REQUIRE(service->init(true) == 0); }
   SECTION("init->start->connect") {
     REQUIRE(service->init(true) == 0);
-    service->set_buf_mgr(bufMgr);
+    service->set_chunk_mgr(bufMgr);
     service->start();
     REQUIRE(service->connect(nullptr, nullptr) == -1);
     service->shutdown();
   }
   SECTION("init->connect->start") {
     REQUIRE(service->init(true) == 0);
-    service->set_buf_mgr(bufMgr);
+    service->set_chunk_mgr(bufMgr);
     REQUIRE(service->connect(nullptr, nullptr) == -1);
     service->start();
     service->shutdown();
@@ -80,14 +80,14 @@ TEST_CASE("rdm server") {
   SECTION("init") { REQUIRE(service->init(false) == 0); }
   SECTION("init->start->listen") {
     REQUIRE(service->init(false) == 0);
-    service->set_buf_mgr(bufMgr);
+    service->set_chunk_mgr(bufMgr);
     service->start();
     REQUIRE(service->listen(nullptr, nullptr) == -1);
     service->shutdown();
   }
   SECTION("init->listen->start") {
     REQUIRE(service->init(false) == 0);
-    service->set_buf_mgr(bufMgr);
+    service->set_chunk_mgr(bufMgr);
     REQUIRE(service->listen(nullptr, nullptr) == -1);
     service->start();
     service->shutdown();
@@ -105,7 +105,7 @@ TEST_CASE("rdm client") {
   SECTION("init") { REQUIRE(service->init(false) == 0); }
   SECTION("init->start->connect") {
     REQUIRE(service->init(false) == 0);
-    service->set_buf_mgr(bufMgr);
+    service->set_chunk_mgr(bufMgr);
     service->start();
     REQUIRE(service->get_con(nullptr, nullptr) == nullptr);
     service->shutdown();

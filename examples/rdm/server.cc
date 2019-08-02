@@ -30,11 +30,11 @@
 
 class RecvCallback : public Callback {
   public:
-    explicit RecvCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    explicit RecvCallback(ChunkMgr *chunkMgr_) : chunkMgr(chunkMgr_) {}
     ~RecvCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->get(mid);
+      Chunk *ck = chunkMgr->get(mid);
       auto con = (Connection*)ck->con;
       char peer_name[16];
       con->decode_(ck, nullptr, nullptr, peer_name);
@@ -42,21 +42,21 @@ class RecvCallback : public Callback {
       con->send(ck);
     }
   private:
-    ChunkMgr *bufMgr;
+    ChunkMgr *chunkMgr;
 };
 
 class SendCallback : public Callback {
   public:
-    explicit SendCallback(ChunkMgr *bufMgr_) : bufMgr(bufMgr_) {}
+    explicit SendCallback(ChunkMgr *chunkMgr_) : chunkMgr(chunkMgr_) {}
     ~SendCallback() override = default;
     void operator()(void *param_1, void *param_2) override {
       int mid = *(int*)param_1;
-      Chunk *ck = bufMgr->get(mid);
+      Chunk *ck = chunkMgr->get(mid);
       auto con = (Connection*)ck->con;
-      bufMgr->reclaim(ck, con);
+      chunkMgr->reclaim(ck, con);
     }
   private:
-    ChunkMgr *bufMgr;
+    ChunkMgr *chunkMgr;
 };
 
 int main() {
@@ -64,11 +64,11 @@ int main() {
   auto server = new Server(1, 16);
   server->init(false);
 
-  ChunkMgr *bufMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM*10);
-  server->set_buf_mgr(bufMgr);
+  ChunkMgr *chunkMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM);
+  server->set_chunk_mgr(chunkMgr);
 
-  auto recvCallback = new RecvCallback(bufMgr);
-  auto sendCallback = new SendCallback(bufMgr);
+  auto recvCallback = new RecvCallback(chunkMgr);
+  auto sendCallback = new SendCallback(chunkMgr);
   server->set_recv_callback(recvCallback);
   server->set_send_callback(sendCallback);
 
@@ -80,6 +80,6 @@ int main() {
   delete recvCallback;
   delete sendCallback;
   delete server;
-  delete bufMgr;
+  delete chunkMgr;
   return 0;
 }

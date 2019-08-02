@@ -116,8 +116,8 @@ int main(int argc, char* argv[]) {
   auto client = new Client(1, 16);
   client->init();
 
-  ChunkMgr* bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM * 10);
-  client->set_buf_mgr(bufMgr);
+  ChunkMgr* bufMgr = new ChunkPool(client, BUFFER_SIZE, BUFFER_NUM);
+  client->set_chunk_mgr(bufMgr);
 
   auto recvCallback = new RecvCallback(client, bufMgr);
   auto sendCallback = new SendCallback(bufMgr);
@@ -131,7 +131,6 @@ int main(int argc, char* argv[]) {
 
   client->start();
   client->connect("172.168.2.106", "12345");
-
   client->wait();
 
   delete shutdownCallback;

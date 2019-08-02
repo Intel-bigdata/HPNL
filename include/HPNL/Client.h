@@ -71,7 +71,7 @@ class Client : public FabricService {
     /// Buffer management
     /// This method should be called after init
     /// \param set chunk management to server
-    void set_buf_mgr(ChunkMgr* chunkMgr);
+    void set_chunk_mgr(ChunkMgr* chunkMgr);
 
     /// Initialize event callback
     /// \param this function will be called when received new message.

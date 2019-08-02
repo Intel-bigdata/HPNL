@@ -22,7 +22,7 @@
 
 TEST_CASE("chunk pool") {
   int request_chunk_number = 32;
-  auto cp = new ChunkPool(nullptr, 4096, request_chunk_number * 2, 1024);
+  auto cp = new ChunkPool(nullptr, 4096, request_chunk_number * 2);
   for (int i = 0; i < request_chunk_number; i++) {
     auto ck = reinterpret_cast<Chunk*>(cp->get(nullptr));
     REQUIRE(ck != nullptr);

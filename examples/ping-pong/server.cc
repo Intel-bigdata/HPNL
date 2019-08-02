@@ -37,44 +37,44 @@ class ShutdownCallback : public Callback {
 
 class RecvCallback : public Callback {
  public:
-  explicit RecvCallback(ChunkMgr* bufMgr_) : bufMgr(bufMgr_) {}
+  explicit RecvCallback(ChunkMgr* chunkMgr_) : chunkMgr(chunkMgr_) {}
   ~RecvCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
     int mid = *static_cast<int*>(param_1);
-    auto ck = bufMgr->get(mid);
-    ck->size = MSG_SIZE;
+    auto ck = chunkMgr->get(mid);
     auto con = static_cast<Connection*>(ck->con);
+    ck->size = MSG_SIZE;
     con->send(ck);
   }
 
  private:
-  ChunkMgr* bufMgr;
+  ChunkMgr* chunkMgr;
 };
 
 class SendCallback : public Callback {
  public:
-  explicit SendCallback(ChunkMgr* bufMgr_) : bufMgr(bufMgr_) {}
+  explicit SendCallback(ChunkMgr* chunkMgr_) : chunkMgr(chunkMgr_) {}
   ~SendCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
     int mid = *static_cast<int*>(param_1);
-    Chunk* ck = bufMgr->get(mid);
+    Chunk* ck = chunkMgr->get(mid);
     auto con = static_cast<Connection*>(ck->con);
-    bufMgr->reclaim(ck, con);
+    chunkMgr->reclaim(ck, con);
   }
 
  private:
-  ChunkMgr* bufMgr;
+  ChunkMgr* chunkMgr;
 };
 
 int main(int argc, char* argv[]) {
   auto server = new Server(1, 16);
   server->init();
 
-  ChunkMgr* bufMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM, BUFFER_NUM * 10);
-  server->set_buf_mgr(bufMgr);
+  ChunkMgr* chunkMgr = new ChunkPool(server, BUFFER_SIZE, BUFFER_NUM);
+  server->set_chunk_mgr(chunkMgr);
 
-  auto recvCallback = new RecvCallback(bufMgr);
-  auto sendCallback = new SendCallback(bufMgr);
+  auto recvCallback = new RecvCallback(chunkMgr);
+  auto sendCallback = new SendCallback(chunkMgr);
   auto shutdownCallback = new ShutdownCallback();
   server->set_recv_callback(recvCallback);
   server->set_send_callback(sendCallback);
@@ -89,6 +89,6 @@ int main(int argc, char* argv[]) {
   delete sendCallback;
   delete shutdownCallback;
   delete server;
-  delete bufMgr;
+  delete chunkMgr;
   return 0;
 }

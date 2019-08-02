@@ -54,8 +54,8 @@ std::map<Chunk*, int> PoolAllocator::chunk_to_id_map;
 std::mutex PoolAllocator::mtx;
 
 ChunkPool::ChunkPool(FabricService* service, const int request_buffer_size,
-  const int next_request_buffer_number, const int max_buffer_number) :
-    pool(request_buffer_size+sizeof(Chunk), next_request_buffer_number, max_buffer_number),
+  const int next_request_buffer_number) :
+    pool(request_buffer_size+sizeof(Chunk), next_request_buffer_number, 0),
     buffer_size(request_buffer_size), used_buffers(0) {
 
   PoolAllocator::buffer_size = buffer_size;

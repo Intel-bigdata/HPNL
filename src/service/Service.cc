@@ -220,7 +220,7 @@ void Service::wait() {
   }
 }
 
-void Service::set_buf_mgr(ChunkMgr* bufMgr_) { this->bufMgr = bufMgr_; }
+void Service::set_chunk_mgr(ChunkMgr* bufMgr_) { this->bufMgr = bufMgr_; }
 
 void Service::set_recv_callback(Callback* callback) { recvCallback = callback; }
 
