@@ -18,13 +18,7 @@ class ExternalRdmCqDemultiplexer {
     int wait_event(Chunk**, int*);
   private:
     RdmStack *stack;
-    int epfd;
-    int fd;
-    struct epoll_event event;
-    fid_fabric *fabric;
     fid_cq *cq;
-    uint64_t start;
-    uint64_t end;
 };
 
 #endif

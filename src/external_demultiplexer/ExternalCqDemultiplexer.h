@@ -18,12 +18,6 @@ class ExternalCqDemultiplexer {
   private:
     MsgStack *stack;
     fid_cq *cq;
-    fid_fabric *fabric;
-    struct epoll_event event;
-    int epfd;
-    int fd;
-    uint64_t start;
-    uint64_t end;
 };
 
 #endif
