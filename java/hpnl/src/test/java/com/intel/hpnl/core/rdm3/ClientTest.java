@@ -64,16 +64,17 @@ public class ClientTest implements Runnable {
         boolean b = r%2 == 0;
         int len = 0;
         if (b) {
-          len = 2414;
-          for (int i = 0; i < len; i++) {
-            rawBuffer.put((byte) i);
-          }
+          len = 2141;
+//          for (int i = 0; i < len; i++) {
+//            rawBuffer.put((byte) i);
+//          }
         } else {
-          len = rawBuffer.remaining();
-          for (int i = 0; i < len; i++) {
-            rawBuffer.put((byte) i);
-          }
+          len = 2137;
+//          for (int i = 0; i < len; i++) {
+//            rawBuffer.put((byte) i);
+//          }
         }
+        rawBuffer.position(rawBuffer.position()+len);
         int pos = rawBuffer.position();
         rawBuffer.position(posBefore);
         rawBuffer.putInt(len);
@@ -82,9 +83,9 @@ public class ClientTest implements Runnable {
         sendBuffer.insertMetadata((byte) 0, -1L, limit);
         rawBuffer.flip();
         connection.send(sendBuffer.remaining(), sendBuffer.getBufferId());
-        try {
-            Thread.sleep(200);
-        }catch(InterruptedException e){}
+//        try {
+//            Thread.sleep(200);
+//        }catch(InterruptedException e){}
 
       eventTask.addPendingTask(task);
     };

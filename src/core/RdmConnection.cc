@@ -58,7 +58,7 @@ int RdmConnection::init() {
   
   fi_av_attr	av_attr;
   memset(&av_attr, 0, sizeof(av_attr));
-  av_attr.type = FI_AV_UNSPEC;
+  av_attr.type = FI_AV_MAP;
   if (fi_av_open(domain, &av_attr, &av, NULL))
     perror("fi_av_open");
   
