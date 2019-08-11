@@ -1,6 +1,7 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractConnection;
+import com.intel.hpnl.api.EventTask;
 import com.intel.hpnl.api.HpnlBuffer;
 import com.intel.hpnl.api.HpnlService;
 import org.slf4j.Logger;
@@ -15,6 +16,8 @@ public class RdmConnection extends AbstractConnection {
   private boolean server;
   private long nativeConnId;
   private long nativeHandle;
+
+  private EventTask eventTask;
 
   private static final Logger log = LoggerFactory.getLogger(RdmConnection.class);
 
@@ -61,6 +64,20 @@ public class RdmConnection extends AbstractConnection {
 
   protected long getNativeHandle() {
     return this.nativeHandle;
+  }
+
+  public void setEventTask(EventTask eventTask) {
+    this.eventTask = eventTask;
+  }
+
+  @Override
+  protected void addTask(int eventType, int bufferId, int bufferSize){
+    eventTask.addPendingTask(new Runnable() {
+      @Override
+      public void run() {
+        RdmConnection.this.executeCallback(eventType, bufferId, bufferSize);
+      }
+    });
   }
 
   @Override

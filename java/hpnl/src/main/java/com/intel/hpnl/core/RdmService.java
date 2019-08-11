@@ -66,6 +66,7 @@ public class RdmService extends AbstractService {
       con.setAddrInfo("<unset>", 0, localIp, localPort);
     }
     con.setConnectionId(localIp, localPort);
+    con.setEventTask(task);
     this.conMap.put(connHandle, con);
   }
 

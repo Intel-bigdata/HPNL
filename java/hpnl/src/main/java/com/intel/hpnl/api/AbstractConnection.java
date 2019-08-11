@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import com.intel.hpnl.core.RdmConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +64,8 @@ public abstract class AbstractConnection implements Connection {
   protected abstract int getCqIndexFromNative(long nativeHandle);
 
   protected abstract long getNativeHandle();
+
+  protected abstract void addTask(int eventType, int bufferId, int bufferSize);
 
   public Handler getConnectedCallback() {
     return this.connectedCallback;
@@ -159,10 +160,18 @@ public abstract class AbstractConnection implements Connection {
   }
 
   protected int handleCallback(int eventType, int bufferId, int bufferSize) {
+    addTask(eventType, bufferId, bufferSize);
+    return 0;
+  }
+
+  public void executeCallback(int eventType, int bufferId, int bufferSize){
     int e;
     switch(eventType) {
       case EventType.RECV_EVENT:
-        e = this.executeCallback(this.recvCallback, bufferId, bufferSize);
+        e = this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
+        if(e == Handler.RESULT_DEFAULT){
+          this.releaseRecvBuffer(bufferId);
+        }
         break;
       case EventType.SEND_EVENT:
 //        RdmConnection connection = (RdmConnection)this;
@@ -174,28 +183,25 @@ public abstract class AbstractConnection implements Connection {
 //        }
 //        log.info("{}, {}, {}, {}, {}", connection.getConnectionId(), bufferId, seqId,
 //                buffer.getRawBuffer().limit(), bufferSize);
-        e = this.executeCallback(this.sendCallback, bufferId, bufferSize);
+        e = this.safeExecuteCallback(this.sendCallback, bufferId, bufferSize);
         if (e == Handler.RESULT_DEFAULT) {
           this.reclaimSendBuffer(bufferId);
         }
         break;
       case EventType
               .CONNECTED_EVENT:
-        e = this.executeCallback(this.connectedCallback, bufferId, 0);
+        this.safeExecuteCallback(this.connectedCallback, bufferId, 0);
         break;
       case EventType.READ_EVENT:
-        e = this.executeCallback(this.readCallback, bufferId, bufferSize);
+        this.safeExecuteCallback(this.readCallback, bufferId, bufferSize);
         break;
       case EventType.SHUTDOWN:
-        e = this.executeCallbacks(this.shutdownCallbacks, bufferId, 0);
+        this.executeCallbacks(this.shutdownCallbacks, bufferId, 0);
         break;
-      default:
-        e = 1;
     }
-    return e;
   }
 
-  private int executeCallback(Handler handler, int bufferId, int bufferSize) {
+  private int safeExecuteCallback(Handler handler, int bufferId, int bufferSize) {
     if (handler == null) {
       return 1;
     } else {
@@ -214,7 +220,7 @@ public abstract class AbstractConnection implements Connection {
 
     while(var5.hasNext()) {
       Handler callback = (Handler)var5.next();
-      int tmp = this.executeCallback(callback, bufferId, bufferSize);
+      int tmp = this.safeExecuteCallback(callback, bufferId, bufferSize);
       if (tmp == 0) {
         ret = tmp;
       }

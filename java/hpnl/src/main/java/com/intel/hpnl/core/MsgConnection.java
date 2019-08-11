@@ -21,6 +21,9 @@ public class MsgConnection extends AbstractConnection {
   }
 
   @Override
+  protected void addTask(int eventType, int bufferId, int bufferSize){}
+
+  @Override
   protected void initialize(long nativeCon) {
     this.init(nativeCon);
   }
