@@ -19,6 +19,8 @@ public class RdmService extends AbstractService {
 
   private static final Logger log = LoggerFactory.getLogger(RdmService.class);
 
+  private Thread taskThread;
+
   static{
     String nic = HpnlConfig.getInstance().getNic();
     try {
@@ -41,8 +43,13 @@ public class RdmService extends AbstractService {
     this.init(this.bufferNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
     this.initBufferPool(this.bufferNum, this.bufferSize, this.bufferNum);
     this.task = new RdmService.RdmTask(ioRatio);
+    taskThread = new Thread(task);
     Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
     return this;
+  }
+
+  public void start(){
+    taskThread.start();
   }
 
   @Override
@@ -66,7 +73,6 @@ public class RdmService extends AbstractService {
       con.setAddrInfo("<unset>", 0, localIp, localPort);
     }
     con.setConnectionId(localIp, localPort);
-    con.setEventTask(task);
     this.conMap.put(connHandle, con);
   }
 
@@ -91,6 +97,10 @@ public class RdmService extends AbstractService {
   public void stop() {
     if(!this.task.isStopped()) {
       synchronized (this) {
+        if(taskThread != null) {
+          taskThread.interrupt();
+          taskThread = null;
+        }
         if (!this.task.isStopped()) {
           this.task.stop();
 //          this.waitToComplete();

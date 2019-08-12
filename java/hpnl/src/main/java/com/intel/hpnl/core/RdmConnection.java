@@ -1,7 +1,6 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractConnection;
-import com.intel.hpnl.api.EventTask;
 import com.intel.hpnl.api.HpnlBuffer;
 import com.intel.hpnl.api.HpnlService;
 import org.slf4j.Logger;
@@ -9,15 +8,17 @@ import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
-public class RdmConnection extends AbstractConnection {
+public class RdmConnection extends AbstractConnection{
   private ByteBuffer localName;
   private int localNameLength;
   private boolean server;
   private long nativeConnId;
   private long nativeHandle;
 
-  private EventTask eventTask;
+  private BlockingQueue<Runnable> eventQueue;
 
   private static final Logger log = LoggerFactory.getLogger(RdmConnection.class);
 
@@ -66,18 +67,14 @@ public class RdmConnection extends AbstractConnection {
     return this.nativeHandle;
   }
 
-  public void setEventTask(EventTask eventTask) {
-    this.eventTask = eventTask;
+  @Override
+  public void setEventQueue(BlockingQueue<Runnable> eventQueue) {
+    this.eventQueue = eventQueue;
   }
 
   @Override
-  protected void addTask(int eventType, int bufferId, int bufferSize){
-    eventTask.addPendingTask(new Runnable() {
-      @Override
-      public void run() {
-        RdmConnection.this.executeCallback(eventType, bufferId, bufferSize);
-      }
-    });
+  protected void addTask(int eventType, int bufferId, int bufferSize) throws InterruptedException{
+    eventQueue.put(() -> RdmConnection.this.executeCallback(eventType, bufferId, bufferSize));
   }
 
   @Override
@@ -119,6 +116,7 @@ public class RdmConnection extends AbstractConnection {
     return this.localName;
   }
 
+  @Override
   public boolean isServer() {
     return server;
   }

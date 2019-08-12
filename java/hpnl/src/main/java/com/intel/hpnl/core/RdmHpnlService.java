@@ -18,8 +18,8 @@ public class RdmHpnlService implements HpnlService {
     } else {
       this.service = (new RdmService(numThreads, numBuffers, bufferSize, ioRatio)).init();
     }
-
     this.service.setHpnlService(this);
+    this.service.start();
     this.server = server;
   }
 

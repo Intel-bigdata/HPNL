@@ -38,6 +38,10 @@ public class MsgConnection extends AbstractConnection {
     return this.nativeHandle;
   }
 
+  public boolean isServer() {
+    return false;
+  }
+
   @Override
   public int send(int bufferSize, int bufferId) {
     return this.send(bufferSize, bufferId, this.nativeHandle);

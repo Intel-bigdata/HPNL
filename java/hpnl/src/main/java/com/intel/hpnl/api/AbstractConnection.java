@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,7 +66,9 @@ public abstract class AbstractConnection implements Connection {
 
   protected abstract long getNativeHandle();
 
-  protected abstract void addTask(int eventType, int bufferId, int bufferSize);
+  protected abstract void addTask(int eventType, int bufferId, int bufferSize)throws InterruptedException;
+
+  protected abstract boolean isServer();
 
   public Handler getConnectedCallback() {
     return this.connectedCallback;
@@ -159,8 +162,15 @@ public abstract class AbstractConnection implements Connection {
     return this.recvBufferMap.get(bufferId);
   }
 
-  protected int handleCallback(int eventType, int bufferId, int bufferSize) {
-    addTask(eventType, bufferId, bufferSize);
+  @Override
+  public void setEventQueue(BlockingQueue<Runnable> eventQueue){}
+
+  protected int handleCallback(int eventType, int bufferId, int bufferSize) throws InterruptedException{
+    if(isServer()){
+      executeCallback(eventType, bufferId, bufferSize);
+    }else {
+      addTask(eventType, bufferId, bufferSize);
+    }
     return 0;
   }
 
