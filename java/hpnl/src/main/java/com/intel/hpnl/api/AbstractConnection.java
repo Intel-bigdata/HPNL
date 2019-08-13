@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +37,9 @@ public abstract class AbstractConnection implements Connection {
 
   protected AbstractConnection(long nativeCon, HpnlService service, long connectId) {
     this.service = service;
-    this.sendBufferMap = new HashMap();
-    this.recvBufferMap = new HashMap();
-    this.sendBufferList = new LinkedList();
+    this.sendBufferMap = new ConcurrentHashMap<>();
+    this.recvBufferMap = new ConcurrentHashMap();
+    this.sendBufferList = new ConcurrentLinkedQueue<>();
     this.initialize(nativeCon);
     this.cqIndex = this.getCqIndexFromNative(this.getNativeHandle());
     this.connected = true;
@@ -118,38 +120,34 @@ public abstract class AbstractConnection implements Connection {
   }
 
   protected void reclaimSendBuffer(int bufferId) {
+    //no sync since buffer id is unique
     HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
     if (buffer == null) {
       throw new IllegalStateException("buffer not found with id: " + bufferId);
-    } else {
-      this.sendBufferList.offer(buffer);
     }
+    this.sendBufferList.offer(buffer);
   }
 
   @Override
   public void pushSendBuffer(HpnlBuffer buffer) {
-    synchronized(this) {
-      this.sendBufferMap.put(buffer.getBufferId(), buffer);
-      this.sendBufferList.offer(buffer);
-    }
+    this.sendBufferMap.put(buffer.getBufferId(), buffer);
+    this.sendBufferList.offer(buffer);
   }
 
   @Override
   public void pushRecvBuffer(HpnlBuffer buffer) {
-    synchronized(this) {
-      this.recvBufferMap.put(buffer.getBufferId(), buffer);
-    }
+    this.recvBufferMap.put(buffer.getBufferId(), buffer);
   }
 
   @Override
   public HpnlBuffer takeSendBuffer() {
-      HpnlBuffer buffer = this.sendBufferList.poll();
-      if(buffer == null){
-        if(log.isDebugEnabled()){
-          log.debug("Connection ({}) lack of send buffer", this.getConnectionId());
-        }
+    HpnlBuffer buffer = this.sendBufferList.poll();
+    if(buffer == null){
+      if(log.isDebugEnabled()){
+        log.debug("Connection ({}) lack of send buffer", this.getConnectionId());
       }
-      return buffer;
+    }
+    return buffer;
   }
 
   @Override
