@@ -2,9 +2,7 @@ package com.intel.hpnl.api;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -68,7 +66,7 @@ public abstract class AbstractConnection implements Connection {
 
   protected abstract long getNativeHandle();
 
-  protected abstract void addTask(int eventType, int bufferId, int bufferSize)throws InterruptedException;
+  protected abstract void addTask(Runnable task);
 
   protected abstract boolean isServer();
 
@@ -163,12 +161,16 @@ public abstract class AbstractConnection implements Connection {
   @Override
   public void setEventQueue(BlockingQueue<Runnable> eventQueue){}
 
+  /**
+   * it's called from single thread of event task
+   * @param eventType
+   * @param bufferId
+   * @param bufferSize
+   * @return
+   * @throws InterruptedException
+   */
   protected int handleCallback(int eventType, int bufferId, int bufferSize) throws InterruptedException{
-    if(isServer()){
-      executeCallback(eventType, bufferId, bufferSize);
-    }else {
-      addTask(eventType, bufferId, bufferSize);
-    }
+    executeCallback(eventType, bufferId, bufferSize);
     return 0;
   }
 
@@ -176,9 +178,18 @@ public abstract class AbstractConnection implements Connection {
     int e;
     switch(eventType) {
       case EventType.RECV_EVENT:
-        e = this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
-        if(e == Handler.RESULT_DEFAULT){
-          this.releaseRecvBuffer(bufferId);
+        if(isServer()){
+          e = this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
+          if(e == Handler.RESULT_DEFAULT){
+            this.releaseRecvBuffer(bufferId);
+          }
+        }else {
+          ReceiveTaskCache.CallbackTask task = ReceiveTaskCache.getInstance();
+          task.connection = this;
+          task.handler = recvCallback;
+          task.bufferId = bufferId;
+          task.bufferSize = bufferSize;
+          addTask(task);
         }
         break;
       case EventType.SEND_EVENT:

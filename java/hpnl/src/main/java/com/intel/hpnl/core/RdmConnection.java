@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
 public class RdmConnection extends AbstractConnection{
@@ -72,9 +71,17 @@ public class RdmConnection extends AbstractConnection{
     this.eventQueue = eventQueue;
   }
 
+  /**
+   * add task to event queue owned by one thread
+   * @param task
+   */
   @Override
-  protected void addTask(int eventType, int bufferId, int bufferSize) throws InterruptedException{
-    eventQueue.put(() -> RdmConnection.this.executeCallback(eventType, bufferId, bufferSize));
+  protected void addTask(Runnable task){
+    try {
+      eventQueue.put(task);
+    }catch (InterruptedException e){
+      throw new RuntimeException(e);
+    }
   }
 
   @Override
