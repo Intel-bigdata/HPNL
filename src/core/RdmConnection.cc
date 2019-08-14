@@ -35,11 +35,11 @@ int RdmConnection::init() {
   hints->caps = FI_MSG;
   hints->mode = FI_CONTEXT;
 
-  hints->tx_attr->msg_order = FI_ORDER_SAS;
+//  hints->tx_attr->msg_order = FI_ORDER_SAS;
   hints->tx_attr->comp_order = FI_ORDER_NONE;
   hints->tx_attr->op_flags = FI_INJECT_COMPLETE | FI_COMPLETION;
   hints->rx_attr->op_flags = FI_COMPLETION;
-  hints->rx_attr->msg_order = FI_ORDER_SAS;  
+ // hints->rx_attr->msg_order = FI_ORDER_SAS;  
   hints->domain_attr->av_type         = FI_AV_MAP;
   hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
   hints->domain_attr->threading = FI_THREAD_SAFE;
