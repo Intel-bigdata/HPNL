@@ -178,18 +178,9 @@ public abstract class AbstractConnection implements Connection {
     int e;
     switch(eventType) {
       case EventType.RECV_EVENT:
-        if(isServer()){
-          e = this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
-          if(e == Handler.RESULT_DEFAULT){
-            this.releaseRecvBuffer(bufferId);
-          }
-        }else {
-          ReceiveTaskCache.CallbackTask task = ReceiveTaskCache.getInstance();
-          task.connection = this;
-          task.handler = recvCallback;
-          task.bufferId = bufferId;
-          task.bufferSize = bufferSize;
-          addTask(task);
+        e = this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
+        if(e == Handler.RESULT_DEFAULT){
+          this.releaseRecvBuffer(bufferId);
         }
         break;
       case EventType.SEND_EVENT:

@@ -43,13 +43,17 @@ public class RdmService extends AbstractService {
     this.init(this.bufferNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
     this.initBufferPool(this.bufferNum, this.bufferSize, this.bufferNum);
     this.task = new RdmService.RdmTask(ioRatio);
-    taskThread = new Thread(task);
-    Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
+    if(server) {
+      taskThread = new Thread(task);
+    }
+//    Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
     return this;
   }
 
   public void start(){
-    taskThread.start();
+    if(server) {
+      taskThread.start();
+    }
   }
 
   @Override
@@ -97,9 +101,11 @@ public class RdmService extends AbstractService {
   public void stop() {
     if(!this.task.isStopped()) {
       synchronized (this) {
-        if(taskThread != null) {
-          taskThread.interrupt();
-          taskThread = null;
+        if(server) {
+          if (taskThread != null) {
+            taskThread.interrupt();
+            taskThread = null;
+          }
         }
         if (!this.task.isStopped()) {
           this.task.stop();

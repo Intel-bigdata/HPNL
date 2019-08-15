@@ -63,7 +63,7 @@ int RdmStack::init() {
   if (fi_domain(fabric, info, &domain, NULL))
     perror("fi_domain");
 
-  std::cout<<"prov version: "<<info->fabric_attr->prov_version<<std::endl;   
+  std::cout<<"provider: "<<info->fabric_attr->prov_name<<std::endl;   
   
 struct fi_cq_attr cq_attr = {
     .size = 0,
