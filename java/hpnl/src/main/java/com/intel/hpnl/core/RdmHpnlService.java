@@ -5,6 +5,7 @@ import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlService;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RdmHpnlService implements HpnlService {
@@ -19,7 +20,6 @@ public class RdmHpnlService implements HpnlService {
       this.service = (new RdmService(numThreads, numBuffers, bufferSize, ioRatio)).init();
     }
     this.service.setHpnlService(this);
-    this.service.start();
     this.server = server;
   }
 
@@ -31,6 +31,11 @@ public class RdmHpnlService implements HpnlService {
   @Override
   public int connect(String hostname, int port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
     return this.service.connect(hostname, String.valueOf(port), cqIndex, connectedCallback, recvCallback);
+  }
+
+  @Override
+  public void startCq(int cqIndex, BlockingQueue<Runnable> queue) {
+    this.service.start(cqIndex, queue);
   }
 
   @Override

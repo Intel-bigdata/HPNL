@@ -5,6 +5,7 @@ import com.intel.hpnl.api.*;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ public class EqService extends AbstractService {
     super(workerNum, bufferNum, bufferSize, ioRatio, server);
     this.connectedHandlers = new ConcurrentHashMap();
     this.nextConnectId = new AtomicLong();
-    this.eqTask = new EqService.EqTask(ioRatio);
+    this.eqTask = new EqService.EqTask(ioRatio, null);
     this.nextConnectId.set((new Random()).nextLong());
   }
 
@@ -193,8 +194,8 @@ public class EqService extends AbstractService {
   }
 
   protected class EqTask extends EventTask {
-    protected EqTask(int ioRatio) {
-      super(ioRatio);
+    protected EqTask(int ioRatio, BlockingQueue<Runnable> queue) {
+      super(ioRatio, queue);
     }
 
     public int waitEvent() {

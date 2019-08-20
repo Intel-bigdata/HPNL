@@ -3,6 +3,7 @@ package com.intel.hpnl.core;
 import com.intel.hpnl.api.*;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.BlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +20,7 @@ public class RdmService extends AbstractService {
 
   private static final Logger log = LoggerFactory.getLogger(RdmService.class);
 
-  private Thread taskThread;
+//  private Thread taskThread;
 
   static{
     String nic = HpnlConfig.getInstance().getNic();
@@ -42,14 +43,13 @@ public class RdmService extends AbstractService {
   public RdmService init() {
     this.init(this.bufferNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
     this.initBufferPool(this.bufferNum, this.bufferSize, this.bufferNum);
-    this.task = new RdmService.RdmTask(ioRatio);
-    taskThread = new Thread(task);
+//    taskThread = new Thread(task);
     Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
     return this;
   }
 
-  public void start(){
-    taskThread.start();
+  public void start(int cqIndex, BlockingQueue<Runnable> queue){
+    task = new RdmTask(ioRatio, queue);
   }
 
   @Override
@@ -124,10 +124,10 @@ public class RdmService extends AbstractService {
   public void stop() {
     if(!this.task.isStopped()) {
         synchronized (this) {
-            if (taskThread != null) {
-                taskThread.interrupt();
-                taskThread = null;
-            }
+//            if (taskThread != null) {
+//                taskThread.interrupt();
+//                taskThread = null;
+//            }
             if (!this.task.isStopped()) {
                 this.task.stop();
 //          this.waitToComplete();
@@ -139,12 +139,12 @@ public class RdmService extends AbstractService {
   private void shutdown(){
     log.info(this+" shutting down");
     stop();
-    conMap.forEach((k, v) -> {
-      RdmConnection connection = (RdmConnection)v;
-      if(!connection.isServer()) {
-        portGenerator.reclaimPort(v.getSrcPort());
-      }
-    });
+//    conMap.forEach((k, v) -> {
+//      RdmConnection connection = (RdmConnection)v;
+//      if(!connection.isServer()) {
+//        portGenerator.reclaimPort(v.getSrcPort());
+//      }
+//    });
     conMap.clear();
     this.free(this.nativeHandle);
     log.info(this+" shut down");
@@ -205,8 +205,8 @@ public class RdmService extends AbstractService {
   }
 
   protected class RdmTask extends EventTask {
-    protected RdmTask(int ioRatio) {
-      super(ioRatio);
+    protected RdmTask(int ioRatio, BlockingQueue<Runnable> queue) {
+      super(ioRatio, queue);
     }
 
     @Override

@@ -1,15 +1,17 @@
 package com.intel.hpnl.api;
 
 import java.util.Queue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 
 public abstract class EventTask implements Runnable {
   private volatile CountDownLatch completed;
   private final AtomicBoolean running = new AtomicBoolean(false);
-  private final Queue<Runnable> pendingTasks = new ConcurrentLinkedQueue();
+  private final BlockingQueue<Runnable> pendingTasks;
   private final int ioRatio ;
 
   private long startTime;
@@ -17,8 +19,9 @@ public abstract class EventTask implements Runnable {
   protected static final long DEFAULT_DURATION = 100*1000000;
   protected static final int CHECK_DEADLINE_INTERVAL = 64;
 
-  public EventTask(int ioRatio) {
+  public EventTask(int ioRatio, BlockingQueue<Runnable> queue) {
     this.ioRatio = ioRatio;
+    this.pendingTasks = queue;
     this.running.set(true);
   }
 
@@ -82,9 +85,9 @@ public abstract class EventTask implements Runnable {
 //    }
 //  }
 
-  private void runPendingTasks() {
+  private void runPendingTasks() throws Exception{
     Runnable task;
-    if((task = this.pendingTasks.poll()) != null) {
+    if((task = this.pendingTasks.take()) != null) {
       task.run();
     }
   }
@@ -107,8 +110,8 @@ public abstract class EventTask implements Runnable {
 //    }
 //  }
 
-  public void addPendingTask(Runnable task) {
-    this.pendingTasks.offer(task);
+  public void addPendingTask(Runnable task) throws InterruptedException {
+    this.pendingTasks.put(task);
   }
 
   public boolean isStopped() {

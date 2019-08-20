@@ -16,13 +16,16 @@ public class ServerTest {
   private HpnlService service;
   private String hostname;
 
+  private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
+
   public ServerTest(int numThreads, int numBuffer, int bufferSize, String hostname) {
     service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, 50, true);
     this.hostname = hostname;
   }
 
   public void start()throws Exception{
-
+    service.startCq(0, queue);
+    new Thread(service.getCqTasks().get(0)).start();
     service.bind(hostname, 12345, 0, new Handler() {
       @Override
       public int handle(Connection connection, int bufferId, int bufferSize) {

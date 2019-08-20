@@ -36,7 +36,7 @@ public class CqService {
     return this.cqTasks;
   }
 
-  public void addExternalEvent(int cqIndex, Runnable task) {
+  public void addExternalEvent(int cqIndex, Runnable task) throws InterruptedException {
     this.cqTasks.get(cqIndex).addPendingTask(task);
   }
 
@@ -79,7 +79,7 @@ public class CqService {
     private String name;
 
     public CqTask(int index, int ioRatio) {
-      super(ioRatio);
+      super(ioRatio, null);
       this.index = index;
       this.name = "CqTask " + index;
     }

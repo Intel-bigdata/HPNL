@@ -9,9 +9,7 @@ import picocli.CommandLine.Option;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 public class ClientTest {
 
@@ -20,6 +18,8 @@ public class ClientTest {
 
   private int msgSize;
 
+  private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
+
   public ClientTest(int numThreads, int numBuffer, int bufferSize, int msgSize, String hostname) {
     service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, 50, false);
     this.hostname = hostname;
@@ -27,6 +27,8 @@ public class ClientTest {
   }
 
   public void start()throws Exception{
+    service.startCq(0, queue);
+    new Thread(service.getCqTasks().get(0)).start();
     service.connect(hostname, 12345, 0, new Handler() {
       @Override
       public int handle(Connection connection, int bufferId, int bufferSize) {
