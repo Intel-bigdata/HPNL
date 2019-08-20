@@ -4,9 +4,9 @@ import java.util.List;
 
 public interface HpnlService {
 
-  int bind(String hostname, int port, int cqIndex, Handler connectedCallback);
+  int bind(String hostname, int port, int cqIndex, Handler connectedCallback, Handler recvCallback);
 
-  int connect(String hostname, int port, int cqIndex, Handler connectedCallback);
+  int connect(String hostname, int port, int cqIndex, Handler connectedCallback, Handler recvCallback);
 
   void stop();
 

@@ -10,7 +10,8 @@ public class EqServerService extends EqService {
     super(workerNum, bufferNum, bufferSize, ioRatio, true);
   }
 
-  public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
+  @Override
+  public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
     long ret = this.tryConnect(ip, port, cqIndex);
     this.connectedCallback = connectedCallback;
     return ret < 0L ? -1 : 0;

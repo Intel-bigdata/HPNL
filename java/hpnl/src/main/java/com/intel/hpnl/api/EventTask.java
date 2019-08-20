@@ -29,10 +29,12 @@ public abstract class EventTask implements Runnable {
 
     try {
       while(this.running.get()) {
-        startTime = System.nanoTime();
-        processEvents(startTime + DEFAULT_DURATION);
-        long ioTime = System.nanoTime() - startTime;
-        this.runPendingTasks(ioTime * (100 - ioRatio) / ioRatio);
+//        startTime = System.nanoTime();
+//        processEvents(startTime + DEFAULT_DURATION);
+//        long ioTime = System.nanoTime() - startTime;
+//        this.runPendingTasks(ioTime * (100 - ioRatio) / ioRatio);
+        processEvents();
+        runPendingTasks();
       }
     } catch (Throwable var6) {
       this.getLogger().error("error occurred in event task " + this, var6);
@@ -59,40 +61,51 @@ public abstract class EventTask implements Runnable {
     }
   }
 
-  private void processEvents(long deadline){
-    int ret = 1;
-    int cnt = 0;
-    int interval = CHECK_DEADLINE_INTERVAL;
-    while(this.running.get() && ret > 0){
-      ret = this.waitEvent();
-      cnt++;
-      if(cnt >= interval){
-        if(System.nanoTime() >= deadline){
-          return;
-        }
-        interval = interval >> 1;
-        cnt = 0;
-      }
+  private void processEvents(){
+    this.waitEvent();
+  }
+
+//  private void processEvents(long deadline){
+//    int ret = 1;
+//    int cnt = 0;
+//    int interval = CHECK_DEADLINE_INTERVAL;
+//    while(this.running.get() && ret > 0){
+//      ret = this.waitEvent();
+//      cnt++;
+//      if(cnt >= interval){
+//        if(System.nanoTime() >= deadline){
+//          return;
+//        }
+//        interval = interval >> 1;
+//        cnt = 0;
+//      }
+//    }
+//  }
+
+  private void runPendingTasks() {
+    Runnable task;
+    if((task = this.pendingTasks.poll()) != null) {
+      task.run();
     }
   }
 
-  protected void runPendingTasks(long timeout) {
-    long deadline = System.nanoTime() + timeout;
-    Runnable task;
-    int taskCnt = 0;
-    int interval = CHECK_DEADLINE_INTERVAL;
-    while(this.running.get() && ((task = this.pendingTasks.poll()) != null)){
-      task.run();
-      taskCnt++;
-      if(taskCnt >= interval){
-        if(System.nanoTime() >= deadline){
-          return;
-        }
-        taskCnt = 0;
-        interval = interval >> 1;
-      }
-    }
-  }
+//  protected void runPendingTasks(long timeout) {
+//    long deadline = System.nanoTime() + timeout;
+//    Runnable task;
+//    int taskCnt = 0;
+//    int interval = CHECK_DEADLINE_INTERVAL;
+//    while(this.running.get() && ((task = this.pendingTasks.poll()) != null)){
+//      task.run();
+//      taskCnt++;
+//      if(taskCnt >= interval){
+//        if(System.nanoTime() >= deadline){
+//          return;
+//        }
+//        taskCnt = 0;
+//        interval = interval >> 1;
+//      }
+//    }
+//  }
 
   public void addPendingTask(Runnable task) {
     this.pendingTasks.offer(task);

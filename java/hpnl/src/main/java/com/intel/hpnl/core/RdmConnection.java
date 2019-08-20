@@ -1,6 +1,7 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractConnection;
+import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlBuffer;
 import com.intel.hpnl.api.HpnlService;
 import org.slf4j.Logger;
@@ -8,7 +9,9 @@ import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RdmConnection extends AbstractConnection{
   private ByteBuffer localName;
@@ -18,6 +21,8 @@ public class RdmConnection extends AbstractConnection{
   private long nativeHandle;
 
   private BlockingQueue<Runnable> eventQueue;
+  private Map<Long, ByteBuffer> peerMap;
+  private Map<Long, Object[]> addressMap;
 
   private static final Logger log = LoggerFactory.getLogger(RdmConnection.class);
 
@@ -30,6 +35,10 @@ public class RdmConnection extends AbstractConnection{
     this.init(this.nativeHandle);
     this.nativeConnId = get_connection_id(this.nativeHandle);
     this.server = server;
+    if(server){
+      peerMap = new ConcurrentHashMap<>();
+      addressMap = new ConcurrentHashMap<>();
+    }
   }
 
   private native void init(long nativeHandle);
@@ -119,8 +128,43 @@ public class RdmConnection extends AbstractConnection{
   }
 
   @Override
+  public int sendTo(int bufferSize, int bufferId, long connectionId) {
+    return this.sendTo(bufferSize, bufferId, peerMap.get(Long.valueOf(connectionId)), this.nativeHandle);
+  }
+
+  @Override
+  public int sendBufferTo(ByteBuffer buffer, int bufferSize, long connectionId) {
+    return this.sendBufTo(buffer, bufferSize, peerMap.get(Long.valueOf(connectionId)), this.nativeHandle);
+  }
+
+  @Override
+  public int sendBuffer(ByteBuffer buffer, int bufferSize) {
+    return this.sendBuf(buffer, bufferSize, this.nativeHandle);
+  }
+
+  @Override
   public ByteBuffer getLocalName() {
     return this.localName;
+  }
+
+  @Override
+  public void putPeerName(long connectionId, ByteBuffer peer) {
+    peerMap.put(Long.valueOf(connectionId), peer);
+  }
+
+  @Override
+  public ByteBuffer getPeerName(long connectionId){
+    return peerMap.get(Long.valueOf(connectionId));
+  }
+
+  @Override
+  public void putPeerAddress(long connectId, Object[] address){
+    addressMap.put(Long.valueOf(connectId), address);
+  }
+
+  @Override
+  public Object[] getPeerAddress(long connectId){
+    return addressMap.get(connectId);
   }
 
   @Override

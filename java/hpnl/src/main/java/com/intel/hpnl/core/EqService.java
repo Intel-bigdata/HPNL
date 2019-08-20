@@ -52,7 +52,7 @@ public class EqService extends AbstractService {
   }
 
   @Override
-  public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
+  public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
     long seqId = this.tryConnect(ip, port, cqIndex);
     if (seqId < 0L) {
       return -1;

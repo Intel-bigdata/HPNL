@@ -1,17 +1,9 @@
-package com.intel.hpnl.core.rdm4;
+package com.intel.hpnl.core.rdmsglthdiffsize;
 
 import com.intel.hpnl.api.*;
-import com.intel.hpnl.core.RdmConnection;
-import com.intel.hpnl.core.RdmHpnlService;
-import picocli.CommandLine;
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Option;
+import com.intel.hpnl.core.rdm4.RecvCallback;
 
 import java.nio.ByteBuffer;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 public class ClientTest {
 
@@ -27,6 +19,7 @@ public class ClientTest {
   }
 
   public void start()throws Exception{
+
     service.connect(hostname, 12345, 0, new Handler() {
       @Override
       public int handle(Connection connection, int bufferId, int bufferSize) {

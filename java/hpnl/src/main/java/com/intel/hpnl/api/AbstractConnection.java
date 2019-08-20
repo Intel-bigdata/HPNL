@@ -74,10 +74,6 @@ public abstract class AbstractConnection implements Connection {
     return this.connectedCallback;
   }
 
-  public void setConnectedCallback(Handler callback) {
-    this.connectedCallback = callback;
-  }
-
   public Handler getRecvCallback() {
     return this.recvCallback;
   }
@@ -89,6 +85,11 @@ public abstract class AbstractConnection implements Connection {
 
   public Handler getSendCallback() {
     return this.sendCallback;
+  }
+
+  @Override
+  public void setConnectedCallback(Handler callback){
+    this.connectedCallback = callback;
   }
 
   public void setSendCallback(Handler callback) {
@@ -121,6 +122,9 @@ public abstract class AbstractConnection implements Connection {
     //no sync since buffer id is unique
     HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
     if (buffer == null) {
+      if(bufferId < 0){ // temp buffer
+        return;
+      }
       throw new IllegalStateException("buffer not found with id: " + bufferId);
     }
     this.sendBufferList.offer(buffer);
@@ -170,28 +174,26 @@ public abstract class AbstractConnection implements Connection {
    * @throws InterruptedException
    */
   protected int handleCallback(int eventType, int bufferId, int bufferSize) throws InterruptedException{
-    executeCallback(eventType, bufferId, bufferSize);
-    return 0;
+    return executeCallback(eventType, bufferId, bufferSize);
   }
 
-  public void executeCallback(int eventType, int bufferId, int bufferSize){
+  public int executeCallback(int eventType, int bufferId, int bufferSize){
     int e;
     switch(eventType) {
       case EventType.RECV_EVENT:
-        if(isServer()){
-          e = this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
-          if(e == Handler.RESULT_DEFAULT){
-            this.releaseRecvBuffer(bufferId);
-          }
-        }else {
-          ReceiveTaskCache.CallbackTask task = ReceiveTaskCache.getInstance();
-          task.connection = this;
-          task.handler = recvCallback;
-          task.bufferId = bufferId;
-          task.bufferSize = bufferSize;
-          addTask(task);
-        }
-        break;
+//        if(isServer()){
+          return this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
+//          if(e == Handler.RESULT_DEFAULT){
+//            this.releaseRecvBuffer(bufferId);
+//          }
+//        }else {
+//          ReceiveTaskCache.CallbackTask task = ReceiveTaskCache.getInstance();
+//          task.connection = this;
+//          task.handler = recvCallback;
+//          task.bufferId = bufferId;
+//          task.bufferSize = bufferSize;
+//          addTask(task);
+//        }
       case EventType.SEND_EVENT:
 //        RdmConnection connection = (RdmConnection)this;
 //        HpnlBuffer buffer = connection.getSendBuffer(bufferId);
@@ -203,10 +205,9 @@ public abstract class AbstractConnection implements Connection {
 //        log.info("{}, {}, {}, {}, {}", connection.getConnectionId(), bufferId, seqId,
 //                buffer.getRawBuffer().limit(), bufferSize);
         e = this.safeExecuteCallback(this.sendCallback, bufferId, bufferSize);
-        if (e == Handler.RESULT_DEFAULT) {
+        if(e == Handler.RESULT_DEFAULT){
           this.reclaimSendBuffer(bufferId);
         }
-        break;
       case EventType
               .CONNECTED_EVENT:
         this.safeExecuteCallback(this.connectedCallback, bufferId, 0);
@@ -218,6 +219,7 @@ public abstract class AbstractConnection implements Connection {
         this.executeCallbacks(this.shutdownCallbacks, bufferId, 0);
         break;
     }
+    return 0;
   }
 
   private int safeExecuteCallback(Handler handler, int bufferId, int bufferSize) {

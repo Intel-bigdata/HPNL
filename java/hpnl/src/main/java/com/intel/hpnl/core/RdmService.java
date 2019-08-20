@@ -53,13 +53,40 @@ public class RdmService extends AbstractService {
   }
 
   @Override
-  public int connect(String ip, String port, int cqIndex, Handler connectedCallback) {
-    synchronized (this) {
-      RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(ip, port, this.nativeHandle));
-      conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
-      connectedCallback.handle(conn, -1, -1);
-    }
+  public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
+    RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(ip, port, this.nativeHandle));
+    conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
+
+    sendRequest(conn, connectedCallback, recvCallback);
     return 1;
+  }
+
+  private void sendRequest(RdmConnection connection, Handler connectedCallback, Handler recvCallback){
+    HpnlBuffer buffer = connection.takeSendBuffer();
+    ByteBuffer rawBuffer = buffer.getRawBuffer();
+    rawBuffer.clear();
+    rawBuffer.position(buffer.getMetadataSize());
+    String ipPort = new StringBuffer(connection.getSrcAddr()).append(":").append(connection.getSrcPort())
+            .toString();
+    byte[] bytes = ipPort.getBytes();
+    rawBuffer.putInt(bytes.length);
+    rawBuffer.put(ipPort.getBytes());
+
+    ByteBuffer localName = connection.getLocalName();
+    localName.rewind();
+    int nameLen = localName.remaining();
+    rawBuffer.putInt(nameLen);
+    rawBuffer.put(localName);
+    if(log.isDebugEnabled()){
+      log.debug("connection ({}) with local name length ({})", connection.getConnectionId(), nameLen);
+    }
+
+    int limit = rawBuffer.position();
+    buffer.insertMetadata(FrameType.REQ.id(), -1L, limit);
+    rawBuffer.flip();
+    connection.send(buffer.remaining(), buffer.getBufferId());
+    //wait ack
+    connection.setRecvCallback(new ConnectionAckedHandler(connectedCallback, recvCallback));
   }
 
   @Override
@@ -96,16 +123,16 @@ public class RdmService extends AbstractService {
   @Override
   public void stop() {
     if(!this.task.isStopped()) {
-      synchronized (this) {
-        if(taskThread != null) {
-          taskThread.interrupt();
-          taskThread = null;
-        }
-        if (!this.task.isStopped()) {
-          this.task.stop();
+        synchronized (this) {
+            if (taskThread != null) {
+                taskThread.interrupt();
+                taskThread = null;
+            }
+            if (!this.task.isStopped()) {
+                this.task.stop();
 //          this.waitToComplete();
+            }
         }
-      }
     }
   }
 
@@ -198,6 +225,34 @@ public class RdmService extends AbstractService {
     protected void cleanUp() {
       RdmService.log.info("close and remove all connections");
       RdmService.this.conMap.clear();
+    }
+  }
+
+  protected static class ConnectionAckedHandler implements Handler{
+    private Handler connectedHandler;
+    private Handler recvHandler;
+
+    public ConnectionAckedHandler(Handler connectedHandler, Handler recvHandler){
+      this.connectedHandler = connectedHandler;
+      this.recvHandler = recvHandler;
+    }
+
+    @Override
+    public int handle(Connection connection, int bufferId, int bufferSize) {
+      HpnlBuffer buffer = connection.getRecvBuffer(bufferId);
+      ByteBuffer msgBuffer = buffer.parse(bufferSize);
+      if(buffer.getFrameType() != FrameType.ACK.id()){
+        throw new RuntimeException(
+                String.format("expect message type %d, actual %d", FrameType.ACK.id(), buffer.getFrameType()));
+      }
+      if(log.isDebugEnabled()){
+        byte[] bytes = new byte[msgBuffer.remaining()];
+        msgBuffer.get(bytes);
+        log.debug("got ack with content, "+new String(bytes));
+      }
+      connectedHandler.handle(connection, -1, -1);
+      connection.setRecvCallback(recvHandler);
+      return Handler.RESULT_DEFAULT;
     }
   }
 }

@@ -1,4 +1,4 @@
-package com.intel.hpnl.core.rdm4;
+package com.intel.hpnl.core.rdmsglthdiffsize;
 
 import com.intel.hpnl.api.Connection;
 import com.intel.hpnl.api.FrameType;
@@ -49,9 +49,6 @@ public class RecvCallback implements Handler {
     buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
     rawBuffer.flip();
     if(is_server){
-      if(peerName == null){
-        peerName = con.getPeerName(recvBuffer.getPeerConnectionId());
-      }
       con.sendTo(buffer.remaining(), buffer.getBufferId(), peerName);
     }else {
       con.send(buffer.remaining(), buffer.getBufferId());

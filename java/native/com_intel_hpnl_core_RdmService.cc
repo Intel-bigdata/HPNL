@@ -147,14 +147,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *e
   int ret = service->wait_event(&ck, &block_buffer_size);
   if (ret <= 0)
     return ret;
+  if (!ck){
+    return ret;
+  }
   RdmConnection *con = (RdmConnection*)ck->con;
-  if (!con) {
-    return -1; 
-  }
   jobject javaConn = con->get_java_conn();
-  if(!javaConn){
-	 return -1;
-  }
   jmethodID handleCallback = con->get_java_callback_methodID();
   jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, ret, ck->buffer_id, block_buffer_size);
   if (ret == RECV_EVENT && rst) {

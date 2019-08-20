@@ -24,13 +24,13 @@ public class RdmHpnlService implements HpnlService {
   }
 
   @Override
-  public int bind(String hostname, int port, int cqIndex, Handler connectedCallback) {
-    return this.service.connect(hostname, String.valueOf(port), cqIndex, connectedCallback);
+  public int bind(String hostname, int port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
+    return this.service.connect(hostname, String.valueOf(port), cqIndex, connectedCallback, recvCallback);
   }
 
   @Override
-  public int connect(String hostname, int port, int cqIndex, Handler connectedCallback) {
-    return this.service.connect(hostname, String.valueOf(port), cqIndex, connectedCallback);
+  public int connect(String hostname, int port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
+    return this.service.connect(hostname, String.valueOf(port), cqIndex, connectedCallback, recvCallback);
   }
 
   @Override

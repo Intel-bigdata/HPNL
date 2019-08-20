@@ -17,6 +17,10 @@ public interface HpnlBuffer {
 
   long getSeq();
 
+  long getConnectionId();
+
+  long getPeerConnectionId();
+
   void putData(ByteBuffer dataBuffer, byte frameType, long seqId);
 
   void insertMetadata(byte frameType, long seqId, int bufferLimit);

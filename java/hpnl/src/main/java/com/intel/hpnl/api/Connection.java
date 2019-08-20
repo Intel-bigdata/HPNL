@@ -12,6 +12,8 @@ public interface Connection {
 
   void setReadCallback(Handler callback);
 
+  void setConnectedCallback(Handler callback);
+
   void addShutdownCallback(Handler callback);
 
   HpnlBuffer getRecvBuffer(int bufferId);
@@ -32,6 +34,12 @@ public interface Connection {
 
   int sendTo(int bufferSize, int bufferId, ByteBuffer peerName);
 
+  int sendTo(int bufferSize, int bufferId, long connectionId);
+
+  int sendBufferTo(ByteBuffer buffer, int bufferSize, long connectionId);
+
+  int sendBuffer(ByteBuffer buffer, int bufferSize) ;
+
   String getSrcAddr();
 
   int getSrcPort();
@@ -41,6 +49,14 @@ public interface Connection {
   int getDestPort();
 
   ByteBuffer getLocalName();
+
+  void putPeerName(long connectionId, ByteBuffer peer);
+
+  ByteBuffer getPeerName(long connectionId);
+
+  void putPeerAddress(long connectId, Object[] address);
+
+  Object[] getPeerAddress(long connectId);
 
   void shutdown();
 }

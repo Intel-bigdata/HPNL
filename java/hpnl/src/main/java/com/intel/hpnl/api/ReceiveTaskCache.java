@@ -24,10 +24,10 @@ public class ReceiveTaskCache {
     }
 
     public static class CallbackTask implements Runnable {
-        protected Connection connection;
-        protected Handler handler;
-        protected int bufferId;
-        protected int bufferSize;
+        public Connection connection;
+        public Handler handler;
+        public int bufferId;
+        public int bufferSize;
 
         private ReceiveTaskCache cache;
 
@@ -38,10 +38,7 @@ public class ReceiveTaskCache {
         @Override
         public void run() {
             try{
-                int ret = handler.handle(connection, bufferId, bufferSize);
-                if(ret == Handler.RESULT_DEFAULT){
-                    connection.releaseRecvBuffer(bufferId);
-                }
+                handler.handle(connection, bufferId, bufferSize);
             }finally{
                 if(cache != null) {
                     cache.TASK_CACHE.offer(this);

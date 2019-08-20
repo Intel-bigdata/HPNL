@@ -1,6 +1,7 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractConnection;
+import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlService;
 import java.nio.ByteBuffer;
 import org.slf4j.Logger;
@@ -48,9 +49,30 @@ public class MsgConnection extends AbstractConnection {
   }
 
   @Override
+  public int sendTo(int bufferSize, int bufferId, long connectionId){return -1;}
+
+  @Override
+  public int sendBufferTo(ByteBuffer buffer, int bufferSize, long connectionId){return -1;}
+
+  @Override
+  public int sendBuffer(ByteBuffer buffer, int bufferSize){return -1;}
+
+  @Override
   public void releaseRecvBuffer(int bufferId) {
     this.releaseRecvBuffer(bufferId, this.nativeHandle);
   }
+
+  @Override
+  public void putPeerName(long connectionId, ByteBuffer peer){}
+
+  @Override
+  public ByteBuffer getPeerName(long connectionId){return null;}
+
+  @Override
+  public void putPeerAddress(long connectId, Object[] address){}
+
+  @Override
+  public Object[] getPeerAddress(long connectId){return null;}
 
   private native void recv(ByteBuffer buffer, int mid, long nativeHandle);
 

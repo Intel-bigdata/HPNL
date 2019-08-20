@@ -17,12 +17,14 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
     this.byteBuffer.putLong(seq);
   }
 
+  @Override
   public void putData(ByteBuffer src, byte type, long seq) {
     this.putMetadata(src.remaining(), type, seq);
     this.byteBuffer.put(src.slice());
     this.byteBuffer.flip();
   }
 
+  @Override
   public ByteBuffer parse(int blockBufferSize) {
     this.byteBuffer.position(0);
     this.byteBuffer.limit(blockBufferSize);
@@ -31,6 +33,7 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
     return this.byteBuffer.slice();
   }
 
+  @Override
   public void insertMetadata(byte frameType, long seqId, int limit) {
     this.byteBuffer.position(0);
     this.byteBuffer.put(frameType);
@@ -39,7 +42,18 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
     this.byteBuffer.position(limit);
   }
 
+  @Override
   public int getMetadataSize() {
     return METADATA_SIZE;
+  }
+
+  @Override
+  public long getConnectionId(){
+    return -1L;
+  }
+
+  @Override
+  public long getPeerConnectionId(){
+    return -1L;
   }
 }

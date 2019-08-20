@@ -1,6 +1,7 @@
-package com.intel.hpnl.core.rdm4;
+package com.intel.hpnl.core.rdmsglthdiffsize;
 
 import com.intel.hpnl.api.*;
+import com.intel.hpnl.core.rdm4.RecvCallback;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -21,14 +22,18 @@ public class ServerTest {
     this.hostname = hostname;
   }
 
-  public void start()throws Exception{
+  public void start()throws Exception {
 
     service.bind(hostname, 12345, 0, new Handler() {
       @Override
       public int handle(Connection connection, int bufferId, int bufferSize) {
+        ByteBuffer rawBuffer = connection.getRecvBuffer(bufferId).getRawBuffer();
+        rawBuffer.get();//skip frame type;
+        ByteBuffer peerName = connection.getPeerName(rawBuffer.getLong());
+        connection.setRecvCallback(new RecvCallback(true, 5, 4096, peerName));
         return 0;
       }
-    }, new RecvCallback(true, 5, 4096, null));
+    }, null);
   }
 
   public static void main(String... args)throws Exception {
