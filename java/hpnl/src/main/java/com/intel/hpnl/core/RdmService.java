@@ -3,7 +3,6 @@ package com.intel.hpnl.core;
 import com.intel.hpnl.api.*;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.BlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +47,8 @@ public class RdmService extends AbstractService {
     return this;
   }
 
-  public void start(int cqIndex, BlockingQueue<Runnable> queue){
-    task = new RdmTask(ioRatio, queue);
+  public void start(){
+    task = new RdmTask();
   }
 
   @Override
@@ -205,8 +204,8 @@ public class RdmService extends AbstractService {
   }
 
   protected class RdmTask extends EventTask {
-    protected RdmTask(int ioRatio, BlockingQueue<Runnable> queue) {
-      super(ioRatio, queue);
+    protected RdmTask() {
+      super();
     }
 
     @Override

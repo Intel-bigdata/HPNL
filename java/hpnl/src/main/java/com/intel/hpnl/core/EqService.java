@@ -24,7 +24,7 @@ public class EqService extends AbstractService {
     super(workerNum, bufferNum, bufferSize, ioRatio, server);
     this.connectedHandlers = new ConcurrentHashMap();
     this.nextConnectId = new AtomicLong();
-    this.eqTask = new EqService.EqTask(ioRatio, null);
+    this.eqTask = new EqService.EqTask();
     this.nextConnectId.set((new Random()).nextLong());
   }
 
@@ -194,8 +194,8 @@ public class EqService extends AbstractService {
   }
 
   protected class EqTask extends EventTask {
-    protected EqTask(int ioRatio, BlockingQueue<Runnable> queue) {
-      super(ioRatio, queue);
+    protected EqTask() {
+      super();
     }
 
     public int waitEvent() {

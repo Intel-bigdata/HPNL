@@ -24,7 +24,7 @@ public class ServerTest {
   }
 
   public void start()throws Exception{
-    service.startCq(0, queue);
+    service.startCq(0);
     new Thread(service.getCqTasks().get(0)).start();
     service.bind(hostname, 12345, 0, new Handler() {
       @Override

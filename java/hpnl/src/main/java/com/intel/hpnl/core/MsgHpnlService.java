@@ -5,7 +5,6 @@ import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlService;
 import com.intel.hpnl.api.ServiceException;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,8 +47,8 @@ public class MsgHpnlService implements HpnlService {
   }
 
   @Override
-  public void startCq(int cqIndex, BlockingQueue<Runnable> queue) {
-    
+  public void startCq(int cqIndex) {
+
   }
 
   @Override

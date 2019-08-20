@@ -13,6 +13,8 @@ public class RdmHpnlService implements HpnlService {
   private boolean server;
   private AtomicLong nextConnectionId = new AtomicLong(0L);
 
+  private List<EventTask> tasks = new ArrayList();
+
   public RdmHpnlService(int numThreads, int numBuffers, int bufferSize, int ioRatio, boolean server) {
     if (server) {
       this.service = (new RdmServerService(numThreads, numBuffers, bufferSize, ioRatio)).init();
@@ -34,8 +36,9 @@ public class RdmHpnlService implements HpnlService {
   }
 
   @Override
-  public void startCq(int cqIndex, BlockingQueue<Runnable> queue) {
-    this.service.start(cqIndex, queue);
+  public void startCq(int cqIndex) {
+    this.service.start();
+    tasks.add(this.service.getEventTask());
   }
 
   @Override
@@ -54,8 +57,6 @@ public class RdmHpnlService implements HpnlService {
 
   @Override
   public List<EventTask> getCqTasks() {
-    List<EventTask> tasks = new ArrayList();
-    tasks.add(this.service.getEventTask());
     return tasks;
   }
 

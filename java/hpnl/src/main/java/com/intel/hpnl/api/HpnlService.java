@@ -1,7 +1,6 @@
 package com.intel.hpnl.api;
 
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 
 public interface HpnlService {
 
@@ -9,7 +8,7 @@ public interface HpnlService {
 
   int connect(String hostname, int port, int cqIndex, Handler connectedCallback, Handler recvCallback);
 
-  void startCq(int cqIndex, BlockingQueue<Runnable> queue);
+  void startCq(int cqIndex);
 
   void stop();
 

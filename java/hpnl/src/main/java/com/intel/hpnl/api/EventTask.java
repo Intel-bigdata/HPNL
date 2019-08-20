@@ -11,62 +11,53 @@ import org.slf4j.Logger;
 public abstract class EventTask implements Runnable {
   private volatile CountDownLatch completed;
   private final AtomicBoolean running = new AtomicBoolean(false);
-  private final BlockingQueue<Runnable> pendingTasks;
-  private final int ioRatio ;
 
   private long startTime;
 
   protected static final long DEFAULT_DURATION = 100*1000000;
   protected static final int CHECK_DEADLINE_INTERVAL = 64;
 
-  public EventTask(int ioRatio, BlockingQueue<Runnable> queue) {
-    this.ioRatio = ioRatio;
-    this.pendingTasks = queue;
+  public EventTask() {
     this.running.set(true);
   }
 
   @Override
   public void run() {
-    boolean failed = false;
-    running.set(true);
-
-    try {
-      while(this.running.get()) {
+    if(running.get()) {
+      try {
 //        startTime = System.nanoTime();
 //        processEvents(startTime + DEFAULT_DURATION);
 //        long ioTime = System.nanoTime() - startTime;
 //        this.runPendingTasks(ioTime * (100 - ioRatio) / ioRatio);
-        processEvents();
-        runPendingTasks();
+        this.waitEvent();
+      } catch (Throwable th) {
+        this.getLogger().error("error occurred in event task " + this, th);
+        afterError();
       }
-    } catch (Throwable var6) {
-      this.getLogger().error("error occurred in event task " + this, var6);
-      failed = true;
-    }
-
-    if (!this.running.get() || failed) {
-      try {
-        if (this.getLogger().isDebugEnabled()) {
-          this.getLogger().info("cleaning up before exiting event task");
-        }
-
-        this.cleanUp();
-      } catch (Throwable var4) {
-        this.getLogger().error("error occurred during clean-up in task " + this, var4);
-      }
-
-      synchronized(this) {
-        if (this.completed != null) {
-          this.completed.countDown();
-        }
-      }
-      this.stop(false);
     }
   }
 
-  private void processEvents(){
-    this.waitEvent();
+  private void afterError(){
+    if (this.getLogger().isDebugEnabled()) {
+      this.getLogger().info("cleaning up before exiting event task");
+    }
+    try {
+      this.cleanUp();
+    } catch (Throwable var4) {
+      this.getLogger().error("error occurred during clean-up in task " + this, var4);
+    }
+
+    synchronized(this) {
+      if (this.completed != null) {
+        this.completed.countDown();
+      }
+    }
+    this.stop(false);
   }
+
+//  private void processEvents(){
+//
+//  }
 
 //  private void processEvents(long deadline){
 //    int ret = 1;
@@ -85,12 +76,12 @@ public abstract class EventTask implements Runnable {
 //    }
 //  }
 
-  private void runPendingTasks() throws Exception{
-    Runnable task;
-    if((task = this.pendingTasks.take()) != null) {
-      task.run();
-    }
-  }
+//  private void runPendingTasks() throws Exception{
+//    Runnable task;
+//    if((task = this.pendingTasks.take()) != null) {
+//      task.run();
+//    }
+//  }
 
 //  protected void runPendingTasks(long timeout) {
 //    long deadline = System.nanoTime() + timeout;
@@ -110,9 +101,9 @@ public abstract class EventTask implements Runnable {
 //    }
 //  }
 
-  public void addPendingTask(Runnable task) throws InterruptedException {
-    this.pendingTasks.put(task);
-  }
+//  public void addPendingTask(Runnable task) throws InterruptedException {
+//    this.pendingTasks.put(task);
+//  }
 
   public boolean isStopped() {
     return !this.running.get();

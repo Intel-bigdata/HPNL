@@ -21,7 +21,7 @@ public class CqService {
     int workerNum = this.eqService.getWorkerNum();
 
     for(int i = 0; i < workerNum; ++i) {
-      EventTask task = new CqService.CqTask(service.ioRatio, i);
+      EventTask task = new CqService.CqTask(i);
       this.cqTasks.add(task);
     }
 
@@ -37,7 +37,6 @@ public class CqService {
   }
 
   public void addExternalEvent(int cqIndex, Runnable task) throws InterruptedException {
-    this.cqTasks.get(cqIndex).addPendingTask(task);
   }
 
   public native int wait_cq_event(int index, long nativeHandle);
@@ -78,8 +77,8 @@ public class CqService {
     private int index;
     private String name;
 
-    public CqTask(int index, int ioRatio) {
-      super(ioRatio, null);
+    public CqTask(int index) {
+      super();
       this.index = index;
       this.name = "CqTask " + index;
     }
