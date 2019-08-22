@@ -7,11 +7,14 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   protected byte frameType;
   protected long seq;
   protected ByteBuffer byteBuffer;
+  private BufferType bufferType;
+
   public static final int BASE_METADATA_SIZE = 9;
 
-  protected AbstractHpnlBuffer(int bufferId, ByteBuffer byteBuffer) {
+  protected AbstractHpnlBuffer(int bufferId, ByteBuffer byteBuffer, BufferType bufferType) {
     this.bufferId = bufferId;
     this.byteBuffer = byteBuffer;
+    this.bufferType = bufferType;
   }
 
   @Override
@@ -52,5 +55,10 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   @Override
   public void clear(){
     this.byteBuffer.clear();
+  }
+
+  @Override
+  public BufferType getBufferType() {
+    return bufferType;
   }
 }

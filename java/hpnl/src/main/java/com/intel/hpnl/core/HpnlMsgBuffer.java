@@ -6,8 +6,8 @@ import java.nio.ByteBuffer;
 public class HpnlMsgBuffer extends AbstractHpnlBuffer {
   public static final int METADATA_SIZE = BASE_METADATA_SIZE;
 
-  public HpnlMsgBuffer(int bufferId, ByteBuffer byteBuffer) {
-    super(bufferId, byteBuffer);
+  public HpnlMsgBuffer(int bufferId, ByteBuffer byteBuffer, BufferType type) {
+    super(bufferId, byteBuffer, type);
   }
 
   private void putMetadata(int srcSize, byte type, long seq) {
@@ -56,4 +56,7 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
   public long getPeerConnectionId(){
     return -1L;
   }
+
+  @Override
+  public void release() {}
 }

@@ -10,11 +10,11 @@ public class MemPool {
   private int initBufferNum;
   private int bufferSize;
   private int nextBufferNum;
-  private MemPool.Type type;
+  private HpnlBuffer.BufferType type;
   private ConcurrentHashMap<Integer, HpnlBuffer> bufferMap;
   private AtomicInteger seqId;
 
-  public MemPool(AbstractService service, int initBufferNum, int bufferSize, int nextBufferNum, MemPool.Type type) {
+  public MemPool(AbstractService service, int initBufferNum, int bufferSize, int nextBufferNum, HpnlBuffer.BufferType type) {
     this.service = service;
     this.initBufferNum = initBufferNum;
     this.bufferSize = bufferSize;
@@ -43,16 +43,12 @@ public class MemPool {
   private void alloc() {
     ByteBuffer byteBuffer = ByteBuffer.allocateDirect(this.bufferSize);
     int seq = this.seqId.getAndIncrement();
-    HpnlBuffer hpnlBuffer = service.newHpnlBuffer(seq, byteBuffer);
+    HpnlBuffer hpnlBuffer = service.newHpnlBuffer(seq, byteBuffer, type);
     this.bufferMap.put(seq, hpnlBuffer);
-    if (this.type == MemPool.Type.SEND) {
+    if (this.type == HpnlBuffer.BufferType.SEND) {
       this.service.setSendBuffer(byteBuffer, (long)this.bufferSize, seq);
     } else {
       this.service.setRecvBuffer(byteBuffer, (long)this.bufferSize, seq);
     }
-  }
-
-  public enum Type {
-    SEND, RECV
   }
 }

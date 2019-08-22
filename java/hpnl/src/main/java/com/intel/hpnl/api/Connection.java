@@ -18,7 +18,7 @@ public interface Connection {
 
   HpnlBuffer getRecvBuffer(int bufferId);
 
-  void releaseRecvBuffer(int bufferId);
+  void reclaimRecvBuffer(int bufferId);
 
   HpnlBuffer takeSendBuffer();
 

@@ -28,4 +28,12 @@ public interface HpnlBuffer {
   int getMetadataSize();
 
   void clear();
+
+  void release();
+
+  BufferType getBufferType();
+
+  enum BufferType{
+    SEND, RECV
+  }
 }

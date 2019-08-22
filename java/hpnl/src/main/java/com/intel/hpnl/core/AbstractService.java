@@ -5,7 +5,6 @@ import com.intel.hpnl.api.EventTask;
 import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlBuffer;
 import com.intel.hpnl.api.HpnlService;
-import com.intel.hpnl.core.MemPool.Type;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
@@ -40,8 +39,8 @@ public abstract class AbstractService {
   }
 
   protected void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
-    this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, Type.SEND);
-    this.recvBufferPool = new MemPool(this, initBufferNum * 2, bufferSize, nextBufferNum * 2, Type.RECV);
+    this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, HpnlBuffer.BufferType.SEND);
+    this.recvBufferPool = new MemPool(this, initBufferNum * 2, bufferSize, nextBufferNum * 2, HpnlBuffer.BufferType.RECV);
   }
 
   public void reallocBufferPool() {
@@ -59,7 +58,7 @@ public abstract class AbstractService {
     connection.pushRecvBuffer(this.recvBufferPool.getBuffer(bufferId));
   }
 
-  protected abstract HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer);
+  protected abstract HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer, HpnlBuffer.BufferType type);
 
   protected abstract void setSendBuffer(ByteBuffer buffer, long size, int id);
 

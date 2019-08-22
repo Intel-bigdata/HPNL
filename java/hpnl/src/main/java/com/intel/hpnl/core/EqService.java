@@ -121,8 +121,8 @@ public class EqService extends AbstractService {
   }
 
   @Override
-  protected HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer){
-    return new HpnlMsgBuffer(bufferId, byteBuffer);
+  protected HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer, HpnlBuffer.BufferType type){
+    return new HpnlMsgBuffer(bufferId, byteBuffer, type);
   }
 
   public native void shutdown(long eq, long nativeHandle);

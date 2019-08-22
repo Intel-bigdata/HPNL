@@ -118,13 +118,10 @@ public abstract class AbstractConnection implements Connection {
     return this.generalCallback;
   }
 
-  protected void reclaimSendBuffer(int bufferId) {
+  public void reclaimSendBuffer(int bufferId) {
     //no sync since buffer id is unique
     HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
     if (buffer == null) {
-      if(bufferId < 0){ // temp buffer
-        return;
-      }
       throw new IllegalStateException("buffer not found with id: " + bufferId);
     }
     this.sendBufferList.offer(buffer);

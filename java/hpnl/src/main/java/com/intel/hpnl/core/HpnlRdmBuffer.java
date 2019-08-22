@@ -1,6 +1,7 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractHpnlBuffer;
+import com.intel.hpnl.api.Connection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,10 +11,11 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
   private static final Logger log = LoggerFactory.getLogger(HpnlRdmBuffer.class);
   private long connectionId;
+  private RdmConnection connection;
   private long peerConnectionId;
 
-  public HpnlRdmBuffer(int bufferId, ByteBuffer byteBuffer) {
-    super(bufferId, byteBuffer);
+  public HpnlRdmBuffer(int bufferId, ByteBuffer byteBuffer, BufferType type) {
+    super(bufferId, byteBuffer, type);
   }
 
   private void putMetadata(int srcSize, byte type, long seq) {
@@ -72,8 +74,21 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
     return connectionId;
   }
 
+  public void setConnection(Connection connection) {
+    this.connection = (RdmConnection) connection;
+  }
+
   @Override
   public long getPeerConnectionId(){
     return peerConnectionId;
+  }
+
+  @Override
+  public void release() {
+    if(getBufferType() == BufferType.SEND){
+      connection.reclaimSendBuffer(getBufferId());
+    }else {
+      connection.reclaimRecvBuffer(getBufferId());
+    }
   }
 }

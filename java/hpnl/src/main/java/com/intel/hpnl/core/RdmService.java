@@ -175,8 +175,8 @@ public class RdmService extends AbstractService {
   }
 
   @Override
-  protected HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer){
-    return new HpnlRdmBuffer(bufferId, byteBuffer);
+  protected HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer, HpnlBuffer.BufferType type){
+    return new HpnlRdmBuffer(bufferId, byteBuffer, type);
   }
 
   private native int init(int bufferNum, boolean server, String providerName);

@@ -103,17 +103,19 @@ public class RdmConnection extends AbstractConnection{
   @Override
   public void pushSendBuffer(HpnlBuffer buffer) {
     ((HpnlRdmBuffer)buffer).setConnectionId(this.getConnectionId());
+    ((HpnlRdmBuffer)buffer).setConnection(this);
     super.pushSendBuffer(buffer);
   }
 
   @Override
   public void pushRecvBuffer(HpnlBuffer buffer) {
     ((HpnlRdmBuffer)buffer).setConnectionId(this.getConnectionId());
+    ((HpnlRdmBuffer)buffer).setConnection(this);
     super.pushRecvBuffer(buffer);
   }
 
   @Override
-  public void releaseRecvBuffer(int bufferId) {
+  public void reclaimRecvBuffer(int bufferId) {
     this.releaseRecvBuffer(bufferId, this.nativeHandle);
   }
 

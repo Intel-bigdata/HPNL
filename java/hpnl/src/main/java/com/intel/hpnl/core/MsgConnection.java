@@ -58,7 +58,7 @@ public class MsgConnection extends AbstractConnection {
   public int sendBuffer(ByteBuffer buffer, int bufferSize){return -1;}
 
   @Override
-  public void releaseRecvBuffer(int bufferId) {
+  public void reclaimRecvBuffer(int bufferId) {
     this.releaseRecvBuffer(bufferId, this.nativeHandle);
   }
 
