@@ -119,7 +119,10 @@ public abstract class AbstractConnection implements Connection {
   }
 
   public void reclaimSendBuffer(int bufferId, int ctxId) {
-    if(bufferId >= 0) {
+    if(bufferId == 0){ //skip non-cache-able buffer
+      return;
+    }
+    if(bufferId > 0) {
       //no sync since buffer id is unique
       HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
       if (buffer == null) {
@@ -211,6 +214,7 @@ public abstract class AbstractConnection implements Connection {
         if(e == Handler.RESULT_DEFAULT){
           this.reclaimSendBuffer(bufferId, bufferSize);
         }
+        break;
       case EventType
               .CONNECTED_EVENT:
         this.safeExecuteCallback(this.connectedCallback, bufferId, 0);

@@ -38,10 +38,10 @@ public class RdmServerService extends RdmService {
 
     @Override
     public int handle(Connection connection, int bufferId, int bufferSize) {
+
       HpnlBuffer buffer = connection.getRecvBuffer(bufferId);
       buffer.getRawBuffer().position(0);
       FrameType frameType = FrameType.toFrameType(buffer.getRawBuffer().get());
-
       switch (frameType) {
         case REQ:
           long connectId = buffer.getRawBuffer().getLong();
@@ -64,7 +64,6 @@ public class RdmServerService extends RdmService {
               buffer = HpnlBufferAllocator.getBufferFromDefault(40 + HpnlRdmBuffer.METADATA_SIZE);
               ByteBuffer tempBuffer = buffer.getRawBuffer();
               tempBuffer.clear();
-              tempBuffer.position(buffer.getMetadataSize());
               tempBuffer.put(FrameType.ACK.id());
               tempBuffer.putLong(connectId);
               tempBuffer.putLong(-1L);

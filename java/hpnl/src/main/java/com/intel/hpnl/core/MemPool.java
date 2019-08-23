@@ -21,7 +21,7 @@ public class MemPool {
     this.nextBufferNum = nextBufferNum;
     this.type = type;
     this.bufferMap = new ConcurrentHashMap();
-    this.seqId = new AtomicInteger(0);
+    this.seqId = new AtomicInteger(1); //start from 1. 0 will not be reclaimed.
 
     for(int i = 0; i < this.initBufferNum; ++i) {
       this.alloc();
