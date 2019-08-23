@@ -15,7 +15,7 @@
 class RdmConnection;
 class RdmStack : public Stack {
   public:
-    RdmStack(int, bool, const char*);
+    RdmStack(int, int, bool, const char*);
     ~RdmStack();
     virtual int init() override;
     virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
@@ -33,6 +33,7 @@ class RdmStack : public Stack {
     fid_domain *domain;
     fid_cq *cq = NULL;
     int buffer_num;
+    int ctx_num;
     bool is_server;
 
     std::map<long, RdmConnection*> conMap;

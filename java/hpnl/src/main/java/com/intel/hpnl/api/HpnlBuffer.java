@@ -19,6 +19,8 @@ public interface HpnlBuffer {
 
   long getConnectionId();
 
+  void setConnectionId(long connectionId);
+
   long getPeerConnectionId();
 
   void putData(ByteBuffer dataBuffer, byte frameType, long seqId);
@@ -34,6 +36,6 @@ public interface HpnlBuffer {
   BufferType getBufferType();
 
   enum BufferType{
-    SEND, RECV
+    SEND, RECV, GLOBAL
   }
 }

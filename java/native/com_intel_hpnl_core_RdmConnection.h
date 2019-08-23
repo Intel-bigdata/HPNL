@@ -58,18 +58,18 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendTo
 /*
  * Class:     com_intel_hpnl_core_RdmConnection
  * Method:    sendBuf
- * Signature: (Ljava/nio/ByteBuffer;IJ)I
+ * Signature: (Ljava/nio/ByteBuffer;IIIJ)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBuf
-  (JNIEnv *, jobject, jobject, jint, jlong);
+  (JNIEnv *, jobject, jobject, jint, jint, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_RdmConnection
  * Method:    sendBufTo
- * Signature: (Ljava/nio/ByteBuffer;ILjava/nio/ByteBuffer;J)I
+ * Signature: (Ljava/nio/ByteBuffer;IIILjava/nio/ByteBuffer;J)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBufTo
-  (JNIEnv *, jobject, jobject, jint, jobject, jlong);
+  (JNIEnv *, jobject, jobject, jint, jint, jint, jobject, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_RdmConnection

@@ -8,8 +8,9 @@
 
 #include <iostream>
 
-ExternalRdmService::ExternalRdmService(int buffer_num, bool is_server) {
+ExternalRdmService::ExternalRdmService(int buffer_num, int ctx_num, bool is_server) {
   this->buffer_num = buffer_num;
+  this->ctx_num = ctx_num;
   this->is_server = is_server;
   this->recvBufMgr = new ExternalEqServiceBufMgr();
   this->sendBufMgr = new ExternalEqServiceBufMgr();
@@ -23,7 +24,7 @@ ExternalRdmService::~ExternalRdmService() {
 }
 
 int ExternalRdmService::init(const char* prov_name) {
-  this->stack = new RdmStack(this->buffer_num, this->is_server, prov_name);
+  this->stack = new RdmStack(this->buffer_num, this->ctx_num, this->is_server, prov_name);
   this->stack->init();
   this->demulti_plexer = new ExternalRdmCqDemultiplexer(stack);
   this->demulti_plexer->init();
@@ -39,8 +40,8 @@ RdmConnection* ExternalRdmService::get_con(const char* ip, const char* port) {
   return (RdmConnection*)con;
 }
 
-int ExternalRdmService::wait_event(Chunk **ck, int *block_buffer_size) {
-  return this->demulti_plexer->wait_event(ck, block_buffer_size);
+int ExternalRdmService::wait_event(Chunk **ck, int *buffer_id, int *block_buffer_size) {
+  return this->demulti_plexer->wait_event(ck, buffer_id, block_buffer_size);
 }
 
 void ExternalRdmService::reap(int64_t connection_id){

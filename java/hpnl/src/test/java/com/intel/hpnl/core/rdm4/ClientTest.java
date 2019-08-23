@@ -28,7 +28,20 @@ public class ClientTest {
 
   public void start()throws Exception{
     service.startCq(0);
-    new Thread(service.getCqTasks().get(0)).start();
+    EventTask task = service.getCqTasks().get(0);
+    Thread th = new Thread(()->{
+      System.out.println("starting");
+      while(!Thread.currentThread().isInterrupted()) {
+        task.run();
+      }
+      System.out.println("ending");
+    });
+
+    th.setUncaughtExceptionHandler((Thread t, Throwable e) -> {
+      e.printStackTrace();
+    });
+
+    th.start();
     service.connect(hostname, 12345, 0, new Handler() {
       @Override
       public int handle(Connection connection, int bufferId, int bufferSize) {
@@ -37,6 +50,7 @@ public class ClientTest {
         }catch (InterruptedException e){
           e.printStackTrace();
         }
+        System.out.println("pingpong");
         //start pingpong
         ByteBuffer byteBufferTmp = ByteBuffer.allocate(msgSize);
         assert(byteBufferTmp != null);
@@ -58,6 +72,8 @@ public class ClientTest {
       }
     }, new RecvCallback(false, 5, 4096, null));
 
+    System.out.println("waiting");
+    th.join();
   }
 
   public static void main(String... args) throws Exception{

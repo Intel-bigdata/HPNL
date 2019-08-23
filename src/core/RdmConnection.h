@@ -17,7 +17,7 @@
 
 class RdmConnection : public Connection {
   public:
-    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, BufMgr*, int, bool, const char*);
+    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, BufMgr*, int, int, bool, const char*);
     ~RdmConnection();
     virtual int init() override;
 
@@ -26,9 +26,9 @@ class RdmConnection : public Connection {
 
     virtual int send(Chunk*) override;
     virtual int send(int, int) override;
-    virtual int sendBuf(const char*, int) override;
+    virtual int sendBuf(const char*, int, int, int) override;
     virtual int sendTo(int, int, const char*) override;
-    virtual int sendBufTo(const char*, int, const char*) override;
+    virtual int sendBufTo(const char*, int, int, int, const char*) override;
     virtual char* get_peer_name() override;
     char* get_local_name();
     int get_local_name_length();
@@ -87,7 +87,10 @@ class RdmConnection : public Connection {
     std::vector<Chunk*> send_buffers;
     std::unordered_map<int, Chunk*> send_buffers_map;
 
+    std::unordered_map<int, fi_context2*> send_ctx_map;
+
     int buffer_num;
+    int ctx_num;
     bool is_server;
 
     Callback* recv_callback;

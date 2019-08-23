@@ -118,14 +118,20 @@ public abstract class AbstractConnection implements Connection {
     return this.generalCallback;
   }
 
-  public void reclaimSendBuffer(int bufferId) {
-    //no sync since buffer id is unique
-    HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
-    if (buffer == null) {
-      throw new IllegalStateException("buffer not found with id: " + bufferId);
+  public void reclaimSendBuffer(int bufferId, int ctxId) {
+    if(bufferId >= 0) {
+      //no sync since buffer id is unique
+      HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
+      if (buffer == null) {
+        throw new IllegalStateException("buffer not found with id: " + bufferId);
+      }
+      this.sendBufferList.offer(buffer);
+      return;
     }
-    this.sendBufferList.offer(buffer);
+    reclaimGlobalBuffer(bufferId, ctxId);
   }
+
+  protected void reclaimGlobalBuffer(int bufferId, int ctxId){}
 
   @Override
   public void pushSendBuffer(HpnlBuffer buffer) {
@@ -203,7 +209,7 @@ public abstract class AbstractConnection implements Connection {
 //                buffer.getRawBuffer().limit(), bufferSize);
         e = this.safeExecuteCallback(this.sendCallback, bufferId, bufferSize);
         if(e == Handler.RESULT_DEFAULT){
-          this.reclaimSendBuffer(bufferId);
+          this.reclaimSendBuffer(bufferId, bufferSize);
         }
       case EventType
               .CONNECTED_EVENT:
@@ -298,7 +304,6 @@ public abstract class AbstractConnection implements Connection {
           if (log.isDebugEnabled()) {
             log.debug("connection {} with CQ index {} closed.", this.connectId, this.cqIndex);
           }
-
         }
       }
     }

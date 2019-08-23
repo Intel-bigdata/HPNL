@@ -52,7 +52,7 @@ int Service::init(bool msg_) {
     }
     proactor = new Proactor(eq_demulti_plexer, cq_demulti_plexer, 1);
   } else {
-    stack = new RdmStack(buffer_num, is_server, NULL);
+    stack = new RdmStack(buffer_num, 128, is_server, NULL);
     if ((res = stack->init())) {
       return res;
     }

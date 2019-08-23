@@ -10,9 +10,7 @@ import java.nio.ByteBuffer;
 public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
   private static final Logger log = LoggerFactory.getLogger(HpnlRdmBuffer.class);
-  private long connectionId;
   private RdmConnection connection;
-  private long peerConnectionId;
 
   public HpnlRdmBuffer(int bufferId, ByteBuffer byteBuffer, BufferType type) {
     super(bufferId, byteBuffer, type);
@@ -29,7 +27,7 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   @Override
   public void putData(ByteBuffer src, byte type, long seq) {
     this.putMetadata(src.remaining(), type, seq);
-    this.byteBuffer.put(src.slice());
+    this.byteBuffer.put(src);
     this.byteBuffer.flip();
   }
 
@@ -65,30 +63,16 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
     peerConnectionId = -1;
   }
 
-  public void setConnectionId(long connectionId) {
-    this.connectionId = connectionId;
-  }
-
-  @Override
-  public long getConnectionId() {
-    return connectionId;
-  }
-
   public void setConnection(Connection connection) {
     this.connection = (RdmConnection) connection;
   }
 
   @Override
-  public long getPeerConnectionId(){
-    return peerConnectionId;
-  }
-
-  @Override
   public void release() {
-    if(getBufferType() == BufferType.SEND){
-      connection.reclaimSendBuffer(getBufferId());
-    }else {
-      connection.reclaimRecvBuffer(getBufferId());
+    switch (getBufferType()){
+      case SEND: connection.reclaimSendBuffer(getBufferId(), -1); return;
+      case RECV: connection.reclaimRecvBuffer(getBufferId()); return;
+      default: throw new IllegalArgumentException("should not reach here: "+getBufferType());
     }
   }
 }

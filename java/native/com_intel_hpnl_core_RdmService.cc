@@ -48,8 +48,8 @@ static void _set_self(JNIEnv *env, jobject thisObj, ExternalRdmService *self)
   env->SetLongField(thisObj, _get_self_id(env, thisObj), selfPtr);
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jobject obj, jint buffer_num, jboolean is_server, jstring prov_name) {
-  ExternalRdmService *service = new ExternalRdmService(buffer_num, is_server);
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jobject obj, jint buffer_num, jint ctx_num, jboolean is_server, jstring prov_name) {
+  ExternalRdmService *service = new ExternalRdmService(buffer_num, ctx_num, is_server);
   const char* pname = nullptr;
   if(prov_name != NULL){
   	pname = (*env).GetStringUTFChars(prov_name, 0);
@@ -129,31 +129,30 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
 //    (*env).CallVoidMethod(obj, pushSendBuffer, jcon, send_buffer[i]->buffer_id);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, pushSendBuffer, jcon, send_buffer[i]->buffer_id);
   }
-
   std::vector<Chunk*> recv_buffer = con->get_recv_buffer();
   chunks_size = recv_buffer.size();
   for (int i = 0; i < chunks_size; i++) {
 //	  (*env).CallVoidMethod(obj, pushRecvBuffer, jcon, recv_buffer[i]->buffer_id);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, pushRecvBuffer, jcon, recv_buffer[i]->buffer_id);
   }
-
   return *(jlong*)&con;
 }
 
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *env, jobject obj, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
   Chunk *ck = NULL;
+  int buffer_id = 0;
   int block_buffer_size = 0;
-  int ret = service->wait_event(&ck, &block_buffer_size);
+  int ret = service->wait_event(&ck, &buffer_id, &block_buffer_size);
   if (ret <= 0)
     return ret;
-  if (!ck){
-    return ret;
+  if (ck){
+	buffer_id = ck->buffer_id;
   }
   RdmConnection *con = (RdmConnection*)ck->con;
   jobject javaConn = con->get_java_conn();
   jmethodID handleCallback = con->get_java_callback_methodID();
-  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, ret, ck->buffer_id, block_buffer_size);
+  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, ret, buffer_id, block_buffer_size);
   if (ret == RECV_EVENT && rst) {
 	if (con->activate_chunk(ck)) {
 	  perror("failed to return receive chunk/buffer");

@@ -1,9 +1,6 @@
 package com.intel.hpnl.core;
 
-import com.intel.hpnl.api.Connection;
-import com.intel.hpnl.api.FrameType;
-import com.intel.hpnl.api.Handler;
-import com.intel.hpnl.api.HpnlBuffer;
+import com.intel.hpnl.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,6 +11,11 @@ public class RdmServerService extends RdmService {
 
   public RdmServerService(int workNum, int bufferNum, int bufferSize, int ioRatio) {
     super(workNum, bufferNum, bufferSize,  ioRatio, true);
+  }
+
+  @Override
+  public RdmService init() {
+    return init(256);
   }
 
   @Override
@@ -59,13 +61,16 @@ public class RdmServerService extends RdmService {
           String addr = address[0] + ":" + address[1];
           HpnlBuffer buffer = connection.takeSendBuffer();
           if(buffer == null) {
-              ByteBuffer tempBuffer = ByteBuffer.allocateDirect(40 + HpnlRdmBuffer.METADATA_SIZE);
+              buffer = HpnlBufferAllocator.getBufferFromDefault(40 + HpnlRdmBuffer.METADATA_SIZE);
+              ByteBuffer tempBuffer = buffer.getRawBuffer();
+              tempBuffer.clear();
+              tempBuffer.position(buffer.getMetadataSize());
               tempBuffer.put(FrameType.ACK.id());
               tempBuffer.putLong(connectId);
               tempBuffer.putLong(-1L);
               tempBuffer.put(addr.getBytes());
               tempBuffer.flip();
-              connection.sendBufferTo(tempBuffer, tempBuffer.remaining(), connectId);
+              connection.sendBufferTo(buffer, tempBuffer.remaining(), connectId);
           }else {
               ByteBuffer byteBuffer = ByteBuffer.allocate(40);
               byteBuffer.put(addr.getBytes());

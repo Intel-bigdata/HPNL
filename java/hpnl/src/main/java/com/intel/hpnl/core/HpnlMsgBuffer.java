@@ -53,6 +53,10 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
   }
 
   @Override
+  public void setConnectionId(long connectionId) {
+  }
+
+  @Override
   public long getPeerConnectionId(){
     return -1L;
   }

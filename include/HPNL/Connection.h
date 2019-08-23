@@ -11,9 +11,9 @@ class Connection {
     virtual char* get_peer_name() { return 0; }
     virtual int send(Chunk*) { return 0; }
     virtual int send(int, int) { return 0; }
-    virtual int sendBuf(const char*, int) { return 0; }
+    virtual int sendBuf(const char*, int, int, int) { return 0; }
     virtual int sendTo(int, int, const char*) { return 0; }
-    virtual int sendBufTo(const char*, int, const char*) { return 0; }
+    virtual int sendBufTo(const char*, int, int, int, const char*) { return 0; }
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) { return 0; }
     virtual void decode_peer_name(void*, char*) {}
     virtual char* decode_buf(void *buf) { return nullptr; }

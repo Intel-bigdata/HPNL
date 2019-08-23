@@ -78,7 +78,8 @@ public abstract class AbstractService {
 
   public abstract int connect(String host, String port, int cqIndex, Handler connectedCallback, Handler recvCallback);
 
-  protected abstract void regCon(long eq, long connectHandle, String destAddr, int destPort, String srcAddr, int srcPort, long connectId);
+  protected abstract void regCon(long eq, long connectHandle, String destAddr, int destPort,
+                                 String srcAddr, int srcPort, long connectId);
 
   public abstract void unregCon(long eq);
 

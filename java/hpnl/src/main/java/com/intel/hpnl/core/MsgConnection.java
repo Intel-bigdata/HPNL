@@ -2,6 +2,7 @@ package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractConnection;
 import com.intel.hpnl.api.Handler;
+import com.intel.hpnl.api.HpnlBuffer;
 import com.intel.hpnl.api.HpnlService;
 import java.nio.ByteBuffer;
 import org.slf4j.Logger;
@@ -52,10 +53,10 @@ public class MsgConnection extends AbstractConnection {
   public int sendTo(int bufferSize, int bufferId, long connectionId){return -1;}
 
   @Override
-  public int sendBufferTo(ByteBuffer buffer, int bufferSize, long connectionId){return -1;}
+  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, long connectionId){return -1;}
 
   @Override
-  public int sendBuffer(ByteBuffer buffer, int bufferSize){return -1;}
+  public int sendBuffer(HpnlBuffer buffer, int bufferSize){return -1;}
 
   @Override
   public void reclaimRecvBuffer(int bufferId) {

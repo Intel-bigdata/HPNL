@@ -6,6 +6,8 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   private int bufferId;
   protected byte frameType;
   protected long seq;
+  protected long connectionId;
+  protected long peerConnectionId;
   protected ByteBuffer byteBuffer;
   private BufferType bufferType;
 
@@ -17,9 +19,28 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
     this.bufferType = bufferType;
   }
 
+  protected AbstractHpnlBuffer(int bufferId){
+    this.bufferId = bufferId;
+  }
+
   @Override
   public int getBufferId() {
     return this.bufferId;
+  }
+
+  @Override
+  public long getConnectionId() {
+    return connectionId;
+  }
+
+  @Override
+  public void setConnectionId(long connectionId) {
+    this.connectionId = connectionId;
+  }
+
+  @Override
+  public long getPeerConnectionId() {
+    return peerConnectionId;
   }
 
   @Override

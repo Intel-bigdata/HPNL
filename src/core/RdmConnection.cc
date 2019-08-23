@@ -3,7 +3,12 @@
 #include <assert.h>
 #include <algorithm>
 
-RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_, fid_domain* domain_, fid_cq* cq_, BufMgr* rbuf_mgr_, BufMgr* sbuf_mgr_, int buffer_num_, bool is_server_, const char* prov_name_) : ip(ip_), port(port_), info(info_), domain(domain_), conCq(cq_), rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), buffer_num(buffer_num_), is_server(is_server_), prov_name(prov_name_) {}
+RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_,
+		fid_domain* domain_, fid_cq* cq_, BufMgr* rbuf_mgr_,
+		BufMgr* sbuf_mgr_, int buffer_num_, int ctx_num_, bool is_server_,
+		const char* prov_name_) : ip(ip_), port(port_), info(info_), domain(domain_),
+		conCq(cq_), rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), buffer_num(buffer_num_),
+		ctx_num(ctx_num_), is_server(is_server_), prov_name(prov_name_) {}
 RdmConnection::~RdmConnection() {
   for (auto ck: send_buffers) {
     sbuf_mgr->put(ck->buffer_id, ck);
@@ -11,6 +16,13 @@ RdmConnection::~RdmConnection() {
   for (auto ck: recv_buffers) {
     rbuf_mgr->put(ck->buffer_id, ck);
   }
+  send_buffers_map.erase(send_buffers_map.begin(), send_buffers_map.end());
+
+  for (auto ctx: send_ctx_map){
+	std::free(ctx.second);
+  }
+  send_ctx_map.erase(send_ctx_map.begin(), send_ctx_map.end());
+
   if(av){
   	  fi_close(&av->fid);
   	  av = nullptr;
@@ -47,7 +59,6 @@ int RdmConnection::init() {
    if (prov_name != nullptr){
       hints->fabric_attr->prov_name = strdup(prov_name);
     }
-
     assert(info == NULL);
     if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &info))
       perror("fi_getinfo");
@@ -61,7 +72,6 @@ int RdmConnection::init() {
   av_attr.type = FI_AV_MAP;
   if (fi_av_open(domain, &av_attr, &av, NULL))
     perror("fi_av_open");
-  
   if (fi_ep_bind(ep, &conCq->fid, FI_SEND | FI_RECV))
     perror("fi_ep_bind cq");
   if (fi_ep_bind(ep, (fid_t)av, 0))
@@ -90,9 +100,14 @@ int RdmConnection::init() {
   }
   size = 0;
   while(size < buffer_num){
-	Chunk *sck = sbuf_mgr->get();
-	send_buffers.push_back(sck);
-	send_buffers_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
+	  Chunk *sck = sbuf_mgr->get();
+	  send_buffers.push_back(sck);
+	  send_buffers_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
+	  size++;
+  }
+  size = 0;
+  while(size < ctx_num){
+	send_ctx_map.insert(std::pair<int, fi_context2*>(size, (fi_context2*)std::malloc(sizeof(fi_context2))));
 	size++;
   }
   init_addr();
@@ -125,7 +140,7 @@ int RdmConnection::send(int buffer_size, int buffer_id) {
   ck->con = this;
   ck->peer_addr = addr_map[tmp];
   ck->ctx.internal[4] = ck;
-  //std::cout<<ck->buffer_id<<":"<<buffer_size<<std::endl;
+  ck->ctx.internal[5] = NULL;
   if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
     perror("fi_send");
     return -1;
@@ -133,9 +148,17 @@ int RdmConnection::send(int buffer_size, int buffer_id) {
   return 0;
 }
 
-int RdmConnection::sendBuf(const char* buffer, int buffer_size) {
-  fi_context2 *ctx = (fi_context2*)std::malloc(sizeof(fi_context2));
-  ctx->internal[4] = NULL;
+int RdmConnection::sendBuf(const char* buffer, int buffer_id, int ctx_id, int buffer_size) {
+  fi_context2 *ctx;
+  if (ctx_id < 0) {
+	ctx = (fi_context2*)std::malloc(sizeof(fi_context2));
+	(*(int *)ctx->internal[4]) = buffer_id;
+	(*(int *)ctx->internal[5]) = ctx_id;
+  } else {
+	ctx = send_ctx_map[ctx_id];
+	(*(int *)ctx->internal[4]) = buffer_id;
+	(*(int *)ctx->internal[5]) = ctx_id;
+  }
 
   char tmp[32];
   size_t tmp_len = 64;
@@ -163,6 +186,7 @@ int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name)
     ck->peer_addr = addr_map[tmp];
   }
   ck->ctx.internal[4] = ck;
+  ck->ctx.internal[5] = NULL;
   ck->con = this;
   if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
     perror("fi_send");
@@ -171,9 +195,16 @@ int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name)
   return 0;
 }
 
-int RdmConnection::sendBufTo(const char* buffer, int buffer_size, const char* peer_name) {
-  fi_context2 *ctx = (fi_context2*)std::malloc(sizeof(fi_context2));
-  ctx->internal[4] = NULL;
+int RdmConnection::sendBufTo(const char* buffer, int buffer_id, int ctx_id, int buffer_size, const char* peer_name) {
+  fi_context2 *ctx;
+  if (ctx_id < 0) {
+    ctx = (fi_context2*)std::malloc(sizeof(fi_context2));
+    (*(int *)ctx->internal[4]) = buffer_id;
+    (*(int *)ctx->internal[5]) = ctx_id;
+  } else {
+	(*(int *)ctx->internal[4]) = buffer_id;
+	(*(int *)ctx->internal[5]) = ctx_id;
+  }
 
   char tmp[32];
   size_t tmp_len = 64;

@@ -19,7 +19,7 @@ int ExternalRdmCqDemultiplexer::init() {
   return 0;
 }
 
-int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
+int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *buffer_id, int *block_buffer_size) {
   int ret = 0;
   fi_cq_msg_entry entry;
   ret = fi_cq_read(cq, &entry, 1);
@@ -28,17 +28,17 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *block_buffer_size) {
       fi_context2 *ctx = (fi_context2*)entry.op_context;
       *ck = (Chunk*)ctx->internal[4];
       *block_buffer_size = entry.len;
-      //std::cout<<(*ck)->buffer_id<<":"<< (*block_buffer_size)<<std::endl;
       return RECV_EVENT;
     }
     if (entry.flags & FI_SEND) {
       fi_context2 *ctx = (fi_context2*)entry.op_context;
-      if (ctx->internal[4] == NULL) {
-        std::free(ctx);
+      if (ctx->internal[5] != NULL) {
+    	  *buffer_id = *((int*)ctx->internal[4]);
+    	  *block_buffer_size = *((int*)ctx->internal[5]);
       } else {
         *ck = (Chunk*)ctx->internal[4];
+        *block_buffer_size = entry.len;
       }
-      *block_buffer_size = entry.len;
       return SEND_EVENT;
     } 
     if (entry.flags & FI_READ) {

@@ -4,7 +4,8 @@
 #include <stdio.h>
 #include <iostream>
 
-RdmStack::RdmStack(int buffer_num_, bool is_server_, const char* prov_name_) : buffer_num(buffer_num_), is_server(is_server_), prov_name(prov_name_) {}
+RdmStack::RdmStack(int buffer_num_, int ctx_num_, bool is_server_, const char* prov_name_) :
+buffer_num(buffer_num_), ctx_num(ctx_num_), is_server(is_server_), prov_name(prov_name_) {}
 
 RdmStack::~RdmStack() {
   for (auto item : conMap) {
@@ -90,7 +91,8 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
   fi_freeinfo(hints);
 
   long id = id_generator.fetch_add(1);
-  server_con = new RdmConnection(ip, port, server_info, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, true, prov_name);
+  server_con = new RdmConnection(ip, port, server_info, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, ctx_num,
+		  true, prov_name);
   server_con->set_id(id);
   server_con->init();
   conMap.insert(std::pair<long, RdmConnection*>(id, server_con));
@@ -103,7 +105,8 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, BufMgr* rbuf_
     return NULL; 
   }
   long id = id_generator.fetch_add(1);
-  RdmConnection *con = new RdmConnection(ip, port, NULL, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, false, prov_name);
+  RdmConnection *con = new RdmConnection(ip, port, NULL, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, ctx_num,
+		  false, prov_name);
   con->set_id(id);
   con->init();
   conMap.insert(std::pair<long, RdmConnection*>(id, con));

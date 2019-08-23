@@ -73,10 +73,10 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendTo(JNIEnv *env
   return res;
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBuf(JNIEnv *env, jobject obj, jobject buffer, jint bufferSize, jlong nativeHandle) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBuf(JNIEnv *env, jobject obj, jobject buffer, jint bufferId, jint ctxId, jint bufferSize, jlong nativeHandle) {
   RdmConnection *con = *(RdmConnection**)&nativeHandle;
   jbyte* bytes = (jbyte*)(*env).GetDirectBufferAddress(buffer);
-  int res = con->sendBuf((char*)bytes, bufferSize);
+  int res = con->sendBuf((char*)bytes, bufferId, ctxId, bufferSize);
   return res;
 }
 
@@ -85,11 +85,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBuf(JNIEnv *en
  * Method:    sendBufTo
  * Signature: (Ljava/nio/ByteBuffer;I[BJ)I
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBufTo(JNIEnv *env, jobject, jobject buffer, jint bufferSize, jobject peerName, jlong nativeHandle) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBufTo(JNIEnv *env, jobject, jobject buffer, jint bufferId, jint ctxId, jint bufferSize, jobject peerName, jlong nativeHandle) {
   RdmConnection *con = *(RdmConnection**)&nativeHandle;
   jbyte* bytes = (jbyte*)(*env).GetDirectBufferAddress(buffer);
   jbyte* name = (jbyte*)(*env).GetDirectBufferAddress(peerName);
-  int res = con->sendBufTo((char*)bytes, bufferSize, (char*)name);
+  int res = con->sendBufTo((char*)bytes, bufferId, ctxId, bufferSize, (char*)name);
   return res;
 }
 

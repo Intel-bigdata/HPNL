@@ -36,9 +36,9 @@ public interface Connection {
 
   int sendTo(int bufferSize, int bufferId, long connectionId);
 
-  int sendBufferTo(ByteBuffer buffer, int bufferSize, long connectionId);
+  int sendBufferTo(HpnlBuffer buffer, int bufferSize, long peerConnectId);
 
-  int sendBuffer(ByteBuffer buffer, int bufferSize) ;
+  int sendBuffer(HpnlBuffer buffer, int bufferSize) ;
 
   String getSrcAddr();
 

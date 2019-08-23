@@ -26,7 +26,7 @@ class RecvCallback : public Callback {
       int mid = *(int*)param_1;
       Chunk *ck = bufMgr->get(mid);
       Connection *con = (Connection*)ck->con;
-      con->sendBuf((char*)ck->buffer, SIZE);
+      con->sendBuf((char*)ck->buffer, 1, 0, SIZE);
     }
   private:
     BufMgr *bufMgr;

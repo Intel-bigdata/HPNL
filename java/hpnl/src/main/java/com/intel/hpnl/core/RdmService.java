@@ -13,6 +13,8 @@ public class RdmService extends AbstractService {
   protected String localIp;
   protected int localPort;
 
+  private int ctxNum;
+
   private PortGenerator portGenerator = PortGenerator.getInstance();
 
   private static String LOCAL_IP ;
@@ -40,7 +42,12 @@ public class RdmService extends AbstractService {
   }
 
   public RdmService init() {
-    this.init(this.bufferNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
+    return init(128);
+  }
+
+  protected RdmService init(int ctxNum) {
+    this.ctxNum = ctxNum;
+    this.init(this.bufferNum, ctxNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
     this.initBufferPool(this.bufferNum, this.bufferSize, this.bufferNum);
 //    taskThread = new Thread(task);
     Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
@@ -89,8 +96,9 @@ public class RdmService extends AbstractService {
   }
 
   @Override
-  protected void regCon(long key, long connHandle, String dest_addr, int dest_port, String src_addr, int src_port, long connectId) {
-    RdmConnection con = new RdmConnection(connHandle, this.hpnlService, this.server);
+  protected void regCon(long key, long connHandle, String dest_addr,
+                        int dest_port, String src_addr, int src_port, long connectId) {
+    RdmConnection con = new RdmConnection(connHandle, this.hpnlService, this.server, ctxNum);
     if(!server){
       localIp = LOCAL_IP;
       localPort = getFreePort();
@@ -179,7 +187,7 @@ public class RdmService extends AbstractService {
     return new HpnlRdmBuffer(bufferId, byteBuffer, type);
   }
 
-  private native int init(int bufferNum, boolean server, String providerName);
+  private native int init(int bufferNum, int ctxNum, boolean server, String providerName);
 
   protected native long listen(String host, String port, long nativeHandle);
 
