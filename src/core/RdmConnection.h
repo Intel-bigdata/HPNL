@@ -87,7 +87,7 @@ class RdmConnection : public Connection {
     std::vector<Chunk*> send_buffers;
     std::unordered_map<int, Chunk*> send_buffers_map;
 
-    std::unordered_map<int, fi_context2*> send_ctx_map;
+    std::unordered_map<int, Chunk*> send_global_buffers_map;
 
     int buffer_num;
     int ctx_num;
@@ -109,4 +109,5 @@ class RdmConnection : public Connection {
     jobject java_conn;
     jmethodID java_callback_methodID;
 };
+
 #endif

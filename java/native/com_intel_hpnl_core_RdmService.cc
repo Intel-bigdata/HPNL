@@ -146,9 +146,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *e
   int ret = service->wait_event(&ck, &buffer_id, &block_buffer_size);
   if (ret <= 0)
     return ret;
-  if (ck){
-	buffer_id = ck->buffer_id;
+  if(!ck){
+	std::cout<<"warning, no chunk"<<std::endl;
+	return ret;
   }
+  buffer_id = ck->buffer_id;
   RdmConnection *con = (RdmConnection*)ck->con;
   jobject javaConn = con->get_java_conn();
   jmethodID handleCallback = con->get_java_callback_methodID();

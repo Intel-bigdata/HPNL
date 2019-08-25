@@ -32,12 +32,16 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *buffer_id, int *bloc
     }
     if (entry.flags & FI_SEND) {
       fi_context2 *ctx = (fi_context2*)entry.op_context;
-      if (ctx->internal[5] != NULL) {
-    	  *buffer_id = *((int*)ctx->internal[4]);
-    	  *block_buffer_size = *((int*)ctx->internal[5]);
+      if (ctx->internal[4] != NULL) {
+    	  *ck = (Chunk*)ctx->internal[4];
+    	  *block_buffer_size = entry.len;
       } else {
-        *ck = (Chunk*)ctx->internal[4];
-        *block_buffer_size = entry.len;
+    	  *ck = (Chunk*)ctx->internal[5];
+    	  if((*ck)->ctx_id < 0){
+    		  delete (*ck);
+    	  }else{
+    		  *block_buffer_size = (*ck)->ctx_id;
+    	  }
       }
       return SEND_EVENT;
     } 

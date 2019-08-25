@@ -22,6 +22,7 @@ struct Chunk {
   void *con;
   uint32_t capacity;
   int buffer_id;
+  int ctx_id;
   fi_context2 ctx;
   fi_addr_t peer_addr;
 };
