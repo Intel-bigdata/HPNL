@@ -179,71 +179,42 @@ public abstract class AbstractConnection implements Connection {
    * @return
    * @throws InterruptedException
    */
-  protected int handleCallback(int eventType, int bufferId, int bufferSize) throws InterruptedException{
-    return executeCallback(eventType, bufferId, bufferSize);
-  }
-
-  public int executeCallback(int eventType, int bufferId, int bufferSize){
+  protected int handleCallback(int eventType, int bufferId, int bufferSize){
     int e;
     switch(eventType) {
       case EventType.RECV_EVENT:
-//        if(isServer()){
-          return this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
-//          if(e == Handler.RESULT_DEFAULT){
-//            this.releaseRecvBuffer(bufferId);
-//          }
-//        }else {
-//          ReceiveTaskCache.CallbackTask task = ReceiveTaskCache.getInstance();
-//          task.connection = this;
-//          task.handler = recvCallback;
-//          task.bufferId = bufferId;
-//          task.bufferSize = bufferSize;
-//          addTask(task);
-//        }
+        return this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
       case EventType.SEND_EVENT:
-//        RdmConnection connection = (RdmConnection)this;
-//        HpnlBuffer buffer = connection.getSendBuffer(bufferId);
-//        long seqId = -1;
-//        if(buffer.getRawBuffer().limit() >= 17 ) {
-//            buffer.getRawBuffer().position(9);
-//            seqId = buffer.getRawBuffer().getLong();
-//        }
-//        log.info("{}, {}, {}, {}, {}", connection.getConnectionId(), bufferId, seqId,
-//                buffer.getRawBuffer().limit(), bufferSize);
         e = this.safeExecuteCallback(this.sendCallback, bufferId, bufferSize);
         if(e == Handler.RESULT_DEFAULT){
           this.reclaimSendBuffer(bufferId, bufferSize);
         }
-        break;
+        return e;
       case EventType
               .CONNECTED_EVENT:
-        this.safeExecuteCallback(this.connectedCallback, bufferId, 0);
-        break;
+        return this.safeExecuteCallback(this.connectedCallback, bufferId, 0);
       case EventType.READ_EVENT:
-        this.safeExecuteCallback(this.readCallback, bufferId, bufferSize);
-        break;
+        return this.safeExecuteCallback(this.readCallback, bufferId, bufferSize);
       case EventType.SHUTDOWN:
-        this.executeCallbacks(this.shutdownCallbacks, bufferId, 0);
-        break;
+        return this.executeCallbacks(this.shutdownCallbacks, bufferId, 0);
     }
-    return 0;
+    return Handler.RESULT_DEFAULT;
   }
 
   private int safeExecuteCallback(Handler handler, int bufferId, int bufferSize) {
     if (handler == null) {
-      return 1;
-    } else {
-      try {
-        return handler.handle(this, bufferId, bufferSize);
-      } catch (Throwable var5) {
-        log.error("failed to execute callback " + handler, var5);
-        return 1;
-      }
+      return Handler.RESULT_DEFAULT;
+    }
+    try {
+      return handler.handle(this, bufferId, bufferSize);
+    } catch (Throwable var5) {
+      log.error("failed to execute callback " + handler, var5);
+      return Handler.RESULT_DEFAULT;
     }
   }
 
   private int executeCallbacks(List<Handler> callbacks, int bufferId, int bufferSize) {
-    int ret = 1;
+    int ret = Handler.RESULT_DEFAULT;
     Iterator var5 = callbacks.iterator();
 
     while(var5.hasNext()) {

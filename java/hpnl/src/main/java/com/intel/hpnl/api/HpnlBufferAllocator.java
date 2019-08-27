@@ -15,10 +15,10 @@ public class HpnlBufferAllocator {
 
     private static final int MAX_SIZE = 10*1024*1024;
 
-    private static final int BUFFER_TINY = 512;
-    private static final int BUFFER_SMALL = 1024;
-    private static final int BUFFER_MEDIUM = 4096;
-    private static final int BUFFER_LARGE = 8192;
+    public static final int BUFFER_TINY = 512;
+    public static final int BUFFER_SMALL = 1024;
+    public static final int BUFFER_MEDIUM = 4096;
+    public static final int BUFFER_LARGE = 8192;
 
     private static final int MIN_DEFAULT_BUFFER_ID = -100000000;
 

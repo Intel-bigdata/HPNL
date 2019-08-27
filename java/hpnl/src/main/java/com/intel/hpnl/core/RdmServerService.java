@@ -38,22 +38,19 @@ public class RdmServerService extends RdmService {
 
     @Override
     public int handle(Connection connection, int bufferId, int bufferSize) {
-
       HpnlBuffer buffer = connection.getRecvBuffer(bufferId);
       buffer.getRawBuffer().position(0);
       FrameType frameType = FrameType.toFrameType(buffer.getRawBuffer().get());
-      switch (frameType) {
-        case REQ:
-          long connectId = buffer.getRawBuffer().getLong();
-          getPeerInfo(connection, connectId, buffer, bufferSize);
-          connection.setConnectedCallback(connectedCallback);
-          //ack client request
-          ackConnected(connection, connectId);
-          connectedCallback.handle(connection, bufferId, bufferSize);
-          return Handler.RESULT_DEFAULT;
-        default:
-          return recvCallback.handle(connection, bufferId, bufferSize);
+      if(frameType != FrameType.REQ) {
+        return recvCallback.handle(connection, bufferId, bufferSize);
       }
+      long connectId = buffer.getRawBuffer().getLong();
+      getPeerInfo(connection, connectId, buffer, bufferSize);
+      connection.setConnectedCallback(connectedCallback);
+      //ack client request
+      ackConnected(connection, connectId);
+      connectedCallback.handle(connection, bufferId, bufferSize);
+      return Handler.RESULT_DEFAULT;
     }
 
       private void ackConnected(Connection connection, long connectId){

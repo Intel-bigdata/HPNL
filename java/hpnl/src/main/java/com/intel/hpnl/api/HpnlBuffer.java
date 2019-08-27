@@ -3,6 +3,7 @@ package com.intel.hpnl.api;
 import java.nio.ByteBuffer;
 
 public interface HpnlBuffer {
+
   ByteBuffer parse(int bufferSize);
 
   byte getFrameType();
