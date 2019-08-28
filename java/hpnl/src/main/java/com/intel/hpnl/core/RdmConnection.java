@@ -118,14 +118,14 @@ public class RdmConnection extends AbstractConnection{
 
   @Override
   public void pushSendBuffer(HpnlBuffer buffer) {
-    ((HpnlRdmBuffer)buffer).setConnectionId(this.getConnectionId());
+    buffer.setConnectionId(this.getConnectionId());
     ((HpnlRdmBuffer)buffer).setConnection(this);
     super.pushSendBuffer(buffer);
   }
 
   @Override
   public void pushRecvBuffer(HpnlBuffer buffer) {
-    ((HpnlRdmBuffer)buffer).setConnectionId(this.getConnectionId());
+    buffer.setConnectionId(this.getConnectionId());
     ((HpnlRdmBuffer)buffer).setConnection(this);
     super.pushRecvBuffer(buffer);
   }
@@ -142,41 +142,33 @@ public class RdmConnection extends AbstractConnection{
   }
 
   @Override
-  public int send(int bufferSize, int bufferId) {
-    return this.send(bufferSize, bufferId, this.nativeHandle);
+  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, long peerConnectionId) {
+    return this.sendBufferTo(buffer, bufferSize, peerMap.get(Long.valueOf(peerConnectionId)));
   }
 
   @Override
-  public int sendTo(int bufferSize, int bufferId, ByteBuffer peerName) {
-    return this.sendTo(bufferSize, bufferId, peerName, this.nativeHandle);
-  }
-
-  @Override
-  public int sendTo(int bufferSize, int bufferId, long connectionId) {
-    return this.sendTo(bufferSize, bufferId, peerMap.get(Long.valueOf(connectionId)), this.nativeHandle);
-  }
-
-  @Override
-  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, long peerConnectId) {
+  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName) {
     int bufferId = buffer.getBufferId();
-    if(bufferId >= 0){
-      throw new IllegalArgumentException("need negative buffer id. "+bufferId);
+    if(bufferId >  0){
+      return this.sendTo(bufferSize, bufferId, peerName, this.nativeHandle);
     }
+
     if(!globalBufferMap.containsKey(bufferId)){
       globalBufferMap.put(Integer.valueOf(bufferId), buffer);
     }
     Integer ctxId = ctxIdQueue.poll();
     buffer.setConnectionId(getConnectionId());
     return this.sendBufTo(buffer.getRawBuffer(), bufferId, ctxId==null?-1:ctxId.intValue(), bufferSize,
-            peerMap.get(Long.valueOf(peerConnectId)), this.nativeHandle);
+            peerName, this.nativeHandle);
   }
 
   @Override
   public int sendBuffer(HpnlBuffer buffer, int bufferSize) {
     int bufferId = buffer.getBufferId();
-    if(bufferId >= 0){
-      throw new IllegalArgumentException("need negative buffer id. "+bufferId);
+    if(bufferId > 0 ){
+      return this.send(bufferSize, bufferId, this.nativeHandle);
     }
+    // for non registered buffer
     if(!globalBufferMap.containsKey(bufferId)){
       globalBufferMap.put(Integer.valueOf(bufferId), buffer);
     }
@@ -184,6 +176,25 @@ public class RdmConnection extends AbstractConnection{
     buffer.setConnectionId(getConnectionId());
     return this.sendBuf(buffer.getRawBuffer(), buffer.getBufferId(), ctxId==null?-1:ctxId.intValue(),
             bufferSize, this.nativeHandle);
+
+  }
+
+  /**
+   * send buffer without cache
+   * @param buffer
+   * @param bufferSize
+   * @return
+   */
+  @Override
+  public int sendBuffer(ByteBuffer buffer, int bufferSize) {
+    return this.sendBuf(buffer, -1, -1,
+            bufferSize, this.nativeHandle);
+  }
+
+  @Override
+  public int sendBufferTo(ByteBuffer buffer, int bufferSize, long peerConnectionId) {
+    return this.sendBufTo(buffer, -1, -1,
+            bufferSize, peerMap.get(Long.valueOf(peerConnectionId)), this.nativeHandle);
   }
 
   @Override

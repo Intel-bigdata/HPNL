@@ -2,6 +2,7 @@ package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.EventTask;
 import com.intel.hpnl.api.Handler;
+import com.intel.hpnl.api.HpnlBufferAllocator;
 import com.intel.hpnl.api.HpnlService;
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +17,9 @@ public class RdmHpnlService implements HpnlService {
   private List<EventTask> tasks = new ArrayList();
 
   public RdmHpnlService(int numThreads, int numBuffers, int bufferSize, int ioRatio, boolean server) {
+    if(bufferSize < HpnlBufferAllocator.BUFFER_LARGE){
+      throw new IllegalArgumentException("buffer size should be no less than "+HpnlBufferAllocator.BUFFER_LARGE);
+    }
     if (server) {
       this.service = (new RdmServerService(numThreads, numBuffers, bufferSize, ioRatio)).init();
     } else {

@@ -67,7 +67,7 @@ public class ClientTest {
         int limit = rawBuffer.position();
         buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
         rawBuffer.flip();
-        connection.send(buffer.remaining(), buffer.getBufferId());
+        connection.sendBuffer(buffer, buffer.remaining());
         return 0;
       }
     }, new RecvCallback(false, 5, 4096, null));

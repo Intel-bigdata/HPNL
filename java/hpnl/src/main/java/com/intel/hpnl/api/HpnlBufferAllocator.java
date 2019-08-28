@@ -1,7 +1,5 @@
 package com.intel.hpnl.api;
 
-import io.netty.channel.AbstractChannel;
-
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -10,10 +8,11 @@ public class HpnlBufferAllocator {
     private final BufferCache<HpnlBuffer> CACHE_SMALL;
     private final BufferCache<HpnlBuffer> CACHE_MEDIUM;
     private final BufferCache<HpnlBuffer> CACHE_LARGE;
+    private BufferCache<HpnlBuffer> CACHE_MAXSIZE;
 
     private BufferCache.CacheHandler<HpnlBuffer> cacheHandler;
-
-    private static final int MAX_SIZE = 10*1024*1024;
+    private final boolean largePool;
+    private int maxSize;
 
     public static final int BUFFER_TINY = 512;
     public static final int BUFFER_SMALL = 1024;
@@ -32,6 +31,7 @@ public class HpnlBufferAllocator {
     private static final HpnlBufferAllocator DEFAULT = new HpnlBufferAllocator(true, DEFAULT_CACHE_HANDLER);
 
     private HpnlBufferAllocator(boolean largePool, BufferCache.CacheHandler<HpnlBuffer> cacheHandler){
+        this.largePool = largePool;
         this.cacheHandler = cacheHandler;
         CACHE_TINY = BufferCache.getInstance(cacheHandler, BUFFER_TINY,
                 largePool?NUM_UNIT*8:NUM_UNIT*2, largePool?NUM_UNIT*8:NUM_UNIT*2);
@@ -41,6 +41,7 @@ public class HpnlBufferAllocator {
                 largePool?NUM_UNIT*2:NUM_UNIT, largePool?NUM_UNIT*2:NUM_UNIT);
         CACHE_LARGE = BufferCache.getInstance(cacheHandler, BUFFER_LARGE,
                 largePool?NUM_UNIT*4:NUM_UNIT*2, largePool?NUM_UNIT*4:NUM_UNIT*2);
+        this.maxSize = -1;
     }
 
     public static HpnlBuffer getBufferFromDefault(int size){
@@ -49,6 +50,21 @@ public class HpnlBufferAllocator {
 
     public static HpnlBuffer getBufferByIdFromDefault(int bufferId){
         return DEFAULT.getBufferById(bufferId);
+    }
+
+    public static void setDefaultMaxBufferSize(int maxSize){
+        setMaxBufferSize(DEFAULT, maxSize);
+    }
+
+    private static void setMaxBufferSize(HpnlBufferAllocator allocator, int maxSize){
+        synchronized (allocator){
+            if(allocator.CACHE_MAXSIZE == null){
+                allocator.maxSize = maxSize;
+                boolean largePool = allocator.largePool;
+                allocator.CACHE_MAXSIZE = BufferCache.getInstance(allocator.cacheHandler, maxSize,
+                        largePool?NUM_UNIT*4:NUM_UNIT, largePool?NUM_UNIT*4:NUM_UNIT);
+            }
+        }
     }
 
     public static HpnlBufferAllocator getInstance(){
@@ -68,6 +84,10 @@ public class HpnlBufferAllocator {
                 new BufferCacheHandler(new AtomicInteger(start - 1), start - MIN_DEFAULT_BUFFER_ID));
     }
 
+    public void setMaxBufferSize(int maxSize){
+        setMaxBufferSize(this, maxSize);
+    }
+
     public HpnlBuffer getBuffer(int size){
         return getBuffer(this, size);
     }
@@ -80,7 +100,7 @@ public class HpnlBufferAllocator {
     }
 
     /**
-     * different sizes (512, 1024, 4096, 8192) in threadlocal
+     * different sizes (512, 1024, 4096, 8192, maxSize) in threadlocal
      * @return
      */
     private HpnlBuffer getBuffer(HpnlBufferAllocator allocator, int size){
@@ -104,10 +124,16 @@ public class HpnlBufferAllocator {
             buffer.clear();
             return buffer;
         }
-        if(size > MAX_SIZE){
-            throw new IllegalArgumentException("buffer size cannot exceed "+MAX_SIZE);
+        if(maxSize == -1){
+            throw new IllegalStateException("please set max buffer size first");
         }
-        return DEFAULT_CACHE_HANDLER.newInstance(null, size);
+        if(size > maxSize){
+            throw new IllegalArgumentException("buffer size cannot exceed "+maxSize);
+        }
+
+        HpnlBuffer buffer = allocator.CACHE_MAXSIZE.getInstance();
+        buffer.clear();
+        return buffer;
     }
 
     private HpnlBuffer getBufferById(HpnlBufferAllocator allocator, int bufferId){
@@ -124,7 +150,13 @@ public class HpnlBufferAllocator {
             return buffer;
         }
         buffer = allocator.CACHE_LARGE.getBuffer(bufferId);
-        return buffer;
+        if(buffer != null) {
+            return buffer;
+        }
+        if(maxSize == -1){
+            throw new IllegalStateException("please set max buffer size first");
+        }
+        return allocator.CACHE_MAXSIZE.getBuffer(bufferId);
     }
 
     private static class BufferCacheHandler implements BufferCache.CacheHandler<HpnlBuffer>{
@@ -141,7 +173,7 @@ public class HpnlBufferAllocator {
             if(cache != null) {
                 id = idGen.getAndDecrement();
                 if (id < idLimit) {
-                    throw new IllegalArgumentException("id should be less than " + idLimit);
+                    throw new IllegalArgumentException("id should not be less than " + idLimit);
                 }
             }
             HpnlBuffer buffer = new HpnlGlobalBuffer(cache, id, size);

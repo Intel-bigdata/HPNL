@@ -138,12 +138,18 @@ public abstract class AbstractConnection implements Connection {
 
   @Override
   public void pushSendBuffer(HpnlBuffer buffer) {
+    if(buffer.getBufferId() <= 0){
+      throw new IllegalStateException("buffer id should be greater than 0. "+buffer.getBufferId());
+    }
     this.sendBufferMap.put(buffer.getBufferId(), buffer);
     this.sendBufferList.offer(buffer);
   }
 
   @Override
   public void pushRecvBuffer(HpnlBuffer buffer) {
+    if(buffer.getBufferId() <= 0) {
+      throw new IllegalStateException("buffer id should be greater than 0. " + buffer.getBufferId());
+    }
     this.recvBufferMap.put(buffer.getBufferId(), buffer);
   }
 
@@ -155,6 +161,7 @@ public abstract class AbstractConnection implements Connection {
         log.debug("Connection ({}) lack of send buffer", this.getConnectionId());
       }
     }
+    buffer.clear();
     return buffer;
   }
 
@@ -253,11 +260,6 @@ public abstract class AbstractConnection implements Connection {
   @Override
   public int getSrcPort() {
     return this.srcPort;
-  }
-
-  @Override
-  public int sendTo(int bufferSize, int bufferId, ByteBuffer peerName) {
-    throw new UnsupportedOperationException();
   }
 
   @Override

@@ -52,7 +52,7 @@ public class CqService {
 
     while(var1.hasNext()) {
       EventTask task = (EventTask)var1.next();
-      task.stop();
+//      task.stop();
     }
 
     this.waitToComplete();
@@ -60,16 +60,16 @@ public class CqService {
   }
 
   private void waitToComplete() {
-    try {
-      Iterator var1 = this.cqTasks.iterator();
-
-      while(var1.hasNext()) {
-        EventTask task = (EventTask)var1.next();
-        task.waitToComplete();
-      }
-    } catch (InterruptedException var3) {
-      log.error("CQ task is interrupted when wait its completion", var3);
-    }
+//    try {
+//      Iterator var1 = this.cqTasks.iterator();
+//
+//      while(var1.hasNext()) {
+//        EventTask task = (EventTask)var1.next();
+//        task.waitToComplete();
+//      }
+//    } catch (InterruptedException var3) {
+//      log.error("CQ task is interrupted when wait its completion", var3);
+//    }
 
   }
 

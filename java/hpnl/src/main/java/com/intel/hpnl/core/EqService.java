@@ -158,7 +158,7 @@ public class EqService extends AbstractService {
     if(!stopped) {
       synchronized (this) {
         if(!stopped) {
-          this.eqTask.stop();
+//          this.eqTask.stop();
           this.waitToComplete();
           this.delete_eq_event(this.localEq, this.nativeHandle);
           this.free(this.nativeHandle);
@@ -169,13 +169,13 @@ public class EqService extends AbstractService {
   }
 
   private void waitToComplete() {
-    try {
-      this.eqTask.waitToComplete();
-    } catch (InterruptedException var5) {
-      log.error("EQ task interrupted when wait its completion", var5);
-    } finally {
-      log.info("EQ task stopped? {}", this.eqTask.isStopped());
-    }
+//    try {
+//      this.eqTask.waitToComplete();
+//    } catch (InterruptedException var5) {
+//      log.error("EQ task interrupted when wait its completion", var5);
+//    } finally {
+//      log.info("EQ task stopped? {}", this.eqTask.isStopped());
+//    }
 
   }
 

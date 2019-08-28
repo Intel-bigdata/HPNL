@@ -49,9 +49,9 @@ public class RecvCallback implements Handler {
     buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
     rawBuffer.flip();
     if(is_server){
-      con.sendTo(buffer.remaining(), buffer.getBufferId(), peerName);
+      con.sendBufferTo(buffer, buffer.remaining(), peerName);
     }else {
-      con.send(buffer.remaining(), buffer.getBufferId());
+      con.sendBuffer(buffer, buffer.remaining());
     }
 //    con.releaseRecvBuffer(bufferId);
     return Handler.RESULT_DEFAULT;

@@ -72,7 +72,7 @@ public class RdmServerService extends RdmService {
               byteBuffer.put(addr.getBytes());
               byteBuffer.flip();
               buffer.putData(byteBuffer, FrameType.ACK.id(), -1L);
-              connection.sendTo(buffer.remaining(), buffer.getBufferId(), connectId);
+              connection.sendBufferTo(buffer, buffer.remaining(), connectId);
           }
 
           if (log.isDebugEnabled()) {

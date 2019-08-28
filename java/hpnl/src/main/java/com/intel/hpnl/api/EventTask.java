@@ -1,16 +1,10 @@
 package com.intel.hpnl.api;
 
-import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 
 public abstract class EventTask implements Runnable {
-  private volatile CountDownLatch completed;
-  private final AtomicBoolean running = new AtomicBoolean(false);
+//  private volatile CountDownLatch completed;
+//  private final AtomicBoolean running = new AtomicBoolean(false);
 
   private long startTime;
 
@@ -18,12 +12,11 @@ public abstract class EventTask implements Runnable {
   protected static final int CHECK_DEADLINE_INTERVAL = 64;
 
   public EventTask() {
-    this.running.set(true);
+//    this.running.set(true);
   }
 
   @Override
   public void run() {
-    if(running.get()) {
       try {
 //        startTime = System.nanoTime();
 //        processEvents(startTime + DEFAULT_DURATION);
@@ -34,7 +27,6 @@ public abstract class EventTask implements Runnable {
         this.getLogger().error("error occurred in event task " + this, th);
         afterError();
       }
-    }
   }
 
   private void afterError(){
@@ -46,13 +38,6 @@ public abstract class EventTask implements Runnable {
     } catch (Throwable var4) {
       this.getLogger().error("error occurred during clean-up in task " + this, var4);
     }
-
-    synchronized(this) {
-      if (this.completed != null) {
-        this.completed.countDown();
-      }
-    }
-    this.stop(false);
   }
 
 //  private void processEvents(){
@@ -105,9 +90,9 @@ public abstract class EventTask implements Runnable {
 //    this.pendingTasks.put(task);
 //  }
 
-  public boolean isStopped() {
-    return !this.running.get();
-  }
+//  public boolean isStopped() {
+//    return !this.running.get();
+//  }
 
   protected abstract int waitEvent();
 
@@ -116,31 +101,31 @@ public abstract class EventTask implements Runnable {
   protected void cleanUp() {
   }
 
-  public void stop() {
-    this.stop(true);
-  }
-
-  private void stop(boolean needWait) {
-    if (this.running.get()) {
-      synchronized(this) {
-        if (this.running.get()) {
-          this.running.set(false);
-          if (needWait) {
-            this.completed = new CountDownLatch(1);
-          }
-
-          this.getLogger().info(this + " is stopping");
-        }
-      }
-    }
-
-  }
-
-  public void waitToComplete() throws InterruptedException {
-    if (this.completed == null) {
-      throw new IllegalStateException("invoke stop() method before waitToComplete()");
-    } else {
-      this.completed.await();
-    }
-  }
+//  public void stop() {
+//    this.stop(true);
+//  }
+//
+//  private void stop(boolean needWait) {
+//    if (this.running.get()) {
+//      synchronized(this) {
+//        if (this.running.get()) {
+//          this.running.set(false);
+//          if (needWait) {
+//            this.completed = new CountDownLatch(1);
+//          }
+//
+//          this.getLogger().info(this + " is stopping");
+//        }
+//      }
+//    }
+//
+//  }
+//
+//  public void waitToComplete() throws InterruptedException {
+//    if (this.completed == null) {
+//      throw new IllegalStateException("invoke stop() method before waitToComplete()");
+//    } else {
+//      this.completed.await();
+//    }
+//  }
 }

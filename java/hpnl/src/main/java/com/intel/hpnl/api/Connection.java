@@ -30,15 +30,15 @@ public interface Connection {
 
   void setEventQueue(BlockingQueue<Runnable> eventQueue);
 
-  int send(int bufferSize, int bufferId);
-
-  int sendTo(int bufferSize, int bufferId, ByteBuffer peerName);
-
-  int sendTo(int bufferSize, int bufferId, long connectionId);
+  int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName);
 
   int sendBufferTo(HpnlBuffer buffer, int bufferSize, long peerConnectId);
 
   int sendBuffer(HpnlBuffer buffer, int bufferSize) ;
+
+  int sendBufferTo(ByteBuffer buffer, int bufferSize, long peerConnectionId);
+
+  int sendBuffer(ByteBuffer buffer, int bufferSize);
 
   String getSrcAddr();
 

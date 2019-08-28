@@ -1,7 +1,6 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractConnection;
-import com.intel.hpnl.api.Handler;
 import com.intel.hpnl.api.HpnlBuffer;
 import com.intel.hpnl.api.HpnlService;
 import java.nio.ByteBuffer;
@@ -9,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class MsgConnection extends AbstractConnection {
+
   private long nativeHandle;
   private final long nativeEq;
   private static final Logger log = LoggerFactory.getLogger(MsgConnection.class);
@@ -45,15 +45,16 @@ public class MsgConnection extends AbstractConnection {
   }
 
   @Override
-  public int send(int bufferSize, int bufferId) {
-    return this.send(bufferSize, bufferId, this.nativeHandle);
-  }
-
-  @Override
-  public int sendTo(int bufferSize, int bufferId, long connectionId){return -1;}
+  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName){ return -1;}
 
   @Override
   public int sendBufferTo(HpnlBuffer buffer, int bufferSize, long connectionId){return -1;}
+
+  @Override
+  public int sendBufferTo(ByteBuffer buffer, int bufferSize, long peerConnectionId){return -1;}
+
+  @Override
+  public int sendBuffer(ByteBuffer buffer, int bufferSize){ return -1;}
 
   @Override
   public int sendBuffer(HpnlBuffer buffer, int bufferSize){return -1;}

@@ -90,7 +90,7 @@ public class RdmService extends AbstractService {
     int limit = rawBuffer.position();
     buffer.insertMetadata(FrameType.REQ.id(), -1L, limit);
     rawBuffer.flip();
-    connection.send(buffer.remaining(), buffer.getBufferId());
+    connection.sendBuffer(buffer, buffer.remaining());
     //wait ack
     connection.setRecvCallback(new ConnectionAckedHandler(connectedCallback, recvCallback));
   }
@@ -129,18 +129,18 @@ public class RdmService extends AbstractService {
 
   @Override
   public void stop() {
-    if(!this.task.isStopped()) {
-        synchronized (this) {
+//    if(!this.task.isStopped()) {
+//        synchronized (this) {
 //            if (taskThread != null) {
 //                taskThread.interrupt();
 //                taskThread = null;
 //            }
-            if (!this.task.isStopped()) {
-                this.task.stop();
+//            if (!this.task.isStopped()) {
+//                this.task.stop();
 //          this.waitToComplete();
-            }
-        }
-    }
+//            }
+//        }
+//    }
   }
 
   private void shutdown(){
@@ -157,16 +157,16 @@ public class RdmService extends AbstractService {
     log.info(this+" shut down");
   }
 
-  private void waitToComplete() {
-    try {
-      this.task.waitToComplete();
-    } catch (InterruptedException var5) {
-      log.error("EQ task interrupted when wait its completion", var5);
-    } finally {
-      log.info("EQ task stopped? {}", this.task.isStopped());
-    }
-
-  }
+//  private void waitToComplete() {
+//    try {
+//      this.task.waitToComplete();
+//    } catch (InterruptedException var5) {
+//      log.error("EQ task interrupted when wait its completion", var5);
+//    } finally {
+//      log.info("EQ task stopped? {}", this.task.isStopped());
+//    }
+//
+//  }
 
   public long getNativeHandle() {
     return this.nativeHandle;

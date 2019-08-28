@@ -52,9 +52,9 @@ public class RecvCallback implements Handler {
       if(peerName == null){
         peerName = con.getPeerName(recvBuffer.getPeerConnectionId());
       }
-      con.sendTo(buffer.remaining(), buffer.getBufferId(), peerName);
+      con.sendBufferTo(buffer, buffer.remaining(), peerName);
     }else {
-      con.send(buffer.remaining(), buffer.getBufferId());
+      con.sendBuffer(buffer, buffer.remaining());
     }
 //    con.releaseRecvBuffer(bufferId);
     return Handler.RESULT_DEFAULT;
