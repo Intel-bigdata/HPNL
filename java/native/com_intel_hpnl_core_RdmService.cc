@@ -151,9 +151,14 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *e
 
   buffer_id = ck->buffer_id;
   RdmConnection *con = (RdmConnection*)ck->con;
+  assert(con != NULL);
   jobject javaConn = con->get_java_conn();
   jmethodID handleCallback = con->get_java_callback_methodID();
   jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, ret, buffer_id, block_buffer_size);
+  if((*env).ExceptionOccurred()){
+	  (*env).ExceptionDescribe();
+  	  return -1;
+  }
   if (ret == RECV_EVENT && rst) {
 	if (con->activate_chunk(ck)) {
 	  perror("failed to return receive chunk/buffer");
