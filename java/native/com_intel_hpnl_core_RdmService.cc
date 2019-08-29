@@ -120,6 +120,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
   jlong id = -1;
   (*env).CallVoidMethod(obj, regCon, jEq, jcon, NULL, 0, NULL, 0, id);
   if((*env).ExceptionOccurred()){
+	  (*env).ExceptionDescribe();
 	  return -1;
   }
 
@@ -147,11 +148,11 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *e
   if (ret <= 0)
     return ret;
 
-  assert(ck != NULL);
-
   buffer_id = ck->buffer_id;
   RdmConnection *con = (RdmConnection*)ck->con;
-  assert(con != NULL);
+  if(ck->ctx_id < 0){
+	  delete ck;
+  }
   jobject javaConn = con->get_java_conn();
   jmethodID handleCallback = con->get_java_callback_methodID();
   jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, ret, buffer_id, block_buffer_size);
@@ -175,7 +176,6 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_remove_1connection(JN
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1recv_1buffer(JNIEnv *env, jobject obj, jobject recv_buffer, jlong size, jint bufferId, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(recv_buffer);
-  assert(buffer != NULL);
   service->set_recv_buffer((char*)buffer, size, bufferId);
 }
 
@@ -187,7 +187,6 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1recv_1buffer(JNI
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmService_set_1send_1buffer(JNIEnv *env, jobject obj, jobject send_buffer, jlong size, jint bufferId, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(send_buffer);
-  assert(buffer != NULL);
   service->set_send_buffer((char*)buffer, size, bufferId);
 }
 

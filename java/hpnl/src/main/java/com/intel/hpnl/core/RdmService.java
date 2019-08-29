@@ -70,13 +70,12 @@ public class RdmService extends AbstractService {
   private void sendRequest(RdmConnection connection, Handler connectedCallback, Handler recvCallback){
     HpnlBuffer buffer = connection.takeSendBuffer();
     ByteBuffer rawBuffer = buffer.getRawBuffer();
-    rawBuffer.clear();
     rawBuffer.position(buffer.getMetadataSize());
     String ipPort = new StringBuffer(connection.getSrcAddr()).append(":").append(connection.getSrcPort())
             .toString();
     byte[] bytes = ipPort.getBytes();
     rawBuffer.putInt(bytes.length);
-    rawBuffer.put(ipPort.getBytes());
+    rawBuffer.put(bytes);
 
     ByteBuffer localName = connection.getLocalName();
     localName.rewind();
@@ -90,9 +89,9 @@ public class RdmService extends AbstractService {
     int limit = rawBuffer.position();
     buffer.insertMetadata(FrameType.REQ.id(), -1L, limit);
     rawBuffer.flip();
-    connection.sendBuffer(buffer, buffer.remaining());
     //wait ack
     connection.setRecvCallback(new ConnectionAckedHandler(connectedCallback, recvCallback));
+    connection.sendBuffer(buffer, buffer.remaining());
   }
 
   @Override
@@ -108,6 +107,7 @@ public class RdmService extends AbstractService {
     }
     con.setConnectionId(localIp, localPort);
     this.conMap.put(connHandle, con);
+    log.info("registered connection {}:{}", localIp, localPort);
   }
 
   @Override

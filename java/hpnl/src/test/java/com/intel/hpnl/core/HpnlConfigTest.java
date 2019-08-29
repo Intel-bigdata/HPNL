@@ -8,6 +8,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
 
+import java.nio.ByteBuffer;
+
 public class HpnlConfigTest {
 
   private static final String appId = "xyz";

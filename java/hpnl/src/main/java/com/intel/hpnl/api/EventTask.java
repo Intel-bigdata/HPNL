@@ -22,7 +22,9 @@ public abstract class EventTask implements Runnable {
 //        processEvents(startTime + DEFAULT_DURATION);
 //        long ioTime = System.nanoTime() - startTime;
 //        this.runPendingTasks(ioTime * (100 - ioRatio) / ioRatio);
-        this.waitEvent();
+        if(this.waitEvent() < 0){
+          this.getLogger().warn("event process with error");
+        }
       } catch (Throwable th) {
         this.getLogger().error("error occurred in event task " + this, th);
         afterError();

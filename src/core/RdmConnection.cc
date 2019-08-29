@@ -92,6 +92,7 @@ int RdmConnection::init() {
   while (size < 2*buffer_num ) {
     Chunk *rck = rbuf_mgr->get();
     rck->con = this;
+    rck->ctx_id = 0;
     rck->ctx.internal[4] = rck;
     if (fi_recv(ep, rck->buffer, rck->capacity, NULL, FI_ADDR_UNSPEC, &rck->ctx)) {
       perror("fi_recv");
@@ -103,6 +104,7 @@ int RdmConnection::init() {
   while(size < buffer_num){
 	  Chunk *sck = sbuf_mgr->get();
 	  sck->con = this;
+	  sck->ctx_id = 0;
 	  send_buffers.push_back(sck);
 	  send_buffers_map.insert(std::pair<int, Chunk*>(sck->buffer_id, sck));
 	  size++;
@@ -159,6 +161,7 @@ int RdmConnection::sendBuf(const char* buffer, int buffer_id, int ctx_id, int bu
 	ck = new Chunk();
 	ck->con = this;
 	ck->ctx_id = -1; //not for cache
+	ck->ctx.internal[4] = NULL;
 	ck->ctx.internal[5] = ck;
   } else {
 	ck = send_global_buffers_map[ctx_id];
@@ -204,6 +207,7 @@ int RdmConnection::sendBufTo(const char* buffer, int buffer_id, int ctx_id, int 
 	ck = new Chunk();
 	ck->con = this;
 	ck->ctx_id = -1; //not for cache
+	ck->ctx.internal[4] = NULL;
 	ck->ctx.internal[5] = ck;
   } else {
 	ck = send_global_buffers_map[ctx_id];

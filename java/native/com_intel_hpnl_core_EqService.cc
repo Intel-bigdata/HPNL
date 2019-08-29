@@ -223,7 +223,6 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_shutdown(JNIEnv *env, 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_set_1recv_1buffer(JNIEnv *env, jobject thisObj, jobject recv_buffer, jlong size, jint rdmaBufferId, jlong eqServicePtr) {
   ExternalEqService *service = *(ExternalEqService**)&eqServicePtr;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(recv_buffer);
-  assert(buffer != NULL);
   service->set_recv_buffer((char*)buffer, size, rdmaBufferId);
 }
 

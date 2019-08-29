@@ -160,6 +160,7 @@ public abstract class AbstractConnection implements Connection {
       if(log.isDebugEnabled()){
         log.debug("Connection ({}) lack of send buffer", this.getConnectionId());
       }
+      return null;
     }
     buffer.clear();
     return buffer;

@@ -19,7 +19,8 @@ public class HpnlBufferAllocator {
     public static final int BUFFER_MEDIUM = 4096;
     public static final int BUFFER_LARGE = 8192;
 
-    private static final int MIN_DEFAULT_BUFFER_ID = -100000000;
+    private static final int BUFFER_ID_RANGES = 100000000;
+    private static final int MIN_DEFAULT_BUFFER_ID = -BUFFER_ID_RANGES;
 
     private static int currentBufferIdLimit = MIN_DEFAULT_BUFFER_ID;
 
@@ -75,13 +76,13 @@ public class HpnlBufferAllocator {
         int start;
         synchronized (HpnlBufferAllocator.class) {
             start = currentBufferIdLimit;
-            currentBufferIdLimit -= MIN_DEFAULT_BUFFER_ID;
+            currentBufferIdLimit -= BUFFER_ID_RANGES;
             if(currentBufferIdLimit > 0){
                 throw new IllegalStateException("reach buffer limit: "+currentBufferIdLimit);
             }
         }
         return new HpnlBufferAllocator(largePool,
-                new BufferCacheHandler(new AtomicInteger(start - 1), start - MIN_DEFAULT_BUFFER_ID));
+                new BufferCacheHandler(new AtomicInteger(start - 1), start - BUFFER_ID_RANGES));
     }
 
     public void setMaxBufferSize(int maxSize){
@@ -93,7 +94,7 @@ public class HpnlBufferAllocator {
     }
 
     public HpnlBuffer getBufferById(int bufferId){
-        if(bufferId > MIN_DEFAULT_BUFFER_ID){
+        if(bufferId >= MIN_DEFAULT_BUFFER_ID){
             return getBufferById(DEFAULT, bufferId);
         }
         return getBufferById(this, bufferId);
