@@ -39,9 +39,10 @@ int ExternalRdmCqDemultiplexer::wait_event(Chunk** ck, int *buffer_id, int *bloc
     	  *ck = (Chunk*)ctx->internal[5];
     	  if((*ck)->ctx_id < 0){
     		  delete (*ck);
-    	  }else{
-    		  *block_buffer_size = (*ck)->ctx_id;
+    		  *ck = NULL;
+    		  return 0;
     	  }
+    	  *block_buffer_size = (*ck)->ctx_id;
       }
       return SEND_EVENT;
     } 
