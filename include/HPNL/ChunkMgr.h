@@ -27,7 +27,7 @@
 
 #include <boost/pool/pool.hpp>
 
-#include "FabricService.h"
+#include "HPNL/FabricService.h"
 
 class Connection;
 
@@ -41,7 +41,8 @@ struct Chunk {
     /// A pointer to HPNL connection object
     void *con = nullptr;
     /// A pointer to RDMA memory_region
-    void *mr = nullptr;
+    fid_mr *mr = nullptr;
+    void *ptr = nullptr;
     /// Libfabric context in chunk lifetime
     fi_context2 ctx{};
     /// Peer endpoint's address when sending message
@@ -86,10 +87,9 @@ class PoolAllocator {
 
     static int buffer_size;
     static fid_domain *domain;
-    static fid_mr *mr;
     static int id;
     static std::map<Chunk*, int> chunk_to_id_map;
-    static std::map<int, Chunk*> id_to_chunk_map;
+    static std::map<int, std::pair<Chunk*, fid_mr*>> id_to_chunk_map;
     static std::mutex mtx;
 };
 

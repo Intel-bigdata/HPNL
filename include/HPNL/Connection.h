@@ -68,6 +68,10 @@ class Connection {
     virtual int read(int local_buffer_id, int local_buffer_offset, uint64_t local_buffer_length,
                      uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) = 0;
 
+    /// Remote Memory Access Interface
+    virtual int read(Chunk *ck, int local_buffer_offset, uint64_t local_buffer_length,
+                     uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) = 0;
+
     /// Call this function when user activate recv chunk
     virtual void log_used_chunk(Chunk *ck) = 0;
 

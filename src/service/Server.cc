@@ -53,7 +53,7 @@ void Server::set_recv_callback(Callback* callback) {
 }
 
 void Server::set_read_callback(Callback* callback) {
-  service->set_recv_callback(callback);
+  service->set_read_callback(callback);
 }
 
 void Server::set_connected_callback(Callback* callback) {

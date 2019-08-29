@@ -22,9 +22,12 @@
 char* PoolAllocator::malloc(const size_type bytes) {
   int chunk_size = buffer_size+sizeof(Chunk);
   int buffer_num = bytes/chunk_size;
-  auto memory = static_cast<char*>(std::malloc(bytes));
+  char* memory = nullptr;
+  memory = static_cast<char*>(std::malloc(bytes));
+  fid_mr* mr = nullptr;
   if (PoolAllocator::domain) {
-    if (fi_mr_reg(domain, memory, bytes, FI_REMOTE_READ | FI_REMOTE_WRITE | FI_SEND | FI_RECV, 0, 0, 0, &mr, nullptr)) {
+    int res = fi_mr_reg(domain, memory, bytes, FI_RECV | FI_SEND | FI_REMOTE_READ, 0, 0, 0, &mr, nullptr);
+    if (res) {
       perror("fi_mr_reg");
       return nullptr; 
     }
@@ -33,7 +36,7 @@ char* PoolAllocator::malloc(const size_type bytes) {
   auto memory_ptr = first;
   for (int i = 0; i < buffer_num; i++) {
     chunk_to_id_map[memory_ptr] = id;
-    id_to_chunk_map[id] = memory_ptr;
+    id_to_chunk_map[id] = std::pair<Chunk*, fid_mr*>(memory_ptr, mr);
     id++;
     memory_ptr = reinterpret_cast<Chunk*>(reinterpret_cast<char*>(memory_ptr)+chunk_size);
   }
@@ -47,9 +50,8 @@ void PoolAllocator::free(char* const block) {
 
 int PoolAllocator::buffer_size = 0;
 fid_domain* PoolAllocator::domain = nullptr;
-fid_mr* PoolAllocator::mr = nullptr;
 int PoolAllocator::id = 0;
-std::map<int, Chunk*> PoolAllocator::id_to_chunk_map;
+std::map<int, std::pair<Chunk*, fid_mr*>> PoolAllocator::id_to_chunk_map;
 std::map<Chunk*, int> PoolAllocator::chunk_to_id_map;
 std::mutex PoolAllocator::mtx;
 
@@ -67,8 +69,8 @@ ChunkPool::ChunkPool(FabricService* service, const int request_buffer_size,
 
 ChunkPool::~ChunkPool() {
   for (auto ck : PoolAllocator::id_to_chunk_map) {
-    if (ck.second->mr) {
-      fi_close(&((fid_mr*)ck.second->mr)->fid);
+    if (ck.second.second) {
+      fi_close(&((fid_mr*)ck.second.second)->fid);
     }
   }
   PoolAllocator::id_to_chunk_map.clear();
@@ -91,7 +93,7 @@ Chunk* ChunkPool::get(int id) {
   if (!PoolAllocator::id_to_chunk_map.count(id)) {
     return nullptr;
   }
-  return PoolAllocator::id_to_chunk_map[id];
+  return PoolAllocator::id_to_chunk_map[id].first;
 }
 
 Chunk* ChunkPool::get(Connection* con) {
@@ -101,9 +103,9 @@ Chunk* ChunkPool::get(Connection* con) {
     con->log_used_chunk(ck);
   }
   used_buffers++;
-  ck->mr = PoolAllocator::mr;
   ck->capacity = buffer_size;
   ck->buffer_id = PoolAllocator::chunk_to_id_map[ck];
+  ck->mr = PoolAllocator::id_to_chunk_map[ck->buffer_id].second;
   ck->buffer = ck->data;
   ck->size = 0;
   ck->ctx.internal[4] = ck;
