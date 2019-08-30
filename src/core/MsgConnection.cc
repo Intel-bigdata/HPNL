@@ -187,6 +187,13 @@ int MsgConnection::read(int buffer_id, int local_offset, uint64_t len,
                  0, remote_addr, remote_key, ck);
 }
 
+int MsgConnection::read(Chunk *ck, int local_offset, uint64_t len,
+                        uint64_t remote_addr, uint64_t remote_key) {
+  ck->con = this;
+  return fi_read(ep, (char*)ck->buffer + local_offset, len, fi_mr_desc((fid_mr*)ck->mr),
+                 0, remote_addr, remote_key, ck);
+}
+
 int MsgConnection::connect() {
   int res = fi_connect(ep, info->dest_addr, nullptr, 0);
   if (res) {

@@ -27,7 +27,10 @@ class ConnectionImpl : public Connection {
            uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) override {
     return 0;
   }
-
+  int read(Chunk* ck, int local_buffer_offset, uint64_t local_buffer_length,
+           uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) override {
+    return 0;
+  }
   char* get_peer_name() override { return nullptr; }
   void encode_(Chunk* ck, void* buffer, int buffer_length, char* peer_name) override {}
   void decode_(Chunk* ck, void* buffer, int* buffer_length, char* peer_name) override {}

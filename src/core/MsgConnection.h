@@ -50,6 +50,7 @@ class MsgConnection : public ConnectionImpl {
   int send(Chunk*) override;
   int send(int, int) override;
   int read(int, int, uint64_t, uint64_t, uint64_t) override;
+  int read(Chunk*, int, uint64_t, uint64_t, uint64_t) override;
 
   int shutdown() override;
   int connect();
