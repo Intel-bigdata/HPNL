@@ -71,7 +71,9 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   public void release() {
     switch (getBufferType()){
       case SEND: connection.reclaimSendBuffer(getBufferId(), -1); return;
-      case RECV: connection.reclaimRecvBuffer(getBufferId()); return;
+      case RECV:
+        log.info("buffer id release: {}", getBufferId());
+        connection.reclaimRecvBuffer(getBufferId()); return;
       default: throw new IllegalArgumentException("should not reach here: "+getBufferType());
     }
   }

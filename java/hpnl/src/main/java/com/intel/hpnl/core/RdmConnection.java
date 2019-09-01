@@ -142,6 +142,11 @@ public class RdmConnection extends AbstractConnection{
   }
 
   @Override
+  protected void reclaimCtxId(int ctxId) {
+    ctxIdQueue.offer(ctxId);
+  }
+
+  @Override
   public int sendBufferTo(HpnlBuffer buffer, int bufferSize, long peerConnectionId) {
     return this.sendBufferTo(buffer, bufferSize, peerMap.get(Long.valueOf(peerConnectionId)));
   }
@@ -165,6 +170,7 @@ public class RdmConnection extends AbstractConnection{
   @Override
   public int sendBuffer(HpnlBuffer buffer, int bufferSize) {
     int bufferId = buffer.getBufferId();
+//    log.info("buffer id: {}, {}", bufferId, bufferSize);
     if(bufferId > 0 ){
       return this.send(bufferSize, bufferId, this.nativeHandle);
     }

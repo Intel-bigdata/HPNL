@@ -39,6 +39,7 @@ public class RdmServerService extends RdmService {
 
     @Override
     public int handle(Connection connection, int bufferId, int bufferSize) {
+//      log.info("bufferId: {}, {}", bufferId, bufferSize);
       HpnlBuffer buffer = connection.getRecvBuffer(bufferId);
       buffer.getRawBuffer().position(0);
       FrameType frameType = FrameType.toFrameType(buffer.getRawBuffer().get());

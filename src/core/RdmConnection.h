@@ -26,9 +26,9 @@ class RdmConnection : public Connection {
 
     virtual int send(Chunk*) override;
     virtual int send(int, int) override;
-    virtual int sendBuf(const char*, int, int, int) override;
+    virtual int sendBuf(char*, int, int, int) override;
     virtual int sendTo(int, int, const char*) override;
-    virtual int sendBufTo(const char*, int, int, int, const char*) override;
+    virtual int sendBufTo(char*, int, int, int, const char*) override;
     virtual char* get_peer_name() override;
     char* get_local_name();
     int get_local_name_length();

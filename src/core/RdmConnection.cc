@@ -155,17 +155,19 @@ int RdmConnection::send(int buffer_size, int buffer_id) {
   return 0;
 }
 
-int RdmConnection::sendBuf(const char* buffer, int buffer_id, int ctx_id, int buffer_size) {
+int RdmConnection::sendBuf(char* buffer, int buffer_id, int ctx_id, int buffer_size) {
   Chunk *ck;
   if (ctx_id < 0) {
 	ck = new Chunk();
 	ck->con = this;
+	ck->buffer_id = buffer_id;
 	ck->ctx_id = -1; //not for cache
 	ck->ctx.internal[4] = NULL;
 	ck->ctx.internal[5] = ck;
   } else {
 	ck = send_global_buffers_map[ctx_id];
 	ck->buffer_id = buffer_id;
+	ck->buffer = buffer;
   }
 
   char tmp[32];
@@ -201,17 +203,19 @@ int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name)
   return 0;
 }
 
-int RdmConnection::sendBufTo(const char* buffer, int buffer_id, int ctx_id, int buffer_size, const char* peer_name) {
+int RdmConnection::sendBufTo(char* buffer, int buffer_id, int ctx_id, int buffer_size, const char* peer_name) {
   Chunk *ck;
   if (ctx_id < 0) {
 	ck = new Chunk();
 	ck->con = this;
+	ck->buffer_id = buffer_id;
 	ck->ctx_id = -1; //not for cache
 	ck->ctx.internal[4] = NULL;
 	ck->ctx.internal[5] = ck;
   } else {
 	ck = send_global_buffers_map[ctx_id];
 	ck->buffer_id = buffer_id;
+	ck->buffer = buffer;
   }
 
   char tmp[32];

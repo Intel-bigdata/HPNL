@@ -37,7 +37,7 @@ public class HpnlBufferAllocator {
         CACHE_TINY = BufferCache.getInstance(cacheHandler, BUFFER_TINY,
                 largePool?NUM_UNIT*8:NUM_UNIT*2, largePool?NUM_UNIT*8:NUM_UNIT*2);
         CACHE_SMALL = BufferCache.getInstance(cacheHandler, BUFFER_SMALL,
-                largePool?NUM_UNIT*4:NUM_UNIT, largePool?NUM_UNIT*4:NUM_UNIT);
+                largePool?NUM_UNIT*4000:NUM_UNIT*10000, largePool?NUM_UNIT*4000:NUM_UNIT*10000);
         CACHE_MEDIUM = BufferCache.getInstance(cacheHandler, BUFFER_MEDIUM,
                 largePool?NUM_UNIT*2:NUM_UNIT, largePool?NUM_UNIT*2:NUM_UNIT);
         CACHE_LARGE = BufferCache.getInstance(cacheHandler, BUFFER_LARGE,
@@ -182,7 +182,7 @@ public class HpnlBufferAllocator {
         }
     }
 
-    private static class HpnlGlobalBuffer extends AbstractHpnlBuffer{
+    public static class HpnlGlobalBuffer extends AbstractHpnlBuffer{
         private BufferCache<HpnlBuffer> cache;
         private int size;
 
@@ -255,6 +255,9 @@ public class HpnlBufferAllocator {
         @Override
         public void release() {
             if(cache != null){
+                if(getBufferId() == 0){
+                    throw new RuntimeException("buffer id should not be 0");
+                }
                 cache.reclaim(this);
             }
         }

@@ -119,7 +119,11 @@ public abstract class AbstractConnection implements Connection {
   }
 
   public void reclaimSendBuffer(int bufferId, int ctxId) {
+//    log.info("reclaim send buffer: {}, {}", bufferId, ctxId);
     if(bufferId == 0){ //skip non-cache-able buffer
+      if(ctxId >= 0){
+        reclaimCtxId(ctxId);
+      }
       return;
     }
     if(bufferId > 0) {
@@ -133,6 +137,8 @@ public abstract class AbstractConnection implements Connection {
     }
     reclaimGlobalBuffer(bufferId, ctxId);
   }
+
+  protected void reclaimCtxId(int ctxId) {}
 
   protected void reclaimGlobalBuffer(int bufferId, int ctxId){}
 

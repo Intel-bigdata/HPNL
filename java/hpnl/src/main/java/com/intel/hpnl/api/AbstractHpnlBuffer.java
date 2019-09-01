@@ -3,7 +3,7 @@ package com.intel.hpnl.api;
 import java.nio.ByteBuffer;
 
 public abstract class AbstractHpnlBuffer implements HpnlBuffer {
-  private int bufferId;
+  private final int bufferId;
   protected byte frameType;
   protected long seq;
   protected long connectionId;
