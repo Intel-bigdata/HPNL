@@ -10,4 +10,9 @@ public class Constants {
   public static final String CONFIG_ITEM_NIC_NAME = "nic_name";
   public static final String CONFIG_ITEM_APP_ID = "app_id";
   public static final String CONFIG_ITEM_PORT_BATCH_SIZE = "port_batch_size";
+
+  public static final String CFG_BUFFER_NUM_TINY = "hpnl.buffer.num.tiny";
+  public static final String CFG_BUFFER_NUM_SMALL = "hpnl.buffer.num.small";
+  public static final String CFG_BUFFER_NUM_MEDIUM = "hpnl.buffer.num.medium";
+  public static final String CFG_BUFFER_NUM_LARGE = "hpnl.buffer.num.large";
 }

@@ -34,14 +34,20 @@ public class HpnlBufferAllocator {
     private HpnlBufferAllocator(boolean largePool, BufferCache.CacheHandler<HpnlBuffer> cacheHandler){
         this.largePool = largePool;
         this.cacheHandler = cacheHandler;
+        HpnlConfig config = HpnlConfig.getInstance();
+        int tinyNum = config.getBufferNumTiny();
+        int smallNum = config.getBufferNumSmall();
+        int mediumNum = config.getBufferNumMedium();
+        int largeNum = config.getBufferNumLarge();
+
         CACHE_TINY = BufferCache.getInstance(cacheHandler, BUFFER_TINY,
-                largePool?NUM_UNIT*8:NUM_UNIT*2, largePool?NUM_UNIT*8:NUM_UNIT*2);
+                largePool?tinyNum*2:tinyNum, largePool?tinyNum*2:tinyNum);
         CACHE_SMALL = BufferCache.getInstance(cacheHandler, BUFFER_SMALL,
-                largePool?NUM_UNIT*4000:NUM_UNIT*10000, largePool?NUM_UNIT*4000:NUM_UNIT*10000);
+                largePool?smallNum:smallNum, largePool?smallNum:smallNum);
         CACHE_MEDIUM = BufferCache.getInstance(cacheHandler, BUFFER_MEDIUM,
-                largePool?NUM_UNIT*2:NUM_UNIT, largePool?NUM_UNIT*2:NUM_UNIT);
+                largePool?mediumNum:mediumNum, largePool?mediumNum:mediumNum);
         CACHE_LARGE = BufferCache.getInstance(cacheHandler, BUFFER_LARGE,
-                largePool?NUM_UNIT*4:NUM_UNIT*2, largePool?NUM_UNIT*4:NUM_UNIT*2);
+                largePool?largeNum*2:largeNum, largePool?largeNum*2:largeNum);
         this.maxSize = -1;
     }
 
@@ -63,7 +69,7 @@ public class HpnlBufferAllocator {
                 allocator.maxSize = maxSize;
                 boolean largePool = allocator.largePool;
                 allocator.CACHE_MAXSIZE = BufferCache.getInstance(allocator.cacheHandler, maxSize,
-                        largePool?NUM_UNIT*4:NUM_UNIT, largePool?NUM_UNIT*4:NUM_UNIT);
+                        largePool?NUM_UNIT*2:NUM_UNIT, largePool?NUM_UNIT*2:NUM_UNIT);
             }
         }
     }

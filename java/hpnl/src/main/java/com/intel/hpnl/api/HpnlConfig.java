@@ -16,11 +16,21 @@ public class HpnlConfig {
   private String appId;
   private int portBatchSize;
 
+  private int bufferNumTiny;
+  private int bufferNumSmall;
+  private int bufferNumMedium;
+  private int bufferNumLarge;
+
   public static final String DEFAULT_ENDPOINT_TYPE = "RDM";
   public static final String DEFAULT_APP_ID = "default";
   public static final String DEFAULT_PORT_BATCH_SIZE = "50";
   public static final String DEFAULT_PROVIDER_NAME = "sockets";
   public static final String DEFAULT_LIBFABRIC_FILE_NAME = "libfabric.so";
+
+  public static final String DEFAULT_BUFFER_NUM_TINY = "256";
+  public static final String DEFAULT_BUFFER_NUM_SMALL = "10240"; //10m, for most RPC other than launch task
+  public static final String DEFAULT_BUFFER_NUM_MEDIUM = "256"; //1m
+  public static final String DEFAULT_BUFFER_NUM_LARGE = "2560"; //20m, for RPC launch task
 
   private static HpnlConfig _instance = new HpnlConfig();
 
@@ -45,6 +55,15 @@ public class HpnlConfig {
 
       String tmp = getValue(properties, Constants.CONFIG_ITEM_PORT_BATCH_SIZE, DEFAULT_PORT_BATCH_SIZE);
       portBatchSize = Integer.valueOf(tmp);
+
+      tmp = getValue(properties, Constants.CFG_BUFFER_NUM_TINY, DEFAULT_BUFFER_NUM_TINY);
+      bufferNumTiny = Integer.valueOf(tmp);
+      tmp = getValue(properties, Constants.CFG_BUFFER_NUM_SMALL, DEFAULT_BUFFER_NUM_SMALL);
+      bufferNumSmall = Integer.valueOf(tmp);
+      tmp = getValue(properties, Constants.CFG_BUFFER_NUM_MEDIUM, DEFAULT_BUFFER_NUM_MEDIUM);
+      bufferNumMedium = Integer.valueOf(tmp);
+      tmp = getValue(properties, Constants.CFG_BUFFER_NUM_LARGE, DEFAULT_BUFFER_NUM_LARGE);
+      bufferNumLarge = Integer.valueOf(tmp);
     } catch (IOException e) {
       log.error("failed to read hpnl config from "+path, e);
     }
@@ -88,5 +107,21 @@ public class HpnlConfig {
 
   public int getPortBatchSize() {
     return portBatchSize;
+  }
+
+  public int getBufferNumTiny() {
+    return bufferNumTiny;
+  }
+
+  public int getBufferNumSmall() {
+    return bufferNumSmall;
+  }
+
+  public int getBufferNumMedium() {
+    return bufferNumMedium;
+  }
+
+  public int getBufferNumLarge() {
+    return bufferNumLarge;
   }
 }
