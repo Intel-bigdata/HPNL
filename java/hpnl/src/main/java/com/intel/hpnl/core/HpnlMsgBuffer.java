@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 
 public class HpnlMsgBuffer extends AbstractHpnlBuffer {
   public static final int METADATA_SIZE = BASE_METADATA_SIZE;
+  private boolean parsed;
+  private boolean released;
 
   public HpnlMsgBuffer(int bufferId, ByteBuffer byteBuffer, BufferType type) {
     super(bufferId, byteBuffer, type);
@@ -26,10 +28,14 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
 
   @Override
   public ByteBuffer parse(int blockBufferSize) {
+    if(parsed){
+      return byteBuffer;
+    }
     this.byteBuffer.position(0);
     this.byteBuffer.limit(blockBufferSize);
     this.frameType = this.byteBuffer.get();
     this.seq = this.byteBuffer.getLong();
+    parsed = true;
     return this.byteBuffer.slice();
   }
 
@@ -57,10 +63,21 @@ public class HpnlMsgBuffer extends AbstractHpnlBuffer {
   }
 
   @Override
+  public void clear(){
+    byteBuffer.clear();
+    parsed = false;
+    released = false;
+  }
+
+  @Override
   public long getPeerConnectionId(){
     return -1L;
   }
 
   @Override
-  public void release() {}
+  public void release() {
+    if(!released){
+      released = true;
+    }
+  }
 }

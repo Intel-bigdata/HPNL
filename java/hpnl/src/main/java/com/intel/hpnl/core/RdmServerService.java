@@ -28,7 +28,7 @@ public class RdmServerService extends RdmService {
     return 1;
   }
 
-  private class RdmServerReceiveHandler implements Handler {
+  private static class RdmServerReceiveHandler implements Handler {
     private Handler connectedCallback;
     private Handler recvCallback;
 
@@ -41,17 +41,17 @@ public class RdmServerService extends RdmService {
     public int handle(Connection connection, int bufferId, int bufferSize) {
 //      log.info("bufferId: {}, {}", bufferId, bufferSize);
       HpnlBuffer buffer = connection.getRecvBuffer(bufferId);
-      buffer.getRawBuffer().position(0);
-      FrameType frameType = FrameType.toFrameType(buffer.getRawBuffer().get());
+      buffer.parse(bufferSize);
+      FrameType frameType = FrameType.toFrameType(buffer.getFrameType());
       if(frameType != FrameType.REQ) {
-        return recvCallback.handle(connection, bufferId, bufferSize);
+        return recvCallback.handle(connection, buffer);
       }
-      long peerConnectId = buffer.getRawBuffer().getLong();
+      long peerConnectId = buffer.getPeerConnectionId();
       getPeerInfo(connection, peerConnectId, buffer, bufferSize);
 //      connection.setConnectedCallback(connectedCallback);
       //ack client request
       ackConnected(connection, peerConnectId);
-      connectedCallback.handle(connection, bufferId, bufferSize);
+      connectedCallback.handle(connection, buffer);
       return Handler.RESULT_DEFAULT;
     }
 

@@ -31,4 +31,39 @@ public class UtilsTest {
     System.out.println(pid);
   }
 
+  @Test
+  public void testOps(){
+    Inner inner = new Inner();
+    Outer outer = new Outer();
+    inner.putInt();
+    outer.putInt();
+
+    long start = System.nanoTime();
+    for(int i=0; i<100000; i++){
+      inner.putInt();
+    }
+
+    System.out.println(System.nanoTime() - start);
+     start = System.nanoTime();
+    for(int i=0; i<100000; i++){
+      outer.putInt();
+    }
+    System.out.println(System.nanoTime() - start);
+
+
+
+
+  }
+
+  static class Inner{
+    public void putInt(){}
+  }
+  static class Outer{
+    Inner inner = new Inner();
+    public void putInt(){
+      inner.putInt();
+    }
+  }
+
+
 }

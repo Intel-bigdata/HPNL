@@ -11,6 +11,7 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
   private static final Logger log = LoggerFactory.getLogger(HpnlRdmBuffer.class);
   private RdmConnection connection;
+  private boolean released;
 
   public HpnlRdmBuffer(int bufferId, ByteBuffer byteBuffer, BufferType type) {
     super(bufferId, byteBuffer, type);
@@ -37,16 +38,6 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   }
 
   @Override
-  public ByteBuffer parse(int blockBufferSize) {
-    this.byteBuffer.position(0);
-    this.byteBuffer.limit(blockBufferSize);
-    this.frameType = this.byteBuffer.get();
-    peerConnectionId = this.byteBuffer.getLong();
-    this.seq = this.byteBuffer.getLong();
-    return this.byteBuffer.slice();
-  }
-
-  @Override
   public void insertMetadata(byte frameType, long seqId, int limit) {
     this.byteBuffer.position(0);
     this.byteBuffer.put(frameType);
@@ -59,8 +50,8 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
 
   @Override
   public void clear(){
-    super.clear();
-    peerConnectionId = -1;
+      super.clear();
+      released = false;
   }
 
   public void setConnection(Connection connection) {
@@ -69,12 +60,19 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
 
   @Override
   public void release() {
-    switch (getBufferType()){
-      case SEND: connection.reclaimSendBuffer(getBufferId(), -1); return;
-      case RECV:
-        log.info("buffer id release: {}", getBufferId());
-        connection.reclaimRecvBuffer(getBufferId()); return;
-      default: throw new IllegalArgumentException("should not reach here: "+getBufferType());
-    }
+      if (!released) {
+          switch (getBufferType()) {
+              case SEND:
+                  connection.reclaimSendBuffer(getBufferId(), -1);
+                  break;
+              case RECV:
+//        log.info("buffer id release: {}", getBufferId());
+                  connection.reclaimRecvBuffer(getBufferId());
+                  break;
+              default:
+                  throw new IllegalArgumentException("should not reach here: " + getBufferType());
+          }
+          released = true;
+      }
   }
 }

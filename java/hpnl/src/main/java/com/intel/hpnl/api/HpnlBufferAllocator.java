@@ -190,28 +190,17 @@ public class HpnlBufferAllocator {
 
     public static class HpnlGlobalBuffer extends AbstractHpnlBuffer{
         private BufferCache<HpnlBuffer> cache;
-        private int size;
+        private boolean released;
 
         public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
 
         public HpnlGlobalBuffer(BufferCache<HpnlBuffer> cache, int id, int size){
             super(id);
             this.cache = cache;
-            this.size = size;
             byteBuffer = ByteBuffer.allocateDirect(size);
             if(cache != null){
                 cache.putBuffer(id, this);
             }
-        }
-
-        @Override
-        public ByteBuffer parse(int bufferSize) {
-            this.byteBuffer.position(0);
-            this.byteBuffer.limit(bufferSize);
-            this.frameType = this.byteBuffer.get();
-            peerConnectionId = this.byteBuffer.getLong();
-            this.seq = this.byteBuffer.getLong();
-            return this.byteBuffer.slice();
         }
 
         private void putMetadata(int srcSize, byte type, long seq) {
@@ -255,16 +244,17 @@ public class HpnlBufferAllocator {
         public void clear() {
             super.clear();
             connectionId = -1;
-            peerConnectionId = -1;
+            released = false;
         }
 
         @Override
         public void release() {
-            if(cache != null){
+            if(cache != null && !released){
                 if(getBufferId() == 0){
                     throw new RuntimeException("buffer id should not be 0");
                 }
                 cache.reclaim(this);
+                released = true;
             }
         }
 
