@@ -3,6 +3,8 @@ package com.intel.hpnl.core;
 import com.intel.hpnl.api.HpnlFactory;
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
+
 public class UtilsTest {
 
   @Test
@@ -50,9 +52,28 @@ public class UtilsTest {
     }
     System.out.println(System.nanoTime() - start);
 
+  }
 
+  @Test
+  public void testBufferOps() throws Exception{
+    ByteBuffer in = ByteBuffer.allocateDirect(100);
+    int limit = in.limit();
+    in.position(limit - 4);//read head length
+    int headLen = in.getInt();
+    in.position(0);
+    in.position(3);
+    in.limit(67);
 
-
+    long start = System.nanoTime();
+    for(int i=0; i<100000; i++){
+      limit = in.limit();
+      in.position(limit - 4);//read head length
+      headLen = in.getInt();
+      in.position(0);
+      in.position(3);
+      in.limit(67);
+    }
+    System.out.println(System.nanoTime() - start);
   }
 
   static class Inner{

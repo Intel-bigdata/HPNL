@@ -10,13 +10,13 @@ import java.nio.ByteBuffer;
 public class RdmServerService extends RdmService {
   private static final Logger log = LoggerFactory.getLogger(RdmServerService.class);
 
-  public RdmServerService(int workNum, int bufferNum, int bufferSize, int ioRatio) {
-    super(workNum, bufferNum, bufferSize,  ioRatio, true);
+  public RdmServerService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize) {
+    super(workNum, bufferNum, numRecvBuffers, bufferSize,  true);
   }
 
   @Override
   public RdmService init() {
-    return init(256);
+    return init(HpnlConfig.getInstance().getSrvCtxNum());
   }
 
   @Override

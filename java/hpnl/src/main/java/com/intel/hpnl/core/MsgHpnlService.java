@@ -1,9 +1,7 @@
 package com.intel.hpnl.core;
 
-import com.intel.hpnl.api.EventTask;
-import com.intel.hpnl.api.Handler;
-import com.intel.hpnl.api.HpnlService;
-import com.intel.hpnl.api.ServiceException;
+import com.intel.hpnl.api.*;
+
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -15,11 +13,11 @@ public class MsgHpnlService implements HpnlService {
   private boolean server;
   private static final Logger logger = LoggerFactory.getLogger(MsgHpnlService.class);
 
-  public MsgHpnlService(int numThreads, int numBuffers, int bufferSize, int ioRatio, boolean server) {
+  public MsgHpnlService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize, boolean server) {
     if (server) {
-      this.eqService = (new EqServerService(numThreads, numBuffers, bufferSize, ioRatio)).init();
+      this.eqService = (new EqServerService(numThreads, numBuffers, numRecvBuffers, bufferSize)).init();
     } else {
-      this.eqService = (new EqService(numThreads, numBuffers, bufferSize, ioRatio)).init();
+      this.eqService = (new EqService(numThreads, numBuffers, numRecvBuffers, bufferSize)).init();
     }
 
     this.checkInit(this.eqService, "failed to initialize EQ service");
@@ -96,5 +94,10 @@ public class MsgHpnlService implements HpnlService {
   @Override
   public EndpointType getEndpointType() {
     return EndpointType.MSG;
+  }
+
+  @Override
+  public HpnlBuffer getRecvBuffer(int bufferId) {
+    return null;
   }
 }

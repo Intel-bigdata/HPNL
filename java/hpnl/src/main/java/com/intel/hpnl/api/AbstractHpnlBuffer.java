@@ -2,6 +2,9 @@ package com.intel.hpnl.api;
 
 import java.nio.ByteBuffer;
 
+/**
+ * TODO: with unsafe
+ */
 public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   private final int bufferId;
   protected byte frameType;
@@ -80,6 +83,14 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   @Override
   public void put(ByteBuffer src) {
     byteBuffer.put(src);
+  }
+
+  @Override
+  public void put(ByteBuffer src, int length){
+    int pos = src.position();
+    for(int i=pos; i < pos + length; i++){
+      byteBuffer.put(src.get());
+    }
   }
 
   @Override
@@ -162,6 +173,11 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   }
 
   @Override
+  public int writtenDataSize(){
+    return byteBuffer.position() - getMetadataSize();
+  }
+
+  @Override
   public int capacity() {
     return this.byteBuffer.capacity();
   }
@@ -169,6 +185,11 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   @Override
   public void clear(){
     this.byteBuffer.clear();
+    clearState();
+  }
+
+  @Override
+  public void clearState(){
     this.parsed = false;
     this.peerConnectionId = -1;
   }

@@ -126,16 +126,29 @@ public abstract class AbstractConnection implements Connection {
       }
       return;
     }
-    if(bufferId > 0) {
-      //no sync since buffer id is unique
+    if(bufferId < 0) {
+      reclaimGlobalBuffer(bufferId, ctxId);
+      return;
+    }
+    //no sync since buffer id is unique
+    //send buffer
+    if(bufferId < HpnlBuffer.RECV_BUFFER_ID_START) {
       HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
       if (buffer == null) {
-        throw new IllegalStateException("buffer not found with id: " + bufferId);
+        throw new IllegalStateException("send buffer not found with id: " + bufferId);
       }
       this.sendBufferList.offer(buffer);
       return;
     }
-    reclaimGlobalBuffer(bufferId, ctxId);
+    //recv buffer reused for sending
+    if(ctxId >= 0){
+      reclaimCtxId(ctxId);
+    }
+    HpnlBuffer buffer = service.getRecvBuffer(bufferId);
+    if (buffer == null) {
+      throw new IllegalStateException("recv buffer not found with id: " + bufferId);
+    }
+    buffer.release();
   }
 
   protected void reclaimCtxId(int ctxId) {}
@@ -197,7 +210,10 @@ public abstract class AbstractConnection implements Connection {
     int e;
     switch(eventType) {
       case EventType.RECV_EVENT:
-        return this.safeExecuteCallback(this.recvCallback, bufferId, bufferSize);
+        HpnlBuffer buffer = getRecvBuffer(bufferId);
+        buffer.clearState();
+        buffer.parse(bufferSize);
+        return this.safeExecuteCallback(this.recvCallback, buffer);
       case EventType.SEND_EVENT:
         e = this.safeExecuteCallback(this.sendCallback, bufferId, bufferSize);
         if(e == Handler.RESULT_DEFAULT){
@@ -215,24 +231,36 @@ public abstract class AbstractConnection implements Connection {
     return Handler.RESULT_DEFAULT;
   }
 
+  protected int safeExecuteCallback(Handler handler, HpnlBuffer buffer){
+    if (handler == null) {
+      return Handler.RESULT_DEFAULT;
+    }
+    try {
+      return handler.handle(this, buffer);
+    } catch (Throwable e) {
+      log.error("failed to execute callback " + handler, e);
+      return Handler.RESULT_DEFAULT;
+    }
+  }
+
   private int safeExecuteCallback(Handler handler, int bufferId, int bufferSize) {
     if (handler == null) {
       return Handler.RESULT_DEFAULT;
     }
     try {
       return handler.handle(this, bufferId, bufferSize);
-    } catch (Throwable var5) {
-      log.error("failed to execute callback " + handler, var5);
+    } catch (Throwable e) {
+      log.error("failed to execute callback " + handler, e);
       return Handler.RESULT_DEFAULT;
     }
   }
 
   private int executeCallbacks(List<Handler> callbacks, int bufferId, int bufferSize) {
     int ret = Handler.RESULT_DEFAULT;
-    Iterator var5 = callbacks.iterator();
+    Iterator<Handler> it = callbacks.iterator();
 
-    while(var5.hasNext()) {
-      Handler callback = (Handler)var5.next();
+    while(it.hasNext()) {
+      Handler callback = it.next();
       int tmp = this.safeExecuteCallback(callback, bufferId, bufferSize);
       if (tmp == 0) {
         ret = tmp;

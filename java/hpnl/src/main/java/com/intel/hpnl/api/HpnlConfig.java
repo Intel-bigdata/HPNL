@@ -21,11 +21,17 @@ public class HpnlConfig {
   private int bufferNumMedium;
   private int bufferNumLarge;
 
+  private int ctxNum;
+  private int srvCtxNum;
+
   public static final String DEFAULT_ENDPOINT_TYPE = "RDM";
   public static final String DEFAULT_APP_ID = "default";
   public static final String DEFAULT_PORT_BATCH_SIZE = "50";
   public static final String DEFAULT_PROVIDER_NAME = "sockets";
   public static final String DEFAULT_LIBFABRIC_FILE_NAME = "libfabric.so";
+
+  public static final String DEFAULT_CONTEXT_NUM = "1024";
+  public static final String DEFAULT_CONTEXT_NUM_SERVER = "2048";
 
   public static final String DEFAULT_BUFFER_NUM_TINY = "256";
   public static final String DEFAULT_BUFFER_NUM_SMALL = "10240"; //10m, for most RPC other than launch task
@@ -64,6 +70,11 @@ public class HpnlConfig {
       bufferNumMedium = Integer.valueOf(tmp);
       tmp = getValue(properties, Constants.CFG_BUFFER_NUM_LARGE, DEFAULT_BUFFER_NUM_LARGE);
       bufferNumLarge = Integer.valueOf(tmp);
+
+      tmp = getValue(properties, Constants.CFG_CONTEXT_NUM, DEFAULT_CONTEXT_NUM);
+      ctxNum = Integer.valueOf(tmp);
+      tmp = getValue(properties, Constants.CFG_CONTEXT_NUM_SERVER, DEFAULT_CONTEXT_NUM_SERVER);
+      srvCtxNum = Integer.valueOf(tmp);
     } catch (IOException e) {
       log.error("failed to read hpnl config from "+path, e);
     }
@@ -107,6 +118,14 @@ public class HpnlConfig {
 
   public int getPortBatchSize() {
     return portBatchSize;
+  }
+
+  public int getCtxNum() {
+    return ctxNum;
+  }
+
+  public int getSrvCtxNum() {
+    return srvCtxNum;
   }
 
   public int getBufferNumTiny() {

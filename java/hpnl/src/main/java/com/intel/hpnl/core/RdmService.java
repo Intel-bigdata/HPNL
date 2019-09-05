@@ -12,7 +12,6 @@ public class RdmService extends AbstractService {
   private long nativeHandle;
   protected String localIp;
   protected int localPort;
-
   private int ctxNum;
 
   private PortGenerator portGenerator = PortGenerator.getInstance();
@@ -33,22 +32,22 @@ public class RdmService extends AbstractService {
     }
   }
 
-  public RdmService(int workNum, int bufferNum, int bufferSize, int ioRatio) {
-    this(workNum, bufferNum, bufferSize, ioRatio, false);
+  public RdmService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize) {
+    this(workNum, bufferNum, numRecvBuffers, bufferSize, false);
   }
 
-  protected RdmService(int workNum, int bufferNum, int bufferSize, int ioRatio, boolean server) {
-    super(workNum, bufferNum, bufferSize, ioRatio, server);
+  protected RdmService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize, boolean server) {
+    super(workNum, bufferNum, numRecvBuffers, bufferSize, server);
   }
 
   public RdmService init() {
-    return init(128);
+    return init(HpnlConfig.getInstance().getCtxNum());
   }
 
   protected RdmService init(int ctxNum) {
     this.ctxNum = ctxNum;
-    this.init(this.bufferNum, ctxNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
-    this.initBufferPool(this.bufferNum, this.bufferSize, this.bufferNum);
+    this.init(this.bufferNum, recvBufferNum, ctxNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
+    this.initBufferPool(this.bufferNum, recvBufferNum, this.bufferSize);
 //    taskThread = new Thread(task);
     Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
     return this;
@@ -187,7 +186,7 @@ public class RdmService extends AbstractService {
     return new HpnlRdmBuffer(bufferId, byteBuffer, type);
   }
 
-  private native int init(int bufferNum, int ctxNum, boolean server, String providerName);
+  private native int init(int bufferNum, int recvBufferNum, int ctxNum, boolean server, String providerName);
 
   protected native long listen(String host, String port, long nativeHandle);
 

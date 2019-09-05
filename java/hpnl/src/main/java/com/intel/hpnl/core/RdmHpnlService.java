@@ -1,29 +1,26 @@
 package com.intel.hpnl.core;
 
-import com.intel.hpnl.api.EventTask;
-import com.intel.hpnl.api.Handler;
-import com.intel.hpnl.api.HpnlBufferAllocator;
-import com.intel.hpnl.api.HpnlService;
+import com.intel.hpnl.api.*;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class RdmHpnlService implements HpnlService {
   private RdmService service;
   private boolean server;
-  private AtomicLong nextConnectionId = new AtomicLong(0L);
+  private AtomicLong nextConnectionId = new AtomicLong(1L);
 
   private List<EventTask> tasks = new ArrayList();
 
-  public RdmHpnlService(int numThreads, int numBuffers, int bufferSize, int ioRatio, boolean server) {
+  public RdmHpnlService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize, boolean server) {
     if(bufferSize < HpnlBufferAllocator.BUFFER_LARGE){
       throw new IllegalArgumentException("buffer size should be no less than "+HpnlBufferAllocator.BUFFER_LARGE);
     }
     if (server) {
-      this.service = (new RdmServerService(numThreads, numBuffers, bufferSize, ioRatio)).init();
+      this.service = (new RdmServerService(numThreads, numBuffers, numRecvBuffers, bufferSize)).init();
     } else {
-      this.service = (new RdmService(numThreads, numBuffers, bufferSize, ioRatio)).init();
+      this.service = (new RdmService(numThreads, numBuffers, numRecvBuffers, bufferSize)).init();
     }
     this.service.setHpnlService(this);
     this.server = server;
@@ -48,6 +45,11 @@ public class RdmHpnlService implements HpnlService {
   @Override
   public void stop() {
     this.service.stop();
+  }
+
+  @Override
+  public HpnlBuffer getRecvBuffer(int bufferId){
+    return service.getRecvBuffer(bufferId);
   }
 
   @Override

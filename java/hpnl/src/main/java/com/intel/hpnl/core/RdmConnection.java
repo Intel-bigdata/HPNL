@@ -143,6 +143,9 @@ public class RdmConnection extends AbstractConnection{
 
   @Override
   protected void reclaimCtxId(int ctxId) {
+    if(ctxId >= ctxNum){
+      throw new IllegalArgumentException("invalid context id, "+ctxId);
+    }
     ctxIdQueue.offer(ctxId);
   }
 

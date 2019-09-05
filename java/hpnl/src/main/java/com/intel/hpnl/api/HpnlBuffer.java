@@ -16,6 +16,8 @@ public interface HpnlBuffer {
 
   int capacity();
 
+  int writtenDataSize();
+
   long getSeq();
 
   long getConnectionId();
@@ -42,6 +44,8 @@ public interface HpnlBuffer {
 
   void put(ByteBuffer src);
 
+  void put(ByteBuffer src, int length);
+
   void put(byte[] src);
 
   void put(byte[] src, int offset, int length);
@@ -62,9 +66,15 @@ public interface HpnlBuffer {
 
   void clear();
 
+  void clearState();
+
   void release();
 
   BufferType getBufferType();
+
+  int SEND_BUFFER_ID_START = 1;
+
+  int RECV_BUFFER_ID_START = 1000000000;
 
   enum BufferType{
     SEND, RECV, GLOBAL

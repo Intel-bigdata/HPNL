@@ -16,7 +16,7 @@ public abstract class AbstractService {
   protected int workerNum;
   protected int bufferNum;
   protected int bufferSize;
-  protected int ioRatio;
+  protected int recvBufferNum;
   protected boolean server;
   protected HpnlService hpnlService;
   protected Map<Long, Connection> conMap;
@@ -25,11 +25,11 @@ public abstract class AbstractService {
   private MemPool recvBufferPool;
   private static final Logger log = LoggerFactory.getLogger(AbstractService.class);
 
-  protected AbstractService(int workerNum, int bufferNum, int bufferSize, int ioRatio, boolean server) {
+  protected AbstractService(int workerNum, int bufferNum, int recvBufferNum, int bufferSize, boolean server) {
     this.workerNum = workerNum;
     this.bufferNum = bufferNum;
     this.bufferSize = bufferSize;
-    this.ioRatio = ioRatio;
+    this.recvBufferNum = recvBufferNum;
     this.server = server;
     this.conMap = new ConcurrentHashMap();
   }
@@ -38,9 +38,9 @@ public abstract class AbstractService {
     this.hpnlService = service;
   }
 
-  protected void initBufferPool(int initBufferNum, int bufferSize, int nextBufferNum) {
-    this.sendBufferPool = new MemPool(this, initBufferNum, bufferSize, nextBufferNum, HpnlBuffer.BufferType.SEND);
-    this.recvBufferPool = new MemPool(this, initBufferNum * 2, bufferSize, nextBufferNum * 2, HpnlBuffer.BufferType.RECV);
+  protected void initBufferPool(int bufferNum, int recvBufferNum, int bufferSize) {
+    this.sendBufferPool = new MemPool(this, bufferNum, bufferSize, bufferNum, HpnlBuffer.BufferType.SEND);
+    this.recvBufferPool = new MemPool(this, recvBufferNum, bufferSize, recvBufferNum, HpnlBuffer.BufferType.RECV);
   }
 
   public void reallocBufferPool() {

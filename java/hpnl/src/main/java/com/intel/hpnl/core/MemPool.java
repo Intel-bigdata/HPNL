@@ -21,12 +21,17 @@ public class MemPool {
     this.nextBufferNum = nextBufferNum;
     this.type = type;
     this.bufferMap = new ConcurrentHashMap();
-    this.seqId = new AtomicInteger(1); //start from 1. 0 will not be reclaimed.
+    if(type == HpnlBuffer.BufferType.SEND) {
+      this.seqId = new AtomicInteger(HpnlBuffer.SEND_BUFFER_ID_START); //start from 1. 0 will not be reclaimed.
+    }else if(type == HpnlBuffer.BufferType.RECV){
+      this.seqId = new AtomicInteger(HpnlBuffer.RECV_BUFFER_ID_START);
+    }else{
+      throw new IllegalArgumentException("unsupported buffer type, "+type);
+    }
 
     for(int i = 0; i < this.initBufferNum; ++i) {
       this.alloc();
     }
-
   }
 
   public void realloc() {
@@ -46,9 +51,15 @@ public class MemPool {
     HpnlBuffer hpnlBuffer = service.newHpnlBuffer(seq, byteBuffer, type);
     this.bufferMap.put(seq, hpnlBuffer);
     if (this.type == HpnlBuffer.BufferType.SEND) {
-      this.service.setSendBuffer(byteBuffer, (long)this.bufferSize, seq);
+      if(seq >= HpnlBuffer.RECV_BUFFER_ID_START){
+        throw new IllegalStateException("send buffer id should not exceed. "+seq);
+      }
+      this.service.setSendBuffer(byteBuffer, this.bufferSize, seq);
     } else {
-      this.service.setRecvBuffer(byteBuffer, (long)this.bufferSize, seq);
+      if(seq < 0){
+        throw new IllegalStateException("recv buffer id should be negative. "+seq);
+      }
+      this.service.setRecvBuffer(byteBuffer, this.bufferSize, seq);
     }
   }
 }

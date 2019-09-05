@@ -28,6 +28,8 @@ public interface HpnlService {
 
   HpnlService.EndpointType getEndpointType();
 
+  HpnlBuffer getRecvBuffer(int bufferId);
+
   enum EndpointType {
     MSG,
     RDM
