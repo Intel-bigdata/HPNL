@@ -48,8 +48,8 @@ static void _set_self(JNIEnv *env, jobject thisObj, ExternalRdmService *self)
   env->SetLongField(thisObj, _get_self_id(env, thisObj), selfPtr);
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jobject obj, jint buffer_num, jint ctx_num, jboolean is_server, jstring prov_name) {
-  ExternalRdmService *service = new ExternalRdmService(buffer_num, ctx_num, is_server);
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jobject obj, jint buffer_num, jint recv_buffer_num, jint ctx_num, jboolean is_server, jstring prov_name) {
+  ExternalRdmService *service = new ExternalRdmService(buffer_num, recv_buffer_num, ctx_num, is_server);
   const char* pname = nullptr;
   if(prov_name != NULL){
   	pname = (*env).GetStringUTFChars(prov_name, 0);

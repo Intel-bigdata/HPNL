@@ -8,8 +8,9 @@
 
 #include <iostream>
 
-ExternalRdmService::ExternalRdmService(int buffer_num, int ctx_num, bool is_server) {
+ExternalRdmService::ExternalRdmService(int buffer_num, int recv_buffer_num, int ctx_num, bool is_server) {
   this->buffer_num = buffer_num;
+  this->recv_buffer_num = recv_buffer_num;
   this->ctx_num = ctx_num;
   this->is_server = is_server;
   this->recvBufMgr = new ExternalEqServiceBufMgr();
@@ -24,7 +25,7 @@ ExternalRdmService::~ExternalRdmService() {
 }
 
 int ExternalRdmService::init(const char* prov_name) {
-  this->stack = new RdmStack(this->buffer_num, this->ctx_num, this->is_server, prov_name);
+  this->stack = new RdmStack(this->buffer_num, this->recv_buffer_num, this->ctx_num, this->is_server, prov_name);
   this->stack->init();
   this->demulti_plexer = new ExternalRdmCqDemultiplexer(stack);
   this->demulti_plexer->init();

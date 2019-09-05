@@ -5,10 +5,10 @@
 
 RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_,
 		fid_domain* domain_, fid_cq* cq_, BufMgr* rbuf_mgr_,
-		BufMgr* sbuf_mgr_, int buffer_num_, int ctx_num_, bool is_server_,
+		BufMgr* sbuf_mgr_, int buffer_num_, int recv_buffer_num_, int ctx_num_, bool is_server_,
 		const char* prov_name_) : ip(ip_), port(port_), info(info_), domain(domain_),
 		conCq(cq_), rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), buffer_num(buffer_num_),
-		ctx_num(ctx_num_), is_server(is_server_), prov_name(prov_name_) {}
+		recv_buffer_num(recv_buffer_num_), ctx_num(ctx_num_), is_server(is_server_), prov_name(prov_name_) {}
 RdmConnection::~RdmConnection() {
   for (auto ck: send_buffers) {
     sbuf_mgr->put(ck->buffer_id, ck);
@@ -89,7 +89,7 @@ int RdmConnection::init() {
     addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
   }
   int size = 0;
-  while (size < 2*buffer_num ) {
+  while (size < recv_buffer_num ) {
     Chunk *rck = rbuf_mgr->get();
     rck->con = this;
     rck->ctx_id = 0;

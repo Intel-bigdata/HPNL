@@ -11,7 +11,7 @@ class ExternalRdmCqDemultiplexer;
 
 class ExternalRdmService {
   public:
-    ExternalRdmService(int, int, bool);
+    ExternalRdmService(int, int, int, bool);
     ~ExternalRdmService();
     int init(const char*);
     RdmConnection* listen(const char*, const char*);
@@ -26,6 +26,7 @@ class ExternalRdmService {
     RdmStack *stack;
     ExternalRdmCqDemultiplexer *demulti_plexer;
     int buffer_num;
+    int recv_buffer_num;
     int ctx_num;
     bool is_server;
     BufMgr *recvBufMgr;

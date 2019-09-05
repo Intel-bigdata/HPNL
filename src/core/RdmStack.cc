@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <iostream>
 
-RdmStack::RdmStack(int buffer_num_, int ctx_num_, bool is_server_, const char* prov_name_) :
-buffer_num(buffer_num_), ctx_num(ctx_num_), is_server(is_server_), prov_name(prov_name_) {}
+RdmStack::RdmStack(int buffer_num_, int recv_buffer_num_,int ctx_num_, bool is_server_, const char* prov_name_) :
+buffer_num(buffer_num_), recv_buffer_num(recv_buffer_num_), ctx_num(ctx_num_), is_server(is_server_), prov_name(prov_name_) {}
 
 RdmStack::~RdmStack() {
   for (auto item : conMap) {
@@ -81,7 +81,7 @@ struct fi_cq_attr cq_attr = {
   return 0;
 }
 void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
-  if (rbuf_mgr->free_size() < 2*buffer_num || sbuf_mgr->free_size() < buffer_num) {
+  if (rbuf_mgr->free_size() < recv_buffer_num || sbuf_mgr->free_size() < buffer_num) {
     return NULL;
   }
   fi_info* hints = fi_dupinfo(info);
@@ -91,7 +91,7 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
   fi_freeinfo(hints);
 
   long id = id_generator.fetch_add(1);
-  server_con = new RdmConnection(ip, port, server_info, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, ctx_num,
+  server_con = new RdmConnection(ip, port, server_info, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, recv_buffer_num, ctx_num,
 		  true, prov_name);
   server_con->set_id(id);
   server_con->init();
@@ -105,7 +105,7 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, BufMgr* rbuf_
     return NULL; 
   }
   long id = id_generator.fetch_add(1);
-  RdmConnection *con = new RdmConnection(ip, port, NULL, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, ctx_num,
+  RdmConnection *con = new RdmConnection(ip, port, NULL, domain, cq, rbuf_mgr, sbuf_mgr, buffer_num, recv_buffer_num, ctx_num,
 		  false, prov_name);
   con->set_id(id);
   con->init();

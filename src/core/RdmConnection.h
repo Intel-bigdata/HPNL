@@ -17,7 +17,7 @@
 
 class RdmConnection : public Connection {
   public:
-    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, BufMgr*, int, int, bool, const char*);
+    RdmConnection(const char*, const char*, fi_info*, fid_domain*, fid_cq*, BufMgr*, BufMgr*, int, int, int, bool, const char*);
     ~RdmConnection();
     virtual int init() override;
 
@@ -90,6 +90,7 @@ class RdmConnection : public Connection {
     std::unordered_map<int, Chunk*> send_global_buffers_map;
 
     int buffer_num;
+    int recv_buffer_num;
     int ctx_num;
     bool is_server;
 
