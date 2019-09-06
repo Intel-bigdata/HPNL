@@ -246,14 +246,19 @@ public class RdmService extends AbstractService {
     @Override
     public int handle(Connection connection, int bufferId, int bufferSize) {
       HpnlBuffer buffer = connection.getRecvBuffer(bufferId);
-      ByteBuffer msgBuffer = buffer.parse(bufferSize);
+      buffer.parse(bufferSize);
+      return handle(connection, buffer);
+    }
+
+    @Override
+    public int handle(Connection connection, HpnlBuffer buffer){
       if(buffer.getFrameType() != FrameType.ACK.id()){
         throw new RuntimeException(
                 String.format("expect message type %d, actual %d", FrameType.ACK.id(), buffer.getFrameType()));
       }
       if(log.isDebugEnabled()){
-        byte[] bytes = new byte[msgBuffer.remaining()];
-        msgBuffer.get(bytes);
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
         log.debug("got ack with content, "+new String(bytes));
       }
       connectedHandler.handle(connection, -1, -1);

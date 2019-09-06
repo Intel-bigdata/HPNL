@@ -88,6 +88,9 @@ int RdmConnection::init() {
     assert(fi_av_insert(av, info->dest_addr, 1, &addr, 0, NULL) == 1);
     addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
   }
+
+//  std::cout<<buffer_num<<":"<<recv_buffer_num<<std::endl;
+
   int size = 0;
   while (size < recv_buffer_num ) {
     Chunk *rck = rbuf_mgr->get();

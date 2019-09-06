@@ -42,18 +42,23 @@ public class RdmServerService extends RdmService {
 //      log.info("bufferId: {}, {}", bufferId, bufferSize);
       HpnlBuffer buffer = connection.getRecvBuffer(bufferId);
       buffer.parse(bufferSize);
-      FrameType frameType = FrameType.toFrameType(buffer.getFrameType());
+      return handle(connection, buffer);
+    }
+
+  @Override
+  public int handle(Connection connection, HpnlBuffer hpnlBuffer) {
+      FrameType frameType = FrameType.toFrameType(hpnlBuffer.getFrameType());
       if(frameType != FrameType.REQ) {
-        return recvCallback.handle(connection, buffer);
+          return recvCallback.handle(connection, hpnlBuffer);
       }
-      long peerConnectId = buffer.getPeerConnectionId();
-      getPeerInfo(connection, peerConnectId, buffer, bufferSize);
+      long peerConnectId = hpnlBuffer.getPeerConnectionId();
+      getPeerInfo(connection, peerConnectId, hpnlBuffer);
 //      connection.setConnectedCallback(connectedCallback);
       //ack client request
       ackConnected(connection, peerConnectId);
-      connectedCallback.handle(connection, buffer);
+      connectedCallback.handle(connection, hpnlBuffer);
       return Handler.RESULT_DEFAULT;
-    }
+  }
 
   private void ackConnected(Connection connection, long peerConnectId){
       Object[] address = connection.getPeerAddress(peerConnectId);
@@ -80,19 +85,18 @@ public class RdmServerService extends RdmService {
       }
   }
 
-    private void getPeerInfo(Connection connection, long peerConnectId, HpnlBuffer hpnlBuffer, int bufferSize){
-      ByteBuffer msgBuffer = hpnlBuffer.parse(bufferSize);
+    private void getPeerInfo(Connection connection, long peerConnectId, HpnlBuffer hpnlBuffer){
       //read peer address
-      int peerAddrLen = msgBuffer.getInt();
+      int peerAddrLen = hpnlBuffer.getInt();
       byte[] addrBytes = new byte[peerAddrLen];
-      msgBuffer.get(addrBytes, 0, peerAddrLen);
+      hpnlBuffer.get(addrBytes, 0, peerAddrLen);
       String ipPort[] = new String(addrBytes).split(":");
       Object address[] = new Object[]{ipPort[0], Integer.valueOf(ipPort[1])};
       connection.putPeerAddress(peerConnectId, address);
       //read peer name
-      int peerNameLen = msgBuffer.getInt();
+      int peerNameLen = hpnlBuffer.getInt();
       byte[] peerBytes = new byte[peerNameLen];
-      msgBuffer.get(peerBytes, 0, peerNameLen);
+      hpnlBuffer.get(peerBytes, 0, peerNameLen);
       ByteBuffer peerName = ByteBuffer.allocateDirect(peerNameLen);
       peerName.put(peerBytes);
       connection.putPeerName(peerConnectId, peerName);
