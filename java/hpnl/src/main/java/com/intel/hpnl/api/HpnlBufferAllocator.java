@@ -26,6 +26,8 @@ public class HpnlBufferAllocator {
 
     public static final int NUM_UNIT = 128;
 
+    public static final int BUFFER_METADATA_SIZE = 8 + AbstractHpnlBuffer.BASE_METADATA_SIZE;
+
     private static final BufferCache.CacheHandler<HpnlBuffer> DEFAULT_CACHE_HANDLER =
             new BufferCacheHandler(new AtomicInteger(-1), MIN_DEFAULT_BUFFER_ID);
 
@@ -192,7 +194,7 @@ public class HpnlBufferAllocator {
         private BufferCache<HpnlBuffer> cache;
         private boolean released;
 
-        public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
+        public static final int METADATA_SIZE = BUFFER_METADATA_SIZE;
 
         public HpnlGlobalBuffer(BufferCache<HpnlBuffer> cache, int id, int size){
             super(id);
@@ -224,15 +226,15 @@ public class HpnlBufferAllocator {
             this.byteBuffer.put(frameType);
             this.byteBuffer.position(byteBuffer.position()+8);
             this.byteBuffer.putLong(seqId);
-            this.byteBuffer.limit(bufferLimit);
             this.byteBuffer.position(bufferLimit);
         }
 
         @Override
         public void setConnectionId(long connectionId) {
+            int pos = byteBuffer.position();
             this.byteBuffer.position(1);
             this.byteBuffer.putLong(connectionId);
-            this.byteBuffer.position(0);
+            this.byteBuffer.position(pos);
         }
 
         @Override

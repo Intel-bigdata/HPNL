@@ -2,14 +2,11 @@ package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.AbstractHpnlBuffer;
 import com.intel.hpnl.api.Connection;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.ByteBuffer;
 
 public class HpnlRdmBuffer extends AbstractHpnlBuffer {
   public static final int METADATA_SIZE = 8 + BASE_METADATA_SIZE;
-  private static final Logger log = LoggerFactory.getLogger(HpnlRdmBuffer.class);
+//  private static final Logger log = LoggerFactory.getLogger(HpnlRdmBuffer.class);
   private RdmConnection connection;
   private boolean released;
   private long oriConnectionId;
