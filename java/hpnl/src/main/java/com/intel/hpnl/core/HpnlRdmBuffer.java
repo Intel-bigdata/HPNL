@@ -9,7 +9,6 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
 //  private static final Logger log = LoggerFactory.getLogger(HpnlRdmBuffer.class);
   private RdmConnection connection;
   private boolean released;
-  private long oriConnectionId;
 
   public HpnlRdmBuffer(int bufferId, ByteBuffer byteBuffer, BufferType type) {
     super(bufferId, byteBuffer, type);
@@ -29,14 +28,6 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
     this.byteBuffer.put(src);
     this.byteBuffer.flip();
   }
-
-    @Override
-    public void setConnectionId(long connectionId) {
-        if(oriConnectionId == 0){
-            oriConnectionId = connectionId;
-        }
-        this.connectionId = connectionId;
-    }
 
   @Override
   public int getMetadataSize() {
@@ -80,7 +71,6 @@ public class HpnlRdmBuffer extends AbstractHpnlBuffer {
               case RECV:
 //        log.info("buffer id release: {}", getBufferId());
                   connection.reclaimRecvBuffer(getBufferId());
-                  connectionId = oriConnectionId; // in case it's reused for sending in different connections
                   break;
               default:
                   throw new IllegalArgumentException("should not reach here: " + getBufferType());

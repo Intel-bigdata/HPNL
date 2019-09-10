@@ -137,8 +137,12 @@ public class RdmConnection extends AbstractConnection{
 
   @Override
   protected void reclaimGlobalBuffer(int bufferId, int ctxId){
-    globalBufferMap.get(bufferId).release();
-    ctxIdQueue.offer(ctxId);
+    HpnlBuffer hpnlBuffer = globalBufferMap.remove(Integer.valueOf(bufferId));
+    if (hpnlBuffer == null) {
+      throw new IllegalStateException("failed to reclaim send buffer (not found) with id: " + bufferId);
+    }
+    hpnlBuffer.release();
+    reclaimCtxId(ctxId);
   }
 
   @Override
@@ -157,7 +161,7 @@ public class RdmConnection extends AbstractConnection{
   @Override
   public int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName) {
     int bufferId = buffer.getBufferId();
-    if(bufferId >  0){
+    if(bufferId > 0){
       return this.sendTo(bufferSize, bufferId, peerName, this.nativeHandle);
     }
 

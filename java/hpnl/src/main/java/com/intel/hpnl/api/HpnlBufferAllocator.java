@@ -178,12 +178,9 @@ public class HpnlBufferAllocator {
         }
         @Override
         public HpnlBuffer newInstance(BufferCache<HpnlBuffer> cache, int size) {
-            int id = 0;
-            if(cache != null) {
-                id = idGen.getAndDecrement();
-                if (id < idLimit) {
-                    throw new IllegalArgumentException("id should not be less than " + idLimit);
-                }
+            int id = idGen.getAndDecrement();
+            if (id < idLimit) {
+                throw new IllegalArgumentException("id should not be less than " + idLimit);
             }
             HpnlBuffer buffer = new HpnlGlobalBuffer(cache, id, size);
             return buffer;
@@ -252,12 +249,9 @@ public class HpnlBufferAllocator {
         @Override
         public void release() {
             if(cache != null && !released){
-                if(getBufferId() == 0){
-                    throw new RuntimeException("buffer id should not be 0");
-                }
                 cache.reclaim(this);
-                released = true;
             }
+            released = true;
         }
 
         @Override

@@ -120,35 +120,17 @@ public abstract class AbstractConnection implements Connection {
 
   public void reclaimSendBuffer(int bufferId, int ctxId) {
 //    log.info("reclaim send buffer: {}, {}", bufferId, ctxId);
-    if(bufferId == 0){ //skip non-cache-able buffer
-      if(ctxId >= 0){
-        reclaimCtxId(ctxId);
-      }
-      return;
-    }
     if(bufferId < 0) {
       reclaimGlobalBuffer(bufferId, ctxId);
       return;
     }
     //no sync since buffer id is unique
     //send buffer
-    if(bufferId < HpnlBuffer.RECV_BUFFER_ID_START) {
-      HpnlBuffer buffer = this.sendBufferMap.get(bufferId);
-      if (buffer == null) {
-        throw new IllegalStateException("send buffer not found with id: " + bufferId);
-      }
-      this.sendBufferList.offer(buffer);
-      return;
-    }
-    //recv buffer reused for sending
-    if(ctxId >= 0){
-      reclaimCtxId(ctxId);
-    }
-    HpnlBuffer buffer = service.getRecvBuffer(bufferId);
+    HpnlBuffer buffer = this.sendBufferMap.get(Integer.valueOf(bufferId));
     if (buffer == null) {
-      throw new IllegalStateException("recv buffer not found with id: " + bufferId);
+      throw new IllegalStateException("failed to reclaim send buffer (not found) with id: " + bufferId);
     }
-    buffer.release();
+    this.sendBufferList.offer(buffer);
   }
 
   protected void reclaimCtxId(int ctxId) {}
