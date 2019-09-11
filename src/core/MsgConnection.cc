@@ -160,11 +160,11 @@ free_ep:
 
 int MsgConnection::send(Chunk* ck) {
   ck->con = this;
-  if (fi_send(ep, ck->buffer, (size_t)ck->size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+  int res = fi_send(ep, ck->buffer, (size_t)ck->size, fi_mr_desc((fid_mr*)ck->mr), 0, ck);
+  if (res != 0 && res != -11) {
     perror("fi_send");
-    return -1;
   }
-  return 0;
+  return res;
 }
 
 int MsgConnection::send(int buffer_size, int id) {
@@ -172,26 +172,35 @@ int MsgConnection::send(int buffer_size, int id) {
   ck->size = buffer_size;
   if (ck == nullptr) return -1;
   ck->con = this;
-  if (fi_send(ep, ck->buffer, (size_t)buffer_size, fi_mr_desc((fid_mr*)ck->mr), 0, ck)) {
+  int res = fi_send(ep, ck->buffer, (size_t)ck->size, fi_mr_desc((fid_mr*)ck->mr), 0, ck);
+  if (res != 0 && res != -11) {
     perror("fi_send");
-    return -1;
   }
-  return 0;
+  return res;
 }
 
 int MsgConnection::read(int buffer_id, int local_offset, uint64_t len,
                         uint64_t remote_addr, uint64_t remote_key) {
   Chunk* ck = stack->get_rma_chunk(buffer_id);
   ck->con = this;
-  return fi_read(ep, (char*)ck->buffer + local_offset, len, fi_mr_desc((fid_mr*)ck->mr),
-                 0, remote_addr, remote_key, ck);
+  int res = fi_read(ep, (char*)ck->buffer + local_offset, len,
+                    fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
+  if (res != 0 && res != -11) {
+    perror("fi_read");
+  }
+  return res;
 }
 
-int MsgConnection::read(Chunk *ck, int local_offset, uint64_t len,
-                        uint64_t remote_addr, uint64_t remote_key) {
+int MsgConnection::read(Chunk* ck, int local_offset, uint64_t len, uint64_t remote_addr,
+                        uint64_t remote_key) {
   ck->con = this;
-  return fi_read(ep, (char*)ck->buffer + local_offset, len, fi_mr_desc((fid_mr*)ck->mr),
-                 0, remote_addr, remote_key, ck);
+  int res = fi_read(ep, (char*)ck->buffer + local_offset, len,
+                    fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
+
+  if (res != 0 && res != -11) {
+    perror("fi_read");
+  }
+  return res;
 }
 
 int MsgConnection::connect() {

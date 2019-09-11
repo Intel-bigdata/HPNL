@@ -81,14 +81,10 @@ public class Connection {
 
   public int read(int bufferId, int localOffset, long len, long remoteAddr, long remoteMr) {
     int res = read(bufferId, localOffset, len, remoteAddr, remoteMr, this.nativeHandle);
-    if (res == -11) {
-      this.cqService.addExternalEvent(this.index, new ExternalHandler() {
-        public void handle() {
-          read(bufferId, localOffset, len, remoteAddr, remoteMr);
-        } 
-      });
+    if (res != 0 && res != -11) {
+      System.out.println("message read error");
     }
-    return 0;
+    return res;
   }
 
   public void delCon() {
