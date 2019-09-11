@@ -50,21 +50,22 @@ int RdmConnection::init() {
 
 //  hints->tx_attr->msg_order = FI_ORDER_SAS;
   hints->tx_attr->comp_order = FI_ORDER_NONE;
-  hints->tx_attr->op_flags = FI_INJECT_COMPLETE | FI_COMPLETION;
+  hints->tx_attr->op_flags = FI_COMPLETION;
   hints->rx_attr->op_flags = FI_COMPLETION;
  // hints->rx_attr->msg_order = FI_ORDER_SAS;  
   hints->domain_attr->av_type         = FI_AV_MAP;
   hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
   hints->domain_attr->threading = FI_THREAD_SAFE;
  
-   if (prov_name != nullptr){
-      hints->fabric_attr->prov_name = strdup(prov_name);
-    }
-    assert(info == NULL);
-    if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &info))
-      perror("fi_getinfo");
+  if (prov_name != nullptr){
+    hints->fabric_attr->prov_name = strdup(prov_name);
+  }
+  assert(info == NULL);
+  if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &info))
+    perror("fi_getinfo");
     fi_freeinfo(hints);
   }
+  std::cout<<"inject size: "<<info->tx_attr->inject_size<<std::endl;
   if (fi_endpoint(domain, info, &ep, NULL))
     perror("fi_endpoint");
   
@@ -81,12 +82,11 @@ int RdmConnection::init() {
     perror("fi_enable");
   fi_getname((fid_t)ep, local_name, &local_name_len);
   if (!is_server) {
-    char tmp[32];
     size_t tmp_len = 32;
-    fi_av_straddr(av, info->dest_addr, tmp, &tmp_len);
+    fi_av_straddr(av, info->dest_addr, dest_name, &tmp_len);
     fi_addr_t addr;
     assert(fi_av_insert(av, info->dest_addr, 1, &addr, 0, NULL) == 1);
-    addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
+    addr_map.insert(std::pair<std::string, fi_addr_t>(dest_name, addr));
   }
 
 //  std::cout<<buffer_num<<":"<<recv_buffer_num<<std::endl;
@@ -173,10 +173,7 @@ int RdmConnection::sendBuf(char* buffer, int buffer_id, int ctx_id, int buffer_s
 	ck->buffer = buffer;
   }
 
-  char tmp[32];
-  size_t tmp_len = 64;
-  fi_av_straddr(av, info->dest_addr, tmp, &tmp_len);
-  if (fi_send(ep, buffer, buffer_size, NULL, addr_map[tmp], &ck->ctx)) {
+  if (fi_send(ep, buffer, buffer_size, NULL, addr_map[dest_name], &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -235,14 +232,12 @@ int RdmConnection::sendBufTo(char* buffer, int buffer_id, int ctx_id, int buffer
   } else {
     peer_addr = addr_map[tmp];
   }
-
   if (fi_send(ep, buffer, buffer_size, NULL, peer_addr, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
   return 0;
 }
-
 
 char* RdmConnection::get_peer_name() {
   return (char*)info->dest_addr;

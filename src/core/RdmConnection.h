@@ -6,6 +6,7 @@
 #include <rdma/fi_endpoint.h>
 #include <string.h>
 
+#include <mutex>
 #include <vector>
 #include <map>
 #include <unordered_map>
@@ -79,6 +80,7 @@ class RdmConnection : public Connection {
     const char* ip;
     const char* port;
     char local_name[64];
+    char dest_name[32];
     size_t local_name_len = 64;
     std::map<std::string, fi_addr_t> addr_map;
     BufMgr *rbuf_mgr;
@@ -106,6 +108,8 @@ class RdmConnection : public Connection {
     const char* prov_name;
 
     long connect_id;
+
+    std::mutex conMtx;
 
     jobject java_conn;
     jmethodID java_callback_methodID;

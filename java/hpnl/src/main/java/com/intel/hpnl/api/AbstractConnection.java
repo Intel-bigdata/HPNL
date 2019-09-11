@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 public abstract class AbstractConnection implements Connection {
   protected HpnlService service;
+  protected HpnlBufferAllocator allocator;
   private Handler connectedCallback = null;
   private Handler recvCallback = null;
   private Handler sendCallback = null;
@@ -48,6 +49,11 @@ public abstract class AbstractConnection implements Connection {
     }
 
     this.shutdownCallbacks.add(new AbstractConnection.InternalShutdownCallback());
+  }
+
+  @Override
+  public void setHpnlBufferAllocator(HpnlBufferAllocator allocator){
+      this.allocator = allocator;
   }
 
   @Override

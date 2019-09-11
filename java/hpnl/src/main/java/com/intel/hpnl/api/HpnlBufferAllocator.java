@@ -57,9 +57,9 @@ public class HpnlBufferAllocator {
         return DEFAULT.getBuffer(size);
     }
 
-    public static HpnlBuffer getBufferByIdFromDefault(int bufferId){
-        return DEFAULT.getBufferById(bufferId);
-    }
+//    public static HpnlBuffer getBufferByIdFromDefault(int bufferId){
+//        return DEFAULT.getBufferById(bufferId);
+//    }
 
     public static void setDefaultMaxBufferSize(int maxSize){
         setMaxBufferSize(DEFAULT, maxSize);
@@ -101,12 +101,12 @@ public class HpnlBufferAllocator {
         return getBuffer(this, size);
     }
 
-    public HpnlBuffer getBufferById(int bufferId){
-        if(bufferId >= MIN_DEFAULT_BUFFER_ID){
-            return getBufferById(DEFAULT, bufferId);
-        }
-        return getBufferById(this, bufferId);
-    }
+//    public HpnlBuffer getBufferById(int bufferId){
+//        if(bufferId >= MIN_DEFAULT_BUFFER_ID){
+//            return getBufferById(DEFAULT, bufferId);
+//        }
+//        return getBufferById(this, bufferId);
+//    }
 
     /**
      * different sizes (512, 1024, 4096, 8192, maxSize) in threadlocal
@@ -145,28 +145,28 @@ public class HpnlBufferAllocator {
         return buffer;
     }
 
-    private HpnlBuffer getBufferById(HpnlBufferAllocator allocator, int bufferId){
-        HpnlBuffer buffer = allocator.CACHE_TINY.getBuffer(bufferId);
-        if(buffer != null){
-            return buffer;
-        }
-        buffer = allocator.CACHE_SMALL.getBuffer(bufferId);
-        if(buffer != null){
-            return buffer;
-        }
-        buffer = allocator.CACHE_MEDIUM.getBuffer(bufferId);
-        if(buffer != null){
-            return buffer;
-        }
-        buffer = allocator.CACHE_LARGE.getBuffer(bufferId);
-        if(buffer != null) {
-            return buffer;
-        }
-        if(maxSize == -1){
-            throw new IllegalStateException("please set max buffer size first");
-        }
-        return allocator.CACHE_MAXSIZE.getBuffer(bufferId);
-    }
+//    private HpnlBuffer getBufferById(HpnlBufferAllocator allocator, int bufferId){
+//        HpnlBuffer buffer = allocator.CACHE_TINY.getBuffer(bufferId);
+//        if(buffer != null){
+//            return buffer;
+//        }
+//        buffer = allocator.CACHE_SMALL.getBuffer(bufferId);
+//        if(buffer != null){
+//            return buffer;
+//        }
+//        buffer = allocator.CACHE_MEDIUM.getBuffer(bufferId);
+//        if(buffer != null){
+//            return buffer;
+//        }
+//        buffer = allocator.CACHE_LARGE.getBuffer(bufferId);
+//        if(buffer != null) {
+//            return buffer;
+//        }
+//        if(maxSize == -1){
+//            throw new IllegalStateException("please set max buffer size first");
+//        }
+//        return allocator.CACHE_MAXSIZE.getBuffer(bufferId);
+//    }
 
     private static class BufferCacheHandler implements BufferCache.CacheHandler<HpnlBuffer>{
         private AtomicInteger idGen;
@@ -189,7 +189,7 @@ public class HpnlBufferAllocator {
 
     public static class HpnlGlobalBuffer extends AbstractHpnlBuffer{
         private BufferCache<HpnlBuffer> cache;
-        private boolean released;
+        private volatile boolean released;
 
         public static final int METADATA_SIZE = BUFFER_METADATA_SIZE;
 

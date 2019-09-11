@@ -16,6 +16,8 @@ public interface Connection {
 
   void addShutdownCallback(Handler callback);
 
+  void setHpnlBufferAllocator(HpnlBufferAllocator allocator);
+
   HpnlBuffer getRecvBuffer(int bufferId);
 
   void reclaimRecvBuffer(int bufferId);

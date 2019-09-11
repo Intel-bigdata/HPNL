@@ -22,10 +22,11 @@ public class RdmConnection extends AbstractConnection{
   private long nativeHandle;
   private int ctxNum;
 
+  private Map<Integer, HpnlBuffer> globalBufferMap = new ConcurrentHashMap<>();
+
   private BlockingQueue<Runnable> eventQueue;
   private Map<Long, ByteBuffer> peerMap;
   private Map<Long, Object[]> addressMap;
-  private Map<Integer, HpnlBuffer> globalBufferMap;
   private Queue<Integer> ctxIdQueue;
 
   private static final Logger log = LoggerFactory.getLogger(RdmConnection.class);
@@ -44,7 +45,6 @@ public class RdmConnection extends AbstractConnection{
     for(int i=0; i<ctxNum; i++){
       ctxIdQueue.offer(Integer.valueOf(i));
     }
-    globalBufferMap = new ConcurrentHashMap<>();
     if(server){
       peerMap = new ConcurrentHashMap<>();
       addressMap = new ConcurrentHashMap<>();
@@ -137,12 +137,14 @@ public class RdmConnection extends AbstractConnection{
 
   @Override
   protected void reclaimGlobalBuffer(int bufferId, int ctxId){
-    HpnlBuffer hpnlBuffer = globalBufferMap.remove(Integer.valueOf(bufferId));
+    HpnlBuffer hpnlBuffer = globalBufferMap.remove(bufferId);
     if (hpnlBuffer == null) {
       throw new IllegalStateException("failed to reclaim send buffer (not found) with id: " + bufferId);
     }
     hpnlBuffer.release();
-    reclaimCtxId(ctxId);
+    if(ctxId >= 0) {
+        reclaimCtxId(ctxId);
+    }
   }
 
   @Override
@@ -165,14 +167,28 @@ public class RdmConnection extends AbstractConnection{
       return this.sendTo(bufferSize, bufferId, peerName, this.nativeHandle);
     }
 
-    if(!globalBufferMap.containsKey(bufferId)){
-      globalBufferMap.put(Integer.valueOf(bufferId), buffer);
-    }
+    globalBufferMap.put(bufferId, buffer);
     Integer ctxId = ctxIdQueue.poll();
+//      Integer ctxId = null;
     buffer.setConnectionId(getConnectionId());
     return this.sendBufTo(buffer.getRawBuffer(), bufferId, ctxId==null?-1:ctxId.intValue(), bufferSize,
             peerName, this.nativeHandle);
   }
+
+//  @Override
+//  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName) {
+//    int bufferId = buffer.getBufferId();
+//    if(bufferId > 0){
+//      return this.sendTo(bufferSize, bufferId, peerName, this.nativeHandle);
+//    }
+//
+//    globalBufferMap.put(Integer.valueOf(bufferId), buffer);
+//    Integer ctxId = ctxIdQueue.poll();
+////      Integer ctxId = null;
+//    buffer.setConnectionId(getConnectionId());
+//    return this.sendBufTo(buffer.getRawBuffer(), bufferId, -1, bufferSize,
+//            peerName, this.nativeHandle);
+//  }
 
   @Override
   public int sendBuffer(HpnlBuffer buffer, int bufferSize) {
@@ -182,15 +198,29 @@ public class RdmConnection extends AbstractConnection{
       return this.send(bufferSize, bufferId, this.nativeHandle);
     }
     // for non registered buffer
-    if(!globalBufferMap.containsKey(bufferId)){
-      globalBufferMap.put(Integer.valueOf(bufferId), buffer);
-    }
+    globalBufferMap.put(bufferId, buffer);
     Integer ctxId = ctxIdQueue.poll();
+//      Integer ctxId = null;
     buffer.setConnectionId(getConnectionId());
-    return this.sendBuf(buffer.getRawBuffer(), buffer.getBufferId(), ctxId==null?-1:ctxId.intValue(),
-            bufferSize, this.nativeHandle);
-
+    return this.sendBuf(buffer.getRawBuffer(), buffer.getBufferId(), ctxId == null ? -1 : ctxId.intValue(),
+              bufferSize, this.nativeHandle);
   }
+
+//  @Override
+//  public int sendBuffer(HpnlBuffer buffer, int bufferSize) {
+//    int bufferId = buffer.getBufferId();
+////    log.info("buffer id: {}, {}", bufferId, bufferSize);
+//    if(bufferId > 0 ){
+//      return this.send(bufferSize, bufferId, this.nativeHandle);
+//    }
+//    // for non registered buffer
+////    globalBufferMap.put(Integer.valueOf(bufferId), buffer);
+//    Integer ctxId = ctxIdQueue.poll();
+////      Integer ctxId = null;
+//    buffer.setConnectionId(getConnectionId());
+//    return this.sendBuf(buffer.getRawBuffer(), buffer.getBufferId(), -1,
+//            bufferSize, this.nativeHandle);
+//  }
 
   /**
    * send buffer without cache

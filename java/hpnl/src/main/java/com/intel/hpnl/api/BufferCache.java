@@ -29,7 +29,7 @@ public class BufferCache<T> {
         cache.threadLocal = ThreadLocal.withInitial(() -> {
             BufferCache<T> tCache = new BufferCache<>(handler, size, threadBufferLimit);
             tCache.pool = new ConcurrentLinkedQueue<>();
-            tCache.bufferMap = cache.bufferMap;
+            tCache.bufferMap = new ConcurrentHashMap<>();
             return tCache;
         });
         return cache;
@@ -43,10 +43,10 @@ public class BufferCache<T> {
             return object;
         }
         //get from global
-        object = getFromCache(this, size);
-        if(object != null){
-            return object;
-        }
+//        object = getFromCache(this, size, false);
+//        if(object != null){
+//            return object;
+//        }
         //not for cache
         return handler.newInstance(null, size);
     }
@@ -56,12 +56,11 @@ public class BufferCache<T> {
         if(object != null){
             return object;
         }
-        synchronized (cache) {
-            if (cache.count >= cache.bufferLimit) {
-                return null;
-            }
-            cache.count++;
+        if (cache.count >= cache.bufferLimit) {
+            return null;
         }
+        cache.count++;
+
         return handler.newInstance(cache, size);
     }
 
