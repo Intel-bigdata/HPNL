@@ -47,7 +47,7 @@ public class ClientTest {
         connection.sendBuffer(buffer, buffer.remaining());
         return 0;
       }
-    }, new RecvCallback(false, 5, 4096, null));
+    }, new RecvCallback(false, 5, 4096, -1));
 
   }
 

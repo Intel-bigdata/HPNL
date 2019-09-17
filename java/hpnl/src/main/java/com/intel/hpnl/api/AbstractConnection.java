@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -71,8 +70,6 @@ public abstract class AbstractConnection implements Connection {
   protected abstract int getCqIndexFromNative(long nativeHandle);
 
   protected abstract long getNativeHandle();
-
-  protected abstract void addTask(Runnable task);
 
   protected abstract boolean isServer();
 
@@ -182,9 +179,6 @@ public abstract class AbstractConnection implements Connection {
   public HpnlBuffer getRecvBuffer(int bufferId) {
     return this.recvBufferMap.get(bufferId);
   }
-
-  @Override
-  public void setEventQueue(BlockingQueue<Runnable> eventQueue){}
 
   /**
    * it's called from single thread of event task

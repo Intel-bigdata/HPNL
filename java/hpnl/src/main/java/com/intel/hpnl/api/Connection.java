@@ -30,15 +30,13 @@ public interface Connection {
 
   void pushRecvBuffer(HpnlBuffer buffer);
 
-  void setEventQueue(BlockingQueue<Runnable> eventQueue);
+  int sendBufferToAddress(HpnlBuffer buffer, int bufferSize, long peerAddress);
 
-  int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName);
-
-  int sendBufferTo(HpnlBuffer buffer, int bufferSize, long peerConnectId);
+  int sendBufferToId(HpnlBuffer buffer, int bufferSize, long peerConnectId);
 
   int sendBuffer(HpnlBuffer buffer, int bufferSize) ;
 
-  int sendBufferTo(ByteBuffer buffer, int bufferSize, long peerConnectionId);
+  int sendBufferToId(ByteBuffer buffer, int bufferSize, long peerConnectionId);
 
   int sendBuffer(ByteBuffer buffer, int bufferSize);
 
@@ -52,9 +50,11 @@ public interface Connection {
 
   ByteBuffer getLocalName();
 
-  void putPeerName(long connectionId, ByteBuffer peer);
+  long resolvePeerName(ByteBuffer peerName);
 
-  ByteBuffer getPeerName(long connectionId);
+  void putProviderAddress(long connectionId, long address);
+
+  long getProviderAddress(long connectionId);
 
   void putPeerAddress(long connectId, Object[] address);
 

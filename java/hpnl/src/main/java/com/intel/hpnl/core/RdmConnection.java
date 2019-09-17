@@ -8,11 +8,11 @@ import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class RdmConnection extends AbstractConnection{
   private ByteBuffer localName;
@@ -22,10 +22,13 @@ public class RdmConnection extends AbstractConnection{
   private long nativeHandle;
   private int ctxNum;
 
-  private Map<Integer, HpnlBuffer> globalBufferMap = new ConcurrentHashMap<>();
+  private Map<Integer, HpnlBuffer> globalBufferMap = new HashMap<>();
 
-  private BlockingQueue<Runnable> eventQueue;
-  private Map<Long, ByteBuffer> peerMap;
+//  private Map<Long, Map<Integer, HpnlBuffer>> threadMap = new HashMap<>();
+//
+//  private ThreadLocal<Map<Integer, HpnlBuffer>> localBufferMap = ThreadLocal.withInitial(() -> new HashMap<>());
+
+  private Map<Long, Long> peerMap;
   private Map<Long, Object[]> addressMap;
   private Queue<Integer> ctxIdQueue;
 
@@ -41,7 +44,7 @@ public class RdmConnection extends AbstractConnection{
     this.nativeConnId = get_connection_id(this.nativeHandle);
     this.server = server;
     this.ctxNum = ctxNum;
-    ctxIdQueue = new ConcurrentLinkedQueue<>();
+    ctxIdQueue = new LinkedList<>();
     for(int i=0; i<ctxNum; i++){
       ctxIdQueue.offer(Integer.valueOf(i));
     }
@@ -59,13 +62,15 @@ public class RdmConnection extends AbstractConnection{
 
   private native long get_connection_id(long nativeHandle);
 
-  public native int send(int size, int id, long nativeHandle);
+  private native long resolve_peer_name(ByteBuffer peerName, long nativeHandle);
 
-  public native int sendTo(int size, int id, ByteBuffer peer, long nativeHandle);
+  private native int send(int size, int id, long nativeHandle);
 
-  public native int sendBuf(ByteBuffer buffer, int bufferId, int ctxId, int size, long nativeHandle);
+  private native int sendTo(int size, int id, long peerAddress, long nativeHandle);
 
-  public native int sendBufTo(ByteBuffer buffer, int bufferId, int ctxId, int size, ByteBuffer peer, long nativeHandle);
+  private native int sendBuf(ByteBuffer buffer, int bufferId, int ctxId, int size, long nativeHandle);
+
+  private native int sendBufTo(ByteBuffer buffer, int bufferId, int ctxId, int size, long peerAddress, long nativeHandle);
 
   private native void releaseRecvBuffer(int id, long nativeHandle);
 
@@ -85,23 +90,6 @@ public class RdmConnection extends AbstractConnection{
     return this.nativeHandle;
   }
 
-  @Override
-  public void setEventQueue(BlockingQueue<Runnable> eventQueue) {
-    this.eventQueue = eventQueue;
-  }
-
-  /**
-   * add task to event queue owned by one thread
-   * @param task
-   */
-  @Override
-  protected void addTask(Runnable task){
-    try {
-      eventQueue.put(task);
-    }catch (InterruptedException e){
-      throw new RuntimeException(e);
-    }
-  }
 
   @Override
   protected void doShutdown(boolean proactive) {
@@ -109,6 +97,8 @@ public class RdmConnection extends AbstractConnection{
     this.deleteGlobalRef(this.nativeHandle);
     ctxIdQueue.clear();
     globalBufferMap.clear();
+//    threadMap.clear();
+//    localBufferMap.set(null);
     if(server){
       peerMap.clear();
       addressMap.clear();
@@ -138,6 +128,13 @@ public class RdmConnection extends AbstractConnection{
   @Override
   protected void reclaimGlobalBuffer(int bufferId, int ctxId){
     HpnlBuffer hpnlBuffer = globalBufferMap.remove(bufferId);
+//    HpnlBuffer hpnlBuffer = null;
+//    for(Map.Entry<Long, Map<Integer, HpnlBuffer>> entry : threadMap.entrySet()){
+//      hpnlBuffer = entry.getValue().get(bufferId);
+//      if(hpnlBuffer != null){
+//        break;
+//      }
+//    }
     if (hpnlBuffer == null) {
       throw new IllegalStateException("failed to reclaim send buffer (not found) with id: " + bufferId);
     }
@@ -156,23 +153,28 @@ public class RdmConnection extends AbstractConnection{
   }
 
   @Override
-  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, long peerConnectionId) {
-    return this.sendBufferTo(buffer, bufferSize, peerMap.get(Long.valueOf(peerConnectionId)));
+  public int sendBufferToId(HpnlBuffer buffer, int bufferSize, long peerConnectionId) {
+    return this.sendBufferToAddress(buffer, bufferSize, peerMap.get(Long.valueOf(peerConnectionId)));
   }
 
   @Override
-  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName) {
+  public int sendBufferToAddress(HpnlBuffer buffer, int bufferSize, long peerAddress) {
     int bufferId = buffer.getBufferId();
     if(bufferId > 0){
-      return this.sendTo(bufferSize, bufferId, peerName, this.nativeHandle);
+      return this.sendTo(bufferSize, bufferId, peerAddress, this.nativeHandle);
     }
-
+//    localBufferMap.get().put(bufferId, buffer);
+//    if(!threadMap.containsKey(Thread.currentThread().getId())){
+//      synchronized (threadMap) {
+//        threadMap.put(Thread.currentThread().getId(), localBufferMap.get());
+//      }
+//    }
     globalBufferMap.put(bufferId, buffer);
     Integer ctxId = ctxIdQueue.poll();
 //      Integer ctxId = null;
     buffer.setConnectionId(getConnectionId());
     return this.sendBufTo(buffer.getRawBuffer(), bufferId, ctxId==null?-1:ctxId.intValue(), bufferSize,
-            peerName, this.nativeHandle);
+            peerAddress, this.nativeHandle);
   }
 
 //  @Override
@@ -198,6 +200,13 @@ public class RdmConnection extends AbstractConnection{
       return this.send(bufferSize, bufferId, this.nativeHandle);
     }
     // for non registered buffer
+//    localBufferMap.get().put(bufferId, buffer);
+//    if(!threadMap.containsKey(Thread.currentThread().getId())){
+//      synchronized (threadMap) {
+//        threadMap.put(Thread.currentThread().getId(), localBufferMap.get());
+//      }
+//    }
+
     globalBufferMap.put(bufferId, buffer);
     Integer ctxId = ctxIdQueue.poll();
 //      Integer ctxId = null;
@@ -235,7 +244,7 @@ public class RdmConnection extends AbstractConnection{
   }
 
   @Override
-  public int sendBufferTo(ByteBuffer buffer, int bufferSize, long peerConnectionId) {
+  public int sendBufferToId(ByteBuffer buffer, int bufferSize, long peerConnectionId) {
     return this.sendBufTo(buffer, -1, -1,
             bufferSize, peerMap.get(Long.valueOf(peerConnectionId)), this.nativeHandle);
   }
@@ -246,12 +255,17 @@ public class RdmConnection extends AbstractConnection{
   }
 
   @Override
-  public void putPeerName(long connectionId, ByteBuffer peer) {
-    peerMap.put(Long.valueOf(connectionId), peer);
+  public long resolvePeerName(ByteBuffer peerName) {
+    return resolve_peer_name(peerName, this.nativeHandle);
   }
 
   @Override
-  public ByteBuffer getPeerName(long connectionId){
+  public void putProviderAddress(long connectionId, long address) {
+    peerMap.put(Long.valueOf(connectionId), address);
+  }
+
+  @Override
+  public long getProviderAddress(long connectionId){
     return peerMap.get(Long.valueOf(connectionId));
   }
 

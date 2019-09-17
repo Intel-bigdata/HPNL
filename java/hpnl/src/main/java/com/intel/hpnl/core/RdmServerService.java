@@ -71,13 +71,13 @@ public class RdmServerService extends RdmService {
           rawBuffer.put(addr.getBytes());
           buffer.insertMetadata(FrameType.ACK.id(), -1, rawBuffer.position());
           rawBuffer.flip();
-          connection.sendBufferTo(buffer, rawBuffer.remaining(), peerConnectId);
+          connection.sendBufferToId(buffer, rawBuffer.remaining(), peerConnectId);
       }else {
           ByteBuffer byteBuffer = ByteBuffer.allocate(40 + HpnlRdmBuffer.METADATA_SIZE);
           byteBuffer.put(addr.getBytes());
           byteBuffer.flip();
           buffer.putData(byteBuffer, FrameType.ACK.id(), -1L);
-          connection.sendBufferTo(buffer, buffer.remaining(), peerConnectId);
+          connection.sendBufferToId(buffer, buffer.remaining(), peerConnectId);
       }
 
       if (log.isDebugEnabled()) {
@@ -99,7 +99,7 @@ public class RdmServerService extends RdmService {
       hpnlBuffer.get(peerBytes, 0, peerNameLen);
       ByteBuffer peerName = ByteBuffer.allocateDirect(peerNameLen);
       peerName.put(peerBytes);
-      connection.putPeerName(peerConnectId, peerName);
+      connection.putProviderAddress(peerConnectId, connection.resolvePeerName(peerName));
     }
   }
 }

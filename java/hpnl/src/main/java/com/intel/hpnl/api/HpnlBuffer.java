@@ -70,6 +70,10 @@ public interface HpnlBuffer {
 
   void release();
 
+  void setTargetAddress(long targetAddress);
+
+  long getTargetAddress();
+
   BufferType getBufferType();
 
   int SEND_BUFFER_ID_START = 1;

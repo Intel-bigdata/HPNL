@@ -29,8 +29,8 @@ public class ServerTest {
       public int handle(Connection connection, int bufferId, int bufferSize) {
         ByteBuffer rawBuffer = connection.getRecvBuffer(bufferId).getRawBuffer();
         rawBuffer.get();//skip frame type;
-        ByteBuffer peerName = connection.getPeerName(rawBuffer.getLong());
-        connection.setRecvCallback(new RecvCallback(true, 5, 4096, peerName));
+        long peerAddr = connection.getProviderAddress(rawBuffer.getLong());
+        connection.setRecvCallback(new RecvCallback(true, 5, 4096, peerAddr));
         return 0;
       }
     }, null);

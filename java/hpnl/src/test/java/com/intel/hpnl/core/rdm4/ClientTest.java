@@ -21,7 +21,7 @@ public class ClientTest {
   private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   public ClientTest(int numThreads, int numBuffer, int bufferSize, int msgSize, String hostname) {
-    service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, 50, false);
+    service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, bufferSize, false);
     this.hostname = hostname;
     this.msgSize = msgSize;
   }
@@ -70,7 +70,7 @@ public class ClientTest {
         connection.sendBuffer(buffer, buffer.remaining());
         return 0;
       }
-    }, new RecvCallback(false, 5, 4096, null));
+    }, new RecvCallback(false, 5, 4096, -1));
 
     System.out.println("waiting");
     th.join();

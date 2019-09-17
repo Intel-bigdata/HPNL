@@ -49,7 +49,7 @@ public class RecvCallback implements Handler {
     buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
     rawBuffer.flip();
     if(is_server){
-      con.sendBufferTo(buffer, buffer.remaining(), peerName);
+      con.sendBufferToId(buffer, buffer.remaining(), buffer.getPeerConnectionId());
     }else {
       con.sendBuffer(buffer, buffer.remaining());
     }

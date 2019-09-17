@@ -28,8 +28,8 @@ class RdmConnection : public Connection {
     virtual int send(Chunk*) override;
     virtual int send(int, int) override;
     virtual int sendBuf(char*, int, int, int) override;
-    virtual int sendTo(int, int, const char*) override;
-    virtual int sendBufTo(char*, int, int, int, const char*) override;
+    virtual int sendTo(int, int, uint64_t) override;
+    virtual int sendBufTo(char*, int, int, int, uint64_t) override;
     virtual char* get_peer_name() override;
     char* get_local_name();
     int get_local_name_length();
@@ -46,7 +46,8 @@ class RdmConnection : public Connection {
     virtual Callback* get_send_callback() override;
     virtual void decode_peer_name(void*, char*) override;
     virtual char* decode_buf(void *buf) override;
-    virtual Chunk* encode(void *buf, int size, char*) override;
+
+    virtual uint64_t resolve_peer_name(char*);
 
     void set_id(long id_){
     	connect_id = id_;
@@ -82,7 +83,8 @@ class RdmConnection : public Connection {
     char local_name[64];
     char dest_name[32];
     size_t local_name_len = 64;
-    std::map<std::string, fi_addr_t> addr_map;
+    fi_addr_t dest_provider_addr;
+//    std::map<std::string, fi_addr_t> addr_map;
     BufMgr *rbuf_mgr;
     BufMgr *sbuf_mgr;
     std::vector<Chunk*> recv_buffers;

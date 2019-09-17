@@ -23,9 +23,6 @@ public class MsgConnection extends AbstractConnection {
   }
 
   @Override
-  protected void addTask(Runnable task){}
-
-  @Override
   protected void initialize(long nativeCon) {
     this.init(nativeCon);
   }
@@ -45,16 +42,21 @@ public class MsgConnection extends AbstractConnection {
   }
 
   @Override
-  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName){ return -1;}
+  public int sendBufferToAddress(HpnlBuffer buffer, int bufferSize, long peerAddress){ return -1;}
 
   @Override
-  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, long connectionId){return -1;}
+  public int sendBufferToId(HpnlBuffer buffer, int bufferSize, long peerConnectionId){return -1;}
 
   @Override
-  public int sendBufferTo(ByteBuffer buffer, int bufferSize, long peerConnectionId){return -1;}
+  public int sendBufferToId(ByteBuffer buffer, int bufferSize, long peerConnectionId){return -1;}
 
   @Override
   public int sendBuffer(ByteBuffer buffer, int bufferSize){ return -1;}
+
+  @Override
+  public long resolvePeerName(ByteBuffer peerName) {
+    return 0;
+  }
 
   @Override
   public int sendBuffer(HpnlBuffer buffer, int bufferSize){return -1;}
@@ -65,10 +67,10 @@ public class MsgConnection extends AbstractConnection {
   }
 
   @Override
-  public void putPeerName(long connectionId, ByteBuffer peer){}
+  public void putProviderAddress(long connectionId, long peerAddress){}
 
   @Override
-  public ByteBuffer getPeerName(long connectionId){return null;}
+  public long getProviderAddress(long connectionId){return -1;}
 
   @Override
   public void putPeerAddress(long connectId, Object[] address){}

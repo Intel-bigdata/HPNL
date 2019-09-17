@@ -84,9 +84,7 @@ int RdmConnection::init() {
   if (!is_server) {
     size_t tmp_len = 32;
     fi_av_straddr(av, info->dest_addr, dest_name, &tmp_len);
-    fi_addr_t addr;
-    assert(fi_av_insert(av, info->dest_addr, 1, &addr, 0, NULL) == 1);
-    addr_map.insert(std::pair<std::string, fi_addr_t>(dest_name, addr));
+    assert(fi_av_insert(av, info->dest_addr, 1, &dest_provider_addr, 0, NULL) == 1);
   }
 
 //  std::cout<<buffer_num<<":"<<recv_buffer_num<<std::endl;
@@ -145,11 +143,8 @@ int RdmConnection::send(Chunk *ck) {
 
 int RdmConnection::send(int buffer_size, int buffer_id) {
   Chunk *ck = send_buffers_map[buffer_id];
-  char tmp[32];
-  size_t tmp_len = 64;
-  fi_av_straddr(av, info->dest_addr, tmp, &tmp_len);
 
-  ck->peer_addr = addr_map[tmp];
+  ck->peer_addr = dest_provider_addr;
   ck->ctx.internal[4] = ck;
   if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
     perror("fi_send");
@@ -173,28 +168,16 @@ int RdmConnection::sendBuf(char* buffer, int buffer_id, int ctx_id, int buffer_s
 	ck->buffer = buffer;
   }
 
-  if (fi_send(ep, buffer, buffer_size, NULL, addr_map[dest_name], &ck->ctx)) {
+  if (fi_send(ep, buffer, buffer_size, NULL, dest_provider_addr, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
   return 0;
 }
 
-int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name) {
+int RdmConnection::sendTo(int buffer_size, int buffer_id, uint64_t peer_address) {
   Chunk *ck = send_buffers_map[buffer_id];
-  char tmp[32];
-  size_t tmp_len = 64;
-  fi_av_straddr(av, peer_name, tmp, &tmp_len);
-
-  std::map<std::string, fi_addr_t>::const_iterator iter = addr_map.find(tmp);
-  if (iter == addr_map.end()) {
-    fi_addr_t addr;
-    assert(fi_av_insert(av, peer_name, 1, &addr, 0, NULL) == 1);
-    addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
-    ck->peer_addr = addr;
-  } else {
-    ck->peer_addr = addr_map[tmp];
-  }
+  ck->peer_addr = (fi_addr_t)peer_address;
   ck->ctx.internal[4] = ck;
   if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
     perror("fi_send");
@@ -203,7 +186,7 @@ int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name)
   return 0;
 }
 
-int RdmConnection::sendBufTo(char* buffer, int buffer_id, int ctx_id, int buffer_size, const char* peer_name) {
+int RdmConnection::sendBufTo(char* buffer, int buffer_id, int ctx_id, int buffer_size, uint64_t peer_address) {
   Chunk *ck;
   if (ctx_id < 0) {
 	ck = new Chunk();
@@ -218,21 +201,7 @@ int RdmConnection::sendBufTo(char* buffer, int buffer_id, int ctx_id, int buffer
 	ck->buffer = buffer;
   }
 
-  char tmp[32];
-  size_t tmp_len = 64;
-
-  fi_av_straddr(av, peer_name, tmp, &tmp_len);
-  fi_addr_t peer_addr;
-  std::map<std::string, fi_addr_t>::const_iterator iter = addr_map.find(tmp);
-  if (iter == addr_map.end()) {
-    fi_addr_t addr;
-    assert(fi_av_insert(av, peer_name, 1, &addr, 0, NULL) == 1);
-    addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
-    peer_addr = addr;
-  } else {
-    peer_addr = addr_map[tmp];
-  }
-  if (fi_send(ep, buffer, buffer_size, NULL, peer_addr, &ck->ctx)) {
+  if (fi_send(ep, buffer, buffer_size, NULL, (fi_addr_t)peer_address, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -251,27 +220,13 @@ int RdmConnection::get_local_name_length() {
   return local_name_len;
 }
 
-Chunk* RdmConnection::encode(void *buf, int size, char* peer_name) {
-  Chunk *ck = send_buffers.back();
-  send_buffers.pop_back();
-  ck->ctx.internal[4] = ck;
-  ck->con = this;
-  memcpy(ck->buffer, local_name, local_name_len);
-  memcpy((char*)(ck->buffer)+local_name_len, buf, size);
-  ck->size = size+local_name_len;
+uint64_t RdmConnection::resolve_peer_name(char* peer_name){
   char tmp[32];
   size_t tmp_len = 64;
   fi_av_straddr(av, peer_name, tmp, &tmp_len);
-  std::map<std::string, fi_addr_t>::const_iterator iter = addr_map.find(tmp);
-  if (iter == addr_map.end()) {
-    fi_addr_t addr;
-    assert(fi_av_insert(av, peer_name, 1, &addr, 0, NULL) == 1);
-    addr_map.insert(std::pair<std::string, fi_addr_t>(tmp, addr));
-    ck->peer_addr = addr;
-  } else {
-    ck->peer_addr = addr_map[tmp];
-  }
-  return ck;
+  fi_addr_t addr;
+  assert(fi_av_insert(av, peer_name, 1, &addr, 0, NULL) == 1);
+  return (uint64_t)addr;
 }
 
 void RdmConnection::decode_peer_name(void *buf, char* peer_name) {

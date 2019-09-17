@@ -11,6 +11,7 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   protected long seq;
   protected long connectionId;
   protected long peerConnectionId;
+  protected long targetAddress;
   protected ByteBuffer byteBuffer;
   private BufferType bufferType;
 
@@ -46,6 +47,16 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   @Override
   public long getPeerConnectionId() {
     return peerConnectionId;
+  }
+
+  @Override
+  public long getTargetAddress(){
+    return targetAddress;
+  }
+
+  @Override
+  public void setTargetAddress(long address){
+    targetAddress = address;
   }
 
   @Override
@@ -192,6 +203,7 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   public void clearState(){
     this.parsed = false;
     this.peerConnectionId = -1;
+    this.targetAddress = -1;
   }
 
   @Override

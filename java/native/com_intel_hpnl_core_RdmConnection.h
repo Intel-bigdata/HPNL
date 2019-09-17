@@ -50,10 +50,10 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_send
 /*
  * Class:     com_intel_hpnl_core_RdmConnection
  * Method:    sendTo
- * Signature: (IILjava/nio/ByteBuffer;J)I
+ * Signature: (IIJJ)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendTo
-  (JNIEnv *, jobject, jint, jint, jobject, jlong);
+  (JNIEnv *, jobject, jint, jint, jlong, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_RdmConnection
@@ -66,10 +66,19 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBuf
 /*
  * Class:     com_intel_hpnl_core_RdmConnection
  * Method:    sendBufTo
- * Signature: (Ljava/nio/ByteBuffer;IIILjava/nio/ByteBuffer;J)I
+ * Signature: (Ljava/nio/ByteBuffer;IIIJJ)I
  */
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBufTo
-  (JNIEnv *, jobject, jobject, jint, jint, jint, jobject, jlong);
+  (JNIEnv *, jobject, jobject, jint, jint, jint, jlong, jlong);
+
+
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    resolve_peer_name
+ * Signature: (Ljava/nio/ByteBuffer;J)J
+ */
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmConnection_resolve_1peer_1name
+  (JNIEnv *, jobject, jobject, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_RdmConnection

@@ -66,10 +66,9 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_send(JNIEnv *env, 
   return res;
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendTo(JNIEnv *env, jobject obj, jint blockBufferSize, jint bufferId, jobject peerName, jlong nativeHandle) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendTo(JNIEnv *env, jobject obj, jint blockBufferSize, jint bufferId, jlong peerAddress, jlong nativeHandle) {
   RdmConnection *con = *(RdmConnection**)&nativeHandle;
-  jbyte* bytes = (jbyte*)(*env).GetDirectBufferAddress(peerName);
-  int res = con->sendTo(blockBufferSize, bufferId, (char*)bytes);
+  int res = con->sendTo(blockBufferSize, bufferId, (uint64_t)peerAddress);
   return res;
 }
 
@@ -85,12 +84,17 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBuf(JNIEnv *en
  * Method:    sendBufTo
  * Signature: (Ljava/nio/ByteBuffer;I[BJ)I
  */
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBufTo(JNIEnv *env, jobject, jobject buffer, jint bufferId, jint ctxId, jint bufferSize, jobject peerName, jlong nativeHandle) {
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendBufTo(JNIEnv *env, jobject obj, jobject buffer, jint bufferId, jint ctxId, jint bufferSize, jlong peerAddress, jlong nativeHandle) {
   RdmConnection *con = *(RdmConnection**)&nativeHandle;
   jbyte* bytes = (jbyte*)(*env).GetDirectBufferAddress(buffer);
-  jbyte* name = (jbyte*)(*env).GetDirectBufferAddress(peerName);
-  int res = con->sendBufTo((char*)bytes, bufferId, ctxId, bufferSize, (char*)name);
+  int res = con->sendBufTo((char*)bytes, bufferId, ctxId, bufferSize, (uint64_t)peerAddress);
   return res;
+}
+
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmConnection_resolve_1peer_1name(JNIEnv *env, jobject obj, jobject peerName, jlong nativeHandle){
+	RdmConnection *con = *(RdmConnection**)&nativeHandle;
+	jbyte* name = (jbyte*)(*env).GetDirectBufferAddress(peerName);
+	return con->resolve_peer_name((char*)name);
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_releaseRecvBuffer(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jlong conPtr){

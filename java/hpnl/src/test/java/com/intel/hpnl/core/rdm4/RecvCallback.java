@@ -9,16 +9,16 @@ import java.nio.ByteBuffer;
 
 public class RecvCallback implements Handler {
 
-  private ByteBuffer peerName;
+  private long peerAddress = -1;
 
-  public RecvCallback(boolean is_server, int interval, int msgSize, ByteBuffer peerName) {
+  public RecvCallback(boolean is_server, int interval, int msgSize, long peerAddress) {
     this.is_server = is_server;
     this.interval = interval;
     this.msgSize = msgSize;
-    this.peerName = peerName;
+    this.peerAddress = peerAddress;
   }
 
-  public int handle(Connection con, int bufferId, int blockBufferSize) {
+  public int handle(Connection con, HpnlBuffer hpnlBuffer){
     if (!is_server) {
       count++;
       if (count == 1) {
@@ -36,28 +36,32 @@ public class RecvCallback implements Handler {
         }
       }
     }
-    HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
-    assert(recvBuffer != null);
-    ByteBuffer recvByteBuffer = recvBuffer.parse(blockBufferSize);
 
     HpnlBuffer buffer = con.takeSendBuffer();
     buffer.clear();
     ByteBuffer rawBuffer = buffer.getRawBuffer();
     rawBuffer.position(buffer.getMetadataSize());
-    rawBuffer.put(recvByteBuffer);
+    rawBuffer.put(hpnlBuffer.getRawBuffer());
     int limit = rawBuffer.position();
     buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
     rawBuffer.flip();
     if(is_server){
-      if(peerName == null){
-        peerName = con.getPeerName(recvBuffer.getPeerConnectionId());
+      if(peerAddress < 0){
+        peerAddress = con.getProviderAddress(hpnlBuffer.getPeerConnectionId());
       }
-      con.sendBufferTo(buffer, buffer.remaining(), peerName);
+      con.sendBufferToAddress(buffer, buffer.remaining(), peerAddress);
     }else {
       con.sendBuffer(buffer, buffer.remaining());
     }
 //    con.releaseRecvBuffer(bufferId);
     return Handler.RESULT_DEFAULT;
+  }
+
+  public int handle(Connection con, int bufferId, int blockBufferSize) {
+    HpnlBuffer recvBuffer = con.getRecvBuffer(bufferId);
+    assert(recvBuffer != null);
+    recvBuffer.parse(blockBufferSize);
+    return handle(con, recvBuffer);
   }
 
   private long count = 0;
