@@ -15,26 +15,36 @@
 class RdmConnection;
 class RdmStack : public Stack {
   public:
-    RdmStack(int, int, int, bool, const char*);
+    RdmStack(int, int, int, int, bool, const char*);
     ~RdmStack();
     virtual int init() override;
     virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
-    RdmConnection* get_con(const char*, const char*, BufMgr*, BufMgr*);
+    RdmConnection* get_con(const char*, const char*, uint64_t, int, BufMgr*, BufMgr*);
+    void setup_endpoint(const char*, const char*);
     fid_fabric* get_fabric();
-    fid_cq* get_cq();
+    fid_cq** get_cqs();
 
     RdmConnection* get_connection(long id);
     void reap(long id);
 
   private:
     fi_info *info;
-    fi_info *server_info;
+    fi_info *connect_info;
     fid_fabric *fabric;
     fid_domain *domain;
-    fid_cq *cq = NULL;
+    fid_cq **cqs;
+    fid_av *av;
+    fid_ep *ep;
+    fid_ep **tx;
+    fid_ep **rx;
+
+    char *local_name;
+    size_t local_name_len;
+
     int buffer_num;
     int recv_buffer_num;
     int ctx_num;
+    int endpoint_num;
     bool is_server;
 
     std::map<long, RdmConnection*> conMap;
@@ -42,6 +52,7 @@ class RdmStack : public Stack {
     std::atomic_long id_generator;
 
     std::mutex mtx;
+    bool is_setup;
 
     RdmConnection *server_con;
 

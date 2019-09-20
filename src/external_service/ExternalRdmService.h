@@ -2,6 +2,7 @@
 #define EXTERNALRDMSERVICE_H
 
 #include <stdint.h>
+#include <rdma/fabric.h>
 
 class RdmStack;
 class RdmConnection;
@@ -11,12 +12,12 @@ class ExternalRdmCqDemultiplexer;
 
 class ExternalRdmService {
   public:
-    ExternalRdmService(int, int, int, bool);
+    ExternalRdmService(int, int, int, int, bool);
     ~ExternalRdmService();
     int init(const char*);
     RdmConnection* listen(const char*, const char*);
-    RdmConnection* get_con(const char*, const char*);
-    int wait_event(Chunk**, int*, int*);
+    RdmConnection* get_con(const char*, const char*, uint64_t, int);
+    int wait_event(int, int(*process)(Chunk *, int, int, int));
     void reap(int64_t);
 
     void set_recv_buffer(char*, uint64_t, int);
@@ -24,7 +25,8 @@ class ExternalRdmService {
 
   private:
     RdmStack *stack;
-    ExternalRdmCqDemultiplexer *demulti_plexer;
+    fid_cq **cqs;
+    int read_batch_size;
     int buffer_num;
     int recv_buffer_num;
     int ctx_num;

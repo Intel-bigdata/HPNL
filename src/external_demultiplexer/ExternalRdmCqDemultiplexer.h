@@ -18,7 +18,7 @@ class ExternalRdmCqDemultiplexer {
     int wait_event(Chunk**, int*, int*);
   private:
     RdmStack *stack;
-    fid_cq *cq;
+    fid_cq **cq;
 };
 
 #endif

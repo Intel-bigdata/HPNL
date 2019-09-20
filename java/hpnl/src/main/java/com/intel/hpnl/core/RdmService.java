@@ -46,7 +46,9 @@ public class RdmService extends AbstractService {
 
   protected RdmService init(int ctxNum) {
     this.ctxNum = ctxNum;
-    this.init(this.bufferNum, recvBufferNum, ctxNum, this.server, HpnlConfig.getInstance().getLibfabricProviderName());
+
+    this.init(this.bufferNum, recvBufferNum, ctxNum, HpnlConfig.getInstance().getReadBatchSize(), this.server,
+            HpnlConfig.getInstance().getLibfabricProviderName());
     this.initBufferPool(this.bufferNum, recvBufferNum, this.bufferSize);
 //    taskThread = new Thread(task);
     Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
@@ -90,7 +92,7 @@ public class RdmService extends AbstractService {
     rawBuffer.flip();
     //wait ack
     connection.setRecvCallback(new ConnectionAckedHandler(connectedCallback, recvCallback));
-    connection.sendBuffer(buffer, buffer.remaining());
+    connection.sendConnectRequest(buffer, buffer.remaining());
   }
 
   @Override
@@ -186,7 +188,8 @@ public class RdmService extends AbstractService {
     return new HpnlRdmBuffer(bufferId, byteBuffer, type);
   }
 
-  private native int init(int bufferNum, int recvBufferNum, int ctxNum, boolean server, String providerName);
+  private native int init(int bufferNum, int recvBufferNum, int ctxNum, int readBatchSize,
+                          boolean server, String providerName);
 
   protected native long listen(String host, String port, long nativeHandle);
 

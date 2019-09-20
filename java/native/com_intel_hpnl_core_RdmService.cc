@@ -48,8 +48,9 @@ static void _set_self(JNIEnv *env, jobject thisObj, ExternalRdmService *self)
   env->SetLongField(thisObj, _get_self_id(env, thisObj), selfPtr);
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jobject obj, jint buffer_num, jint recv_buffer_num, jint ctx_num, jboolean is_server, jstring prov_name) {
-  ExternalRdmService *service = new ExternalRdmService(buffer_num, recv_buffer_num, ctx_num, is_server);
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jobject obj,
+		jint buffer_num, jint recv_buffer_num, jint ctx_num, jint read_batch_size, jboolean is_server, jstring prov_name) {
+  ExternalRdmService *service = new ExternalRdmService(buffer_num, recv_buffer_num, ctx_num, read_batch_size, is_server);
   const char* pname = nullptr;
   if(prov_name != NULL){
   	pname = (*env).GetStringUTFChars(prov_name, 0);
@@ -139,15 +140,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
   return *(jlong*)&con;
 }
 
-JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *env, jobject obj, jlong nativeHandle) {
-  ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
-  Chunk *ck = NULL;
-  int buffer_id = 0;
-  int block_buffer_size = 0;
-  int ret = service->wait_event(&ck, &buffer_id, &block_buffer_size);
-  if (ret <= 0)
-    return ret;
-
+int process_event(Chunk *ck, int buffer_id, int buffer_size, int event_type){
   buffer_id = ck->buffer_id;
   RdmConnection *con = (RdmConnection*)ck->con;
   if(ck->ctx_id < 0){
@@ -155,16 +148,22 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *e
   }
   jobject javaConn = con->get_java_conn();
   jmethodID handleCallback = con->get_java_callback_methodID();
-  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, ret, buffer_id, block_buffer_size);
+  jint rst = (*env).CallNonvirtualIntMethod(javaConn, parentConnClass, handleCallback, event_type, buffer_id, buffer_size);
   if((*env).ExceptionOccurred()){
 	  (*env).ExceptionDescribe();
-  	  return -1;
+	  return -1;
   }
-  if (ret == RECV_EVENT && rst) {
+  if (event_type == RECV_EVENT && rst) {
 	if (con->activate_chunk(ck)) {
 	  perror("failed to return receive chunk/buffer");
-    }
+	}
   }
+  return 0;
+}
+
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *env, jobject obj, jint cq_index, jlong nativeHandle) {
+  ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
+  int ret = service->wait_event(cq_index, &process_event);
   return ret;
 }
 

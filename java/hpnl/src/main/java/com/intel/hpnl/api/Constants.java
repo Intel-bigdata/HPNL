@@ -18,4 +18,6 @@ public class Constants {
 
   public static final String CFG_CONTEXT_NUM = "hpnl.context.num";
   public static final String CFG_CONTEXT_NUM_SERVER = "hpnl.context.num.server";
+
+  public static final String CFG_READ_BATCH_SIZE = "hpnl.read.batch.size";
 }

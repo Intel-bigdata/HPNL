@@ -9,9 +9,7 @@ import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
-import com.intel.hpnl.core.HpnlMsgBuffer;
 import com.intel.hpnl.core.HpnlRdmBuffer;
-import com.intel.hpnl.core.MsgHpnlService;
 import com.intel.hpnl.core.RdmHpnlService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,8 +79,8 @@ public class HpnlFactory {
   public static int getHpnlBufferMetadataSize() {
     EndpointType endpointType = config.getEndpointType();
     switch(endpointType) {
-      case MSG:
-        return HpnlMsgBuffer.METADATA_SIZE;
+//      case MSG:
+//        return HpnlMsgBuffer.METADATA_SIZE;
       case RDM:
         return HpnlRdmBuffer.METADATA_SIZE;
       default:
@@ -93,8 +91,8 @@ public class HpnlFactory {
   public static HpnlService getService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize, boolean server) {
     EndpointType endpointType = config.getEndpointType();
     switch(endpointType) {
-      case MSG:
-        return new MsgHpnlService(numThreads, numBuffers, numRecvBuffers, bufferSize, server);
+//      case MSG:
+//        return new MsgHpnlService(numThreads, numBuffers, numRecvBuffers, bufferSize, server);
       case RDM:
         return new RdmHpnlService(numThreads, numBuffers, numRecvBuffers, bufferSize, server);
       default:

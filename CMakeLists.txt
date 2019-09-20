@@ -21,10 +21,7 @@ set(SERVICE ${PROJECT_SOURCE_DIR}/src/service)
 set(EXTERNAL_SERVICE ${PROJECT_SOURCE_DIR}/src/external_service)
 set(EXTERNAL_DEMULTIPLEXER ${PROJECT_SOURCE_DIR}/src/external_demultiplexer)
 
-set(DEMULTIPLEXER_FILE ${DEMULTIPLEXER}/Proactor.cc ${DEMULTIPLEXER}/EqDemultiplexer.cc ${DEMULTIPLEXER}/EqHandler.cc ${DEMULTIPLEXER}/CqDemultiplexer.cc ${DEMULTIPLEXER}/RdmCqDemultiplexer.cc)
-set(EXTERNAL_DEMULTIPLEXER_FILE ${EXTERNAL_DEMULTIPLEXER}/ExternalEqDemultiplexer.cc ${EXTERNAL_DEMULTIPLEXER}/ExternalCqDemultiplexer.cc ${EXTERNAL_DEMULTIPLEXER}/ExternalRdmCqDemultiplexer.cc)
-set(CORE_FILE ${CORE}/MsgConnection.cc ${CORE}/MsgStack.cc ${CORE}/RdmStack.cc ${CORE}/RdmConnection.cc)
-set(SERVICE_FILE ${SERVICE}/Service.cc ${SERVICE}/Server.cc ${SERVICE}/Client.cc)
-set(EXTERNAL_SERVICE_FILE ${EXTERNAL_SERVICE}/ExternalEqService.cc)
+set(EXTERNAL_DEMULTIPLEXER_FILE ${EXTERNAL_DEMULTIPLEXER}/ExternalRdmCqDemultiplexer.cc)
+set(CORE_FILE ${CORE}/RdmStack.cc ${CORE}/RdmConnection.cc)
 
 add_subdirectory(java)

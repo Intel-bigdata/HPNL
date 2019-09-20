@@ -24,6 +24,8 @@ public class HpnlConfig {
   private int ctxNum;
   private int srvCtxNum;
 
+  private int readBatchSize;
+
   public static final String DEFAULT_ENDPOINT_TYPE = "RDM";
   public static final String DEFAULT_APP_ID = "default";
   public static final String DEFAULT_PORT_BATCH_SIZE = "50";
@@ -32,6 +34,8 @@ public class HpnlConfig {
 
   public static final String DEFAULT_CONTEXT_NUM = "1024";
   public static final String DEFAULT_CONTEXT_NUM_SERVER = "2048";
+
+  public static final String DEFAULT_READ_BATCH_SIZE = "10";
 
   public static final String DEFAULT_BUFFER_NUM_TINY = "256";
   public static final String DEFAULT_BUFFER_NUM_SMALL = "10240"; //10m, for most RPC other than launch task
@@ -75,6 +79,9 @@ public class HpnlConfig {
       ctxNum = Integer.valueOf(tmp);
       tmp = getValue(properties, Constants.CFG_CONTEXT_NUM_SERVER, DEFAULT_CONTEXT_NUM_SERVER);
       srvCtxNum = Integer.valueOf(tmp);
+
+      tmp = getValue(properties, Constants.CFG_READ_BATCH_SIZE, DEFAULT_READ_BATCH_SIZE);
+      readBatchSize = Integer.valueOf(tmp);
     } catch (IOException e) {
       log.error("failed to read hpnl config from "+path, e);
     }
@@ -142,5 +149,9 @@ public class HpnlConfig {
 
   public int getBufferNumLarge() {
     return bufferNumLarge;
+  }
+
+  public int getReadBatchSize() {
+    return readBatchSize;
   }
 }

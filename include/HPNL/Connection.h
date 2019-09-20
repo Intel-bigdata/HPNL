@@ -6,12 +6,14 @@
 
 class Connection {
   public:
-    virtual int init() { return 0; }
+    virtual int init(int, int, int) { return 0; }
     virtual fi_addr_t recv(const char*, int) { return 0; }
     virtual char* get_peer_name() { return 0; }
     virtual int send(Chunk*) { return 0; }
     virtual int send(int, int) { return 0; }
+    virtual int sendRequest(int, int) {return 0; }
     virtual int sendBuf(char*, int, int, int) { return 0; }
+    virtual int sendBufWithRequest(char*, int, int, int) {return 0;}
     virtual int sendTo(int, int, uint64_t) { return 0; }
     virtual int sendBufTo(char*, int, int, int, uint64_t) { return 0; }
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) { return 0; }

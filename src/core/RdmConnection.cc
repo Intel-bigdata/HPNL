@@ -3,12 +3,20 @@
 #include <assert.h>
 #include <algorithm>
 
-RdmConnection::RdmConnection(const char* ip_, const char* port_, fi_info* info_,
-		fid_domain* domain_, fid_cq* cq_, BufMgr* rbuf_mgr_,
-		BufMgr* sbuf_mgr_, int buffer_num_, int recv_buffer_num_, int ctx_num_, bool is_server_,
-		const char* prov_name_) : ip(ip_), port(port_), info(info_), domain(domain_),
-		conCq(cq_), rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), buffer_num(buffer_num_),
-		recv_buffer_num(recv_buffer_num_), ctx_num(ctx_num_), is_server(is_server_), prov_name(prov_name_) {}
+RdmConnection::RdmConnection(fi_info* info_,
+		fid_av* av_, fi_addr_t src_provider_addr_, fid_cq* cq_,
+		fid_ep* tx_, fid_ep* rx_, BufMgr* rbuf_mgr_,
+		BufMgr* sbuf_mgr_, bool is_server_) : info(info_), av(av_),
+		src_provider_addr(src_provider_addr_), conCq(cq_),
+		tx(tx_), rx(rx_),
+		rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), is_server(is_server_) {
+	if(is_server){
+		recv_tag = TAG_CONNECTION_REQUEST;
+	}else{
+		recv_tag = TAG_CONNECTION_NORMAL;
+	}
+}
+
 RdmConnection::~RdmConnection() {
   for (auto ck: send_buffers) {
     sbuf_mgr->put(ck->buffer_id, ck);
@@ -18,88 +26,31 @@ RdmConnection::~RdmConnection() {
   }
   send_buffers_map.erase(send_buffers_map.begin(), send_buffers_map.end());
 
-  for (auto ctx: send_global_buffers_map){
-	delete ctx.second;
-  }
-  send_global_buffers_map.erase(send_global_buffers_map.begin(),
-		  send_global_buffers_map.end());
+  delete send_global_buffers_array;
 
-  if(av){
-  	  fi_close(&av->fid);
-  	  av = nullptr;
-    }
-  if(ep){
-	  fi_close(&ep->fid);
-	  ep = nullptr;
+  if(info){
+	fi_freeinfo(info);
+	info = nullptr;
   }
-  if (!is_server) {
-	if(info){
-		fi_freeinfo(info);
-    	info = nullptr;
-	}
+
+  if(dest_name){
+	free(dest_name);
   }
-  prov_name = nullptr;
 }
 
-int RdmConnection::init() {
-  if (!is_server) {
-    fi_info *hints = fi_allocinfo();
-  hints->ep_attr->type = FI_EP_RDM;
-  hints->caps = FI_MSG;
-  hints->mode = FI_CONTEXT;
-
-//  hints->tx_attr->msg_order = FI_ORDER_SAS;
-  hints->tx_attr->comp_order = FI_ORDER_NONE;
-  hints->tx_attr->op_flags = FI_COMPLETION;
-  hints->rx_attr->op_flags = FI_COMPLETION;
- // hints->rx_attr->msg_order = FI_ORDER_SAS;  
-  hints->domain_attr->av_type         = FI_AV_MAP;
-  hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
-  hints->domain_attr->threading = FI_THREAD_SAFE;
- 
-  if (prov_name != nullptr){
-    hints->fabric_attr->prov_name = strdup(prov_name);
-  }
-  assert(info == NULL);
-  if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE : 0, hints, &info))
-    perror("fi_getinfo");
-    fi_freeinfo(hints);
-  }
-  std::cout<<"inject size: "<<info->tx_attr->inject_size<<std::endl;
-  if (fi_endpoint(domain, info, &ep, NULL))
-    perror("fi_endpoint");
-  
-  fi_av_attr	av_attr;
-  memset(&av_attr, 0, sizeof(av_attr));
-  av_attr.type = FI_AV_MAP;
-  if (fi_av_open(domain, &av_attr, &av, NULL))
-    perror("fi_av_open");
-  if (fi_ep_bind(ep, &conCq->fid, FI_SEND | FI_RECV))
-    perror("fi_ep_bind cq");
-  if (fi_ep_bind(ep, (fid_t)av, 0))
-    perror("fi_ep_bind av");
-  if (fi_enable(ep))
-    perror("fi_enable");
-  fi_getname((fid_t)ep, local_name, &local_name_len);
-  if (!is_server) {
-    size_t tmp_len = 32;
-    fi_av_straddr(av, info->dest_addr, dest_name, &tmp_len);
-    assert(fi_av_insert(av, info->dest_addr, 1, &dest_provider_addr, 0, NULL) == 1);
-  }
-
-//  std::cout<<buffer_num<<":"<<recv_buffer_num<<std::endl;
-
+int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num) {
   int size = 0;
   while (size < recv_buffer_num ) {
-    Chunk *rck = rbuf_mgr->get();
-    rck->con = this;
-    rck->ctx_id = 0;
-    rck->ctx.internal[4] = rck;
-    if (fi_recv(ep, rck->buffer, rck->capacity, NULL, FI_ADDR_UNSPEC, &rck->ctx)) {
-      perror("fi_recv");
-    }
-    recv_buffers.push_back(rck);
-    size++;
+	Chunk *rck = rbuf_mgr->get();
+	rck->con = this;
+	rck->ctx_id = 0;
+	rck->ctx.internal[4] = rck;
+	if (fi_trecv(rx, rck->buffer, rck->capacity, NULL, src_provider_addr,
+			recv_tag, TAG_IGNORE, &rck->ctx)) {
+	  perror("fi_recv");
+	}
+	recv_buffers.push_back(rck);
+	size++;
   }
   size = 0;
   while(size < buffer_num){
@@ -117,10 +68,16 @@ int RdmConnection::init() {
 	ck->ctx_id = size;
 	ck->ctx.internal[5] = ck;
 	ck->ctx.internal[4] = NULL;
-	send_global_buffers_map.insert(std::pair<int, Chunk*>(size, ck));
+	send_global_buffers_array[size] = ck;
 	size++;
   }
   init_addr();
+  if (!is_server) {
+	size_t tmp_len = 32;
+	dest_name = (char *)malloc(64);
+	fi_av_straddr(av, info->dest_addr, dest_name, &tmp_len);
+	assert(fi_av_insert(av, info->dest_addr, 1, &dest_provider_addr, 0, NULL) == 1);
+  }
   return 0;
 }
 
@@ -135,7 +92,8 @@ void RdmConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_a
 }
 
 int RdmConnection::send(Chunk *ck) {
-  if (fi_send(ep, ck->buffer, ck->size, NULL, ck->peer_addr, &ck->ctx) < 0) {
+  if (fi_tsend(tx, ck->buffer, ck->size, NULL, ck->peer_addr, TAG_CONNECTION_NORMAL,
+		  &ck->ctx) < 0) {
     perror("fi_send");
   }
   return 0;
@@ -143,10 +101,20 @@ int RdmConnection::send(Chunk *ck) {
 
 int RdmConnection::send(int buffer_size, int buffer_id) {
   Chunk *ck = send_buffers_map[buffer_id];
-
-  ck->peer_addr = dest_provider_addr;
   ck->ctx.internal[4] = ck;
-  if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
+  if (fi_tsend(tx, ck->buffer, buffer_size, NULL, dest_provider_addr,
+		  TAG_CONNECTION_NORMAL, &ck->ctx)) {
+    perror("fi_send");
+    return -1;
+  }
+  return 0;
+}
+
+int RdmConnection::sendRequest(int buffer_size, int buffer_id) {
+  Chunk *ck = send_buffers_map[buffer_id];
+  ck->ctx.internal[4] = ck;
+  if (fi_tsend(tx, ck->buffer, buffer_size, NULL, dest_provider_addr,
+		  TAG_CONNECTION_REQUEST, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -163,12 +131,34 @@ int RdmConnection::sendBuf(char* buffer, int buffer_id, int ctx_id, int buffer_s
 	ck->ctx.internal[4] = NULL;
 	ck->ctx.internal[5] = ck;
   } else {
-	ck = send_global_buffers_map[ctx_id];
+	ck = send_global_buffers_array[ctx_id];
 	ck->buffer_id = buffer_id;
-	ck->buffer = buffer;
   }
 
-  if (fi_send(ep, buffer, buffer_size, NULL, dest_provider_addr, &ck->ctx)) {
+  if (fi_tsend(tx, buffer, buffer_size, NULL, dest_provider_addr,
+		  TAG_CONNECTION_NORMAL, &ck->ctx)) {
+    perror("fi_send");
+    return -1;
+  }
+  return 0;
+}
+
+int RdmConnection::sendBufWithRequest(char* buffer, int buffer_id, int ctx_id, int buffer_size) {
+  Chunk *ck;
+  if (ctx_id < 0) {
+	ck = new Chunk();
+	ck->con = this;
+	ck->buffer_id = buffer_id;
+	ck->ctx_id = -1; //not for cache
+	ck->ctx.internal[4] = NULL;
+	ck->ctx.internal[5] = ck;
+  } else {
+	ck = send_global_buffers_array[ctx_id];
+	ck->buffer_id = buffer_id;
+  }
+
+  if (fi_tsend(tx, buffer, buffer_size, NULL, dest_provider_addr,
+		  TAG_CONNECTION_REQUEST, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -177,9 +167,9 @@ int RdmConnection::sendBuf(char* buffer, int buffer_id, int ctx_id, int buffer_s
 
 int RdmConnection::sendTo(int buffer_size, int buffer_id, uint64_t peer_address) {
   Chunk *ck = send_buffers_map[buffer_id];
-  ck->peer_addr = (fi_addr_t)peer_address;
   ck->ctx.internal[4] = ck;
-  if (fi_send(ep, ck->buffer, buffer_size, NULL, ck->peer_addr, &ck->ctx)) {
+  if (fi_tsend(tx, ck->buffer, buffer_size, NULL, peer_address,
+		  TAG_CONNECTION_NORMAL, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -196,12 +186,12 @@ int RdmConnection::sendBufTo(char* buffer, int buffer_id, int ctx_id, int buffer
 	ck->ctx.internal[4] = NULL;
 	ck->ctx.internal[5] = ck;
   } else {
-	ck = send_global_buffers_map[ctx_id];
+	ck = send_global_buffers_array[ctx_id];
 	ck->buffer_id = buffer_id;
-	ck->buffer = buffer;
   }
 
-  if (fi_send(ep, buffer, buffer_size, NULL, (fi_addr_t)peer_address, &ck->ctx)) {
+  if (fi_tsend(tx, buffer, buffer_size, NULL, peer_address,
+		  TAG_CONNECTION_NORMAL, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -244,7 +234,7 @@ fid_cq* RdmConnection::get_cq() {
 int RdmConnection::activate_chunk(Chunk *ck) {
   ck->con = this;
   ck->ctx.internal[4] = ck;
-  if (fi_recv(ep, ck->buffer, ck->capacity, NULL, FI_ADDR_UNSPEC, &ck->ctx)) {
+  if (fi_trecv(rx, ck->buffer, ck->capacity, NULL, src_provider_addr, recv_tag, TAG_IGNORE, &ck->ctx)) {
     perror("fi_recv");
     return -1;
   }

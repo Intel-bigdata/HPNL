@@ -36,6 +36,8 @@ public interface Connection {
 
   int sendBuffer(HpnlBuffer buffer, int bufferSize) ;
 
+  int sendConnectRequest(HpnlBuffer buffer, int bufferSize) ;
+
   int sendBufferToId(ByteBuffer buffer, int bufferSize, long peerConnectionId);
 
   int sendBuffer(ByteBuffer buffer, int bufferSize);

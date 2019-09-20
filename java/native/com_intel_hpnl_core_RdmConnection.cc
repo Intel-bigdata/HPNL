@@ -66,6 +66,12 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_send(JNIEnv *env, 
   return res;
 }
 
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendRequest(JNIEnv *env, jobject obj, jint blockBufferSize, jint bufferId, jlong nativeHandle) {
+  RdmConnection *con = *(RdmConnection**)&nativeHandle;
+  int res = con->sendRequest(blockBufferSize, bufferId);
+  return res;
+}
+
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_sendTo(JNIEnv *env, jobject obj, jint blockBufferSize, jint bufferId, jlong peerAddress, jlong nativeHandle) {
   RdmConnection *con = *(RdmConnection**)&nativeHandle;
   int res = con->sendTo(blockBufferSize, bufferId, (uint64_t)peerAddress);
