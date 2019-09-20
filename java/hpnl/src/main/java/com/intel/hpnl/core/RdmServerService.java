@@ -4,14 +4,21 @@ import com.intel.hpnl.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.awt.*;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RdmServerService extends RdmService {
+  private int cqIndex = 0;
+  private Map<Long, Connection> connectionMap = new HashMap<>();
+
   private static final Logger log = LoggerFactory.getLogger(RdmServerService.class);
 
   public RdmServerService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize) {
     super(workNum, bufferNum, numRecvBuffers, bufferSize,  true);
+    if(workNum < 2){
+        throw new IllegalArgumentException("work number should be at least 2 for server");
+    }
   }
 
   @Override
@@ -28,7 +35,9 @@ public class RdmServerService extends RdmService {
     return 1;
   }
 
-  private static class RdmServerReceiveHandler implements Handler {
+
+
+  private class RdmServerReceiveHandler implements Handler {
     private Handler connectedCallback;
     private Handler recvCallback;
 
@@ -48,16 +57,23 @@ public class RdmServerService extends RdmService {
   @Override
   public int handle(Connection connection, HpnlBuffer hpnlBuffer) {
       FrameType frameType = FrameType.toFrameType(hpnlBuffer.getFrameType());
-      if(frameType != FrameType.REQ) {
-          return recvCallback.handle(connection, hpnlBuffer);
-      }
-      long peerConnectId = hpnlBuffer.getPeerConnectionId();
-      getPeerInfo(connection, peerConnectId, hpnlBuffer);
+      if(frameType == FrameType.REQ) {
+          long peerConnectId = hpnlBuffer.getPeerConnectionId();
+          if(connectionMap.containsKey(peerConnectId)){
+              throw new IllegalStateException("child connection has been created already," +
+                      " peer connection id is "+peerConnectId);
+          }
+          getPeerInfo(connection, peerConnectId, hpnlBuffer);
 //      connection.setConnectedCallback(connectedCallback);
-      //ack client request
-      ackConnected(connection, peerConnectId);
-      connectedCallback.handle(connection, hpnlBuffer);
-      return Handler.RESULT_DEFAULT;
+          //ack client request
+          ackConnected(connection, peerConnectId);
+          Connection childConnection = RdmServerService.this.createChildConnection(
+                  connection.getProviderAddress(peerConnectId), connection.getPeerAddress(peerConnectId));
+          connectionMap.put(peerConnectId, childConnection);
+          connectedCallback.handle(childConnection, hpnlBuffer);
+          return Handler.RESULT_DEFAULT;
+      }
+      throw new IllegalStateException("frame type should be FrameType.REQ, not "+frameType);
   }
 
   private void ackConnected(Connection connection, long peerConnectId){
@@ -101,5 +117,19 @@ public class RdmServerService extends RdmService {
       peerName.put(peerBytes);
       connection.putProviderAddress(peerConnectId, connection.resolvePeerName(peerName));
     }
+  }
+
+  private Connection createChildConnection(long srcProviderAddress, Object[] peerAddress) {
+    cqIndex = (++cqIndex)%workerNum;
+    if(cqIndex == 0){//0 for listening
+        ++cqIndex;
+    }
+    long nativeConnHandler = this.get_con(localIp, String.valueOf(localPort), srcProviderAddress,
+            cqIndex, this.getNativeHandle());
+    RdmConnection childConn = (RdmConnection) this.getConnection(nativeConnHandler);
+    int port = this.getFreePort();
+    childConn.setAddrInfo((String)peerAddress[0], (Integer)peerAddress[1], localIp, port);
+    childConn.setConnectionId(localIp, port);
+    return childConn;
   }
 }

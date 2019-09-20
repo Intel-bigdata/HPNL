@@ -36,7 +36,8 @@ public class RdmService extends AbstractService {
     this(workNum, bufferNum, numRecvBuffers, bufferSize, false);
   }
 
-  protected RdmService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize, boolean server) {
+  protected RdmService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize,
+                       boolean server) {
     super(workNum, bufferNum, numRecvBuffers, bufferSize, server);
   }
 
@@ -47,7 +48,8 @@ public class RdmService extends AbstractService {
   protected RdmService init(int ctxNum) {
     this.ctxNum = ctxNum;
 
-    this.init(this.bufferNum, recvBufferNum, ctxNum, HpnlConfig.getInstance().getReadBatchSize(), this.server,
+    this.init(this.bufferNum, recvBufferNum, ctxNum, workerNum,
+            HpnlConfig.getInstance().getReadBatchSize(), this.server,
             HpnlConfig.getInstance().getLibfabricProviderName());
     this.initBufferPool(this.bufferNum, recvBufferNum, this.bufferSize);
 //    taskThread = new Thread(task);
@@ -61,7 +63,8 @@ public class RdmService extends AbstractService {
 
   @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
-    RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(ip, port, this.nativeHandle));
+    RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(ip, port,
+            -1L, cqIndex, this.nativeHandle));
     conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
 
     sendRequest(conn, connectedCallback, recvCallback);
@@ -188,12 +191,12 @@ public class RdmService extends AbstractService {
     return new HpnlRdmBuffer(bufferId, byteBuffer, type);
   }
 
-  private native int init(int bufferNum, int recvBufferNum, int ctxNum, int readBatchSize,
+  private native int init(int bufferNum, int recvBufferNum, int ctxNum, int endpointNum, int readBatchSize,
                           boolean server, String providerName);
 
   protected native long listen(String host, String port, long nativeHandle);
 
-  private native long get_con(String host, String port, long nativeHandle);
+  protected native long get_con(String host, String port, long srcProviderAddr, int cqIndex, long nativeHandle);
 
   private native int wait_event(long nativeHandle);
 

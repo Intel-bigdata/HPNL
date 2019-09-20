@@ -1,5 +1,5 @@
 set(NATIVE ${PROJECT_SOURCE_DIR}/java/native)
-set(NATIVE_FILE ${NATIVE}/com_intel_hpnl_core_Utils.cc ${NATIVE}/com_intel_hpnl_core_RdmConnection.cc)
+set(NATIVE_FILE ${NATIVE}/com_intel_hpnl_core_Utils.cc ${NATIVE}/com_intel_hpnl_core_RdmConnection.cc ${NATIVE}/com_intel_hpnl_core_RdmService.cc)
 
 set(JNI_INCLUDE "$ENV{JAVA_HOME}/include" "$ENV{JAVA_HOME}/include/linux")
 include_directories(${JNI_INCLUDE})

@@ -7,10 +7,12 @@
 
 #include <iostream>
 
-ExternalRdmService::ExternalRdmService(int buffer_num, int recv_buffer_num, int ctx_num, int read_batch_size, bool is_server) {
+ExternalRdmService::ExternalRdmService(int buffer_num, int recv_buffer_num, int ctx_num, int endpoint_num,
+		int read_batch_size, bool is_server) {
   this->buffer_num = buffer_num;
   this->recv_buffer_num = recv_buffer_num;
   this->ctx_num = ctx_num;
+  this->endpoint_num = endpoint_num;
   this->read_batch_size = read_batch_size;
   this->is_server = is_server;
   this->recvBufMgr = new ExternalEqServiceBufMgr();
@@ -24,7 +26,8 @@ ExternalRdmService::~ExternalRdmService() {
 }
 
 int ExternalRdmService::init(const char* prov_name) {
-  this->stack = new RdmStack(this->buffer_num, this->recv_buffer_num, this->ctx_num, this->is_server, prov_name);
+  this->stack = new RdmStack(this->buffer_num, this->recv_buffer_num, this->ctx_num, this->endpoint_num,
+		  this->is_server, prov_name);
   this->stack->init();
   cqs = stack->get_cqs();
   return 0;
@@ -41,7 +44,7 @@ RdmConnection* ExternalRdmService::get_con(const char* ip, const char* port, uin
   return (RdmConnection*)con;
 }
 
-int ExternalRdmService::wait_event(int cq_index, int(*process)(Chunk *, int, int, int)) {
+int ExternalRdmService::wait_event(JNIEnv *env, int cq_index, int(*process)(JNIEnv *, Chunk *, int, int, int)) {
   fi_cq_tagged_entry entries[read_batch_size];
   int ret = fi_cq_read(cqs[cq_index], &entries, read_batch_size);
   if(ret > 0){
@@ -51,7 +54,7 @@ int ExternalRdmService::wait_event(int cq_index, int(*process)(Chunk *, int, int
 		  fi_context2 *ctx = (fi_context2*)entry->op_context;
 		  Chunk *ck =(Chunk*)ctx->internal[4];
 		  int buffer_size = entry->len;
-		  if(process(ck, ck->buffer_id, buffer_size, RECV_EVENT) < 0){
+		  if(process(env, ck, ck->buffer_id, buffer_size, RECV_EVENT) < 0){
 			  return -1;
 		  }
 		  continue;
@@ -67,7 +70,7 @@ int ExternalRdmService::wait_event(int cq_index, int(*process)(Chunk *, int, int
 			  ck = (Chunk*)ctx->internal[5];
 			  buffer_size = ck->ctx_id;
 		  }
-		  if(process(ck, ck->buffer_id, buffer_size, SEND_EVENT) < 0){
+		  if(process(env, ck, ck->buffer_id, buffer_size, SEND_EVENT) < 0){
 			  return -1;
 		  }
 		  continue;

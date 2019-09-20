@@ -49,8 +49,10 @@ static void _set_self(JNIEnv *env, jobject thisObj, ExternalRdmService *self)
 }
 
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jobject obj,
-		jint buffer_num, jint recv_buffer_num, jint ctx_num, jint read_batch_size, jboolean is_server, jstring prov_name) {
-  ExternalRdmService *service = new ExternalRdmService(buffer_num, recv_buffer_num, ctx_num, read_batch_size, is_server);
+		jint buffer_num, jint recv_buffer_num, jint ctx_num, jint endpoint_num,
+		jint read_batch_size, jboolean is_server, jstring prov_name) {
+  ExternalRdmService *service = new ExternalRdmService(buffer_num, recv_buffer_num, ctx_num,
+		  endpoint_num, read_batch_size, is_server);
   const char* pname = nullptr;
   if(prov_name != NULL){
   	pname = (*env).GetStringUTFChars(prov_name, 0);
@@ -102,15 +104,16 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, 
   return *(jlong*)&con;
 }
 
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env, jobject obj, jstring ip_, jstring port_, jlong nativeHandle) {
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env, jobject obj, jstring ip_, jstring port_,
+		jlong src_provider_addr, jint cq_index, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
   const char *ip = (*env).GetStringUTFChars(ip_, 0);
   const char *port = (*env).GetStringUTFChars(port_, 0);
-  RdmConnection *con = (RdmConnection*)service->get_con(ip, port);
+  RdmConnection *con = (RdmConnection*)service->get_con(ip, port, src_provider_addr, cq_index);
   if (!con) {
 //    (*env).CallVoidMethod(obj, reallocBufferPool);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, reallocBufferPool);
-    con = (RdmConnection*)service->get_con(ip, port);
+    con = (RdmConnection*)service->get_con(ip, port, src_provider_addr, cq_index);
     if (!con) {
       return -1; 
     }
@@ -140,7 +143,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
   return *(jlong*)&con;
 }
 
-int process_event(Chunk *ck, int buffer_id, int buffer_size, int event_type){
+int process_event(JNIEnv *env, Chunk *ck, int buffer_id, int buffer_size, int event_type){
   buffer_id = ck->buffer_id;
   RdmConnection *con = (RdmConnection*)ck->con;
   if(ck->ctx_id < 0){
@@ -163,7 +166,7 @@ int process_event(Chunk *ck, int buffer_id, int buffer_size, int event_type){
 
 JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_wait_1event(JNIEnv *env, jobject obj, jint cq_index, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
-  int ret = service->wait_event(cq_index, &process_event);
+  int ret = service->wait_event(env, cq_index, &process_event);
   return ret;
 }
 

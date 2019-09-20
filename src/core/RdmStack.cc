@@ -8,9 +8,6 @@
 RdmStack::RdmStack(int buffer_num_, int recv_buffer_num_,int ctx_num_, int endpoint_num_, bool is_server_, const char* prov_name_) :
 buffer_num(buffer_num_), recv_buffer_num(recv_buffer_num_), ctx_num(ctx_num_), endpoint_num(endpoint_num_),
 is_server(is_server_), prov_name(prov_name_) {
-	if(is_server){
-		endpoint_num++; // the first endpoint is for connection setup
-	}
 	is_setup = false;
 	server_con = nullptr;
 }
@@ -201,6 +198,7 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, uint64_t src_
   long id = id_generator.fetch_add(1);
   if(is_server){
 	  assert(src_provider_addr >= 0);
+	  assert(cq_index > 0);
   }else{
 	  assert(cq_index == 0);
   }

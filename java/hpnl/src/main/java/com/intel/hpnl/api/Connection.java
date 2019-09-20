@@ -1,7 +1,6 @@
 package com.intel.hpnl.api;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.BlockingQueue;
 
 public interface Connection {
   long getConnectionId();
