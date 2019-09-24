@@ -8,11 +8,9 @@ public interface HpnlService {
 
   int connect(String hostname, int port, int cqIndex, Handler connectedCallback, Handler recvCallback);
 
-  void startCq(int cqIndex);
-
   void stop();
 
-  EventTask getEqTask();
+  EventTask getCqTask(int cqIndex);
 
   List<EventTask> getCqTasks();
 

@@ -144,6 +144,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
 }
 
 int process_event(JNIEnv *env, Chunk *ck, int buffer_id, int buffer_size, int event_type){
+	std::cout<<"event type: "<<event_type<<std::endl;
   buffer_id = ck->buffer_id;
   RdmConnection *con = (RdmConnection*)ck->con;
   if(ck->ctx_id < 0){

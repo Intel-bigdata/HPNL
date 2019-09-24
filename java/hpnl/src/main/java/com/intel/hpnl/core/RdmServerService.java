@@ -35,8 +35,6 @@ public class RdmServerService extends RdmService {
     return 1;
   }
 
-
-
   private class RdmServerReceiveHandler implements Handler {
     private Handler connectedCallback;
     private Handler recvCallback;

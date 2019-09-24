@@ -3,12 +3,15 @@ package com.intel.hpnl.core;
 import com.intel.hpnl.api.*;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class RdmService extends AbstractService {
-  private EventTask task;
+  private List<EventTask> tasks;
   private long nativeHandle;
   protected String localIp;
   protected int localPort;
@@ -39,6 +42,11 @@ public class RdmService extends AbstractService {
   protected RdmService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize,
                        boolean server) {
     super(workNum, bufferNum, numRecvBuffers, bufferSize, server);
+    tasks = new ArrayList<>();
+    for(int i=0; i<workNum; i++){
+      tasks.add(new RdmTask(i));
+    }
+    tasks = Collections.unmodifiableList(tasks);
   }
 
   public RdmService init() {
@@ -57,10 +65,6 @@ public class RdmService extends AbstractService {
     return this;
   }
 
-  public void start(){
-    task = new RdmTask();
-  }
-
   @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
     RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(ip, port,
@@ -68,6 +72,14 @@ public class RdmService extends AbstractService {
     conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
 
     sendRequest(conn, connectedCallback, recvCallback);
+    //test send
+    HpnlBuffer buffer = conn.takeSendBuffer();
+    ByteBuffer rawBuffer = buffer.getRawBuffer();
+    rawBuffer.position(buffer.getMetadataSize());
+    int limit = rawBuffer.position();
+    buffer.insertMetadata(FrameType.REQ.id(), -1L, limit);
+    rawBuffer.flip();
+    conn.sendBuffer(buffer, buffer.remaining());
     return 1;
   }
 
@@ -127,8 +139,16 @@ public class RdmService extends AbstractService {
   }
 
   @Override
-  public EventTask getEventTask() {
-    return this.task;
+  public EventTask getEventTask(int cqIndex) {
+    if(cqIndex >= workerNum){
+      throw new IllegalArgumentException(String.format(
+              "cq index %d cannot exceed number of worker threads %d", cqIndex, workerNum));
+    }
+    return tasks.get(cqIndex);
+  }
+
+  public List<EventTask> getCqTasks(){
+    return tasks;
   }
 
   @Override
@@ -198,7 +218,7 @@ public class RdmService extends AbstractService {
 
   protected native long get_con(String host, String port, long srcProviderAddr, int cqIndex, long nativeHandle);
 
-  private native int wait_event(long nativeHandle);
+  private native int wait_event(int cqIndex, long nativeHandle);
 
   public native void set_recv_buffer(ByteBuffer buffer, long size, int id, long nativeHandle);
 
@@ -217,13 +237,14 @@ public class RdmService extends AbstractService {
   }
 
   protected class RdmTask extends EventTask {
-    protected RdmTask() {
-      super();
+    private int cqIndex;
+    protected RdmTask(int cqIndex) {
+      this.cqIndex = cqIndex;
     }
 
     @Override
     public int waitEvent() {
-      int ret = RdmService.this.wait_event(RdmService.this.nativeHandle) ;
+      int ret = RdmService.this.wait_event(cqIndex, RdmService.this.nativeHandle) ;
       if(ret == -1) {
         RdmService.log.warn("wait or process event error, ignoring");
       }

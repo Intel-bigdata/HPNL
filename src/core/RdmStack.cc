@@ -72,18 +72,19 @@ int RdmStack::init() {
   hints->tx_attr->op_flags = FI_COMPLETION;
   hints->rx_attr->op_flags = FI_COMPLETION;
   //hints->rx_attr->msg_order = FI_ORDER_SAS;
-  hints->domain_attr->av_type         = FI_AV_MAP;
+  hints->domain_attr->av_type         = FI_AV_UNSPEC;
   hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
-  hints->domain_attr->threading = FI_THREAD_SAFE;
+  hints->domain_attr->threading = FI_THREAD_UNSPEC;
 
   if (prov_name != nullptr){
     hints->fabric_attr->prov_name = strdup(prov_name);
   }
-  std::cout<<"provider: "<<info->fabric_attr->prov_name<<std::endl;
 
   if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, is_server ? FI_SOURCE : 0, hints, &info)){
     perror("fi_getinfo");
   }
+  std::cout<<"provider: "<<info->fabric_attr->prov_name<<std::endl;
+
   fi_freeinfo(hints);
   if (fi_fabric(info->fabric_attr, &fabric, NULL)){
     perror("fi_fabric");
@@ -108,13 +109,13 @@ int RdmStack::init() {
 	  if (fi_cq_open(domain, &cq_attr, &cqs[size], NULL)) {
 		perror("fi_cq_open");
 	  }
+	  std::cout<<"cq id: "<<size<<", fid: "<<&cqs[size]->fid<<std::endl;
 	  size++;
   }
 
   //AV
   fi_av_attr	av_attr;
   memset(&av_attr, 0, sizeof(av_attr));
-  av_attr.type = FI_AV_MAP;
   if (fi_av_open(domain, &av_attr, &av, NULL)){
 	  perror("fi_av_open");
   }
@@ -141,15 +142,16 @@ void RdmStack::setup_endpoint(const char* ip, const char* port){
   tx = new fid_ep*[endpoint_num];
   int i;
   for(i=0; i<endpoint_num; i++){
-	  fi_tx_context(ep, 0, NULL, &tx[i], NULL);
+	  fi_tx_context(ep, i, NULL, &tx[i], NULL);
 	  fi_ep_bind(tx[i], &(cqs[i]->fid), FI_SEND);
 	  fi_enable(tx[i]);
   }
   rx = new fid_ep*[endpoint_num];
   for(i=0; i<endpoint_num; i++){
-	  fi_rx_context(ep, 0, NULL, &rx[i], NULL);
+	  fi_rx_context(ep, i, NULL, &rx[i], NULL);
 	  fi_ep_bind(rx[i], &(cqs[i]->fid), FI_RECV);
 	  fi_enable(rx[i]);
+	  std::cout<<"rx id: "<<i<<", cq fid: "<<&cqs[i]->fid<<", rx: "<<&rx[i]->fid<<std::endl;
   }
 
   fi_scalable_ep_bind(ep, (fid_t)av, 0);

@@ -85,7 +85,7 @@ public abstract class AbstractService {
 
   public abstract void removeConnection(long connectionId, long connHandle, boolean proactive);
 
-  public abstract EventTask getEventTask();
+  public abstract EventTask getEventTask(int cqIndex);
 
   public abstract void stop();
 

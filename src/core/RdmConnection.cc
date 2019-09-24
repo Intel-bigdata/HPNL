@@ -2,6 +2,7 @@
 #include <iostream>
 #include <assert.h>
 #include <algorithm>
+#include <bitset>
 
 RdmConnection::RdmConnection(fi_info* info_,
 		fid_av* av_, fi_addr_t src_provider_addr_, fid_cq* cq_,
@@ -26,20 +27,22 @@ RdmConnection::~RdmConnection() {
   }
   send_buffers_map.erase(send_buffers_map.begin(), send_buffers_map.end());
 
-  delete send_global_buffers_array;
+  if(send_global_buffers_array){
+	  for(int i=0; i<ctx_num; i++){
+		  delete send_global_buffers_array[i];
+	  }
+	  delete send_global_buffers_array;
+  }
 
   if(info){
 	fi_freeinfo(info);
 	info = nullptr;
   }
-
-  if(dest_name){
-	free(dest_name);
-  }
 }
 
 int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num) {
   int size = 0;
+  std::cout<<"rx: "<<&rx->fid<<std::endl;
   while (size < recv_buffer_num ) {
 	Chunk *rck = rbuf_mgr->get();
 	rck->con = this;
@@ -62,6 +65,8 @@ int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num) {
 	  size++;
   }
   size = 0;
+  send_global_buffers_array = (Chunk**)malloc(ctx_num*sizeof(Chunk*));
+  this->ctx_num = ctx_num;
   while(size < ctx_num){
 	Chunk *ck = new Chunk();
 	ck->con = this;
@@ -73,9 +78,6 @@ int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num) {
   }
   init_addr();
   if (!is_server) {
-	size_t tmp_len = 32;
-	dest_name = (char *)malloc(64);
-	fi_av_straddr(av, info->dest_addr, dest_name, &tmp_len);
 	assert(fi_av_insert(av, info->dest_addr, 1, &dest_provider_addr, 0, NULL) == 1);
   }
   return 0;

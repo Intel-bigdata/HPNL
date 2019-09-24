@@ -21,14 +21,13 @@ public class ClientTest {
   private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   public ClientTest(int numThreads, int numBuffer, int bufferSize, int msgSize, String hostname) {
-    service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, bufferSize, false);
+    service = HpnlFactory.getService(numThreads, numBuffer, numBuffer, bufferSize, false);
     this.hostname = hostname;
     this.msgSize = msgSize;
   }
 
   public void start()throws Exception{
-    service.startCq(0);
-    EventTask task = service.getCqTasks().get(0);
+    EventTask task = service.getCqTask(0);
     Thread th = new Thread(()->{
       System.out.println("starting");
       while(!Thread.currentThread().isInterrupted()) {

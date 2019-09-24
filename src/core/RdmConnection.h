@@ -98,7 +98,6 @@ class RdmConnection : public Connection {
     const char* ip;
     const char* port;
     char *local_name;
-    char *dest_name;
     size_t local_name_len = 64;
     fi_addr_t dest_provider_addr;
 
@@ -109,6 +108,7 @@ class RdmConnection : public Connection {
     std::vector<Chunk*> recv_buffers;
     std::vector<Chunk*> send_buffers;
     std::unordered_map<int, Chunk*> send_buffers_map;
+    int ctx_num;
 
     Chunk **send_global_buffers_array;
 

@@ -19,17 +19,18 @@ public class ServerTest {
   private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   public ServerTest(int numThreads, int numBuffer, int bufferSize, String hostname) {
-    service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, bufferSize, true);
+    service = HpnlFactory.getService(numThreads, numBuffer, numBuffer, bufferSize, true);
     this.hostname = hostname;
   }
 
   public void start()throws Exception{
-    service.startCq(0);
-    EventTask task = service.getCqTasks().get(0);
+    EventTask task = service.getCqTask(0);
+    EventTask task2 = service.getCqTask(1);
     Thread th = new Thread(()->{
       System.out.println("starting");
       while(!Thread.currentThread().isInterrupted()) {
         task.run();
+//        task2.run();
       }
       System.out.println("ending");
     });

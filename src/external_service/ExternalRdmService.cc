@@ -49,6 +49,7 @@ int ExternalRdmService::wait_event(JNIEnv *env, int cq_index, int(*process)(JNIE
   int ret = fi_cq_read(cqs[cq_index], &entries, read_batch_size);
   if(ret > 0){
 	for(int j=0; j<ret; j++){
+		std::cout<<"received: "<<std::endl;
 		fi_cq_tagged_entry* entry = &entries[j];
 		if (entry->flags & FI_RECV) {
 		  fi_context2 *ctx = (fi_context2*)entry->op_context;

@@ -2,7 +2,6 @@ package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -10,8 +9,6 @@ public class RdmHpnlService implements HpnlService {
   private RdmService service;
   private boolean server;
   private AtomicLong nextConnectionId = new AtomicLong(1L);
-
-  private List<EventTask> tasks = new ArrayList();
 
   public RdmHpnlService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize, boolean server) {
     if(bufferSize < HpnlBufferAllocator.BUFFER_LARGE){
@@ -37,12 +34,6 @@ public class RdmHpnlService implements HpnlService {
   }
 
   @Override
-  public void startCq(int cqIndex) {
-    this.service.start();
-    tasks.add(this.service.getEventTask());
-  }
-
-  @Override
   public void stop() {
     this.service.stop();
   }
@@ -53,8 +44,8 @@ public class RdmHpnlService implements HpnlService {
   }
 
   @Override
-  public EventTask getEqTask() {
-    return null;
+  public EventTask getCqTask(int cqIndex) {
+    return service.getEventTask(cqIndex);
   }
 
   public RdmService getRdmService(){
@@ -63,7 +54,7 @@ public class RdmHpnlService implements HpnlService {
 
   @Override
   public List<EventTask> getCqTasks() {
-    return tasks;
+    return service.getCqTasks();
   }
 
   @Override

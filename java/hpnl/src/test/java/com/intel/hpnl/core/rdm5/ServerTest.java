@@ -19,8 +19,7 @@ public class ServerTest {
   }
 
   public void start()throws Exception{
-    service.startCq(0);
-    EventTask task = service.getCqTasks().get(0);
+    EventTask task = service.getCqTask(0);
     Thread th = new Thread(()->{
       System.out.println("starting");
       while(!Thread.currentThread().isInterrupted()) {
