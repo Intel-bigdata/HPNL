@@ -83,6 +83,10 @@ class RdmConnection : public Connection {
 	void set_java_callback_methodID(jmethodID methodID){
 		java_callback_methodID = methodID;
 	}
+
+	void set_accepted_connection(bool ac){
+		accepted_connection = ac;
+	}
   private:
     fid_fabric *fabric;
     fi_info *info;
@@ -100,8 +104,6 @@ class RdmConnection : public Connection {
     char *local_name;
     size_t local_name_len = 64;
     fi_addr_t dest_provider_addr;
-
-    fi_addr_t src_provider_addr;
 //    std::map<std::string, fi_addr_t> addr_map;
     BufMgr *rbuf_mgr;
     BufMgr *sbuf_mgr;
@@ -113,6 +115,7 @@ class RdmConnection : public Connection {
     Chunk **send_global_buffers_array;
 
     bool is_server;
+    bool accepted_connection;
 
     Callback* recv_callback;
     Callback* send_callback;

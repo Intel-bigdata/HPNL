@@ -64,9 +64,9 @@ public class RdmServerService extends RdmService {
           getPeerInfo(connection, peerConnectId, hpnlBuffer);
 //      connection.setConnectedCallback(connectedCallback);
           //ack client request
-          ackConnected(connection, peerConnectId);
           Connection childConnection = RdmServerService.this.createChildConnection(
-                  connection.getProviderAddress(peerConnectId), connection.getPeerAddress(peerConnectId));
+                  connection.getProviderAddress(peerConnectId), connection.getPeerAddress(peerConnectId), recvCallback);
+          ackConnected(connection, peerConnectId);
           connectionMap.put(peerConnectId, childConnection);
           connectedCallback.handle(childConnection, hpnlBuffer);
           return Handler.RESULT_DEFAULT;
@@ -117,17 +117,22 @@ public class RdmServerService extends RdmService {
     }
   }
 
-  private Connection createChildConnection(long srcProviderAddress, Object[] peerAddress) {
+  private Connection createChildConnection(long remoteProviderAddress, Object[] peerAddress,
+                                           Handler recvCallback) {
+    if(log.isDebugEnabled()){
+        log.debug("create child connection for remote address, "+remoteProviderAddress);
+    }
     cqIndex = (++cqIndex)%workerNum;
     if(cqIndex == 0){//0 for listening
         ++cqIndex;
     }
-    long nativeConnHandler = this.get_con(localIp, String.valueOf(localPort), srcProviderAddress,
+    long nativeConnHandler = this.get_con(localIp, String.valueOf(localPort), remoteProviderAddress,
             cqIndex, this.getNativeHandle());
     RdmConnection childConn = (RdmConnection) this.getConnection(nativeConnHandler);
     int port = this.getFreePort();
     childConn.setAddrInfo((String)peerAddress[0], (Integer)peerAddress[1], localIp, port);
     childConn.setConnectionId(localIp, port);
+    childConn.setRecvCallback(recvCallback);
     return childConn;
   }
 }

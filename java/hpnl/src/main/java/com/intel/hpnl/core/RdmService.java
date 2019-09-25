@@ -72,14 +72,6 @@ public class RdmService extends AbstractService {
     conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
 
     sendRequest(conn, connectedCallback, recvCallback);
-    //test send
-    HpnlBuffer buffer = conn.takeSendBuffer();
-    ByteBuffer rawBuffer = buffer.getRawBuffer();
-    rawBuffer.position(buffer.getMetadataSize());
-    int limit = rawBuffer.position();
-    buffer.insertMetadata(FrameType.REQ.id(), -1L, limit);
-    rawBuffer.flip();
-    conn.sendBuffer(buffer, buffer.remaining());
     return 1;
   }
 
@@ -216,7 +208,7 @@ public class RdmService extends AbstractService {
 
   protected native long listen(String host, String port, long nativeHandle);
 
-  protected native long get_con(String host, String port, long srcProviderAddr, int cqIndex, long nativeHandle);
+  protected native long get_con(String host, String port, long destProviderAddr, int cqIndex, long nativeHandle);
 
   private native int wait_event(int cqIndex, long nativeHandle);
 

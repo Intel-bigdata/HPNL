@@ -186,7 +186,7 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
   return server_con;
 }
 
-RdmConnection* RdmStack::get_con(const char* ip, const char* port, uint64_t src_provider_addr,
+RdmConnection* RdmStack::get_con(const char* ip, const char* port, uint64_t dest_provider_addr,
 		int cq_index, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
   std::lock_guard<std::mutex> lk(mtx);
   if(!is_setup){
@@ -198,16 +198,19 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, uint64_t src_
   }
 
   long id = id_generator.fetch_add(1);
+  bool ac = false;
   if(is_server){
-	  assert(src_provider_addr >= 0);
+	  assert(dest_provider_addr >= 0);
 	  assert(cq_index > 0);
+	  ac = true;
   }else{
 	  assert(cq_index == 0);
   }
   RdmConnection *con = new RdmConnection(connect_info, av,
-		  is_server ? src_provider_addr:FI_ADDR_UNSPEC,
+		  is_server ? dest_provider_addr:FI_ADDR_UNSPEC,
 				  cqs[cq_index], tx[cq_index], rx[cq_index], rbuf_mgr, sbuf_mgr, false);
   con->set_id(id);
+  con->set_accepted_connection(ac);
   con->set_local_name(local_name, local_name_len);
   con->init(buffer_num, recv_buffer_num, ctx_num);
   conMap.insert(std::pair<long, RdmConnection*>(id, con));

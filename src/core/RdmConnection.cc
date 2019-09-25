@@ -5,10 +5,10 @@
 #include <bitset>
 
 RdmConnection::RdmConnection(fi_info* info_,
-		fid_av* av_, fi_addr_t src_provider_addr_, fid_cq* cq_,
+		fid_av* av_, fi_addr_t dest_provider_addr_, fid_cq* cq_,
 		fid_ep* tx_, fid_ep* rx_, BufMgr* rbuf_mgr_,
 		BufMgr* sbuf_mgr_, bool is_server_) : info(info_), av(av_),
-		src_provider_addr(src_provider_addr_), conCq(cq_),
+		dest_provider_addr(dest_provider_addr_), conCq(cq_),
 		tx(tx_), rx(rx_),
 		rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), is_server(is_server_) {
 	if(is_server){
@@ -16,6 +16,7 @@ RdmConnection::RdmConnection(fi_info* info_,
 	}else{
 		recv_tag = TAG_CONNECTION_NORMAL;
 	}
+	accepted_connection = false;
 }
 
 RdmConnection::~RdmConnection() {
@@ -43,12 +44,13 @@ RdmConnection::~RdmConnection() {
 int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num) {
   int size = 0;
   std::cout<<"rx: "<<&rx->fid<<std::endl;
+  std::cout<<"dest add: "<<dest_provider_addr<<std::endl;
   while (size < recv_buffer_num ) {
 	Chunk *rck = rbuf_mgr->get();
 	rck->con = this;
 	rck->ctx_id = 0;
 	rck->ctx.internal[4] = rck;
-	if (fi_trecv(rx, rck->buffer, rck->capacity, NULL, src_provider_addr,
+	if (fi_trecv(rx, rck->buffer, rck->capacity, NULL, dest_provider_addr,
 			recv_tag, TAG_IGNORE, &rck->ctx)) {
 	  perror("fi_recv");
 	}
@@ -77,7 +79,7 @@ int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num) {
 	size++;
   }
   init_addr();
-  if (!is_server) {
+  if ((!is_server) && (!accepted_connection)) {
 	assert(fi_av_insert(av, info->dest_addr, 1, &dest_provider_addr, 0, NULL) == 1);
   }
   return 0;
@@ -213,9 +215,6 @@ int RdmConnection::get_local_name_length() {
 }
 
 uint64_t RdmConnection::resolve_peer_name(char* peer_name){
-  char tmp[32];
-  size_t tmp_len = 64;
-  fi_av_straddr(av, peer_name, tmp, &tmp_len);
   fi_addr_t addr;
   assert(fi_av_insert(av, peer_name, 1, &addr, 0, NULL) == 1);
   return (uint64_t)addr;
@@ -236,7 +235,7 @@ fid_cq* RdmConnection::get_cq() {
 int RdmConnection::activate_chunk(Chunk *ck) {
   ck->con = this;
   ck->ctx.internal[4] = ck;
-  if (fi_trecv(rx, ck->buffer, ck->capacity, NULL, src_provider_addr, recv_tag, TAG_IGNORE, &ck->ctx)) {
+  if (fi_trecv(rx, ck->buffer, ck->capacity, NULL, dest_provider_addr, recv_tag, TAG_IGNORE, &ck->ctx)) {
     perror("fi_recv");
     return -1;
   }

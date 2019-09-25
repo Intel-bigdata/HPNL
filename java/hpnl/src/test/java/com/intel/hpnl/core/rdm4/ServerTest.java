@@ -40,6 +40,21 @@ public class ServerTest {
     });
 
     th.start();
+
+    Thread th2 = new Thread(()->{
+      System.out.println("starting child connection");
+      while(!Thread.currentThread().isInterrupted()) {
+//        task.run();
+        task2.run();
+      }
+      System.out.println("ending child connection");
+    });
+
+    th2.setUncaughtExceptionHandler((Thread t, Throwable e) -> {
+      e.printStackTrace();
+    });
+
+    th2.start();
     service.bind(hostname, 12345, 0, new Handler() {
       @Override
       public int handle(Connection connection, int bufferId, int bufferSize) {
