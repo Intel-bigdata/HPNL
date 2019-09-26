@@ -104,8 +104,13 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmConnection_resolve_1peer_1na
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_releaseRecvBuffer(JNIEnv *env, jobject thisObj, jint rdmaBufferId, jlong conPtr){
-	Connection *con = *(Connection**)&conPtr;
+	RdmConnection *con = *(RdmConnection**)&conPtr;
 	con->activate_chunk(rdmaBufferId);
+}
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_adjustSendTarget(JNIEnv *env, jobject thisObj, jint sendCtxId, jlong conPtr){
+	RdmConnection *con = *(RdmConnection**)&conPtr;
+	con->adjust_send_target(sendCtxId);
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_deleteGlobalRef

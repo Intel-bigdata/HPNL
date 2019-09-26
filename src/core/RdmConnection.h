@@ -17,16 +17,12 @@
 
 #include <jni.h>
 
-#define TAG_IGNORE (1l << 56)
-#define TAG_CONNECTION_REQUEST 0l
-#define TAG_CONNECTION_NORMAL 1l
-
 class RdmConnection : public Connection {
   public:
     RdmConnection(fi_info*, fid_av*, uint64_t, fid_cq*,
     		fid_ep*, fid_ep*, BufMgr*, BufMgr*, bool);
     ~RdmConnection();
-    virtual int init(int, int, int) override;
+    virtual int init(int, int, int, int, int) override;
 
     void init_addr();
     void get_addr(char**, size_t*, char**, size_t*);
@@ -57,6 +53,7 @@ class RdmConnection : public Connection {
     virtual char* decode_buf(void *buf) override;
 
     virtual uint64_t resolve_peer_name(char*);
+    virtual void adjust_send_target(int);
 
     void set_id(long id_){
     	connect_id = id_;
@@ -87,6 +84,10 @@ class RdmConnection : public Connection {
 	void set_accepted_connection(bool ac){
 		accepted_connection = ac;
 	}
+
+	bool is_accepted_connection(){
+		return accepted_connection;
+	}
   private:
     fid_fabric *fabric;
     fi_info *info;
@@ -104,6 +105,8 @@ class RdmConnection : public Connection {
     char *local_name;
     size_t local_name_len = 64;
     fi_addr_t dest_provider_addr;
+    fi_addr_t recv_ctx_addr;
+    fi_addr_t send_ctx_addr;
 //    std::map<std::string, fi_addr_t> addr_map;
     BufMgr *rbuf_mgr;
     BufMgr *sbuf_mgr;
@@ -132,6 +135,11 @@ class RdmConnection : public Connection {
 
     jobject java_conn;
     jmethodID java_callback_methodID;
+
+    uint64_t TAG_IGNORE = 1L << 10;
+    uint64_t TAG_CONNECTION_REQUEST = 0L;
+    uint64_t TAG_CONNECTION_NORMAL = 1L;
+    int RECV_CTX_BITS = 6;
 };
 
 #endif

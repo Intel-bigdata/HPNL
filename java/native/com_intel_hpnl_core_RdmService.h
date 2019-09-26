@@ -26,10 +26,10 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen
 /*
  * Class:     com_intel_hpnl_core_RdmService
  * Method:    get_con
- * Signature: (Ljava/lang/String;Ljava/lang/String;JIJ)J
+ * Signature: (Ljava/lang/String;Ljava/lang/String;JIIJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con
-  (JNIEnv *, jobject, jstring, jstring, jlong, jint, jlong);
+  (JNIEnv *, jobject, jstring, jstring, jlong, jint, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_RdmService

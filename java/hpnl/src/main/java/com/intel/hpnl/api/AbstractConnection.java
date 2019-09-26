@@ -190,7 +190,6 @@ public abstract class AbstractConnection implements Connection {
    */
   protected int handleCallback(int eventType, int bufferId, int bufferSize){
     int e;
-    System.out.println("event type: "+eventType);
     switch(eventType) {
       case EventType.RECV_EVENT:
         HpnlBuffer buffer = getRecvBuffer(bufferId);

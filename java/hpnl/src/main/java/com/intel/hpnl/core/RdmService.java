@@ -68,7 +68,7 @@ public class RdmService extends AbstractService {
   @Override
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
     RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(ip, port,
-            -1L, cqIndex, this.nativeHandle));
+            -1L, cqIndex, 0, this.nativeHandle));
     conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
 
     sendRequest(conn, connectedCallback, recvCallback);
@@ -112,6 +112,9 @@ public class RdmService extends AbstractService {
       con.setAddrInfo(con.getDestAddr(), con.getDestPort(), localIp, localPort);
     }else{
       con.setAddrInfo("<unset>", 0, localIp, localPort);
+      if(connectId == -2L){//accepted connection
+        localPort = getFreePort();
+      }
     }
     con.setConnectionId(localIp, localPort);
     this.conMap.put(connHandle, con);
@@ -208,7 +211,7 @@ public class RdmService extends AbstractService {
 
   protected native long listen(String host, String port, long nativeHandle);
 
-  protected native long get_con(String host, String port, long destProviderAddr, int cqIndex, long nativeHandle);
+  protected native long get_con(String host, String port, long destProviderAddr, int cqIndex, int sendCtxId, long nativeHandle);
 
   private native int wait_event(int cqIndex, long nativeHandle);
 
@@ -275,8 +278,10 @@ public class RdmService extends AbstractService {
         throw new RuntimeException(
                 String.format("expect message type %d, actual %d", FrameType.ACK.id(), buffer.getFrameType()));
       }
+      int sendCtxId = buffer.getInt();
+      connection.adjustSendTarget(sendCtxId);
       if(log.isDebugEnabled()){
-        byte[] bytes = new byte[buffer.remaining()];
+        byte[] bytes = new byte[buffer.getInt()];
         buffer.get(bytes);
         log.debug("got ack with content, "+new String(bytes));
       }

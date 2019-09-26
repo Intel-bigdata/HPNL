@@ -105,15 +105,15 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, 
 }
 
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env, jobject obj, jstring ip_, jstring port_,
-		jlong src_provider_addr, jint cq_index, jlong nativeHandle) {
+		jlong dest_provider_addr, jint cq_index, jint send_ctx_id, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
   const char *ip = (*env).GetStringUTFChars(ip_, 0);
   const char *port = (*env).GetStringUTFChars(port_, 0);
-  RdmConnection *con = (RdmConnection*)service->get_con(ip, port, src_provider_addr, cq_index);
+  RdmConnection *con = (RdmConnection*)service->get_con(ip, port, dest_provider_addr, cq_index, send_ctx_id);
   if (!con) {
 //    (*env).CallVoidMethod(obj, reallocBufferPool);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, reallocBufferPool);
-    con = (RdmConnection*)service->get_con(ip, port, src_provider_addr, cq_index);
+    con = (RdmConnection*)service->get_con(ip, port, dest_provider_addr, cq_index, send_ctx_id);
     if (!con) {
       return -1; 
     }
@@ -121,7 +121,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
 
   jlong jcon = *(jlong*)&con;
   jlong jEq = -1;
-  jlong id = -1;
+  jlong id = con->is_accepted_connection() ? -2 : -1;
   (*env).CallVoidMethod(obj, regCon, jEq, jcon, NULL, 0, NULL, 0, id);
   if((*env).ExceptionOccurred()){
 	  (*env).ExceptionDescribe();
@@ -130,12 +130,14 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
 
   std::vector<Chunk*> send_buffer = con->get_send_buffer();
   int chunks_size = send_buffer.size();
+  std::cout<<"send buffers: "<<chunks_size<<std::endl;
   for (int i = 0; i < chunks_size; i++) {
 //    (*env).CallVoidMethod(obj, pushSendBuffer, jcon, send_buffer[i]->buffer_id);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, pushSendBuffer, jcon, send_buffer[i]->buffer_id);
   }
   std::vector<Chunk*> recv_buffer = con->get_recv_buffer();
   chunks_size = recv_buffer.size();
+  std::cout<<"recv buffers: "<<chunks_size<<std::endl;
   for (int i = 0; i < chunks_size; i++) {
 //	  (*env).CallVoidMethod(obj, pushRecvBuffer, jcon, recv_buffer[i]->buffer_id);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, pushRecvBuffer, jcon, recv_buffer[i]->buffer_id);

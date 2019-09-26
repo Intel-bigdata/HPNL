@@ -19,7 +19,7 @@ class RdmStack : public Stack {
     ~RdmStack();
     virtual int init() override;
     virtual void* bind(const char*, const char*, BufMgr*, BufMgr*) override;
-    RdmConnection* get_con(const char*, const char*, uint64_t, int, BufMgr*, BufMgr*);
+    RdmConnection* get_con(const char*, const char*, uint64_t, int, int, BufMgr*, BufMgr*);
     void setup_endpoint(const char*, const char*);
     fid_fabric* get_fabric();
     fid_cq** get_cqs();
@@ -57,6 +57,11 @@ class RdmStack : public Stack {
     RdmConnection *server_con;
 
     const char* prov_name;
+
+    uint64_t TAG_IGNORE = 1L << 10;
+    uint64_t TAG_CONNECTION_REQUEST = 0L;
+    uint64_t TAG_CONNECTION_NORMAL = 1L;
+    int RECV_CTX_BITS = 6;
 };
 
 #endif

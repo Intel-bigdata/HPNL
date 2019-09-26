@@ -16,7 +16,7 @@ class ExternalRdmService {
     ~ExternalRdmService();
     int init(const char*);
     RdmConnection* listen(const char*, const char*);
-    RdmConnection* get_con(const char*, const char*, uint64_t, int);
+    RdmConnection* get_con(const char*, const char*, uint64_t, int, int);
     int wait_event(JNIEnv *, int, int(*process)(JNIEnv *, Chunk *, int, int, int));
     void reap(int64_t);
 

@@ -62,4 +62,6 @@ public interface Connection {
   Object[] getPeerAddress(long connectId);
 
   void shutdown();
+
+  void adjustSendTarget(int sendCtxId);
 }

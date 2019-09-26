@@ -15,7 +15,7 @@ public class RdmServerService extends RdmService {
   private static final Logger log = LoggerFactory.getLogger(RdmServerService.class);
 
   public RdmServerService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize) {
-    super(workNum, bufferNum, numRecvBuffers, bufferSize,  true);
+    super(workNum, bufferNum, numRecvBuffers, bufferSize, true);
     if(workNum < 2){
         throw new IllegalArgumentException("work number should be at least 2 for server");
     }
@@ -52,8 +52,8 @@ public class RdmServerService extends RdmService {
       return handle(connection, buffer);
     }
 
-  @Override
-  public int handle(Connection connection, HpnlBuffer hpnlBuffer) {
+    @Override
+    public int handle(Connection connection, HpnlBuffer hpnlBuffer) {
       FrameType frameType = FrameType.toFrameType(hpnlBuffer.getFrameType());
       if(frameType == FrameType.REQ) {
           long peerConnectId = hpnlBuffer.getPeerConnectionId();
@@ -64,40 +64,46 @@ public class RdmServerService extends RdmService {
           getPeerInfo(connection, peerConnectId, hpnlBuffer);
 //      connection.setConnectedCallback(connectedCallback);
           //ack client request
+          int cqIndex = RdmServerService.this.nextCqIndex();
           Connection childConnection = RdmServerService.this.createChildConnection(
-                  connection.getProviderAddress(peerConnectId), connection.getPeerAddress(peerConnectId), recvCallback);
-          ackConnected(connection, peerConnectId);
+                  connection.getProviderAddress(peerConnectId), connection.getPeerAddress(peerConnectId),
+                  cqIndex, recvCallback);
+          ackConnected(childConnection, peerConnectId, connection.getPeerAddress(peerConnectId), cqIndex);
           connectionMap.put(peerConnectId, childConnection);
           connectedCallback.handle(childConnection, hpnlBuffer);
           return Handler.RESULT_DEFAULT;
       }
       throw new IllegalStateException("frame type should be FrameType.REQ, not "+frameType);
-  }
+    }
 
-  private void ackConnected(Connection connection, long peerConnectId){
-      Object[] address = connection.getPeerAddress(peerConnectId);
+    private void ackConnected(Connection connection, long peerConnectId, Object[] address, int cqIndex){
       String addr = address[0] + ":" + address[1];
+      int dataSize = 60;
       HpnlBuffer buffer = connection.takeSendBuffer();
       if(buffer == null) {
-          buffer = HpnlBufferAllocator.getBufferFromDefault(40 + HpnlRdmBuffer.METADATA_SIZE);
+          buffer = HpnlBufferAllocator.getBufferFromDefault(dataSize + HpnlRdmBuffer.METADATA_SIZE);
           ByteBuffer rawBuffer = buffer.getRawBuffer();
           rawBuffer.position(buffer.getMetadataSize());
+          rawBuffer.putInt(cqIndex);
+          rawBuffer.putInt(addr.getBytes().length);
           rawBuffer.put(addr.getBytes());
           buffer.insertMetadata(FrameType.ACK.id(), -1, rawBuffer.position());
           rawBuffer.flip();
           connection.sendBufferToId(buffer, rawBuffer.remaining(), peerConnectId);
       }else {
-          ByteBuffer byteBuffer = ByteBuffer.allocate(40 + HpnlRdmBuffer.METADATA_SIZE);
+          ByteBuffer byteBuffer = ByteBuffer.allocate(dataSize + HpnlRdmBuffer.METADATA_SIZE);
+          byteBuffer.putInt(cqIndex);
+          byteBuffer.putInt(addr.getBytes().length);
           byteBuffer.put(addr.getBytes());
           byteBuffer.flip();
           buffer.putData(byteBuffer, FrameType.ACK.id(), -1L);
-          connection.sendBufferToId(buffer, buffer.remaining(), peerConnectId);
+          connection.sendBuffer(buffer, buffer.remaining());
       }
 
       if (log.isDebugEnabled()) {
           log.debug("acknowledging connection from " + addr);
       }
-  }
+    }
 
     private void getPeerInfo(Connection connection, long peerConnectId, HpnlBuffer hpnlBuffer){
       //read peer address
@@ -117,17 +123,23 @@ public class RdmServerService extends RdmService {
     }
   }
 
-  private Connection createChildConnection(long remoteProviderAddress, Object[] peerAddress,
-                                           Handler recvCallback) {
-    if(log.isDebugEnabled()){
-        log.debug("create child connection for remote address, "+remoteProviderAddress);
-    }
+
+  private int nextCqIndex() {
     cqIndex = (++cqIndex)%workerNum;
     if(cqIndex == 0){//0 for listening
         ++cqIndex;
     }
+    return cqIndex;
+  }
+
+  private Connection createChildConnection(long remoteProviderAddress, Object[] peerAddress, int cqIndex,
+                                           Handler recvCallback) {
+    if(log.isDebugEnabled()){
+        log.debug("create child connection for remote address, "+remoteProviderAddress);
+    }
+
     long nativeConnHandler = this.get_con(localIp, String.valueOf(localPort), remoteProviderAddress,
-            cqIndex, this.getNativeHandle());
+            cqIndex, 0, this.getNativeHandle());
     RdmConnection childConn = (RdmConnection) this.getConnection(nativeConnHandler);
     int port = this.getFreePort();
     childConn.setAddrInfo((String)peerAddress[0], (Integer)peerAddress[1], localIp, port);

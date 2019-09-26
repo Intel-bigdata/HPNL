@@ -78,6 +78,8 @@ public class RdmConnection extends AbstractConnection{
 
   private native void releaseRecvBuffer(int id, long nativeHandle);
 
+  private native void adjustSendTarget(int sendCtxId, long nativeHandle);
+
   private native void deleteGlobalRef(long nativeHandle);
 
   private native void free(long nativeHandle);
@@ -327,5 +329,10 @@ public class RdmConnection extends AbstractConnection{
     }
     String tmp = localIp.replaceAll("\\.", "") + port;
     connectId = Long.valueOf(tmp);
+  }
+
+  @Override
+  public void adjustSendTarget(int sendCtxId){
+    adjustSendTarget(sendCtxId, nativeHandle);
   }
 }

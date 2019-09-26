@@ -38,9 +38,9 @@ RdmConnection* ExternalRdmService::listen(const char* ip, const char* port) {
 }
 
 RdmConnection* ExternalRdmService::get_con(const char* ip, const char* port, uint64_t src_provider_addr,
-		int cq_index) {
+		int cq_index, int send_ctx_id) {
   RdmConnection *con = ((RdmStack*)stack)->get_con(ip, port, src_provider_addr,
-		  cq_index, recvBufMgr, sendBufMgr);
+		  cq_index, send_ctx_id, recvBufMgr, sendBufMgr);
   return (RdmConnection*)con;
 }
 
@@ -49,7 +49,6 @@ int ExternalRdmService::wait_event(JNIEnv *env, int cq_index, int(*process)(JNIE
   int ret = fi_cq_read(cqs[cq_index], &entries, read_batch_size);
   if(ret > 0){
 	for(int j=0; j<ret; j++){
-		std::cout<<"received: "<<std::endl;
 		fi_cq_tagged_entry* entry = &entries[j];
 		if (entry->flags & FI_RECV) {
 		  fi_context2 *ctx = (fi_context2*)entry->op_context;

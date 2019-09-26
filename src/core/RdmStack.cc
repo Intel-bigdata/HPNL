@@ -1,5 +1,6 @@
 #include "core/RdmStack.h"
 #include "core/RdmConnection.h"
+#include "core/Constant.h"
 #include <stdlib.h>
 
 #include <stdio.h>
@@ -71,6 +72,8 @@ int RdmStack::init() {
   hints->tx_attr->comp_order = FI_ORDER_NONE;
   hints->tx_attr->op_flags = FI_COMPLETION;
   hints->rx_attr->op_flags = FI_COMPLETION;
+  hints->ep_attr->tx_ctx_cnt = endpoint_num;
+  hints->ep_attr->rx_ctx_cnt = endpoint_num;
   //hints->rx_attr->msg_order = FI_ORDER_SAS;
   hints->domain_attr->av_type         = FI_AV_UNSPEC;
   hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
@@ -80,7 +83,7 @@ int RdmStack::init() {
     hints->fabric_attr->prov_name = strdup(prov_name);
   }
 
-  if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, is_server ? FI_SOURCE : 0, hints, &info)){
+  if (fi_getinfo(FI_VERSION(1, 8), NULL, NULL, is_server ? FI_SOURCE : 0, hints, &info)){
     perror("fi_getinfo");
   }
   std::cout<<"provider: "<<info->fabric_attr->prov_name<<std::endl;
@@ -109,13 +112,14 @@ int RdmStack::init() {
 	  if (fi_cq_open(domain, &cq_attr, &cqs[size], NULL)) {
 		perror("fi_cq_open");
 	  }
-	  std::cout<<"cq id: "<<size<<", fid: "<<&cqs[size]->fid<<std::endl;
 	  size++;
   }
 
   //AV
   fi_av_attr	av_attr;
   memset(&av_attr, 0, sizeof(av_attr));
+  av_attr.type = FI_AV_UNSPEC;
+  av_attr.rx_ctx_bits = RECV_CTX_BITS;
   if (fi_av_open(domain, &av_attr, &av, NULL)){
 	  perror("fi_av_open");
   }
@@ -125,18 +129,21 @@ int RdmStack::init() {
 
 void RdmStack::setup_endpoint(const char* ip, const char* port){
   fi_info* hints = fi_dupinfo(info);
-  if (fi_getinfo(FI_VERSION(1, 5), ip, port, is_server ? FI_SOURCE:0, hints,
+  if (fi_getinfo(FI_VERSION(1, 8), ip, port, is_server ? FI_SOURCE:0, hints,
 		  &connect_info)){
 	perror("fi_getinfo");
   }
   fi_freeinfo(hints);
 
+  std::cout<<"connect info: "<<connect_info->ep_attr->tx_ctx_cnt<<std::endl;
+  std::cout<<"connect info: "<<connect_info->ep_attr->rx_ctx_cnt<<std::endl;
   //endpoint
-  connect_info->ep_attr->tx_ctx_cnt = endpoint_num;
-  connect_info->ep_attr->rx_ctx_cnt = endpoint_num;
   if (fi_scalable_ep(domain, connect_info, &ep, NULL)) {
 	perror("fi_endpoint");
   }
+
+  fi_scalable_ep_bind(ep, &av->fid, 0);
+  fi_enable(ep);
 
   //contexts
   tx = new fid_ep*[endpoint_num];
@@ -151,15 +158,14 @@ void RdmStack::setup_endpoint(const char* ip, const char* port){
 	  fi_rx_context(ep, i, NULL, &rx[i], NULL);
 	  fi_ep_bind(rx[i], &(cqs[i]->fid), FI_RECV);
 	  fi_enable(rx[i]);
-	  std::cout<<"rx id: "<<i<<", cq fid: "<<&cqs[i]->fid<<", rx: "<<&rx[i]->fid<<std::endl;
   }
-
-  fi_scalable_ep_bind(ep, (fid_t)av, 0);
-  fi_enable(ep);
 
   local_name = (char *)malloc(64);
   local_name_len = 64;
   fi_getname(&ep->fid, local_name, &(local_name_len));
+  printf("local name len: %d\n", local_name_len);
+	for(i=0; i<local_name_len; i++)
+		printf("local name: %d\n", local_name[i]);
 }
 
 void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
@@ -181,13 +187,13 @@ void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr*
 		  FI_ADDR_UNSPEC, cqs[0], tx[0], rx[0], rbuf_mgr, sbuf_mgr, true);
   server_con->set_id(id);
   server_con->set_local_name(local_name, local_name_len);
-  server_con->init(buffer_num, recv_buffer_num, ctx_num);
+  server_con->init(buffer_num, recv_buffer_num, ctx_num, 0, 0);
   conMap.insert(std::pair<long, RdmConnection*>(id, server_con));
   return server_con;
 }
 
 RdmConnection* RdmStack::get_con(const char* ip, const char* port, uint64_t dest_provider_addr,
-		int cq_index, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
+		int cq_index, int send_ctx_id, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {
   std::lock_guard<std::mutex> lk(mtx);
   if(!is_setup){
 	  setup_endpoint(ip, port);
@@ -198,11 +204,9 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, uint64_t dest
   }
 
   long id = id_generator.fetch_add(1);
-  bool ac = false;
   if(is_server){
 	  assert(dest_provider_addr >= 0);
 	  assert(cq_index > 0);
-	  ac = true;
   }else{
 	  assert(cq_index == 0);
   }
@@ -210,9 +214,9 @@ RdmConnection* RdmStack::get_con(const char* ip, const char* port, uint64_t dest
 		  is_server ? dest_provider_addr:FI_ADDR_UNSPEC,
 				  cqs[cq_index], tx[cq_index], rx[cq_index], rbuf_mgr, sbuf_mgr, false);
   con->set_id(id);
-  con->set_accepted_connection(ac);
+  con->set_accepted_connection(is_server);
   con->set_local_name(local_name, local_name_len);
-  con->init(buffer_num, recv_buffer_num, ctx_num);
+  con->init(buffer_num, recv_buffer_num, ctx_num, send_ctx_id, 0);
   conMap.insert(std::pair<long, RdmConnection*>(id, con));
   return con;
 }
