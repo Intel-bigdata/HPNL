@@ -39,7 +39,6 @@ public abstract class AbstractConnection implements Connection {
     this.recvBufferMap = new ConcurrentHashMap();
     this.sendBufferList = new ConcurrentLinkedQueue<>();
     this.initialize(nativeCon);
-    this.cqIndex = this.getCqIndexFromNative(this.getNativeHandle());
     this.connected = true;
     if (connectId == 0L) {
       this.connectId = service.getNewConnectionId();
@@ -60,14 +59,16 @@ public abstract class AbstractConnection implements Connection {
     return this.cqIndex;
   }
 
+  public void setCqIndex(int cqIndex){
+    this.cqIndex = cqIndex;
+  }
+
   @Override
   public long getConnectionId() {
     return this.connectId;
   }
 
   protected abstract void initialize(long nativeHandle);
-
-  protected abstract int getCqIndexFromNative(long nativeHandle);
 
   protected abstract long getNativeHandle();
 

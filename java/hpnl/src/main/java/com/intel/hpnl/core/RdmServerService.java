@@ -30,7 +30,8 @@ public class RdmServerService extends RdmService {
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
     localIp = ip;
     localPort = Integer.valueOf(port);
-    Connection conn = this.getConnection(this.listen(ip, port, this.getNativeHandle()));
+    RdmConnection conn = (RdmConnection) this.getConnection(this.listen(ip, port, this.getNativeHandle()));
+    conn.setCqIndex(cqIndex);
     setConnection(conn);
     conn.setRecvCallback(new RdmServerReceiveHandler(connectedCallback, recvCallback));
     return 1;
@@ -143,7 +144,7 @@ public class RdmServerService extends RdmService {
     long nativeConnHandler = this.get_con(localIp, String.valueOf(localPort), remoteProviderAddress,
             cqIndex, 0, this.getNativeHandle());
     RdmConnection childConn = (RdmConnection) this.getConnection(nativeConnHandler);
-    int port = this.getFreePort();
+    childConn.setCqIndex(cqIndex);
     //local addr was set when registered connection
     childConn.setAddrInfo((String)peerAddress[0], (Integer)peerAddress[1], childConn.getSrcAddr(), childConn.getSrcPort());
     childConn.setRecvCallback(recvCallback);
