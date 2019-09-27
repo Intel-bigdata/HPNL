@@ -63,13 +63,12 @@ public class ClientTest {
         ByteBuffer rawBuffer = buffer.getRawBuffer();
         rawBuffer.position(buffer.getMetadataSize());
         rawBuffer.put(byteBufferTmp);
-        int limit = rawBuffer.position();
-        buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
+        buffer.insertMetadata(FrameType.NORMAL.id());
         rawBuffer.flip();
         connection.sendBuffer(buffer, buffer.remaining());
         return 0;
       }
-    }, new RecvCallback(false, 5, 4096, -1));
+    }, new RecvCallback(false, 5, msgSize, -1));
 
     System.out.println("waiting");
     th.join();

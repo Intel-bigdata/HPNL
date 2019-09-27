@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class RdmConnection extends AbstractConnection{
   private ByteBuffer localName;
@@ -24,12 +23,6 @@ public class RdmConnection extends AbstractConnection{
 
   private Map<Integer, HpnlBuffer> globalBufferMap = new HashMap<>();
 
-//  private Map<Long, Map<Integer, HpnlBuffer>> threadMap = new HashMap<>();
-//
-//  private ThreadLocal<Map<Integer, HpnlBuffer>> localBufferMap = ThreadLocal.withInitial(() -> new HashMap<>());
-
-  private Map<Long, Long> peerMap;
-  private Map<Long, Object[]> addressMap;
   private Queue<Integer> ctxIdQueue;
 
   private static final Logger log = LoggerFactory.getLogger(RdmConnection.class);
@@ -47,10 +40,6 @@ public class RdmConnection extends AbstractConnection{
     ctxIdQueue = new LinkedList<>();
     for(int i=0; i<ctxNum; i++){
       ctxIdQueue.offer(Integer.valueOf(i));
-    }
-    if(server){
-      peerMap = new ConcurrentHashMap<>();
-      addressMap = new ConcurrentHashMap<>();
     }
   }
 
@@ -103,25 +92,17 @@ public class RdmConnection extends AbstractConnection{
     this.deleteGlobalRef(this.nativeHandle);
     ctxIdQueue.clear();
     globalBufferMap.clear();
-//    threadMap.clear();
-//    localBufferMap.set(null);
-    if(server){
-      peerMap.clear();
-      addressMap.clear();
-    }
 //    this.free(this.nativeHandle);
   }
 
   @Override
   public void pushSendBuffer(HpnlBuffer buffer) {
-    buffer.setConnectionId(this.getConnectionId());
     ((HpnlRdmBuffer)buffer).setConnection(this);
     super.pushSendBuffer(buffer);
   }
 
   @Override
   public void pushRecvBuffer(HpnlBuffer buffer) {
-    buffer.setConnectionId(this.getConnectionId());
     ((HpnlRdmBuffer)buffer).setConnection(this);
     super.pushRecvBuffer(buffer);
   }
@@ -134,69 +115,17 @@ public class RdmConnection extends AbstractConnection{
   @Override
   protected void reclaimGlobalBuffer(int bufferId, int ctxId){
     HpnlBuffer hpnlBuffer = globalBufferMap.remove(bufferId);
-//    HpnlBuffer hpnlBuffer = null;
-//    for(Map.Entry<Long, Map<Integer, HpnlBuffer>> entry : threadMap.entrySet()){
-//      hpnlBuffer = entry.getValue().get(bufferId);
-//      if(hpnlBuffer != null){
-//        break;
-//      }
-//    }
     if (hpnlBuffer == null) {
       throw new IllegalStateException("failed to reclaim send buffer (not found) with id: " + bufferId);
     }
     hpnlBuffer.release();
     if(ctxId >= 0) {
-        reclaimCtxId(ctxId);
+      if(ctxId >= ctxNum){
+        throw new IllegalArgumentException("invalid context id, "+ctxId);
+      }
+      ctxIdQueue.offer(ctxId);
     }
   }
-
-  @Override
-  protected void reclaimCtxId(int ctxId) {
-    if(ctxId >= ctxNum){
-      throw new IllegalArgumentException("invalid context id, "+ctxId);
-    }
-    ctxIdQueue.offer(ctxId);
-  }
-
-  @Override
-  public int sendBufferToId(HpnlBuffer buffer, int bufferSize, long peerConnectionId) {
-    return this.sendBufferToAddress(buffer, bufferSize, peerMap.get(Long.valueOf(peerConnectionId)));
-  }
-
-  @Override
-  public int sendBufferToAddress(HpnlBuffer buffer, int bufferSize, long peerAddress) {
-    int bufferId = buffer.getBufferId();
-    if(bufferId > 0){
-      return this.sendTo(bufferSize, bufferId, peerAddress, this.nativeHandle);
-    }
-//    localBufferMap.get().put(bufferId, buffer);
-//    if(!threadMap.containsKey(Thread.currentThread().getId())){
-//      synchronized (threadMap) {
-//        threadMap.put(Thread.currentThread().getId(), localBufferMap.get());
-//      }
-//    }
-    globalBufferMap.put(bufferId, buffer);
-    Integer ctxId = ctxIdQueue.poll();
-//      Integer ctxId = null;
-    buffer.setConnectionId(getConnectionId());
-    return this.sendBufTo(buffer.getRawBuffer(), bufferId, ctxId==null?-1:ctxId.intValue(), bufferSize,
-            peerAddress, this.nativeHandle);
-  }
-
-//  @Override
-//  public int sendBufferTo(HpnlBuffer buffer, int bufferSize, ByteBuffer peerName) {
-//    int bufferId = buffer.getBufferId();
-//    if(bufferId > 0){
-//      return this.sendTo(bufferSize, bufferId, peerName, this.nativeHandle);
-//    }
-//
-//    globalBufferMap.put(Integer.valueOf(bufferId), buffer);
-//    Integer ctxId = ctxIdQueue.poll();
-////      Integer ctxId = null;
-//    buffer.setConnectionId(getConnectionId());
-//    return this.sendBufTo(buffer.getRawBuffer(), bufferId, -1, bufferSize,
-//            peerName, this.nativeHandle);
-//  }
 
   @Override
   public int sendBuffer(HpnlBuffer buffer, int bufferSize) {
@@ -206,17 +135,8 @@ public class RdmConnection extends AbstractConnection{
       return this.send(bufferSize, bufferId, this.nativeHandle);
     }
     // for non registered buffer
-//    localBufferMap.get().put(bufferId, buffer);
-//    if(!threadMap.containsKey(Thread.currentThread().getId())){
-//      synchronized (threadMap) {
-//        threadMap.put(Thread.currentThread().getId(), localBufferMap.get());
-//      }
-//    }
-
     globalBufferMap.put(bufferId, buffer);
     Integer ctxId = ctxIdQueue.poll();
-//      Integer ctxId = null;
-    buffer.setConnectionId(getConnectionId());
     return this.sendBuf(buffer.getRawBuffer(), buffer.getBufferId(), ctxId == null ? -1 : ctxId.intValue(),
               bufferSize, this.nativeHandle);
   }
@@ -229,36 +149,11 @@ public class RdmConnection extends AbstractConnection{
       return this.sendRequest(bufferSize, bufferId, this.nativeHandle);
     }
     // for non registered buffer
-//    localBufferMap.get().put(bufferId, buffer);
-//    if(!threadMap.containsKey(Thread.currentThread().getId())){
-//      synchronized (threadMap) {
-//        threadMap.put(Thread.currentThread().getId(), localBufferMap.get());
-//      }
-//    }
-
     globalBufferMap.put(bufferId, buffer);
     Integer ctxId = ctxIdQueue.poll();
-//      Integer ctxId = null;
-    buffer.setConnectionId(getConnectionId());
     return this.sendBufWithRequest(buffer.getRawBuffer(), buffer.getBufferId(), ctxId == null ? -1 : ctxId.intValue(),
             bufferSize, this.nativeHandle);
   }
-
-//  @Override
-//  public int sendBuffer(HpnlBuffer buffer, int bufferSize) {
-//    int bufferId = buffer.getBufferId();
-////    log.info("buffer id: {}, {}", bufferId, bufferSize);
-//    if(bufferId > 0 ){
-//      return this.send(bufferSize, bufferId, this.nativeHandle);
-//    }
-//    // for non registered buffer
-////    globalBufferMap.put(Integer.valueOf(bufferId), buffer);
-//    Integer ctxId = ctxIdQueue.poll();
-////      Integer ctxId = null;
-//    buffer.setConnectionId(getConnectionId());
-//    return this.sendBuf(buffer.getRawBuffer(), buffer.getBufferId(), -1,
-//            bufferSize, this.nativeHandle);
-//  }
 
   /**
    * send buffer without cache
@@ -273,12 +168,6 @@ public class RdmConnection extends AbstractConnection{
   }
 
   @Override
-  public int sendBufferToId(ByteBuffer buffer, int bufferSize, long peerConnectionId) {
-    return this.sendBufTo(buffer, -1, -1,
-            bufferSize, peerMap.get(Long.valueOf(peerConnectionId)), this.nativeHandle);
-  }
-
-  @Override
   public ByteBuffer getLocalName() {
     return this.localName;
   }
@@ -286,26 +175,6 @@ public class RdmConnection extends AbstractConnection{
   @Override
   public long resolvePeerName(ByteBuffer peerName) {
     return resolve_peer_name(peerName, this.nativeHandle);
-  }
-
-  @Override
-  public void putProviderAddress(long connectionId, long address) {
-    peerMap.put(Long.valueOf(connectionId), address);
-  }
-
-  @Override
-  public long getProviderAddress(long connectionId){
-    return peerMap.get(Long.valueOf(connectionId));
-  }
-
-  @Override
-  public void putPeerAddress(long connectId, Object[] address){
-    addressMap.put(Long.valueOf(connectId), address);
-  }
-
-  @Override
-  public Object[] getPeerAddress(long connectId){
-    return addressMap.get(connectId);
   }
 
   @Override

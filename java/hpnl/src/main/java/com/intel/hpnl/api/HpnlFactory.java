@@ -82,7 +82,7 @@ public class HpnlFactory {
 //      case MSG:
 //        return HpnlMsgBuffer.METADATA_SIZE;
       case RDM:
-        return HpnlRdmBuffer.METADATA_SIZE;
+        return HpnlRdmBuffer.BASE_METADATA_SIZE;
       default:
         throw new UnsupportedOperationException("unsupported: " + endpointType);
     }

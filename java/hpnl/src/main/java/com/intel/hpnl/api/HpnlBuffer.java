@@ -18,17 +18,9 @@ public interface HpnlBuffer {
 
   int writtenDataSize();
 
-  long getSeq();
+  void putData(ByteBuffer dataBuffer, byte frameType);
 
-  long getConnectionId();
-
-  void setConnectionId(long connectionId);
-
-  long getPeerConnectionId();
-
-  void putData(ByteBuffer dataBuffer, byte frameType, long seqId);
-
-  void insertMetadata(byte frameType, long seqId, int bufferLimit);
+  void insertMetadata(byte frameType);
 
   byte get();
 
@@ -66,19 +58,15 @@ public interface HpnlBuffer {
 
   void clear();
 
-  void clearState();
-
   void release();
-
-  void setTargetAddress(long targetAddress);
-
-  long getTargetAddress();
 
   BufferType getBufferType();
 
   int SEND_BUFFER_ID_START = 1;
 
   int RECV_BUFFER_ID_START = 1000000000;
+
+  void received();
 
   enum BufferType{
     SEND, RECV, GLOBAL

@@ -37,14 +37,12 @@ public class RecvCallback implements Handler {
       }
     }
 
-    System.out.println("received pingpong");
     HpnlBuffer buffer = con.takeSendBuffer();
     buffer.clear();
     ByteBuffer rawBuffer = buffer.getRawBuffer();
     rawBuffer.position(buffer.getMetadataSize());
     rawBuffer.put(hpnlBuffer.getRawBuffer());
-    int limit = rawBuffer.position();
-    buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
+    buffer.insertMetadata(FrameType.NORMAL.id());
     rawBuffer.flip();
     if(is_server){
 //      if(peerAddress < 0){

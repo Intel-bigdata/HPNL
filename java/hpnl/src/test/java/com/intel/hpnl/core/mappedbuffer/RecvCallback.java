@@ -23,8 +23,7 @@ public class RecvCallback implements Handler {
     ByteBuffer rawBuffer = buffer.getRawBuffer();
     rawBuffer.position(buffer.getMetadataSize());
     rawBuffer.put(recvByteBuffer);
-    int limit = rawBuffer.position();
-    buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
+    buffer.insertMetadata(FrameType.NORMAL.id());
     rawBuffer.flip();
 //    con.releaseRecvBuffer(bufferId);
     return Handler.RESULT_DEFAULT;

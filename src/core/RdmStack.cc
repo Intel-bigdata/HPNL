@@ -135,8 +135,6 @@ void RdmStack::setup_endpoint(const char* ip, const char* port){
   }
   fi_freeinfo(hints);
 
-  std::cout<<"connect info: "<<connect_info->ep_attr->tx_ctx_cnt<<std::endl;
-  std::cout<<"connect info: "<<connect_info->ep_attr->rx_ctx_cnt<<std::endl;
   //endpoint
   if (fi_scalable_ep(domain, connect_info, &ep, NULL)) {
 	perror("fi_endpoint");
@@ -163,9 +161,6 @@ void RdmStack::setup_endpoint(const char* ip, const char* port){
   local_name = (char *)malloc(64);
   local_name_len = 64;
   fi_getname(&ep->fid, local_name, &(local_name_len));
-  printf("local name len: %d\n", local_name_len);
-	for(i=0; i<local_name_len; i++)
-		printf("local name: %d\n", local_name[i]);
 }
 
 void* RdmStack::bind(const char* ip, const char* port, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {

@@ -83,6 +83,11 @@ public class RdmHpnlService implements HpnlService {
   }
 
   @Override
+  public Connection getConnection(){
+    return service.getConnection();
+  }
+
+  @Override
   public EndpointType getEndpointType() {
     return EndpointType.RDM;
   }

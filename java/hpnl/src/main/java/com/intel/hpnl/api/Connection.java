@@ -29,15 +29,9 @@ public interface Connection {
 
   void pushRecvBuffer(HpnlBuffer buffer);
 
-  int sendBufferToAddress(HpnlBuffer buffer, int bufferSize, long peerAddress);
-
-  int sendBufferToId(HpnlBuffer buffer, int bufferSize, long peerConnectId);
-
   int sendBuffer(HpnlBuffer buffer, int bufferSize) ;
 
   int sendConnectRequest(HpnlBuffer buffer, int bufferSize) ;
-
-  int sendBufferToId(ByteBuffer buffer, int bufferSize, long peerConnectionId);
 
   int sendBuffer(ByteBuffer buffer, int bufferSize);
 
@@ -52,14 +46,6 @@ public interface Connection {
   ByteBuffer getLocalName();
 
   long resolvePeerName(ByteBuffer peerName);
-
-  void putProviderAddress(long connectionId, long address);
-
-  long getProviderAddress(long connectionId);
-
-  void putPeerAddress(long connectId, Object[] address);
-
-  Object[] getPeerAddress(long connectId);
 
   void shutdown();
 

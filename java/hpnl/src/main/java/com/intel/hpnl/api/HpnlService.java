@@ -24,6 +24,8 @@ public interface HpnlService {
 
   void reclaimPort(int port);
 
+  Connection getConnection();
+
   HpnlService.EndpointType getEndpointType();
 
   HpnlBuffer getRecvBuffer(int bufferId);

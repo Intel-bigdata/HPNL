@@ -136,8 +136,6 @@ public abstract class AbstractConnection implements Connection {
     this.sendBufferList.offer(buffer);
   }
 
-  protected void reclaimCtxId(int ctxId) {}
-
   protected void reclaimGlobalBuffer(int bufferId, int ctxId){}
 
   @Override
@@ -193,7 +191,7 @@ public abstract class AbstractConnection implements Connection {
     switch(eventType) {
       case EventType.RECV_EVENT:
         HpnlBuffer buffer = getRecvBuffer(bufferId);
-        buffer.clearState();
+        buffer.received();
         buffer.parse(bufferSize);
         return this.safeExecuteCallback(this.recvCallback, buffer);
       case EventType.SEND_EVENT:

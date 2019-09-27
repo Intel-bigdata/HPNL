@@ -135,11 +135,6 @@ class RdmConnection : public Connection {
 
     jobject java_conn;
     jmethodID java_callback_methodID;
-
-    uint64_t TAG_IGNORE = 1L << 10;
-    uint64_t TAG_CONNECTION_REQUEST = 0L;
-    uint64_t TAG_CONNECTION_NORMAL = 1L;
-    int RECV_CTX_BITS = 6;
 };
 
 #endif

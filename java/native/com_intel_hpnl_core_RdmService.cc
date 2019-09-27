@@ -130,14 +130,12 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
 
   std::vector<Chunk*> send_buffer = con->get_send_buffer();
   int chunks_size = send_buffer.size();
-  std::cout<<"send buffers: "<<chunks_size<<std::endl;
   for (int i = 0; i < chunks_size; i++) {
 //    (*env).CallVoidMethod(obj, pushSendBuffer, jcon, send_buffer[i]->buffer_id);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, pushSendBuffer, jcon, send_buffer[i]->buffer_id);
   }
   std::vector<Chunk*> recv_buffer = con->get_recv_buffer();
   chunks_size = recv_buffer.size();
-  std::cout<<"recv buffers: "<<chunks_size<<std::endl;
   for (int i = 0; i < chunks_size; i++) {
 //	  (*env).CallVoidMethod(obj, pushRecvBuffer, jcon, recv_buffer[i]->buffer_id);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, pushRecvBuffer, jcon, recv_buffer[i]->buffer_id);
@@ -146,7 +144,6 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
 }
 
 int process_event(JNIEnv *env, Chunk *ck, int buffer_id, int buffer_size, int event_type){
-	std::cout<<"event type: "<<event_type<<std::endl;
   buffer_id = ck->buffer_id;
   RdmConnection *con = (RdmConnection*)ck->con;
   if(ck->ctx_id < 0){

@@ -41,14 +41,13 @@ public class RecvCallback implements Handler {
     buffer.clear();
     ByteBuffer rawBuffer = buffer.getRawBuffer();
     rawBuffer.position(4113);
-    int limit = rawBuffer.position();
-    buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
+    buffer.insertMetadata(FrameType.NORMAL.id());
     rawBuffer.flip();
     if(is_server){
 //      if(peerName == null){
 //        peerName = con.getPeerName(recvBuffer.getPeerConnectionId());
 //      }
-      con.sendBufferToId(buffer, buffer.remaining(), recvBuffer.getPeerConnectionId());
+      con.sendBuffer(buffer, buffer.remaining());
     }else {
       con.sendBuffer(buffer, buffer.remaining());
     }

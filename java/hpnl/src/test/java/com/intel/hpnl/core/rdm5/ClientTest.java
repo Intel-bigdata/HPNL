@@ -58,8 +58,7 @@ public class ClientTest {
         ByteBuffer rawBuffer = buffer.getRawBuffer();
         rawBuffer.position(4113);
 //        rawBuffer.put(byteBufferTmp);
-        int limit = rawBuffer.position();
-        buffer.insertMetadata(FrameType.NORMAL.id(), 0L, limit);
+        buffer.insertMetadata(FrameType.NORMAL.id());
         rawBuffer.flip();
         connection.sendBuffer(buffer, rawBuffer.remaining());
         return 0;

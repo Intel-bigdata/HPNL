@@ -72,6 +72,7 @@ public class RdmService extends AbstractService {
     conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
 
     sendRequest(conn, connectedCallback, recvCallback);
+    setConnection(conn);
     return 1;
   }
 
@@ -79,6 +80,7 @@ public class RdmService extends AbstractService {
     HpnlBuffer buffer = connection.takeSendBuffer();
     ByteBuffer rawBuffer = buffer.getRawBuffer();
     rawBuffer.position(buffer.getMetadataSize());
+    rawBuffer.putLong(connection.getConnectionId());
     String ipPort = new StringBuffer(connection.getSrcAddr()).append(":").append(connection.getSrcPort())
             .toString();
     byte[] bytes = ipPort.getBytes();
@@ -94,8 +96,7 @@ public class RdmService extends AbstractService {
       log.debug("connection ({}) with local name length ({})", connection.getConnectionId(), nameLen);
     }
 
-    int limit = rawBuffer.position();
-    buffer.insertMetadata(FrameType.REQ.id(), -1L, limit);
+    buffer.insertMetadata(FrameType.REQ.id());
     rawBuffer.flip();
     //wait ack
     connection.setRecvCallback(new ConnectionAckedHandler(connectedCallback, recvCallback));
@@ -111,9 +112,11 @@ public class RdmService extends AbstractService {
       localPort = getFreePort();
       con.setAddrInfo(con.getDestAddr(), con.getDestPort(), localIp, localPort);
     }else{
-      con.setAddrInfo("<unset>", 0, localIp, localPort);
       if(connectId == -2L){//accepted connection
-        localPort = getFreePort();
+        //dest port will be reset in later
+        con.setAddrInfo("<unset>", 0, localIp, getFreePort());
+      }else {
+        con.setAddrInfo("<unset>", 0, localIp, localPort);
       }
     }
     con.setConnectionId(localIp, localPort);
@@ -256,7 +259,7 @@ public class RdmService extends AbstractService {
     }
   }
 
-  protected static class ConnectionAckedHandler implements Handler{
+  protected class ConnectionAckedHandler implements Handler{
     private Handler connectedHandler;
     private Handler recvHandler;
 

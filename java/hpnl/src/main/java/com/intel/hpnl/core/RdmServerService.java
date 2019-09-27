@@ -30,8 +30,9 @@ public class RdmServerService extends RdmService {
   public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
     localIp = ip;
     localPort = Integer.valueOf(port);
-    Connection connection = this.getConnection(this.listen(ip, port, this.getNativeHandle()));
-    connection.setRecvCallback(new RdmServerReceiveHandler(connectedCallback, recvCallback));
+    Connection conn = this.getConnection(this.listen(ip, port, this.getNativeHandle()));
+    setConnection(conn);
+    conn.setRecvCallback(new RdmServerReceiveHandler(connectedCallback, recvCallback));
     return 1;
   }
 
@@ -56,19 +57,17 @@ public class RdmServerService extends RdmService {
     public int handle(Connection connection, HpnlBuffer hpnlBuffer) {
       FrameType frameType = FrameType.toFrameType(hpnlBuffer.getFrameType());
       if(frameType == FrameType.REQ) {
-          long peerConnectId = hpnlBuffer.getPeerConnectionId();
+          long peerConnectId = hpnlBuffer.getLong();
           if(connectionMap.containsKey(peerConnectId)){
               throw new IllegalStateException("child connection has been created already," +
                       " peer connection id is "+peerConnectId);
           }
-          getPeerInfo(connection, peerConnectId, hpnlBuffer);
-//      connection.setConnectedCallback(connectedCallback);
-          //ack client request
+          Object[] address = getPeerAddress(hpnlBuffer);
+          long provAddr = getPeerProviderAddr(hpnlBuffer);
           int cqIndex = RdmServerService.this.nextCqIndex();
-          Connection childConnection = RdmServerService.this.createChildConnection(
-                  connection.getProviderAddress(peerConnectId), connection.getPeerAddress(peerConnectId),
+          Connection childConnection = RdmServerService.this.createChildConnection(provAddr, address,
                   cqIndex, recvCallback);
-          ackConnected(childConnection, peerConnectId, connection.getPeerAddress(peerConnectId), cqIndex);
+          ackConnected(childConnection, address, cqIndex);
           connectionMap.put(peerConnectId, childConnection);
           connectedCallback.handle(childConnection, hpnlBuffer);
           return Handler.RESULT_DEFAULT;
@@ -76,27 +75,27 @@ public class RdmServerService extends RdmService {
       throw new IllegalStateException("frame type should be FrameType.REQ, not "+frameType);
     }
 
-    private void ackConnected(Connection connection, long peerConnectId, Object[] address, int cqIndex){
+    private void ackConnected(Connection connection, Object[] address, int cqIndex){
       String addr = address[0] + ":" + address[1];
       int dataSize = 60;
       HpnlBuffer buffer = connection.takeSendBuffer();
       if(buffer == null) {
-          buffer = HpnlBufferAllocator.getBufferFromDefault(dataSize + HpnlRdmBuffer.METADATA_SIZE);
+          buffer = HpnlBufferAllocator.getBufferFromDefault(dataSize + AbstractHpnlBuffer.BASE_METADATA_SIZE);
           ByteBuffer rawBuffer = buffer.getRawBuffer();
           rawBuffer.position(buffer.getMetadataSize());
           rawBuffer.putInt(cqIndex);
           rawBuffer.putInt(addr.getBytes().length);
           rawBuffer.put(addr.getBytes());
-          buffer.insertMetadata(FrameType.ACK.id(), -1, rawBuffer.position());
+          buffer.insertMetadata(FrameType.ACK.id());
           rawBuffer.flip();
-          connection.sendBufferToId(buffer, rawBuffer.remaining(), peerConnectId);
+          connection.sendBuffer(buffer, rawBuffer.remaining());
       }else {
-          ByteBuffer byteBuffer = ByteBuffer.allocate(dataSize + HpnlRdmBuffer.METADATA_SIZE);
+          ByteBuffer byteBuffer = ByteBuffer.allocate(dataSize + AbstractHpnlBuffer.BASE_METADATA_SIZE);
           byteBuffer.putInt(cqIndex);
           byteBuffer.putInt(addr.getBytes().length);
           byteBuffer.put(addr.getBytes());
           byteBuffer.flip();
-          buffer.putData(byteBuffer, FrameType.ACK.id(), -1L);
+          buffer.putData(byteBuffer, FrameType.ACK.id());
           connection.sendBuffer(buffer, buffer.remaining());
       }
 
@@ -105,21 +104,24 @@ public class RdmServerService extends RdmService {
       }
     }
 
-    private void getPeerInfo(Connection connection, long peerConnectId, HpnlBuffer hpnlBuffer){
-      //read peer address
-      int peerAddrLen = hpnlBuffer.getInt();
-      byte[] addrBytes = new byte[peerAddrLen];
-      hpnlBuffer.get(addrBytes, 0, peerAddrLen);
-      String ipPort[] = new String(addrBytes).split(":");
-      Object address[] = new Object[]{ipPort[0], Integer.valueOf(ipPort[1])};
-      connection.putPeerAddress(peerConnectId, address);
-      //read peer name
-      int peerNameLen = hpnlBuffer.getInt();
-      byte[] peerBytes = new byte[peerNameLen];
-      hpnlBuffer.get(peerBytes, 0, peerNameLen);
-      ByteBuffer peerName = ByteBuffer.allocateDirect(peerNameLen);
-      peerName.put(peerBytes);
-      connection.putProviderAddress(peerConnectId, connection.resolvePeerName(peerName));
+    private Object[] getPeerAddress(HpnlBuffer hpnlBuffer) {
+        //read peer address
+        int peerAddrLen = hpnlBuffer.getInt();
+        byte[] addrBytes = new byte[peerAddrLen];
+        hpnlBuffer.get(addrBytes, 0, peerAddrLen);
+        String ipPort[] = new String(addrBytes).split(":");
+        Object address[] = new Object[]{ipPort[0], Integer.valueOf(ipPort[1])};
+        return address;
+    }
+
+    private long getPeerProviderAddr(HpnlBuffer hpnlBuffer){
+        //read peer name
+        int peerNameLen = hpnlBuffer.getInt();
+        byte[] peerBytes = new byte[peerNameLen];
+        hpnlBuffer.get(peerBytes, 0, peerNameLen);
+        ByteBuffer peerName = ByteBuffer.allocateDirect(peerNameLen);
+        peerName.put(peerBytes);
+        return connection.resolvePeerName(peerName);
     }
   }
 
@@ -142,8 +144,8 @@ public class RdmServerService extends RdmService {
             cqIndex, 0, this.getNativeHandle());
     RdmConnection childConn = (RdmConnection) this.getConnection(nativeConnHandler);
     int port = this.getFreePort();
-    childConn.setAddrInfo((String)peerAddress[0], (Integer)peerAddress[1], localIp, port);
-    childConn.setConnectionId(localIp, port);
+    //local addr was set when registered connection
+    childConn.setAddrInfo((String)peerAddress[0], (Integer)peerAddress[1], childConn.getSrcAddr(), childConn.getSrcPort());
     childConn.setRecvCallback(recvCallback);
     return childConn;
   }

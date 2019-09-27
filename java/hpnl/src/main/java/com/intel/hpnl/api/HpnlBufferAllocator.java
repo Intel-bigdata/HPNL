@@ -26,7 +26,7 @@ public class HpnlBufferAllocator {
 
     public static final int NUM_UNIT = 128;
 
-    public static final int BUFFER_METADATA_SIZE = 8 + AbstractHpnlBuffer.BASE_METADATA_SIZE;
+    public static final int BUFFER_METADATA_SIZE = AbstractHpnlBuffer.BASE_METADATA_SIZE;
 
     private static final BufferCache.CacheHandler<HpnlBuffer> DEFAULT_CACHE_HANDLER =
             new BufferCacheHandler(new AtomicInteger(-1), MIN_DEFAULT_BUFFER_ID);
@@ -189,9 +189,6 @@ public class HpnlBufferAllocator {
 
     public static class HpnlGlobalBuffer extends AbstractHpnlBuffer{
         private BufferCache<HpnlBuffer> cache;
-        private volatile boolean released;
-
-        public static final int METADATA_SIZE = BUFFER_METADATA_SIZE;
 
         public HpnlGlobalBuffer(BufferCache<HpnlBuffer> cache, int id, int size){
             super(id);
@@ -202,56 +199,11 @@ public class HpnlBufferAllocator {
             }
         }
 
-        private void putMetadata(int srcSize, byte type, long seq) {
-            this.byteBuffer.rewind();
-            this.byteBuffer.limit(METADATA_SIZE + srcSize);
-            this.byteBuffer.put(type);
-            this.byteBuffer.putLong(this.connectionId);
-            this.byteBuffer.putLong(seq);
-        }
-
-        @Override
-        public void putData(ByteBuffer dataBuffer, byte frameType, long seqId) {
-            this.putMetadata(dataBuffer.remaining(), frameType, seqId);
-            this.byteBuffer.put(dataBuffer);
-            this.byteBuffer.flip();
-        }
-
-        @Override
-        public void insertMetadata(byte frameType, long seqId, int bufferLimit) {
-            this.byteBuffer.position(0);
-            this.byteBuffer.put(frameType);
-            this.byteBuffer.position(byteBuffer.position()+8);
-            this.byteBuffer.putLong(seqId);
-            this.byteBuffer.position(bufferLimit);
-        }
-
-        @Override
-        public void setConnectionId(long connectionId) {
-            int pos = byteBuffer.position();
-            this.byteBuffer.position(1);
-            this.byteBuffer.putLong(connectionId);
-            this.byteBuffer.position(pos);
-        }
-
-        @Override
-        public int getMetadataSize() {
-            return METADATA_SIZE;
-        }
-
-        @Override
-        public void clear() {
-            super.clear();
-            connectionId = -1;
-            released = false;
-        }
-
         @Override
         public void release() {
-            if(cache != null && !released){
+            if(cache != null){
                 cache.reclaim(this);
             }
-            released = true;
         }
 
         @Override

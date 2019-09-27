@@ -8,16 +8,12 @@ import java.nio.ByteBuffer;
 public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   private final int bufferId;
   protected byte frameType;
-  protected long seq;
-  protected long connectionId;
-  protected long peerConnectionId;
-  protected long targetAddress;
   protected ByteBuffer byteBuffer;
   private BufferType bufferType;
 
   private boolean parsed;
 
-  public static final int BASE_METADATA_SIZE = 9;
+  public static final int BASE_METADATA_SIZE = 1;
 
   protected AbstractHpnlBuffer(int bufferId, ByteBuffer byteBuffer, BufferType bufferType) {
     this.bufferId = bufferId;
@@ -29,34 +25,30 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
     this.bufferId = bufferId;
   }
 
+  private void putMetadata(int srcSize, byte type) {
+    this.byteBuffer.rewind();
+    this.byteBuffer.limit(BASE_METADATA_SIZE + srcSize);
+    this.byteBuffer.put(type);
+  }
+
+  @Override
+  public void putData(ByteBuffer dataBuffer, byte frameType) {
+    this.putMetadata(dataBuffer.remaining(), frameType);
+    this.byteBuffer.put(dataBuffer);
+    this.byteBuffer.flip();
+  }
+
+  @Override
+  public void insertMetadata(byte frameType) {
+    int posBef = this.byteBuffer.position();
+    this.byteBuffer.position(0);
+    this.byteBuffer.put(frameType);
+    this.byteBuffer.position(posBef);
+  }
+
   @Override
   public int getBufferId() {
     return this.bufferId;
-  }
-
-  @Override
-  public long getConnectionId() {
-    return connectionId;
-  }
-
-  @Override
-  public void setConnectionId(long connectionId) {
-    this.connectionId = connectionId;
-  }
-
-  @Override
-  public long getPeerConnectionId() {
-    return peerConnectionId;
-  }
-
-  @Override
-  public long getTargetAddress(){
-    return targetAddress;
-  }
-
-  @Override
-  public void setTargetAddress(long address){
-    targetAddress = address;
   }
 
   @Override
@@ -150,8 +142,8 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   }
 
   @Override
-  public long getSeq() {
-    return this.seq;
+  public void received(){
+    parsed = false;
   }
 
   @Override
@@ -162,8 +154,6 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
     this.byteBuffer.position(0);
     this.byteBuffer.limit(bufferSize);
     this.frameType = this.byteBuffer.get();
-    peerConnectionId = this.byteBuffer.getLong();
-    this.seq = this.byteBuffer.getLong();
     parsed = true;
     return this.byteBuffer;
   }
@@ -196,14 +186,7 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   @Override
   public void clear(){
     this.byteBuffer.clear();
-    clearState();
-  }
-
-  @Override
-  public void clearState(){
-    this.parsed = false;
-    this.peerConnectionId = -1;
-    this.targetAddress = -1;
+    parsed = false;
   }
 
   @Override
