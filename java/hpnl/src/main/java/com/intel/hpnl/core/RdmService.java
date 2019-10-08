@@ -71,13 +71,14 @@ public class RdmService extends AbstractService {
             -1L, cqIndex, 0, this.nativeHandle));
     conn.setCqIndex(cqIndex);
     conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
-
-    sendRequest(conn, connectedCallback, recvCallback);
-    setConnection(conn);
+    //use connection id as tag
+    sendRequest(conn, cqIndex, conn.getConnectionId(), connectedCallback, recvCallback);
+//    setConnection(conn);
     return 1;
   }
 
-  private void sendRequest(RdmConnection connection, Handler connectedCallback, Handler recvCallback){
+  private void sendRequest(RdmConnection connection, int cqIndex, long tag,
+                           Handler connectedCallback, Handler recvCallback){
     HpnlBuffer buffer = connection.takeSendBuffer();
     ByteBuffer rawBuffer = buffer.getRawBuffer();
     rawBuffer.position(buffer.getMetadataSize());
@@ -93,6 +94,8 @@ public class RdmService extends AbstractService {
     int nameLen = localName.remaining();
     rawBuffer.putInt(nameLen);
     rawBuffer.put(localName);
+    rawBuffer.putInt(cqIndex);
+    rawBuffer.putLong(tag);
     if(log.isDebugEnabled()){
       log.debug("connection ({}) with local name length ({})", connection.getConnectionId(), nameLen);
     }
@@ -289,8 +292,8 @@ public class RdmService extends AbstractService {
         buffer.get(bytes);
         log.debug("got ack with content, "+new String(bytes));
       }
-      connectedHandler.handle(connection, -1, -1);
       connection.setRecvCallback(recvHandler);
+      connectedHandler.handle(connection, -1, -1);
       return Handler.RESULT_DEFAULT;
     }
   }

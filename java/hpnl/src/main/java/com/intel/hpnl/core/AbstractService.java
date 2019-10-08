@@ -19,7 +19,6 @@ public abstract class AbstractService {
   protected int recvBufferNum;
   protected boolean server;
   protected HpnlService hpnlService;
-  protected Connection connection;
   protected Map<Long, Connection> conMap;
   protected boolean stopped;
   private MemPool sendBufferPool;
@@ -59,22 +58,8 @@ public abstract class AbstractService {
     connection.pushRecvBuffer(this.recvBufferPool.getBuffer(bufferId));
   }
 
-  protected void setConnection(Connection connection){
-    if(this.connection != null){
-      throw new IllegalStateException("connection is set already");
-    }
-    this.connection = connection;
-  }
-
-  /**
-   * primary connection for service.
-   * @return
-   */
   public Connection getConnection(){
-    if(connection == null){
-      throw new IllegalStateException("connect is not established yet");
-    }
-    return connection;
+    throw new UnsupportedOperationException();
   }
 
   protected abstract HpnlBuffer newHpnlBuffer(int bufferId, ByteBuffer byteBuffer, HpnlBuffer.BufferType type);

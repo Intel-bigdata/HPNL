@@ -10,6 +10,7 @@ import java.util.Map;
 
 public class RdmServerService extends RdmService {
   private int cqIndex = 0;
+  protected Connection connection;
   private Map<Long, Connection> connectionMap = new HashMap<>();
 
   private static final Logger log = LoggerFactory.getLogger(RdmServerService.class);
@@ -19,6 +20,25 @@ public class RdmServerService extends RdmService {
     if(workNum < 2){
         throw new IllegalArgumentException("work number should be at least 2 for server");
     }
+  }
+
+  protected void setConnection(Connection connection){
+    if(this.connection != null){
+        throw new IllegalStateException("connection is set already");
+    }
+    this.connection = connection;
+  }
+
+    /**
+    * primary connection for service.
+    * @return
+    */
+  @Override
+  public Connection getConnection(){
+    if(connection == null){
+        throw new IllegalStateException("connect is not established yet");
+    }
+    return connection;
   }
 
   @Override
@@ -68,9 +88,9 @@ public class RdmServerService extends RdmService {
           int cqIndex = RdmServerService.this.nextCqIndex();
           Connection childConnection = RdmServerService.this.createChildConnection(provAddr, address,
                   cqIndex, recvCallback);
-          ackConnected(childConnection, address, cqIndex);
           connectionMap.put(peerConnectId, childConnection);
           connectedCallback.handle(childConnection, hpnlBuffer);
+          ackConnected(childConnection, address, cqIndex);
           return Handler.RESULT_DEFAULT;
       }
       throw new IllegalStateException("frame type should be FrameType.REQ, not "+frameType);

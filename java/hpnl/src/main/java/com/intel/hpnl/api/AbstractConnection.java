@@ -189,6 +189,9 @@ public abstract class AbstractConnection implements Connection {
    */
   protected int handleCallback(int eventType, int bufferId, int bufferSize){
     int e;
+    if(log.isTraceEnabled()){
+      log.trace("handle callback with event: "+eventType);
+    }
     switch(eventType) {
       case EventType.RECV_EVENT:
         HpnlBuffer buffer = getRecvBuffer(bufferId);
@@ -214,6 +217,9 @@ public abstract class AbstractConnection implements Connection {
 
   protected int safeExecuteCallback(Handler handler, HpnlBuffer buffer){
     if (handler == null) {
+      if(log.isTraceEnabled()){
+        log.trace("no recv callback set, skip recv callback");
+      }
       return Handler.RESULT_DEFAULT;
     }
     try {
