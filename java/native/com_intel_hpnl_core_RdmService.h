@@ -21,7 +21,7 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init
  * Signature: (Ljava/lang/String;Ljava/lang/String;J)J
  */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen
-  (JNIEnv *, jobject, jstring, jstring, jlong);
+  (JNIEnv *, jobject, jstring, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_RdmService
@@ -29,7 +29,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen
  * Signature: (Ljava/lang/String;Ljava/lang/String;JIIJ)J
  */
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con
-  (JNIEnv *, jobject, jstring, jstring, jlong, jint, jint, jlong);
+  (JNIEnv *, jobject, jstring, jint, jstring, jint, jlong, jlong, jint, jint, jlong);
 
 /*
  * Class:     com_intel_hpnl_core_RdmService

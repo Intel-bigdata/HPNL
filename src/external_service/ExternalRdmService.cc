@@ -33,13 +33,14 @@ int ExternalRdmService::init(const char* prov_name) {
   return 0;
 }
 
-RdmConnection* ExternalRdmService::listen(const char* ip, const char* port) {
+RdmConnection* ExternalRdmService::listen(const char* ip, int port) {
   return (RdmConnection*)stack->bind(ip, port, recvBufMgr, sendBufMgr);
 }
 
-RdmConnection* ExternalRdmService::get_con(const char* ip, const char* port, uint64_t src_provider_addr,
+RdmConnection* ExternalRdmService::get_con(const char* dest_ip, int dest_port,
+		const char* src_ip, int src_port, uint64_t tag, uint64_t src_provider_addr,
 		int cq_index, int send_ctx_id) {
-  RdmConnection *con = ((RdmStack*)stack)->get_con(ip, port, src_provider_addr,
+  RdmConnection *con = ((RdmStack*)stack)->get_con(dest_ip, dest_port, src_ip, src_port, tag, src_provider_addr,
 		  cq_index, send_ctx_id, recvBufMgr, sendBufMgr);
   return (RdmConnection*)con;
 }

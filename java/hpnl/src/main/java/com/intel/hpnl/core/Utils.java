@@ -57,8 +57,15 @@ public class Utils {
   }
 
   public static String getIpFromHostname(String hostname) throws UnknownHostException {
-    InetAddress address = InetAddress.getByName(hostname);
-    return address.getHostAddress();
+    if(!Utils.isIp(hostname)) {
+      try {
+        InetAddress address = InetAddress.getByName(hostname);
+        return address.getHostAddress();
+      }catch(UnknownHostException e){
+        throw new RuntimeException("failed to resolve "+hostname, e);
+      }
+    }
+    return hostname;
   }
 
   public static void setAffinitiy(long affinitiy){
@@ -75,4 +82,10 @@ public class Utils {
 
   private static native int get_pid();
 
+  /**
+   * globally unique id based on IP and port
+   */
+  public static long unique(String ip, int port) {
+    return Long.valueOf(ip.replaceAll("\\.", "") + port);
+  }
 }

@@ -22,7 +22,7 @@ class RdmConnection : public Connection {
     RdmConnection(fi_info*, fid_av*, uint64_t, fid_cq*,
     		fid_ep*, fid_ep*, BufMgr*, BufMgr*, bool);
     ~RdmConnection();
-    virtual int init(int, int, int, int, int) override;
+    virtual int init(int, int, int, uint64_t, int, int) override;
 
     void init_addr();
     void get_addr(char**, size_t*, char**, size_t*);
@@ -60,9 +60,10 @@ class RdmConnection : public Connection {
     }
     long get_id() { return connect_id; }
 
-    void set_local_name(char *local_name, size_t local_name_len){
+    void set_local_name(char *local_name, size_t local_name_len, fi_addr_t local_provider_addr){
     	this->local_name = local_name;
     	this->local_name_len = local_name_len;
+    	this->local_provider_addr = local_provider_addr;
     }
 
     jobject get_java_conn(){
@@ -99,12 +100,14 @@ class RdmConnection : public Connection {
     fid_eq *conEq;
     
     uint64_t recv_tag;
+    uint64_t send_tag;
 
     const char* ip;
     const char* port;
     char *local_name;
     size_t local_name_len = 64;
     fi_addr_t dest_provider_addr;
+    fi_addr_t local_provider_addr;
     fi_addr_t recv_ctx_addr;
     fi_addr_t send_ctx_addr;
 //    std::map<std::string, fi_addr_t> addr_map;

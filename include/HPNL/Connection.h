@@ -6,7 +6,7 @@
 
 class Connection {
   public:
-    virtual int init(int, int, int, int, int) { return 0; }
+    virtual int init(int, int, int, uint64_t, int, int) { return 0; }
     virtual fi_addr_t recv(const char*, int) { return 0; }
     virtual char* get_peer_name() { return 0; }
     virtual int send(Chunk*) { return 0; }

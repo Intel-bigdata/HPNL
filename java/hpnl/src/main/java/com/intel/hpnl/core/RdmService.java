@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,8 +14,6 @@ import org.slf4j.LoggerFactory;
 public class RdmService extends AbstractService {
   private List<EventTask> tasks;
   private long nativeHandle;
-  protected String localIp;
-  protected int localPort;
   private int ctxNum;
 
   private PortGenerator portGenerator = PortGenerator.getInstance();
@@ -28,9 +27,9 @@ public class RdmService extends AbstractService {
   static{
     String nic = HpnlConfig.getInstance().getNic();
     try {
-      LOCAL_IP = Utils.getLocalhost(nic);
+      LOCAL_IP = Utils.getIpFromHostname(Utils.getLocalhost(nic));
     }catch (Exception e){
-      LOCAL_IP = null;
+      LOCAL_IP = "<unknown>";
       log.error("failed to get local IP of NIC: "+nic, e);
     }
   }
@@ -66,11 +65,14 @@ public class RdmService extends AbstractService {
   }
 
   @Override
-  public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
-    RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(ip, port,
-            -1L, cqIndex, 0, this.nativeHandle));
+  public int connect(String destIp, int destPort, int cqIndex, Handler connectedCallback, Handler recvCallback) {
+    String localIp = LOCAL_IP;
+    int localPort = getFreePort();
+    long tag = Utils.unique(localIp, localPort);
+    RdmConnection conn = (RdmConnection) this.conMap.get(this.get_con(destIp, destPort, localIp,
+            localPort, tag, -1L, cqIndex, 0, this.nativeHandle));
     conn.setCqIndex(cqIndex);
-    conn.setAddrInfo(ip, Integer.valueOf(port), conn.getSrcAddr(), conn.getSrcPort());
+    conn.setAddrInfo(destIp, destPort, conn.getSrcAddr(), conn.getSrcPort());
     //use connection id as tag
     sendRequest(conn, cqIndex, conn.getConnectionId(), connectedCallback, recvCallback);
 //    setConnection(conn);
@@ -108,24 +110,25 @@ public class RdmService extends AbstractService {
   }
 
   @Override
-  protected void regCon(long key, long connHandle, String dest_addr,
-                        int dest_port, String src_addr, int src_port, long connectId) {
+  protected void regCon(long key, long connHandle, String destIp,
+                        int destPort, String srcIp, int srcPort, long connectId) {
     RdmConnection con = new RdmConnection(connHandle, this.hpnlService, this.server, ctxNum);
+    con.setConnectionId(connectId);
+    this.conMap.put(connHandle, con);
     if(!server){
-      localIp = LOCAL_IP;
-      localPort = getFreePort();
-      con.setAddrInfo(con.getDestAddr(), con.getDestPort(), localIp, localPort);
+      con.setAddrInfo(destIp, destPort, srcIp, srcPort);
+      log.info("created client RDM connection {}:{} -> {}:{}", srcIp, srcPort, destIp, destPort);
     }else{
-      if(connectId == -2L){//accepted connection
+      if(srcPort == -2){//accepted connection
         //dest port will be reset in later
-        con.setAddrInfo("<unset>", 0, localIp, getFreePort());
+        int port = getFreePort();
+        con.setAddrInfo(destIp, destPort, LOCAL_IP, getFreePort());
+        log.info("created accepted RDM connection {}:{} -> {}:{}", LOCAL_IP, port, destIp, destPort);
       }else {
-        con.setAddrInfo("<unset>", 0, localIp, localPort);
+        con.setAddrInfo("<unset>", 0, LOCAL_IP, srcPort);
+        log.info("created server RDM connection src {}:{}", LOCAL_IP, srcPort);
       }
     }
-    con.setConnectionId(localIp, localPort);
-    this.conMap.put(connHandle, con);
-    log.info("registered connection {}:{}", localIp, localPort);
   }
 
   @Override
@@ -178,7 +181,13 @@ public class RdmService extends AbstractService {
 //        portGenerator.reclaimPort(v.getSrcPort());
 //      }
 //    });
+    if(!conMap.isEmpty()){
+      try {
+        Thread.sleep(100);
+      }catch (InterruptedException e){}
+    }
     conMap.clear();
+
     this.free(this.nativeHandle);
     log.info(this+" shut down");
   }
@@ -216,9 +225,10 @@ public class RdmService extends AbstractService {
   private native int init(int bufferNum, int recvBufferNum, int ctxNum, int endpointNum, int readBatchSize,
                           boolean server, String providerName);
 
-  protected native long listen(String host, String port, long nativeHandle);
+  protected native long listen(String localhost, int localPort, long nativeHandle);
 
-  protected native long get_con(String host, String port, long destProviderAddr, int cqIndex, int sendCtxId, long nativeHandle);
+  protected native long get_con(String destHost, int destPort, String localhost, int localPort, long tag,
+                                long destProviderAddr, int cqIndex, int sendCtxId, long nativeHandle);
 
   private native int wait_event(int cqIndex, long nativeHandle);
 
@@ -259,6 +269,9 @@ public class RdmService extends AbstractService {
 
     protected void cleanUp() {
       RdmService.log.info("close and remove all connections");
+      for(Map.Entry<Long, Connection> entry : RdmService.this.conMap.entrySet()){
+        ((RdmConnection)entry.getValue()).doShutdown(true);
+      }
       RdmService.this.conMap.clear();
     }
   }

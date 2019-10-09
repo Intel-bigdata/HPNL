@@ -15,6 +15,7 @@ public class Constants {
   public static final String CFG_BUFFER_NUM_SMALL = "hpnl.buffer.num.small";
   public static final String CFG_BUFFER_NUM_MEDIUM = "hpnl.buffer.num.medium";
   public static final String CFG_BUFFER_NUM_LARGE = "hpnl.buffer.num.large";
+  public static final String CFG_BUFFER_NUM_MAX = "hpnl.buffer.num.max";
 
   public static final String CFG_CONTEXT_NUM = "hpnl.context.num";
   public static final String CFG_CONTEXT_NUM_SERVER = "hpnl.context.num.server";

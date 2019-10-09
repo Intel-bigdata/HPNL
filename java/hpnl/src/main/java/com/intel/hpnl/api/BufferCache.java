@@ -76,6 +76,12 @@ public class BufferCache<T> {
         return bufferMap.get(id);
     }
 
+    public void clear(){
+        pool.clear();
+        bufferMap.clear();
+        threadLocal.get().clear();
+    }
+
     public interface CacheHandler<T>{
         T newInstance(BufferCache<T> cache, int size);
     }

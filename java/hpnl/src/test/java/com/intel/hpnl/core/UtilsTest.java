@@ -76,6 +76,21 @@ public class UtilsTest {
     System.out.println(System.nanoTime() - start);
   }
 
+  @Test
+  public void test1()throws Exception{
+    int BUFFER_ID_RANGES = 100000000;
+    int MIN_DEFAULT_BUFFER_ID = -BUFFER_ID_RANGES;
+
+    int currentBufferIdLimit = MIN_DEFAULT_BUFFER_ID;
+    int count = 0;
+    while(currentBufferIdLimit < 0){
+      currentBufferIdLimit -= BUFFER_ID_RANGES;
+      count++;
+    }
+    System.out.println(currentBufferIdLimit);
+    System.out.println(count);
+  }
+
   static class Inner{
     public void putInt(){}
   }

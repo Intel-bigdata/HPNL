@@ -6,7 +6,6 @@ import com.intel.hpnl.api.HpnlService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -182,22 +181,8 @@ public class RdmConnection extends AbstractConnection{
     return server;
   }
 
-  /**
-   * globally unique id based on IP and port
-   * @param localIp
-   * @param port
-   */
-  public void setConnectionId(String localIp, int port){
-    if(!Utils.isIp(localIp)) {
-      try {
-        localIp = Utils.getIpFromHostname(localIp);
-      }catch(UnknownHostException e){
-        log.error("failed to resolve "+localIp, e);
-        throw new RuntimeException(e);
-      }
-    }
-    String tmp = localIp.replaceAll("\\.", "") + port;
-    connectId = Long.valueOf(tmp);
+  public void setConnectionId(long connectionId){
+    connectId = connectionId;
   }
 
   @Override

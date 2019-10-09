@@ -30,28 +30,27 @@ RdmConnection::~RdmConnection() {
 	  }
 	  delete send_global_buffers_array;
   }
-
-  if(info){
-	fi_freeinfo(info);
-	info = nullptr;
-  }
 }
 
-int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num, int tx_ctx_index, int rx_ctx_index) {
+int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num,
+		uint64_t tag, int tx_ctx_index, int rx_ctx_index) {
   if ((!is_server) && (!accepted_connection)) {
 	assert(fi_av_insert(av, info->dest_addr, 1, &dest_provider_addr, 0, NULL) == 1);
   }
   if(is_server){
-	recv_tag = TAG_CONNECTION_REQUEST;
-	send_ctx_addr = dest_provider_addr;//need use sendTo method with address specified
-	recv_ctx_addr = dest_provider_addr;
+	recv_tag = tag;
+	send_tag = TAG_CONNECTION_NORMAL; //no send via server connection
+	send_ctx_addr = dest_provider_addr;//FI_ADDR_UNSEPC, no send via server connection
+	recv_ctx_addr = dest_provider_addr;//FI_ADDR_UNSEPC
   }else{
-	recv_tag = TAG_CONNECTION_NORMAL;
+	recv_tag = tag;
+	send_tag = tag;
 	if(accepted_connection){
-		send_ctx_addr = dest_provider_addr;
+		send_ctx_addr = fi_rx_addr(dest_provider_addr, tx_ctx_index, RECV_CTX_BITS);
 		recv_ctx_addr = fi_rx_addr(dest_provider_addr, rx_ctx_index, RECV_CTX_BITS);
 	}else{
 		send_ctx_addr = fi_rx_addr(dest_provider_addr, tx_ctx_index, RECV_CTX_BITS);
+//		recv_ctx_addr = fi_rx_addr(dest_provider_addr, rx_ctx_index, RECV_CTX_BITS);
 		recv_ctx_addr = FI_ADDR_UNSPEC;
 	}
   }
@@ -108,7 +107,7 @@ void RdmConnection::get_addr(char** dest_addr_, size_t* dest_port_, char** src_a
 }
 
 int RdmConnection::send(Chunk *ck) {
-  if (fi_tsend(tx, ck->buffer, ck->size, NULL, ck->peer_addr, TAG_CONNECTION_NORMAL,
+  if (fi_tsend(tx, ck->buffer, ck->size, NULL, ck->peer_addr, send_tag,
 		  &ck->ctx) < 0) {
     perror("fi_send");
   }
@@ -119,7 +118,7 @@ int RdmConnection::send(int buffer_size, int buffer_id) {
   Chunk *ck = send_buffers_map[buffer_id];
   ck->ctx.internal[4] = ck;
   if (fi_tsend(tx, ck->buffer, buffer_size, NULL, send_ctx_addr,
-		  TAG_CONNECTION_NORMAL, &ck->ctx)) {
+		  send_tag, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -152,7 +151,7 @@ int RdmConnection::sendBuf(char* buffer, int buffer_id, int ctx_id, int buffer_s
   }
 
   if (fi_tsend(tx, buffer, buffer_size, NULL, send_ctx_addr,
-		  TAG_CONNECTION_NORMAL, &ck->ctx)) {
+		  send_tag, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -185,7 +184,7 @@ int RdmConnection::sendTo(int buffer_size, int buffer_id, uint64_t peer_address)
   Chunk *ck = send_buffers_map[buffer_id];
   ck->ctx.internal[4] = ck;
   if (fi_tsend(tx, ck->buffer, buffer_size, NULL, peer_address,
-		  TAG_CONNECTION_NORMAL, &ck->ctx)) {
+		  send_tag, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }
@@ -207,7 +206,7 @@ int RdmConnection::sendBufTo(char* buffer, int buffer_id, int ctx_id, int buffer
   }
 
   if (fi_tsend(tx, buffer, buffer_size, NULL, peer_address,
-		  TAG_CONNECTION_NORMAL, &ck->ctx)) {
+		  send_tag, &ck->ctx)) {
     perror("fi_send");
     return -1;
   }

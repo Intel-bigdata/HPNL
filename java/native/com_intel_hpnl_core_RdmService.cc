@@ -62,15 +62,14 @@ JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmService_init(JNIEnv * env, jo
   return res;
 }
 
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, jobject obj, jstring ip_, jstring port_, jlong nativeHandle) {
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, jobject obj, jstring ip_, jint port_, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
   const char *ip = (*env).GetStringUTFChars(ip_, 0);
-  const char *port = (*env).GetStringUTFChars(port_, 0);
-  RdmConnection *con = service->listen(ip, port);
+  RdmConnection *con = service->listen(ip, port_);
   if (!con) {
 //    (*env).CallVoidMethod(obj, reallocBufferPool);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, reallocBufferPool);
-    con = (RdmConnection*)service->listen(ip, port);
+    con = (RdmConnection*)service->listen(ip, port_);
     if (!con) {
       return -1;
     }
@@ -79,7 +78,7 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, 
   jlong jcon = *(jlong*)&con;
   jlong jEq = -1;
   jlong id = -1;
-  (*env).CallVoidMethod(obj, regCon, jEq, jcon, NULL, 0, NULL, 0, id);
+  (*env).CallVoidMethod(obj, regCon, jEq, jcon, NULL, 0, ip_, port_, id);
   if((*env).ExceptionOccurred()){
   	  return -1;
   }
@@ -104,16 +103,19 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_listen(JNIEnv *env, 
   return *(jlong*)&con;
 }
 
-JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env, jobject obj, jstring ip_, jstring port_,
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env, jobject obj,
+		jstring dest_ip_, jint dest_port_, jstring src_ip_, jint src_port_, jlong tag,
 		jlong dest_provider_addr, jint cq_index, jint send_ctx_id, jlong nativeHandle) {
   ExternalRdmService *service = *(ExternalRdmService**)&nativeHandle;
-  const char *ip = (*env).GetStringUTFChars(ip_, 0);
-  const char *port = (*env).GetStringUTFChars(port_, 0);
-  RdmConnection *con = (RdmConnection*)service->get_con(ip, port, dest_provider_addr, cq_index, send_ctx_id);
+  const char *dest_ip = dest_ip_==NULL ? nullptr : (*env).GetStringUTFChars(dest_ip_, 0);
+  const char *src_ip = src_ip_==NULL ? nullptr : (*env).GetStringUTFChars(src_ip_, 0);
+  RdmConnection *con = (RdmConnection*)service->get_con(dest_ip, dest_port_, src_ip, src_port_,
+		  tag, dest_provider_addr, cq_index, send_ctx_id);
   if (!con) {
 //    (*env).CallVoidMethod(obj, reallocBufferPool);
 	(*env).CallNonvirtualVoidMethod(obj, parentClass, reallocBufferPool);
-    con = (RdmConnection*)service->get_con(ip, port, dest_provider_addr, cq_index, send_ctx_id);
+    con = (RdmConnection*)service->get_con(dest_ip, dest_port_, src_ip, src_port_,
+  		  tag, dest_provider_addr, cq_index, send_ctx_id);
     if (!con) {
       return -1; 
     }
@@ -121,8 +123,9 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmService_get_1con(JNIEnv *env
 
   jlong jcon = *(jlong*)&con;
   jlong jEq = -1;
-  jlong id = con->is_accepted_connection() ? -2 : -1;
-  (*env).CallVoidMethod(obj, regCon, jEq, jcon, NULL, 0, NULL, 0, id);
+  jlong id = tag;
+  jint src_port = con->is_accepted_connection() ? -2 : src_port_;
+  (*env).CallVoidMethod(obj, regCon, jEq, jcon, dest_ip_, dest_port_, src_ip_, src_port, id);
   if((*env).ExceptionOccurred()){
 	  (*env).ExceptionDescribe();
 	  return -1;

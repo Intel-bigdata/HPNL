@@ -20,6 +20,7 @@ public class HpnlConfig {
   private int bufferNumSmall;
   private int bufferNumMedium;
   private int bufferNumLarge;
+  private int bufferNumMax;
 
   private int ctxNum;
   private int srvCtxNum;
@@ -41,6 +42,7 @@ public class HpnlConfig {
   public static final String DEFAULT_BUFFER_NUM_SMALL = "10240"; //10m, for most RPC other than launch task
   public static final String DEFAULT_BUFFER_NUM_MEDIUM = "256"; //1m
   public static final String DEFAULT_BUFFER_NUM_LARGE = "2560"; //20m, for RPC launch task
+  public static final String DEFAULT_BUFFER_NUM_MAX = "256"; //buffer with max size which is equal to send buffer size
 
   private static HpnlConfig _instance = new HpnlConfig();
 
@@ -74,6 +76,8 @@ public class HpnlConfig {
       bufferNumMedium = Integer.valueOf(tmp);
       tmp = getValue(properties, Constants.CFG_BUFFER_NUM_LARGE, DEFAULT_BUFFER_NUM_LARGE);
       bufferNumLarge = Integer.valueOf(tmp);
+      tmp = getValue(properties, Constants.CFG_BUFFER_NUM_MAX, DEFAULT_BUFFER_NUM_MAX);
+      bufferNumMax = Integer.valueOf(tmp);
 
       tmp = getValue(properties, Constants.CFG_CONTEXT_NUM, DEFAULT_CONTEXT_NUM);
       ctxNum = Integer.valueOf(tmp);
@@ -151,7 +155,13 @@ public class HpnlConfig {
     return bufferNumLarge;
   }
 
+  public int getBufferNumMax() {
+    return bufferNumMax;
+  }
+
   public int getReadBatchSize() {
     return readBatchSize;
   }
+
+
 }

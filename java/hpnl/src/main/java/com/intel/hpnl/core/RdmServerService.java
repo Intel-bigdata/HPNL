@@ -47,9 +47,7 @@ public class RdmServerService extends RdmService {
   }
 
   @Override
-  public int connect(String ip, String port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
-    localIp = ip;
-    localPort = Integer.valueOf(port);
+  public int connect(String ip, int port, int cqIndex, Handler connectedCallback, Handler recvCallback) {
     RdmConnection conn = (RdmConnection) this.getConnection(this.listen(ip, port, this.getNativeHandle()));
     conn.setCqIndex(cqIndex);
     setConnection(conn);
@@ -86,8 +84,10 @@ public class RdmServerService extends RdmService {
           Object[] address = getPeerAddress(hpnlBuffer);
           long provAddr = getPeerProviderAddr(hpnlBuffer);
           int cqIndex = RdmServerService.this.nextCqIndex();
+          int sendCtxId = hpnlBuffer.getInt();
+          long tag = hpnlBuffer.getLong();
           Connection childConnection = RdmServerService.this.createChildConnection(provAddr, address,
-                  cqIndex, recvCallback);
+                  cqIndex, sendCtxId, tag, recvCallback);
           connectionMap.put(peerConnectId, childConnection);
           connectedCallback.handle(childConnection, hpnlBuffer);
           ackConnected(childConnection, address, cqIndex);
@@ -156,17 +156,16 @@ public class RdmServerService extends RdmService {
   }
 
   private Connection createChildConnection(long remoteProviderAddress, Object[] peerAddress, int cqIndex,
-                                           Handler recvCallback) {
+                                           int sendCtxId, long tag, Handler recvCallback) {
     if(log.isDebugEnabled()){
         log.debug("create child connection for remote address, "+remoteProviderAddress);
     }
 
-    long nativeConnHandler = this.get_con(localIp, String.valueOf(localPort), remoteProviderAddress,
-            cqIndex, 0, this.getNativeHandle());
+    //local address will be set in regCon callback
+    long nativeConnHandler = this.get_con((String)peerAddress[0], (Integer)peerAddress[1], null, 0,
+            tag, remoteProviderAddress, cqIndex, sendCtxId, this.getNativeHandle());
     RdmConnection childConn = (RdmConnection) this.getConnection(nativeConnHandler);
     childConn.setCqIndex(cqIndex);
-    //local addr was set when registered connection
-    childConn.setAddrInfo((String)peerAddress[0], (Integer)peerAddress[1], childConn.getSrcAddr(), childConn.getSrcPort());
     childConn.setRecvCallback(recvCallback);
     return childConn;
   }
