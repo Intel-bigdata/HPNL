@@ -2,7 +2,7 @@ package com.intel.hpnl.api;
 
 public class Constants {
 
-    private Constants(){};
+  private Constants(){};
 
   public static final String CONFIG_ITEM_PROVIDER_NAME = "provider_name";
   public static final String CONFIG_ITEM_LIBFABRIC_FILE_NAME = "libfabric_file_name";
@@ -16,6 +16,8 @@ public class Constants {
   public static final String CFG_BUFFER_NUM_MEDIUM = "hpnl.buffer.num.medium";
   public static final String CFG_BUFFER_NUM_LARGE = "hpnl.buffer.num.large";
   public static final String CFG_BUFFER_NUM_MAX = "hpnl.buffer.num.max";
+
+  public static final String CFG_AUTO_ACK_CONNECTION = "hpnl.auto.ack.connection";
 
   public static final String CFG_CONTEXT_NUM = "hpnl.context.num";
   public static final String CFG_CONTEXT_NUM_SERVER = "hpnl.context.num.server";

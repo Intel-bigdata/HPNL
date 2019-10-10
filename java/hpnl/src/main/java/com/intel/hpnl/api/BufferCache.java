@@ -79,7 +79,9 @@ public class BufferCache<T> {
     public void clear(){
         pool.clear();
         bufferMap.clear();
-        threadLocal.get().clear();
+        if(threadLocal != null) {
+            threadLocal.get().clear();
+        }
     }
 
     public interface CacheHandler<T>{

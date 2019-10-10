@@ -91,6 +91,10 @@ public abstract class AbstractService {
 
   public abstract EventTask getEventTask(int cqIndex);
 
+  public void ackConnected(Connection connection){
+    throw new UnsupportedOperationException();
+  }
+
   public abstract void stop();
 
   protected static long sequenceId() {

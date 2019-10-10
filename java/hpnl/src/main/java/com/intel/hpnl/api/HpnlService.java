@@ -18,6 +18,8 @@ public interface HpnlService {
 
   void removeNativeConnection(long nativeConnectionId, long connHandle, boolean proactive);
 
+  public void ackConnected(Connection connection);
+
   boolean isServer();
 
   int getFreePort();

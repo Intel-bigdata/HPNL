@@ -68,6 +68,11 @@ public class RdmHpnlService implements HpnlService {
   }
 
   @Override
+  public void ackConnected(Connection connection){
+    service.ackConnected(connection);
+  }
+
+  @Override
   public boolean isServer() {
     return this.server;
   }

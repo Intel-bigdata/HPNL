@@ -79,7 +79,7 @@ public class HpnlBufferAllocator {
     public static HpnlBufferAllocator getInstance(boolean largePool){
         IdRange idRange = idRangeQueue.poll();
         if(idRange == null) {
-            synchronized (idRange) {
+            synchronized (idRangeQueue) {
                 int start = currentBufferIdLimit;
                 currentBufferIdLimit -= BUFFER_ID_RANGES;
                 if (currentBufferIdLimit > 0) {

@@ -181,9 +181,13 @@ public class RdmService extends AbstractService {
 //        portGenerator.reclaimPort(v.getSrcPort());
 //      }
 //    });
-    if(!conMap.isEmpty()){
+    long start = System.currentTimeMillis();
+    while(!conMap.isEmpty()){
       try {
         Thread.sleep(100);
+        if(System.currentTimeMillis() - start >= 500){
+          break;
+        }
       }catch (InterruptedException e){}
     }
     conMap.clear();

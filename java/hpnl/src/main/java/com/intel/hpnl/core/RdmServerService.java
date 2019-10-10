@@ -12,6 +12,7 @@ public class RdmServerService extends RdmService {
   private int cqIndex = 0;
   protected Connection connection;
   private Map<Long, Connection> connectionMap = new HashMap<>();
+  private boolean autoAckConnection;
 
   private static final Logger log = LoggerFactory.getLogger(RdmServerService.class);
 
@@ -20,6 +21,7 @@ public class RdmServerService extends RdmService {
     if(workNum < 2){
         throw new IllegalArgumentException("work number should be at least 2 for server");
     }
+    autoAckConnection = HpnlConfig.getInstance().isAutoAckConnection();
   }
 
   protected void setConnection(Connection connection){
@@ -53,6 +55,36 @@ public class RdmServerService extends RdmService {
     setConnection(conn);
     conn.setRecvCallback(new RdmServerReceiveHandler(connectedCallback, recvCallback));
     return 1;
+  }
+
+  @Override
+  public void ackConnected(Connection connection){
+    String addr = connection.getDestAddr() + ":" + connection.getDestPort();
+    int dataSize = 60;
+    HpnlBuffer buffer = connection.takeSendBuffer();
+    if(buffer == null) {
+        buffer = HpnlBufferAllocator.getBufferFromDefault(dataSize + AbstractHpnlBuffer.BASE_METADATA_SIZE);
+        ByteBuffer rawBuffer = buffer.getRawBuffer();
+        rawBuffer.position(buffer.getMetadataSize());
+        rawBuffer.putInt(connection.getCqIndex());
+        rawBuffer.putInt(addr.getBytes().length);
+        rawBuffer.put(addr.getBytes());
+        buffer.insertMetadata(FrameType.ACK.id());
+        rawBuffer.flip();
+        connection.sendBuffer(buffer, rawBuffer.remaining());
+    }else {
+        ByteBuffer byteBuffer = ByteBuffer.allocate(dataSize + AbstractHpnlBuffer.BASE_METADATA_SIZE);
+        byteBuffer.putInt(connection.getCqIndex());
+        byteBuffer.putInt(addr.getBytes().length);
+        byteBuffer.put(addr.getBytes());
+        byteBuffer.flip();
+        buffer.putData(byteBuffer, FrameType.ACK.id());
+        connection.sendBuffer(buffer, buffer.remaining());
+    }
+
+    if (log.isDebugEnabled()) {
+        log.debug("acknowledging connection from " + addr);
+    }
   }
 
   private class RdmServerReceiveHandler implements Handler {
@@ -90,39 +122,12 @@ public class RdmServerService extends RdmService {
                   cqIndex, sendCtxId, tag, recvCallback);
           connectionMap.put(peerConnectId, childConnection);
           connectedCallback.handle(childConnection, hpnlBuffer);
-          ackConnected(childConnection, address, cqIndex);
+          if(autoAckConnection){
+              ackConnected(childConnection);
+          }
           return Handler.RESULT_DEFAULT;
       }
       throw new IllegalStateException("frame type should be FrameType.REQ, not "+frameType);
-    }
-
-    private void ackConnected(Connection connection, Object[] address, int cqIndex){
-      String addr = address[0] + ":" + address[1];
-      int dataSize = 60;
-      HpnlBuffer buffer = connection.takeSendBuffer();
-      if(buffer == null) {
-          buffer = HpnlBufferAllocator.getBufferFromDefault(dataSize + AbstractHpnlBuffer.BASE_METADATA_SIZE);
-          ByteBuffer rawBuffer = buffer.getRawBuffer();
-          rawBuffer.position(buffer.getMetadataSize());
-          rawBuffer.putInt(cqIndex);
-          rawBuffer.putInt(addr.getBytes().length);
-          rawBuffer.put(addr.getBytes());
-          buffer.insertMetadata(FrameType.ACK.id());
-          rawBuffer.flip();
-          connection.sendBuffer(buffer, rawBuffer.remaining());
-      }else {
-          ByteBuffer byteBuffer = ByteBuffer.allocate(dataSize + AbstractHpnlBuffer.BASE_METADATA_SIZE);
-          byteBuffer.putInt(cqIndex);
-          byteBuffer.putInt(addr.getBytes().length);
-          byteBuffer.put(addr.getBytes());
-          byteBuffer.flip();
-          buffer.putData(byteBuffer, FrameType.ACK.id());
-          connection.sendBuffer(buffer, buffer.remaining());
-      }
-
-      if (log.isDebugEnabled()) {
-          log.debug("acknowledging connection from " + addr);
-      }
     }
 
     private Object[] getPeerAddress(HpnlBuffer hpnlBuffer) {
@@ -157,12 +162,15 @@ public class RdmServerService extends RdmService {
 
   private Connection createChildConnection(long remoteProviderAddress, Object[] peerAddress, int cqIndex,
                                            int sendCtxId, long tag, Handler recvCallback) {
+    String destIp =  (String)peerAddress[0];
+    int destPort = (Integer)peerAddress[1];
     if(log.isDebugEnabled()){
-        log.debug("create child connection for remote address, "+remoteProviderAddress);
+        log.debug("create child connection for remote {}:{}, remote provider address {}.", destIp, destPort,
+                remoteProviderAddress);
     }
 
     //local address will be set in regCon callback
-    long nativeConnHandler = this.get_con((String)peerAddress[0], (Integer)peerAddress[1], null, 0,
+    long nativeConnHandler = this.get_con(destIp, destPort, null, 0,
             tag, remoteProviderAddress, cqIndex, sendCtxId, this.getNativeHandle());
     RdmConnection childConn = (RdmConnection) this.getConnection(nativeConnHandler);
     childConn.setCqIndex(cqIndex);

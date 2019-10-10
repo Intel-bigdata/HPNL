@@ -22,6 +22,8 @@ public class HpnlConfig {
   private int bufferNumLarge;
   private int bufferNumMax;
 
+  private boolean autoAckConnection;
+
   private int ctxNum;
   private int srvCtxNum;
 
@@ -43,6 +45,8 @@ public class HpnlConfig {
   public static final String DEFAULT_BUFFER_NUM_MEDIUM = "256"; //1m
   public static final String DEFAULT_BUFFER_NUM_LARGE = "2560"; //20m, for RPC launch task
   public static final String DEFAULT_BUFFER_NUM_MAX = "256"; //buffer with max size which is equal to send buffer size
+
+  public static final String DEFAULT_AUTO_ACK_CONNECTION = "false";
 
   private static HpnlConfig _instance = new HpnlConfig();
 
@@ -78,6 +82,9 @@ public class HpnlConfig {
       bufferNumLarge = Integer.valueOf(tmp);
       tmp = getValue(properties, Constants.CFG_BUFFER_NUM_MAX, DEFAULT_BUFFER_NUM_MAX);
       bufferNumMax = Integer.valueOf(tmp);
+
+      tmp = getValue(properties, Constants.CFG_AUTO_ACK_CONNECTION, DEFAULT_AUTO_ACK_CONNECTION);
+      autoAckConnection = Boolean.valueOf(tmp);
 
       tmp = getValue(properties, Constants.CFG_CONTEXT_NUM, DEFAULT_CONTEXT_NUM);
       ctxNum = Integer.valueOf(tmp);
@@ -157,6 +164,10 @@ public class HpnlConfig {
 
   public int getBufferNumMax() {
     return bufferNumMax;
+  }
+
+  public boolean isAutoAckConnection (){
+    return autoAckConnection;
   }
 
   public int getReadBatchSize() {
