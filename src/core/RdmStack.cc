@@ -41,6 +41,14 @@ RdmStack::~RdmStack() {
 	  delete[] rx;
   }
 
+  if(ep){
+	  fi_close(&ep->fid);
+  }
+
+  if(av){
+	  fi_close(&av->fid);
+  }
+
   if(domain){
 	  fi_close(&domain->fid);
 	  domain = nullptr;
