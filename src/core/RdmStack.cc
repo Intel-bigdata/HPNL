@@ -91,7 +91,7 @@ int RdmStack::init() {
     hints->fabric_attr->prov_name = strdup(prov_name);
   }
 
-  if (fi_getinfo(FI_VERSION(1, 8), NULL, NULL, is_server ? FI_SOURCE : 0, hints, &info)){
+  if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, is_server ? FI_SOURCE : 0, hints, &info)){
     perror("fi_getinfo");
   }
   std::cout<<"provider: "<<info->fabric_attr->prov_name<<std::endl;
