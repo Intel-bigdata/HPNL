@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <iostream>
 
+#ifndef OFI_MR_BASIC_MAP
+#define OFI_MR_BASIC_MAP (FI_MR_ALLOCATED | FI_MR_PROV_KEY | FI_MR_VIRT_ADDR)
+#endif
+
 RdmStack::RdmStack(int buffer_num_, int recv_buffer_num_,int ctx_num_, int endpoint_num_, bool is_server_, const char* prov_name_) :
 buffer_num(buffer_num_), recv_buffer_num(recv_buffer_num_), ctx_num(ctx_num_), endpoint_num(endpoint_num_),
 is_server(is_server_), prov_name(prov_name_) {
@@ -83,15 +87,15 @@ int RdmStack::init() {
   hints->ep_attr->tx_ctx_cnt = endpoint_num;
   hints->ep_attr->rx_ctx_cnt = endpoint_num;
   //hints->rx_attr->msg_order = FI_ORDER_SAS;
-  hints->domain_attr->av_type         = FI_AV_UNSPEC;
+  //hints->domain_attr->av_type         = FI_AV_UNSPEC;
   hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
-  hints->domain_attr->threading = FI_THREAD_UNSPEC;
-
+  //hints->domain_attr->threading = FI_THREAD_UNSPEC;
+  hints->domain_attr->mr_mode = OFI_MR_BASIC_MAP;
   if (prov_name != nullptr){
     hints->fabric_attr->prov_name = strdup(prov_name);
   }
 
-  if (fi_getinfo(FI_VERSION(1, 5), NULL, NULL, 0, hints, &info)){
+  if (fi_getinfo(FI_VERSION(1, 8), NULL, NULL, 0, hints, &info)){
     perror("fi_getinfo");
   }
   std::cout<<"provider: "<<info->fabric_attr->prov_name<<std::endl;
@@ -109,7 +113,7 @@ int RdmStack::init() {
     .size = 0,
     .flags = 0,
     .format = FI_CQ_FORMAT_TAGGED,
-    .wait_obj = FI_WAIT_FD,
+    .wait_obj = FI_WAIT_NONE,
     .signaling_vector = 0,
     .wait_cond = FI_CQ_COND_NONE,
     .wait_set = NULL
@@ -117,7 +121,7 @@ int RdmStack::init() {
   cqs = new fid_cq*[endpoint_num];
   int size = 0;
   while(size < endpoint_num){//cqs[0] for connection setup
-	  if (fi_cq_open(domain, &cq_attr, &cqs[size], NULL)) {
+	  if (fi_cq_open(domain, &cq_attr, &cqs[size], &cqs[size])) {
 		perror("fi_cq_open");
 	  }
 	  size++;
