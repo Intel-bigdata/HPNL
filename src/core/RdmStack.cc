@@ -77,9 +77,8 @@ RdmStack::~RdmStack() {
 int RdmStack::init() {
   fi_info* hints = fi_allocinfo();
   hints->ep_attr->type = FI_EP_RDM;
-  hints->caps = FI_TAGGED | FI_DIRECTED_RECV;
+  hints->caps = FI_TAGGED | FI_NAMED_RX_CTX | FI_DIRECTED_RECV;
   hints->mode = FI_CONTEXT;
-
 //  hints->tx_attr->msg_order = FI_ORDER_SAS;
   hints->tx_attr->comp_order = FI_ORDER_NONE;
   hints->tx_attr->op_flags = FI_COMPLETION;
@@ -99,6 +98,7 @@ int RdmStack::init() {
     perror("fi_getinfo");
   }
   std::cout<<"provider: "<<info->fabric_attr->prov_name<<std::endl;
+  std::cout<<"number of context :"<<endpoint_num<<std::endl;
 
   fi_freeinfo(hints);
   if (fi_fabric(info->fabric_attr, &fabric, NULL)){
@@ -176,7 +176,7 @@ void RdmStack::setup_endpoint(const char* ip, int port){
   local_name_len = 64;
   fi_getname(&ep->fid, local_name, &(local_name_len));
 
-  assert(fi_av_insert(av, local_name, 1, &local_provider_addr, 0, NULL) == 1);
+  //assert(fi_av_insert(av, local_name, 1, &local_provider_addr, 0, NULL) == 1);
 }
 
 void* RdmStack::bind(const char* ip, int port, BufMgr* rbuf_mgr, BufMgr* sbuf_mgr) {

@@ -48,6 +48,7 @@ int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num,
 	if(accepted_connection){
 		send_ctx_addr = fi_rx_addr(dest_provider_addr, tx_ctx_index, RECV_CTX_BITS);
 		recv_ctx_addr = fi_rx_addr(dest_provider_addr, rx_ctx_index, RECV_CTX_BITS);
+		//recv_ctx_addr = FI_ADDR_UNSPEC;
 	}else{
 		send_ctx_addr = fi_rx_addr(dest_provider_addr, tx_ctx_index, RECV_CTX_BITS);
 //		recv_ctx_addr = fi_rx_addr(dest_provider_addr, rx_ctx_index, RECV_CTX_BITS);
@@ -95,6 +96,8 @@ int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num,
 }
 
 void RdmConnection::adjust_send_target(int send_ctx_id){
+	fi_av_remove(av, &dest_provider_addr, 1, 0);
+	assert(fi_av_insert(av, info->dest_addr, 1, &dest_provider_addr, 0, NULL) == 1);
 	send_ctx_addr = fi_rx_addr(dest_provider_addr, send_ctx_id, RECV_CTX_BITS);
 }
 
