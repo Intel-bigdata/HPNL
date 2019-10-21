@@ -15,48 +15,39 @@ public class ServerTest {
 
   private HpnlService service;
   private String hostname;
+  private int numThreads;
   private int msgSize;
 
   private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   public ServerTest(int numThreads, int numBuffer, int bufferSize, int msgSize, String hostname) {
     service = HpnlFactory.getService(numThreads, numBuffer, numBuffer, bufferSize, true);
+    this.numThreads = numThreads;
     this.hostname = hostname;
     this.msgSize = msgSize;
   }
 
   public void start()throws Exception{
-    EventTask task = service.getCqTask(0);
-    EventTask task2 = service.getCqTask(1);
-    Thread th = new Thread(()->{
-      System.out.println("starting");
-      while(!Thread.currentThread().isInterrupted()) {
-        task.run();
+    List<Thread> threads = new ArrayList<>();
+    for(int i=0; i<numThreads; i++){
+      EventTask task = service.getCqTask(i);
+      Thread th = new Thread(()->{
+        System.out.println("starting");
+        while(!Thread.currentThread().isInterrupted()) {
+          task.run();
 //        task2.run();
-      }
-      System.out.println("ending");
-    });
+        }
+        System.out.println("ending");
+      });
 
-    th.setUncaughtExceptionHandler((Thread t, Throwable e) -> {
-      e.printStackTrace();
-    });
+      th.setUncaughtExceptionHandler((Thread t, Throwable e) -> {
+        e.printStackTrace();
+      });
 
-    th.start();
+      th.start();
+      threads.add(th);
+    }
 
-    Thread th2 = new Thread(()->{
-      System.out.println("starting child connection");
-      while(!Thread.currentThread().isInterrupted()) {
-//        task.run();
-        task2.run();
-      }
-      System.out.println("ending child connection");
-    });
-
-    th2.setUncaughtExceptionHandler((Thread t, Throwable e) -> {
-      e.printStackTrace();
-    });
-
-    th2.start();
     service.bind(hostname, 12345, 0, new Handler() {
       @Override
       public int handle(Connection connection, int bufferId, int bufferSize) {
@@ -70,7 +61,7 @@ public class ServerTest {
       }
     }, new RecvCallback(true, 5, msgSize, -1));
     System.out.println("waiting");
-    th.join();
+    threads.get(0).join();
   }
 
   public static void main(String... args)throws Exception {
