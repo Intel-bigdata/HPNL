@@ -121,7 +121,7 @@ int RdmStack::init() {
   cqs = new fid_cq*[endpoint_num];
   int size = 0;
   while(size < endpoint_num){//cqs[0] for connection setup
-	  if (fi_cq_open(domain, &cq_attr, &cqs[size], &cqs[size])) {
+	  if (fi_cq_open(domain, &cq_attr, &cqs[size], NULL)) {
 		perror("fi_cq_open");
 	  }
 	  size++;
