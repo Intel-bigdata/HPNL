@@ -6,26 +6,20 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HpnlBufferAllocator {
-    private final BufferCache<HpnlBuffer> CACHE_TINY;
     private final BufferCache<HpnlBuffer> CACHE_SMALL;
-    private final BufferCache<HpnlBuffer> CACHE_MEDIUM;
     private final BufferCache<HpnlBuffer> CACHE_LARGE;
     private BufferCache<HpnlBuffer> CACHE_MAXSIZE;
 
     private BufferCache.CacheHandler<HpnlBuffer> cacheHandler;
     private int maxSize;
 
-    public static final int BUFFER_TINY = 512;
-    public static final int BUFFER_SMALL = 1024;
-    public static final int BUFFER_MEDIUM = 4096;
-    public static final int BUFFER_LARGE = 8192;
+    public static final int BUFFER_SMALL = 4096;
+    public static final int BUFFER_LARGE = 16384;
 
     private static final int BUFFER_ID_RANGES = 1000000;
     private static final int MIN_DEFAULT_BUFFER_ID = -BUFFER_ID_RANGES;
     private static int currentBufferIdLimit = MIN_DEFAULT_BUFFER_ID;
     private static Queue<IdRange> idRangeQueue = new ConcurrentLinkedQueue<>();
-
-    public static final int NUM_UNIT = 128;
 
     public static final int BUFFER_METADATA_SIZE = AbstractHpnlBuffer.BASE_METADATA_SIZE;
 
@@ -37,14 +31,10 @@ public class HpnlBufferAllocator {
     private HpnlBufferAllocator(BufferCache.CacheHandler<HpnlBuffer> cacheHandler){
         this.cacheHandler = cacheHandler;
         HpnlConfig config = HpnlConfig.getInstance();
-        int tinyNum = config.getBufferNumTiny();
         int smallNum = config.getBufferNumSmall();
-        int mediumNum = config.getBufferNumMedium();
         int largeNum = config.getBufferNumLarge();
 
-        CACHE_TINY = BufferCache.getInstance(cacheHandler, BUFFER_TINY, tinyNum, tinyNum);
         CACHE_SMALL = BufferCache.getInstance(cacheHandler, BUFFER_SMALL, smallNum, smallNum);
-        CACHE_MEDIUM = BufferCache.getInstance(cacheHandler, BUFFER_MEDIUM, mediumNum, mediumNum);
         CACHE_LARGE = BufferCache.getInstance(cacheHandler, BUFFER_LARGE, largeNum, largeNum);
         this.maxSize = -1;
     }
@@ -53,10 +43,6 @@ public class HpnlBufferAllocator {
         return DEFAULT.getBuffer(size);
     }
 
-//    public static HpnlBuffer getBufferByIdFromDefault(int bufferId){
-//        return DEFAULT.getBufferById(bufferId);
-//    }
-
     public static void setDefaultMaxBufferSize(int maxSize){
         setMaxBufferSize(DEFAULT, maxSize);
     }
@@ -64,6 +50,11 @@ public class HpnlBufferAllocator {
     private static void setMaxBufferSize(HpnlBufferAllocator allocator, int maxSize){
         synchronized (allocator){
             if(allocator.CACHE_MAXSIZE == null){
+                if(allocator.BUFFER_LARGE > maxSize){
+                    throw new IllegalArgumentException(
+                            String.format("max buffer size %d should be no less than large buffer size %d",
+                                    maxSize, BUFFER_LARGE));
+                }
                 allocator.maxSize = maxSize;
                 int num = HpnlConfig.getInstance().getBufferNumMax();
                 allocator.CACHE_MAXSIZE = BufferCache.getInstance(allocator.cacheHandler, maxSize,
@@ -73,10 +64,6 @@ public class HpnlBufferAllocator {
     }
 
     public static HpnlBufferAllocator getInstance(){
-        return getInstance(false);
-    }
-
-    public static HpnlBufferAllocator getInstance(boolean largePool){
         IdRange idRange = idRangeQueue.poll();
         if(idRange == null) {
             synchronized (idRangeQueue) {
@@ -99,30 +86,13 @@ public class HpnlBufferAllocator {
         return getBuffer(this, size);
     }
 
-//    public HpnlBuffer getBufferById(int bufferId){
-//        if(bufferId >= MIN_DEFAULT_BUFFER_ID){
-//            return getBufferById(DEFAULT, bufferId);
-//        }
-//        return getBufferById(this, bufferId);
-//    }
-
     /**
-     * different sizes (512, 1024, 4096, 8192, maxSize) in threadlocal
+     * different sizes (4096, 16384, maxSize) in threadlocal
      * @return
      */
     private HpnlBuffer getBuffer(HpnlBufferAllocator allocator, int size){
-        if(size <= BUFFER_TINY){
-            HpnlBuffer buffer = allocator.CACHE_TINY.getInstance();
-            buffer.clear();
-            return buffer;
-        }
         if(size <= BUFFER_SMALL){
             HpnlBuffer buffer = allocator.CACHE_SMALL.getInstance();
-            buffer.clear();
-            return buffer;
-        }
-        if(size <= BUFFER_MEDIUM){
-            HpnlBuffer buffer = allocator.CACHE_MEDIUM.getInstance();
             buffer.clear();
             return buffer;
         }
@@ -144,9 +114,7 @@ public class HpnlBufferAllocator {
     }
 
     public void clear(){
-        CACHE_TINY.clear();
         CACHE_SMALL.clear();
-        CACHE_MEDIUM.clear();
         CACHE_LARGE.clear();
         if(CACHE_MAXSIZE != null){
             CACHE_MAXSIZE.clear();
@@ -155,29 +123,6 @@ public class HpnlBufferAllocator {
         idRange.reset();
         idRangeQueue.offer(idRange);
     }
-
-//    private HpnlBuffer getBufferById(HpnlBufferAllocator allocator, int bufferId){
-//        HpnlBuffer buffer = allocator.CACHE_TINY.getBuffer(bufferId);
-//        if(buffer != null){
-//            return buffer;
-//        }
-//        buffer = allocator.CACHE_SMALL.getBuffer(bufferId);
-//        if(buffer != null){
-//            return buffer;
-//        }
-//        buffer = allocator.CACHE_MEDIUM.getBuffer(bufferId);
-//        if(buffer != null){
-//            return buffer;
-//        }
-//        buffer = allocator.CACHE_LARGE.getBuffer(bufferId);
-//        if(buffer != null) {
-//            return buffer;
-//        }
-//        if(maxSize == -1){
-//            throw new IllegalStateException("please set max buffer size first");
-//        }
-//        return allocator.CACHE_MAXSIZE.getBuffer(bufferId);
-//    }
 
     private static class BufferCacheHandler implements BufferCache.CacheHandler<HpnlBuffer>{
         private IdRange idRange;
