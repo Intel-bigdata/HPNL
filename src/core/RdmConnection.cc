@@ -153,11 +153,11 @@ int RdmConnection::shutdown() {
 }
 
 int RdmConnection::send(Chunk* ck) {
-  if (fi_send(ep, ck->buffer, ck->size, nullptr, ck->peer_addr, &ck->ctx) < 0) {
+  int res = fi_send(ep, ck->buffer, ck->size, nullptr, ck->peer_addr, &ck->ctx);
+  if (res != 0 && res != -11) {
     perror("fi_send");
-    return -1;
   }
-  return 0;
+  return res;
 }
 
 int RdmConnection::send(int buffer_size, int buffer_id) {
@@ -179,11 +179,11 @@ int RdmConnection::send(int buffer_size, int buffer_id) {
   msg.iov_count = 1;
   msg.addr = ck->peer_addr;
   msg.context = &ck->ctx;
-  if (fi_sendmsg(ep, &msg, FI_INJECT_COMPLETE)) {
+  int res = fi_sendmsg(ep, &msg, FI_INJECT_COMPLETE);
+  if (res != 0 && res != -11) {
     perror("fi_sendmsg");
-    return -1;
   }
-  return 0;
+  return res;
 }
 
 int RdmConnection::sendBuf(const char* buffer, int buffer_size) {
@@ -193,11 +193,11 @@ int RdmConnection::sendBuf(const char* buffer, int buffer_size) {
   char tmp[32];
   size_t tmp_len = 32;
   fi_av_straddr(av, info->dest_addr, tmp, &tmp_len);
-  if (fi_send(ep, buffer, buffer_size, nullptr, address_map[tmp], ctx)) {
+  int res = fi_send(ep, buffer, buffer_size, nullptr, address_map[tmp], ctx);
+  if (res != 0 && res != -11) {
     perror("fi_send");
-    return -1;
   }
-  return 0;
+  return res;
 }
 
 int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name) {
@@ -227,11 +227,11 @@ int RdmConnection::sendTo(int buffer_size, int buffer_id, const char* peer_name)
   msg.iov_count = 1;
   msg.addr = ck->peer_addr;
   msg.context = &ck->ctx;
-  if (fi_sendmsg(ep, &msg, FI_INJECT_COMPLETE)) {
+  int res = fi_sendmsg(ep, &msg, FI_INJECT_COMPLETE);
+  if (res != 0 && res != -11) {
     perror("fi_sendmsg");
-    return -1;
   }
-  return 0;
+  return res;
 }
 
 int RdmConnection::sendBufTo(const char* buffer, int buffer_size, const char* peer_name) {
@@ -252,12 +252,11 @@ int RdmConnection::sendBufTo(const char* buffer, int buffer_size, const char* pe
   } else {
     peer_addr = address_map[tmp];
   }
-
-  if (fi_send(ep, buffer, buffer_size, nullptr, peer_addr, ctx)) {
+  int res = fi_send(ep, buffer, buffer_size, nullptr, peer_addr, ctx);
+  if (res != 0 && res != -11) {
     perror("fi_send");
-    return -1;
   }
-  return 0;
+  return res;
 }
 
 char* RdmConnection::get_peer_name() { return (char*)info->dest_addr; }
