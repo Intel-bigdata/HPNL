@@ -73,7 +73,7 @@ RdmStack::~RdmStack() {
 int RdmStack::init() {
   fi_info* hints = fi_allocinfo();
   hints->ep_attr->type = FI_EP_RDM;
-  hints->caps = FI_TAGGED | FI_DIRECTED_RECV;
+  hints->caps = FI_TAGGED | FI_DIRECTED_RECV | FI_RMA;
   hints->mode = FI_CONTEXT;
 
 //  hints->tx_attr->msg_order = FI_ORDER_SAS;
@@ -86,6 +86,7 @@ int RdmStack::init() {
   hints->domain_attr->av_type         = FI_AV_UNSPEC;
   hints->domain_attr->resource_mgmt   = FI_RM_ENABLED;
   hints->domain_attr->threading = FI_THREAD_UNSPEC;
+  hints->domain_attr->mr_mode = FI_MR_BASIC;
 
   if (prov_name != nullptr){
     hints->fabric_attr->prov_name = strdup(prov_name);
@@ -190,7 +191,7 @@ void* RdmStack::bind(const char* ip, int port, BufMgr* rbuf_mgr, BufMgr* sbuf_mg
   }
 
   long id = id_generator.fetch_add(1);
-  server_con = new RdmConnection(connect_info, av,
+  server_con = new RdmConnection(domain, connect_info, av,
 		  FI_ADDR_UNSPEC, cqs[0], tx[0], rx[0], rbuf_mgr, sbuf_mgr, true);
   server_con->set_id(id);
   server_con->set_local_name(local_name, local_name_len, local_provider_addr);
@@ -218,7 +219,7 @@ RdmConnection* RdmStack::get_con(const char* dest_ip, int dest_port,
   }else{
 	  assert(cq_index == 0);
   }
-  RdmConnection *con = new RdmConnection(connect_info, av,
+  RdmConnection *con = new RdmConnection(domain, connect_info, av,
 		  is_server ? dest_provider_addr:FI_ADDR_UNSPEC,
 				  cqs[cq_index], tx[cq_index], rx[cq_index], rbuf_mgr, sbuf_mgr, false);
   con->set_id(id);

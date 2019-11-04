@@ -5,6 +5,7 @@
 #include <rdma/fi_cm.h>
 #include <rdma/fi_endpoint.h>
 #include <rdma/fi_tagged.h>
+#include <rdma/fi_rma.h>
 #include <string.h>
 
 #include <mutex>
@@ -19,7 +20,7 @@
 
 class RdmConnection : public Connection {
   public:
-    RdmConnection(fi_info*, fid_av*, uint64_t, fid_cq*,
+    RdmConnection(fid_domain *, fi_info*, fid_av*, uint64_t, fid_cq*,
     		fid_ep*, fid_ep*, BufMgr*, BufMgr*, bool);
     ~RdmConnection();
     virtual int init(int, int, int, uint64_t, int, int) override;
@@ -34,6 +35,8 @@ class RdmConnection : public Connection {
     virtual int sendBufWithRequest(char*, int, int, int) override;
     virtual int sendTo(int, int, uint64_t) override;
     virtual int sendBufTo(char*, int, int, int, uint64_t) override;
+    virtual int read(int, int, uint64_t, uint64_t, uint64_t) override;
+    virtual int read(int, uint64_t, uint64_t, int, uint64_t, uint64_t, uint64_t) override;
 
     virtual char* get_peer_name() override;
     char* get_local_name();
@@ -42,6 +45,8 @@ class RdmConnection : public Connection {
     virtual void reclaim_chunk(Chunk*) override;
     virtual int activate_chunk(Chunk*) override;
     virtual int activate_chunk(int) override;
+    virtual uint64_t reg_rma_buffer(uint64_t, uint64_t, int) override;
+    virtual void unreg_rma_buffer(int) override;
     std::vector<Chunk*> get_send_buffer();
     std::vector<Chunk*> get_recv_buffer();
 
@@ -119,6 +124,8 @@ class RdmConnection : public Connection {
     int ctx_num;
 
     Chunk **send_global_buffers_array;
+
+    std::unordered_map<int, Chunk*> rdma_buffers_map;
 
     bool is_server;
     bool accepted_connection;

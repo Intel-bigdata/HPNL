@@ -17,6 +17,7 @@ class Connection {
     virtual int sendTo(int, int, uint64_t) { return 0; }
     virtual int sendBufTo(char*, int, int, int, uint64_t) { return 0; }
     virtual int read(int, int, uint64_t, uint64_t, uint64_t) { return 0; }
+    virtual int read(int, uint64_t, uint64_t, int, uint64_t, uint64_t, uint64_t) { return 0; }
     virtual void decode_peer_name(void*, char*) {}
     virtual char* decode_buf(void *buf) { return nullptr; }
     virtual Chunk* encode(void *buf, int size, char*) { return nullptr; }
@@ -24,6 +25,9 @@ class Connection {
     virtual void reclaim_chunk(Chunk*) {}
     virtual int activate_chunk(Chunk*) { return 0; }
     virtual int activate_chunk(int) {}
+    virtual uint64_t reg_rma_buffer(uint64_t, uint64_t, int) { return 0;}
+    virtual void unreg_rma_buffer(int) {}
+
     virtual void set_recv_callback(Callback*) {}
     virtual void set_send_callback(Callback*) {}
     virtual Callback* get_recv_callback() { return nullptr; }

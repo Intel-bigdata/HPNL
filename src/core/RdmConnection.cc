@@ -6,10 +6,10 @@
 #include <bitset>
 #include <stdio.h>
 
-RdmConnection::RdmConnection(fi_info* info_,
+RdmConnection::RdmConnection(fid_domain *domain_, fi_info* info_,
 		fid_av* av_, fi_addr_t dest_provider_addr_, fid_cq* cq_,
 		fid_ep* tx_, fid_ep* rx_, BufMgr* rbuf_mgr_,
-		BufMgr* sbuf_mgr_, bool is_server_) : info(info_), av(av_),
+		BufMgr* sbuf_mgr_, bool is_server_) : domain(domain_), info(info_), av(av_),
 		dest_provider_addr(dest_provider_addr_), conCq(cq_),
 		tx(tx_), rx(rx_), rbuf_mgr(rbuf_mgr_), sbuf_mgr(sbuf_mgr_), is_server(is_server_) {
 	accepted_connection = false;
@@ -30,6 +30,11 @@ RdmConnection::~RdmConnection() {
 	  }
 	  delete send_global_buffers_array;
   }
+
+  for (auto it = rdma_buffers_map.begin(); it != rdma_buffers_map.end(); ++it){
+	  delete it->second;
+  }
+  rdma_buffers_map.erase(rdma_buffers_map.begin(), rdma_buffers_map.end());
 }
 
 int RdmConnection::init(int buffer_num, int recv_buffer_num, int ctx_num,
@@ -213,6 +218,18 @@ int RdmConnection::sendBufTo(char* buffer, int buffer_id, int ctx_id, int buffer
   return 0;
 }
 
+int RdmConnection::read(int buffer_id, int local_offset, uint64_t len, uint64_t remote_addr, uint64_t remote_key) {
+	Chunk *ck = rdma_buffers_map[buffer_id];
+	return fi_read(rx, (char*)ck->buffer + local_offset, len, fi_mr_desc((fid_mr*)ck->mr),
+	                 0, remote_addr, remote_key, ck);
+}
+
+int RdmConnection::read(int buffer_id, uint64_t buffer_addr, uint64_t buffer_size, int local_offset, uint64_t len,
+		uint64_t remote_addr, uint64_t remote_key) {
+	reg_rma_buffer(buffer_addr, buffer_size, buffer_id);
+	return read(buffer_id, local_offset, len, remote_addr, remote_key);
+}
+
 char* RdmConnection::get_peer_name() {
   return (char*)info->dest_addr;
 }
@@ -241,6 +258,35 @@ char* RdmConnection::decode_buf(void *buf) {
 
 fid_cq* RdmConnection::get_cq() {
   return conCq; 
+}
+
+uint64_t RdmConnection::reg_rma_buffer(uint64_t buffer_addr, uint64_t buffer_size, int buffer_id){
+	Chunk *ck = new Chunk();
+	ck->buffer = (char *)buffer_addr;
+	ck->capacity = buffer_size;
+	ck->buffer_id = buffer_id;
+	ck->con = this;
+	fid_mr* mr;
+	if (fi_mr_reg(domain, ck->buffer, ck->capacity,
+					FI_REMOTE_READ | FI_READ | FI_WRITE | FI_REMOTE_WRITE, 0, 0, 0, &mr,
+	                NULL)) {
+	    delete ck;
+	    perror("fi_mr_reg");
+	    return -1;
+	}
+	ck->mr = mr;
+	rdma_buffers_map.insert(std::pair<int, Chunk*>(buffer_id, ck));
+	return ((fid_mr*)ck->mr)->key;
+}
+
+void RdmConnection::unreg_rma_buffer(int buffer_id) {
+	Chunk* ck = rdma_buffers_map[buffer_id];
+	if (!ck) {
+	   return;
+	}
+	fi_close(&((fid_mr*)ck->mr)->fid);
+	delete ck;
+	rdma_buffers_map.erase(buffer_id);
 }
 
 int RdmConnection::activate_chunk(Chunk *ck) {

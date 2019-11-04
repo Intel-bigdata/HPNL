@@ -68,7 +68,9 @@ public interface HpnlBuffer {
 
   void received();
 
-  enum BufferType{
+  long getMemoryAddress();
+
+    enum BufferType{
     SEND, RECV, GLOBAL
   }
 }

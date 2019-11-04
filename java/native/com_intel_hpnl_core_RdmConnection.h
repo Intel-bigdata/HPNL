@@ -120,8 +120,46 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_releaseRecvBuffer
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_adjustSendTarget
   (JNIEnv *, jobject, jint, jlong);
 
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    regRmaBuffer
+ * Signature: (JJIJ)J
+ */
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmConnection_regRmaBuffer
+  (JNIEnv *, jobject, jlong, jlong, jint, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    unregRmaBuffer
+ * Signature: (IJ)V
+ */
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_unregRmaBuffer
+  (JNIEnv *, jobject, jint, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    read
+ * Signature: (IIJJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_read
+  (JNIEnv *, jobject, jint, jint, jlong, jlong, jlong, jlong);
+
+
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    readToBuffer
+ * Signature: (IJJIJJJJ)I
+ */
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_readToBuffer
+  (JNIEnv *, jobject, jint, jlong, jlong, jint, jlong, jlong, jlong, jlong);
+
+/*
+ * Class:     com_intel_hpnl_core_RdmConnection
+ * Method:    free
+ * Signature: (J)V
+ */
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_free
-  (JNIEnv *env, jobject thisObj, jlong conPtr);
+  (JNIEnv *, jobject, jlong);
 
 #ifdef __cplusplus
 }

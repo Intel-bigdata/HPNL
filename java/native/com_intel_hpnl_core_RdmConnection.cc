@@ -120,6 +120,35 @@ JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_deleteGlobalRef
 	con->set_java_conn(NULL);
 }
 
+
+JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_RdmConnection_regRmaBuffer
+  (JNIEnv *env, jobject thisObj, jlong bufferAddr, jlong bufferSize, jint bufferId, jlong conPtr){
+	RdmConnection *con = *(RdmConnection**)&conPtr;
+	return con->reg_rma_buffer(bufferAddr, bufferSize, bufferId);
+}
+
+
+JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_unregRmaBuffer
+  (JNIEnv *env, jobject thisObj, jint bufferId, jlong conPtr){
+	RdmConnection *con = *(RdmConnection**)&conPtr;
+	con->unreg_rma_buffer(bufferId);
+}
+
+
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_read
+  (JNIEnv *env, jobject thisObj, jint bufferId, jint offset, jlong len, jlong remoteAddr, jlong remoteKey, jlong conPtr){
+	RdmConnection *con = *(RdmConnection**)&conPtr;
+	return con->read(bufferId, offset, len, remoteAddr, remoteKey);
+}
+
+
+JNIEXPORT jint JNICALL Java_com_intel_hpnl_core_RdmConnection_readToBuffer
+  (JNIEnv *env, jobject thisObj, jint bufferId, jlong bufferAddr, jlong bufferSize, jint offset, jlong len,
+		  jlong remoteAddr, jlong remoteKey, jlong conPtr){
+	RdmConnection *con = *(RdmConnection**)&conPtr;
+	return con->read(bufferId, bufferAddr, bufferSize, offset, len, remoteAddr, remoteKey);
+}
+
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_RdmConnection_free
   (JNIEnv *env, jobject thisObj, jlong conPtr){
 	RdmConnection *con = *(RdmConnection**)&conPtr;

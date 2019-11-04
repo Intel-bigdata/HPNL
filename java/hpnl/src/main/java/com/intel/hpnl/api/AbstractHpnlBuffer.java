@@ -193,4 +193,9 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   public BufferType getBufferType() {
     return bufferType;
   }
+
+  @Override
+  public long getMemoryAddress(){
+    return 0;
+  }
 }

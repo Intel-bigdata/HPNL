@@ -29,6 +29,14 @@ public interface Connection {
 
   void pushRecvBuffer(HpnlBuffer buffer);
 
+  long regRmaBuffer(HpnlBuffer buffer);
+
+  void unregRmaBuffer(int bufferId);
+
+  int read(int bufferId, int offset, long len, long remoteAddr, long remoteKey);
+
+  int read(HpnlBuffer buffer, int offset, long len, long remoteAddr, long remoteKey);
+
   int sendBuffer(HpnlBuffer buffer, int bufferSize) ;
 
   int sendConnectRequest(HpnlBuffer buffer, int bufferSize) ;

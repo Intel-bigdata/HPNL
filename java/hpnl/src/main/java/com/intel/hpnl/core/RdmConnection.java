@@ -64,6 +64,15 @@ public class RdmConnection extends AbstractConnection{
 
   private native int sendBufTo(ByteBuffer buffer, int bufferId, int ctxId, int size, long peerAddress, long nativeHandle);
 
+  private native long regRmaBuffer(long memoryAddr, long bufferSize, int bufferId, long nativeHandle);
+
+  private native void unregRmaBuffer(int bufferId, long nativeHandle);
+
+  private native int read(int bufferId, int offset, long len, long remoteAddr, long remoteKey, long nativeHandle);
+
+  private native int readToBuffer(int bufferId, long bufferAddr, long bufferSize, int offset, long len,
+                          long remoteAddr, long remoteKey, long nativeHandle);
+
   private native void releaseRecvBuffer(int id, long nativeHandle);
 
   private native void adjustSendTarget(int sendCtxId, long nativeHandle);
@@ -71,6 +80,8 @@ public class RdmConnection extends AbstractConnection{
   private native void deleteGlobalRef(long nativeHandle);
 
   private native void free(long nativeHandle);
+
+
 
   protected void initialize(long nativeCon) {
     this.init(nativeCon);
@@ -104,6 +115,27 @@ public class RdmConnection extends AbstractConnection{
   public void pushRecvBuffer(HpnlBuffer buffer) {
     ((HpnlRdmBuffer)buffer).setConnection(this);
     super.pushRecvBuffer(buffer);
+  }
+
+  @Override
+  public long regRmaBuffer(HpnlBuffer buffer) {
+    return regRmaBuffer(buffer.getMemoryAddress(), buffer.capacity(), buffer.getBufferId(), nativeHandle);
+  }
+
+  @Override
+  public int read(HpnlBuffer buffer, int offset, long len, long remoteAddr, long remoteKey) {
+    return readToBuffer(buffer.getBufferId(), buffer.getMemoryAddress(), buffer.capacity(), offset, len,
+            remoteAddr, remoteKey, nativeHandle);
+  }
+
+  @Override
+  public void unregRmaBuffer(int bufferId){
+    unregRmaBuffer(bufferId, nativeHandle);
+  }
+
+  @Override
+  public int read(int bufferId, int offset, long len, long remoteAddr, long remoteKey){
+    return read(bufferId, offset, len, remoteAddr, remoteKey, nativeHandle);
   }
 
   @Override
