@@ -34,8 +34,8 @@ public class HpnlBufferAllocator {
         int smallNum = config.getBufferNumSmall();
         int largeNum = config.getBufferNumLarge();
 
-        CACHE_SMALL = BufferCache.getInstance(cacheHandler, BUFFER_SMALL, smallNum, smallNum);
-        CACHE_LARGE = BufferCache.getInstance(cacheHandler, BUFFER_LARGE, largeNum, largeNum);
+        CACHE_SMALL = BufferCache.getInstance(cacheHandler, BUFFER_SMALL, smallNum);
+        CACHE_LARGE = BufferCache.getInstance(cacheHandler, BUFFER_LARGE, largeNum);
         this.maxSize = -1;
     }
 
@@ -58,7 +58,7 @@ public class HpnlBufferAllocator {
                 allocator.maxSize = maxSize;
                 int num = HpnlConfig.getInstance().getBufferNumMax();
                 allocator.CACHE_MAXSIZE = BufferCache.getInstance(allocator.cacheHandler, maxSize,
-                        num, num);
+                        num);
             }
         }
     }
@@ -178,9 +178,6 @@ public class HpnlBufferAllocator {
             super(id);
             this.cache = cache;
             byteBuffer = ByteBuffer.allocateDirect(size);
-            if(cache != null){
-                cache.putBuffer(id, this);
-            }
         }
 
         @Override

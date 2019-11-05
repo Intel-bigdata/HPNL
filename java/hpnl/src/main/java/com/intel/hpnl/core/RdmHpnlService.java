@@ -12,7 +12,7 @@ public class RdmHpnlService implements HpnlService {
 
   public RdmHpnlService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize, boolean server) {
     if(bufferSize < HpnlBufferAllocator.BUFFER_LARGE){
-      throw new IllegalArgumentException("buffer size should be no less than "+HpnlBufferAllocator.BUFFER_LARGE);
+      throw new IllegalArgumentException("buffer size should be no less than "+ HpnlBufferAllocator.BUFFER_LARGE);
     }
     if (server) {
       this.service = (new RdmServerService(numThreads, numBuffers, numRecvBuffers, bufferSize)).init();

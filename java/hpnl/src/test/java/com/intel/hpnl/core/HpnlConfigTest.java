@@ -1,14 +1,10 @@
 package com.intel.hpnl.core;
 
 import com.intel.hpnl.api.Constants;
-import com.intel.hpnl.api.HpnlBufferAllocator;
 import com.intel.hpnl.api.HpnlConfig;
 import org.junit.Assert;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.powermock.reflect.Whitebox;
-
-import java.nio.ByteBuffer;
 
 public class HpnlConfigTest {
 

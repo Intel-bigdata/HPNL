@@ -6,6 +6,7 @@ import org.junit.Test;
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PooledBufferTest {
 
@@ -123,5 +124,57 @@ public class PooledBufferTest {
         public void go() {
             status = 2;
         }
+    }
+
+    @Test
+    public void testRpcNettyCache()throws Exception{
+        int directArena = Runtime.getRuntime().availableProcessors()*2; // specified or core size*2
+        int tinyCacheSize = 512;// specified or 512
+        int smallCacheSize = 256;// specified or 256
+        int normalCacheSize = 64;// specified or 64
+        PooledByteBufAllocator allocator = new PooledByteBufAllocator(true, 0, directArena,
+        8192, 11, tinyCacheSize, smallCacheSize, normalCacheSize, true);
+    }
+
+    @Test
+    public void testLazySet()throws Exception{
+        AtomicInteger value = new AtomicInteger(0);
+        Runnable task = () -> {
+            for (int i = 0; i < 1000; i++) {
+                value.lazySet(i+ 1);
+            }
+            while (!Thread.currentThread().isInterrupted()){
+                try {
+                    Thread.sleep(1);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        Runnable task2 = () -> {
+            while(true) {
+                int i = value.get();
+                System.out.println(Thread.currentThread().getName() + ": " + i);
+                try {
+                    Thread.sleep(2);
+                }catch (Exception e){
+                    e.printStackTrace();
+                }
+                if(i == 1000){
+                    System.out.println("done");
+                    break;
+                }
+            }
+        };
+        Thread t1 = new Thread(task, "t1");
+        Thread t2 = new Thread(task2, "t2");
+        t1.start();
+        t2.start();
+        t1.join();
+        t2.join();
+
+        System.out.println(value.intValue());
+
     }
 }
