@@ -4,7 +4,7 @@
   <groupId>com.intel.hpnl</groupId>
   <artifactId>hpnl-eventpool</artifactId>
   <packaging>jar</packaging>
-  <version>0.5</version>
+  <version>1.0</version>
   <name>hpnl</name>
   <url>http://maven.apache.org</url>
   <dependencies>

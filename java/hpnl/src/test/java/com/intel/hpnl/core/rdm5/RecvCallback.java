@@ -1,18 +1,21 @@
 package com.intel.hpnl.core.rdm5;
 
 import com.intel.hpnl.api.*;
+import com.intel.hpnl.core.FixedSizeBufferAllocator;
 
 import java.nio.ByteBuffer;
 
 public class RecvCallback implements Handler {
 
+  private final HpnlService service;
   private ByteBuffer peerName;
 
-  public RecvCallback(boolean is_server, int interval, int msgSize, ByteBuffer peerName) {
+  public RecvCallback(boolean is_server, int interval, int msgSize, ByteBuffer peerName, HpnlService service) {
     this.is_server = is_server;
     this.interval = interval;
     this.msgSize = msgSize;
     this.peerName = peerName;
+    this.service = service;
   }
 
   public int handle(Connection con, int bufferId, int blockBufferSize) {
@@ -37,7 +40,7 @@ public class RecvCallback implements Handler {
     assert(recvBuffer != null);
     ByteBuffer recvByteBuffer = recvBuffer.parse(blockBufferSize);
 
-    HpnlBuffer buffer = HpnlBufferAllocator.getBufferFromDefault(8192);
+    HpnlBuffer buffer = service.getHpnlBuffer(8192);
     buffer.clear();
     ByteBuffer rawBuffer = buffer.getRawBuffer();
     rawBuffer.position(4113);

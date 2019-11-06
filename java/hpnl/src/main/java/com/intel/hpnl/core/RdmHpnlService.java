@@ -10,14 +10,12 @@ public class RdmHpnlService implements HpnlService {
   private boolean server;
   private AtomicLong nextConnectionId = new AtomicLong(1L);
 
-  public RdmHpnlService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize, boolean server) {
-    if(bufferSize < HpnlBufferAllocator.BUFFER_LARGE){
-      throw new IllegalArgumentException("buffer size should be no less than "+ HpnlBufferAllocator.BUFFER_LARGE);
-    }
+  public RdmHpnlService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize,
+                        boolean server, String role) {
     if (server) {
-      this.service = (new RdmServerService(numThreads, numBuffers, numRecvBuffers, bufferSize)).init();
+      this.service = (new RdmServerService(numThreads, numBuffers, numRecvBuffers, bufferSize, role)).init();
     } else {
-      this.service = (new RdmService(numThreads, numBuffers, numRecvBuffers, bufferSize)).init();
+      this.service = (new RdmService(numThreads, numBuffers, numRecvBuffers, bufferSize, role)).init();
     }
     this.service.setHpnlService(this);
     this.server = server;
@@ -44,6 +42,11 @@ public class RdmHpnlService implements HpnlService {
   }
 
   @Override
+  public HpnlBuffer getHpnlBuffer(int cap) {
+      return service.getBuffer(cap);
+  }
+
+    @Override
   public EventTask getCqTask(int cqIndex) {
     return service.getEventTask(cqIndex);
   }

@@ -1,14 +1,20 @@
 package com.intel.hpnl.api;
 
+import io.netty.buffer.ByteBuf;
+
 import java.nio.ByteBuffer;
 
 public interface HpnlBuffer {
 
   ByteBuffer parse(int bufferSize);
 
+  ByteBuf parseNetty(int bufferSize);
+
   byte getFrameType();
 
   ByteBuffer getRawBuffer();
+
+  ByteBuf getRawNettyBuffer();
 
   int remaining();
 
@@ -70,7 +76,7 @@ public interface HpnlBuffer {
 
   long getMemoryAddress();
 
-    enum BufferType{
-    SEND, RECV, GLOBAL
+  enum BufferType{
+    SEND, RECV, GLOBAL, RDMA
   }
 }

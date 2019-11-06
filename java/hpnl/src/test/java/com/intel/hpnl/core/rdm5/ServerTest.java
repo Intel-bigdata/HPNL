@@ -14,7 +14,7 @@ public class ServerTest {
   private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   public ServerTest(int numThreads, int numBuffer, int bufferSize, String hostname) {
-    service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, 50, true);
+    service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, 50, true, "rpc");
     this.hostname = hostname;
   }
 
@@ -39,7 +39,7 @@ public class ServerTest {
         System.out.println("bound");
         return 0;
       }
-    }, new RecvCallback(true, 5, 4096, null));
+    }, new RecvCallback(true, 5, 4096, null, service));
     System.out.println("waiting");
     th.join();
   }

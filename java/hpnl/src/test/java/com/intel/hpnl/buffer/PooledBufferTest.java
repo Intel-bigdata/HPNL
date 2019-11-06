@@ -1,5 +1,6 @@
 package com.intel.hpnl.buffer;
 
+import com.intel.hpnl.core.FixedSizeBufferAllocator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import org.junit.Test;
@@ -176,5 +177,10 @@ public class PooledBufferTest {
 
         System.out.println(value.intValue());
 
+    }
+
+    @Test
+    public void testMetaSize()throws Exception{
+        System.out.println(FixedSizeBufferAllocator.BUFFER_METADATA_SIZE);
     }
 }

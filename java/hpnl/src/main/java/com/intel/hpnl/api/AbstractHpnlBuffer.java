@@ -13,7 +13,7 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
 
   private boolean parsed;
 
-  public static final int BASE_METADATA_SIZE = 1;
+  public static final int BASE_METADATA_SIZE = HpnlBufferAllocator.BUFFER_METADATA_SIZE;
 
   protected AbstractHpnlBuffer(int bufferId, ByteBuffer byteBuffer, BufferType bufferType) {
     this.bufferId = bufferId;

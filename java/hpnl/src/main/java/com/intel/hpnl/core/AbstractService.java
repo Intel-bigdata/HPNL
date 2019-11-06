@@ -21,17 +21,21 @@ public abstract class AbstractService {
   protected HpnlService hpnlService;
   protected Map<Long, Connection> conMap;
   protected boolean stopped;
+  protected String role;
+
   private MemPool sendBufferPool;
   private MemPool recvBufferPool;
   private static final Logger log = LoggerFactory.getLogger(AbstractService.class);
 
-  protected AbstractService(int workerNum, int bufferNum, int recvBufferNum, int bufferSize, boolean server) {
+  protected AbstractService(int workerNum, int bufferNum, int recvBufferNum, int bufferSize,
+                            boolean server, String role) {
     this.workerNum = workerNum;
     this.bufferNum = bufferNum;
     this.bufferSize = bufferSize;
     this.recvBufferNum = recvBufferNum;
     this.server = server;
     this.conMap = new ConcurrentHashMap();
+    this.role = role;
   }
 
   public void setHpnlService(HpnlService service) {

@@ -32,6 +32,8 @@ public interface HpnlService {
 
   HpnlBuffer getRecvBuffer(int bufferId);
 
+  HpnlBuffer getHpnlBuffer(int cap);
+
   enum EndpointType {
     MSG,
     RDM

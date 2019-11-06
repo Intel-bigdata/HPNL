@@ -16,12 +16,12 @@ public class RdmServerService extends RdmService {
 
   private static final Logger log = LoggerFactory.getLogger(RdmServerService.class);
 
-  public RdmServerService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize) {
-    super(workNum, bufferNum, numRecvBuffers, bufferSize, true);
+  public RdmServerService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize, String role) {
+    super(workNum, bufferNum, numRecvBuffers, bufferSize, true, role);
     if(workNum < 2){
         throw new IllegalArgumentException("work number should be at least 2 for server");
     }
-    autoAckConnection = HpnlConfig.getInstance().isAutoAckConnection();
+    autoAckConnection = HpnlConfig.getInstance().isAutoAckConnection(role);
   }
 
   protected void setConnection(Connection connection){
@@ -45,7 +45,7 @@ public class RdmServerService extends RdmService {
 
   @Override
   public RdmService init() {
-    return init(HpnlConfig.getInstance().getSrvCtxNum());
+    return init(HpnlConfig.getInstance().getSrvCtxNum(role));
   }
 
   @Override
@@ -63,7 +63,7 @@ public class RdmServerService extends RdmService {
     int dataSize = 60;
     HpnlBuffer buffer = connection.takeSendBuffer();
     if(buffer == null) {
-        buffer = HpnlBufferAllocator.getBufferFromDefault(dataSize + AbstractHpnlBuffer.BASE_METADATA_SIZE);
+        buffer = getBuffer(dataSize + AbstractHpnlBuffer.BASE_METADATA_SIZE);
         ByteBuffer rawBuffer = buffer.getRawBuffer();
         rawBuffer.position(buffer.getMetadataSize());
         rawBuffer.putInt(connection.getCqIndex());

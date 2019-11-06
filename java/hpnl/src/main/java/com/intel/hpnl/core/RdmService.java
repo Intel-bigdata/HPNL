@@ -16,6 +16,9 @@ public class RdmService extends AbstractService {
   private long nativeHandle;
   private int ctxNum;
 
+  private HpnlBufferAllocator allocator;
+  private volatile boolean allocated;
+
   private PortGenerator portGenerator = PortGenerator.getInstance();
 
   private static String LOCAL_IP ;
@@ -34,13 +37,13 @@ public class RdmService extends AbstractService {
     }
   }
 
-  public RdmService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize) {
-    this(workNum, bufferNum, numRecvBuffers, bufferSize, false);
+  public RdmService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize, String role) {
+    this(workNum, bufferNum, numRecvBuffers, bufferSize, false, role);
   }
 
   protected RdmService(int workNum, int bufferNum, int numRecvBuffers, int bufferSize,
-                       boolean server) {
-    super(workNum, bufferNum, numRecvBuffers, bufferSize, server);
+                       boolean server, String role) {
+    super(workNum, bufferNum, numRecvBuffers, bufferSize, server, role);
     tasks = new ArrayList<>();
     for(int i=0; i<workNum; i++){
       tasks.add(new RdmTask(i));
@@ -49,19 +52,31 @@ public class RdmService extends AbstractService {
   }
 
   public RdmService init() {
-    return init(HpnlConfig.getInstance().getCtxNum());
+    return init(HpnlConfig.getInstance().getCtxNum(role));
   }
 
   protected RdmService init(int ctxNum) {
     this.ctxNum = ctxNum;
 
     this.init(this.bufferNum, recvBufferNum, ctxNum, workerNum,
-            HpnlConfig.getInstance().getReadBatchSize(), this.server,
+            HpnlConfig.getInstance().getReadBatchSize(role), this.server,
             HpnlConfig.getInstance().getLibfabricProviderName());
     this.initBufferPool(this.bufferNum, recvBufferNum, this.bufferSize);
 //    taskThread = new Thread(task);
     Runtime.getRuntime().addShutdownHook(new Thread(() -> this.shutdown()));
     return this;
+  }
+
+  public HpnlBuffer getBuffer(int cap) {
+    if(allocator == null){
+      synchronized (this){
+        if(!allocated){
+          allocator = HpnlFactory.getHpnlBufferAllocator(true, bufferSize, role);
+          allocated = true;
+        }
+      }
+    }
+    return allocator.getBuffer(cap);
   }
 
   @Override
@@ -170,6 +185,9 @@ public class RdmService extends AbstractService {
 //            }
 //        }
 //    }
+    if(allocator != null){
+      allocator.clear();
+    }
   }
 
   private void shutdown(){

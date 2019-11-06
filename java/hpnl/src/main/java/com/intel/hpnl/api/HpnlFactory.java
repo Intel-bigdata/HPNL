@@ -9,6 +9,8 @@ import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
+import com.intel.hpnl.core.DynamicSizeBufferAllocator;
+import com.intel.hpnl.core.FixedSizeBufferAllocator;
 import com.intel.hpnl.core.HpnlRdmBuffer;
 import com.intel.hpnl.core.RdmHpnlService;
 import org.slf4j.Logger;
@@ -88,16 +90,28 @@ public class HpnlFactory {
     }
   }
 
-  public static HpnlService getService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize, boolean server) {
+  public static HpnlService getService(int numThreads, int numBuffers, int numRecvBuffers, int bufferSize,
+                                       boolean server, String role) {
     EndpointType endpointType = config.getEndpointType();
     switch(endpointType) {
 //      case MSG:
 //        return new MsgHpnlService(numThreads, numBuffers, numRecvBuffers, bufferSize, server);
       case RDM:
-        return new RdmHpnlService(numThreads, numBuffers, numRecvBuffers, bufferSize, server);
+        return new RdmHpnlService(numThreads, numBuffers, numRecvBuffers, bufferSize, server, role);
       default:
         throw new UnsupportedOperationException(endpointType + " is not supported");
     }
+  }
+
+  public static HpnlBufferAllocator getHpnlBufferAllocator(boolean fixedSize, int maxCap, String role){
+    return getHpnlBufferAllocator(fixedSize, maxCap, role, 0);
+  }
+
+  public static HpnlBufferAllocator getHpnlBufferAllocator(boolean fixedSize, int maxCap, String role, int cores){
+    if(fixedSize){
+      return FixedSizeBufferAllocator.getInstance(role, maxCap);
+    }
+    return DynamicSizeBufferAllocator.getInstance(role, maxCap, cores);
   }
 
 }

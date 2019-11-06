@@ -9,6 +9,7 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import com.intel.hpnl.core.FixedSizeBufferAllocator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

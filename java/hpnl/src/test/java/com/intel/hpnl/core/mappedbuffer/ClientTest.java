@@ -16,7 +16,7 @@ public class ClientTest {
   private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   public ClientTest(int numThreads, int numBuffer, int bufferSize, int msgSize, String hostname) {
-    service = HpnlFactory.getService(numThreads, numBuffer, numBuffer, bufferSize, false);
+    service = HpnlFactory.getService(numThreads, numBuffer, numBuffer, bufferSize, false, "rpc");
     this.hostname = hostname;
     this.msgSize = msgSize;
   }

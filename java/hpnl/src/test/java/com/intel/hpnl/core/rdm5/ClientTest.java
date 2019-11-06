@@ -1,6 +1,7 @@
 package com.intel.hpnl.core.rdm5;
 
 import com.intel.hpnl.api.*;
+import com.intel.hpnl.core.FixedSizeBufferAllocator;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
@@ -16,7 +17,7 @@ public class ClientTest {
   private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   public ClientTest(int numThreads, int numBuffer, int bufferSize, int msgSize, String hostname) {
-    service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, 50, false);
+    service = HpnlFactory.getService(numThreads, numBuffer, bufferSize, 50, false, "rpc");
     this.hostname = hostname;
     this.msgSize = msgSize;
   }
@@ -53,7 +54,7 @@ public class ClientTest {
         }
         byteBufferTmp.flip();
 
-        HpnlBuffer buffer = HpnlBufferAllocator.getBufferFromDefault(8192);
+        HpnlBuffer buffer = service.getHpnlBuffer(8192);
         buffer.clear();
         ByteBuffer rawBuffer = buffer.getRawBuffer();
         rawBuffer.position(4113);
@@ -63,7 +64,7 @@ public class ClientTest {
         connection.sendBuffer(buffer, rawBuffer.remaining());
         return 0;
       }
-    }, new RecvCallback(false, 5, 4096, null));
+    }, new RecvCallback(false, 5, 4096, null, service));
 
     System.out.println("waiting");
     th.join();

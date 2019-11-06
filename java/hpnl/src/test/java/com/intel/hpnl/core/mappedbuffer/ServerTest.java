@@ -14,7 +14,7 @@ public class ServerTest {
   private BlockingQueue<Runnable> queue = new LinkedBlockingQueue<>();
 
   public ServerTest(int numThreads, int numBuffer, int bufferSize, String hostname) {
-    service = HpnlFactory.getService(numThreads, numBuffer, numBuffer, bufferSize, true);
+    service = HpnlFactory.getService(numThreads, numBuffer, numBuffer, bufferSize, true, "rpc");
     this.hostname = hostname;
   }
 
