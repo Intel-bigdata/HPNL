@@ -3,9 +3,6 @@ package com.intel.hpnl.core;
 import com.intel.hpnl.api.*;
 
 import java.nio.ByteBuffer;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class FixedSizeBufferAllocator implements HpnlBufferAllocator {
     private final BufferCache<HpnlBuffer> smallCache;
@@ -18,10 +15,9 @@ public class FixedSizeBufferAllocator implements HpnlBufferAllocator {
     private int largeCap;
     private int maxCap;
 
-    private static final int BUFFER_ID_RANGES = 1000000;
-    private static final int BUFFER_ID_START = 0;
-    private static int currentBufferIdLimit = BUFFER_ID_START;
-    private static final Queue<IdRange> idRangeQueue = new ConcurrentLinkedQueue<>();
+    private String role;
+
+    private static final BufferIdManager idManager = new BufferIdManager();
 
     private FixedSizeBufferAllocator(BufferCache.CacheHandler<HpnlBuffer> cacheHandler, String role, int maxCap){
         this.cacheHandler = cacheHandler;
@@ -41,22 +37,13 @@ public class FixedSizeBufferAllocator implements HpnlBufferAllocator {
                             maxCap, largeCap));
         }
         this.maxCap = maxCap;
+        this.role = role;
         maxCache = BufferCache.getInstance(cacheHandler, maxCap, maxNum);
     }
 
 
     public static FixedSizeBufferAllocator getInstance(String role, int maxCap){
-        IdRange idRange = idRangeQueue.poll();
-        if(idRange == null) {
-            synchronized (idRangeQueue) {
-                int start = currentBufferIdLimit;
-                currentBufferIdLimit -= BUFFER_ID_RANGES;
-                if (currentBufferIdLimit > 0) {
-                    throw new IllegalStateException("reach buffer limit: " + currentBufferIdLimit);
-                }
-                idRange = new IdRange(start-1, currentBufferIdLimit);
-            }
-        }
+        BufferIdManager.IdRange idRange = idManager.getUniqueIdRange(role);
         return new FixedSizeBufferAllocator(new BufferCacheHandler(idRange), role, maxCap);
     }
 
@@ -102,15 +89,14 @@ public class FixedSizeBufferAllocator implements HpnlBufferAllocator {
         smallCache.clear();
         largeCache.clear();
         maxCache.clear();
-        IdRange idRange = ((BufferCacheHandler)cacheHandler).idRange;
-        idRange.reset();
-        idRangeQueue.offer(idRange);
+        BufferIdManager.IdRange idRange = ((BufferCacheHandler)cacheHandler).idRange;
+        idManager.reclaim(role, idRange);
     }
 
     private static class BufferCacheHandler implements BufferCache.CacheHandler<HpnlBuffer>{
-        private IdRange idRange;
+        private BufferIdManager.IdRange idRange;
 
-        public BufferCacheHandler(IdRange idRange){
+        public BufferCacheHandler(BufferIdManager.IdRange idRange){
             this.idRange = idRange;
         }
         @Override
@@ -119,38 +105,8 @@ public class FixedSizeBufferAllocator implements HpnlBufferAllocator {
             return buffer;
         }
 
-        public IdRange getIdRange() {
+        public BufferIdManager.IdRange getIdRange() {
             return idRange;
-        }
-    }
-
-    private static class IdRange{
-        private final int start;
-        private final int end;
-        private final AtomicInteger idGen;
-
-        public IdRange(int start, int end){
-            if(start >= 0){
-                throw new IllegalArgumentException("start needs to be less than 0. "+start);
-            }
-            if(start < end){
-                throw new IllegalArgumentException("end needs to be less than start. "+end);
-            }
-            this.start = start;
-            this.end = end;
-            idGen = new AtomicInteger(start);
-        }
-
-        public int next(){
-            int id = idGen.getAndDecrement();
-            if (id < end) {
-                throw new IllegalArgumentException("id should not be less than limit. " + end);
-            }
-            return id;
-        }
-
-        public void reset(){
-            idGen.set(start);
         }
     }
 

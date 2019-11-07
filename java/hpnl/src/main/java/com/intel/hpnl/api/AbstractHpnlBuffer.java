@@ -1,19 +1,32 @@
 package com.intel.hpnl.api;
 
+import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
+
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 
-/**
- * TODO: with unsafe
- */
 public abstract class AbstractHpnlBuffer implements HpnlBuffer {
   private final int bufferId;
   protected byte frameType;
   protected ByteBuffer byteBuffer;
-  private BufferType bufferType;
+  protected long address = 0L;
 
+  private BufferType bufferType;
   private boolean parsed;
 
   public static final int BASE_METADATA_SIZE = HpnlBufferAllocator.BUFFER_METADATA_SIZE;
+  private static Unsafe unsafe;
+
+  static{
+    try {
+      Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+      unsafeField.setAccessible(true);
+      unsafe = (Unsafe) unsafeField.get(null);
+    }catch(Exception e){
+      unsafe = null;
+    }
+  }
 
   protected AbstractHpnlBuffer(int bufferId, ByteBuffer byteBuffer, BufferType bufferType) {
     this.bufferId = bufferId;
@@ -90,8 +103,21 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
 
   @Override
   public void put(ByteBuffer src, int length){
+    if(unsafe != null && src.isDirect() && (getMemoryAddress() > 0)) {
+      if(length < 0){
+        throw new IllegalArgumentException("length should be no less than 0, "+length);
+      }
+      if(src.remaining() < length || byteBuffer.remaining() < length){
+        throw new IllegalArgumentException("both source buffer and dest buffer's remaining should no less than length, "+length);
+      }
+      unsafe.copyMemory(((DirectBuffer)src).address()+src.position(),
+              getMemoryAddress()+byteBuffer.position(), length);
+      src.position(src.position()+length);
+      byteBuffer.position(byteBuffer.position()+length);
+      return;
+    }
     int pos = src.position();
-    for(int i=pos; i < pos + length; i++){
+    for (int i = pos; i < pos + length; i++) {
       byteBuffer.put(src.get());
     }
   }
@@ -196,6 +222,15 @@ public abstract class AbstractHpnlBuffer implements HpnlBuffer {
 
   @Override
   public long getMemoryAddress(){
-    return 0;
+    if(address != 0L){
+      return address;
+    }
+    if(byteBuffer.isDirect()){
+      address = ((DirectBuffer)byteBuffer).address();
+    }else{
+      address = -1;
+    }
+    return address;
   }
+
 }

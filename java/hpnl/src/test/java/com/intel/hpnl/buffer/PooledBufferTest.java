@@ -5,8 +5,10 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import org.junit.Test;
 import sun.misc.Unsafe;
+import sun.nio.ch.DirectBuffer;
 
 import java.lang.reflect.Field;
+import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PooledBufferTest {
@@ -135,6 +137,35 @@ public class PooledBufferTest {
         int normalCacheSize = 64;// specified or 64
         PooledByteBufAllocator allocator = new PooledByteBufAllocator(true, 0, directArena,
         8192, 11, tinyCacheSize, smallCacheSize, normalCacheSize, true);
+        ByteBuf buffer = allocator.directBuffer();
+        System.out.println(buffer.capacity());
+    }
+
+    @Test
+    public void testBufferCopy()throws Exception{
+        ByteBuffer src = ByteBuffer.allocateDirect(16);
+        ByteBuffer buffer2 = ByteBuffer.allocateDirect(16);
+        Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+        unsafeField.setAccessible(true);
+        Unsafe unsafe = (Unsafe)unsafeField.get(null);
+        src.putLong(2).putLong(3);
+        src.position(8);
+        buffer2.putLong(4);
+        int length = 8;
+        long memoryAddress = ((DirectBuffer)buffer2).address();
+        if(unsafe != null && src.isDirect() && (memoryAddress > 0)) {
+            if(length < 0){
+                throw new IllegalArgumentException("length should be no less than 0, "+length);
+            }
+            if(src.remaining() < length || buffer2.remaining() < length){
+                throw new IllegalArgumentException("both source buffer and dest buffer's remaining should no less than length, "+length);
+            }
+            unsafe.copyMemory(((DirectBuffer)src).address()+src.position(),
+                    memoryAddress+buffer2.position(), length);
+            buffer2.position(8);
+            src.position(src.position()+length);
+            System.out.println(buffer2.getLong());
+        }
     }
 
     @Test
