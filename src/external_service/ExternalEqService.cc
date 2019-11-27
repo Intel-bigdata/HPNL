@@ -88,7 +88,7 @@ fid_eq* ExternalEqService::connect(const char* ip, const char* port) {
   return eq;
 }
 
-uint64_t ExternalEqService::reg_rma_buffer(char* buffer, uint64_t buffer_size,
+Chunk* ExternalEqService::reg_rma_buffer(char* buffer, uint64_t buffer_size,
                                            int buffer_id) {
   return stack->reg_rma_buffer(buffer, buffer_size, buffer_id);
 }

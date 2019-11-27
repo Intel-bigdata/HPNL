@@ -59,6 +59,10 @@ void Client::set_read_callback(Callback* callback) {
   service->set_read_callback(callback);
 }
 
+void Client::set_write_callback(Callback* callback) {
+  service->set_write_callback(callback);
+}
+
 void Client::set_connected_callback(Callback* callback) {
   service->set_connected_callback(callback);
 }
@@ -67,7 +71,7 @@ void Client::set_shutdown_callback(Callback* callback) {
   service->set_shutdown_callback(callback);
 }
 
-uint64_t Client::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+Chunk* Client::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
   return service->reg_rma_buffer(buffer, buffer_size, buffer_id);
 }
 

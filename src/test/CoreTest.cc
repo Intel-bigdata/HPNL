@@ -127,11 +127,11 @@ TEST_CASE("rma buffer registration") {
   }
 
   SECTION("sycn rma buffer registration") {
-    REQUIRE(stack->reg_rma_buffer(nullptr, 1, 2) == -1);
-    REQUIRE(stack->reg_rma_buffer(test, 10, 1) > 0);
-    REQUIRE(stack->reg_rma_buffer(test, 20, 2) > 0);
-    REQUIRE(stack->reg_rma_buffer(test, 30, 3) > 0);
-    REQUIRE(stack->reg_rma_buffer(test, 40, 4) > 0);
+    REQUIRE(stack->reg_rma_buffer(nullptr, 1, 2) == nullptr);
+    REQUIRE(stack->reg_rma_buffer(test, 10, 1)->mr->key > 0);
+    REQUIRE(stack->reg_rma_buffer(test, 20, 2)->mr->key > 0);
+    REQUIRE(stack->reg_rma_buffer(test, 30, 3)->mr->key > 0);
+    REQUIRE(stack->reg_rma_buffer(test, 40, 4)->mr->key > 0);
     REQUIRE(stack->get_rma_chunk(1)->capacity == 10);
     REQUIRE(stack->get_rma_chunk(2)->capacity == 20);
     REQUIRE(stack->get_rma_chunk(3)->capacity == 30);

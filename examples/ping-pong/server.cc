@@ -16,8 +16,8 @@
 // under the License.
 
 #include "HPNL/Callback.h"
-#include "HPNL/ChunkMgr.h"
 #include "HPNL/Connection.h"
+#include "HPNL/ChunkMgr.h"
 #include "HPNL/Server.h"
 
 #include <iostream>
@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
   server->set_shutdown_callback(shutdownCallback);
 
   server->start();
-  server->listen("172.168.2.106", "12345");
+  server->listen("172.168.0.40", "12345");
   server->wait();
 
   delete recvCallback;

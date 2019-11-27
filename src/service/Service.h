@@ -63,11 +63,12 @@ class Service {
   void set_send_callback(Callback* /*callback*/);
   void set_recv_callback(Callback* /*callback*/);
   void set_read_callback(Callback* /*callback*/);
+  void set_write_callback(Callback* /*callback*/);
   void set_connected_callback(Callback* /*callback*/);
   void set_shutdown_callback(Callback* /*callback*/);
 
   // RMA buffer registration
-  uint64_t reg_rma_buffer(char* /*buffer*/, uint64_t /*buffer_size*/, int /*buffer_id*/);
+  Chunk* reg_rma_buffer(char* /*buffer*/, uint64_t /*buffer_size*/, int /*buffer_id*/);
   void unreg_rma_buffer(int /*buffer_id*/);
   Chunk* get_rma_buffer(int /*buffer_id*/);
 
@@ -89,6 +90,7 @@ class Service {
   Callback* recvCallback;
   Callback* sendCallback;
   Callback* readCallback;
+  Callback* writeCallback;
   Callback* acceptRequestCallback;
   Callback* connectedCallback;
   Callback* shutdownCallback;

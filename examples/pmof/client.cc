@@ -36,9 +36,10 @@ uint64_t start, end = 0;
 std::mutex mtx;
 
 char* rma_buffer = nullptr;
-uint64_t rkey = 0;
+Chunk* rma_ck = nullptr;
 uint64_t remote_buffer = 0;
 uint64_t remote_rkey = 0;
+uint64_t remote_buffer_size = 0;
 
 uint64_t timestamp_now() {
   return std::chrono::high_resolution_clock::now().time_since_epoch() /
@@ -64,10 +65,6 @@ class ConnectedCallback : public Callback {
       : client(client_), chunkMgr(chunkMgr_) {}
   ~ConnectedCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
-    rma_buffer = static_cast<char*>(std::malloc(4096));
-    memset(rma_buffer, '0', 4096);
-    rkey = client->reg_rma_buffer(rma_buffer, 4096, 0);
-
     auto con = static_cast<Connection*>(param_1);
     Chunk* ck = chunkMgr->get(con);
     ck->size = MSG_SIZE;
@@ -96,7 +93,12 @@ class RecvCallback : public Callback {
     auto con = static_cast<Connection*>(ck->con);
     remote_buffer = msg->buffer();
     remote_rkey = msg->rkey();
-    con->read(0, 0, 4096, msg->buffer(), msg->rkey());
+    remote_buffer_size = msg->size();
+
+    rma_buffer = static_cast<char*>(std::malloc(remote_buffer_size));
+    rma_ck = client->reg_rma_buffer(rma_buffer, remote_buffer_size, 0);
+
+    con->read(rma_ck, 0, remote_buffer_size, msg->buffer(), msg->rkey());
   }
 
  private:
@@ -119,6 +121,17 @@ class SendCallback : public Callback {
   ChunkMgr* chunkMgr;
 };
 
+class ReadCallback : public Callback {
+ public:
+  explicit ReadCallback(ChunkMgr* chunkMgr_) : chunkMgr(chunkMgr_) {}
+  void operator()(void* param_1, void* param_2) override {
+    std::cout << "remote content: " << (char*)rma_ck->buffer << std::endl;
+  }
+
+ private:
+  ChunkMgr* chunkMgr;
+};
+
 int main(int argc, char* argv[]) {
   auto client = new Client(1, 16);
   client->init();
@@ -129,15 +142,17 @@ int main(int argc, char* argv[]) {
   auto recvCallback = new RecvCallback(client, chunkMgr);
   auto sendCallback = new SendCallback(chunkMgr);
   auto connectedCallback = new ConnectedCallback(client, chunkMgr);
+  auto readCallback = new ReadCallback(chunkMgr);
   auto shutdownCallback = new ShutdownCallback(client);
 
   client->set_recv_callback(recvCallback);
   client->set_send_callback(sendCallback);
   client->set_connected_callback(connectedCallback);
+  client->set_read_callback(readCallback);
   client->set_shutdown_callback(shutdownCallback);
 
   client->start();
-  client->connect("172.168.2.106", "12345");
+  client->connect("172.168.0.40", "12345");
 
   client->wait();
 

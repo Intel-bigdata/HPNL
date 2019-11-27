@@ -48,6 +48,9 @@ class RdmConnection : public ConnectionImpl {
   int sendTo(int, int, const char*) override;
   int sendBufTo(const char*, int, const char*) override;
 
+  int read(Chunk*, int, uint64_t, uint64_t, uint64_t) override { return -1; } /// not supported
+  int write(Chunk*, int, uint64_t, uint64_t, uint64_t) override { return -1; } /// not supported
+
   char* get_peer_name() override;
   char* get_local_name();
   int get_local_name_length();
@@ -58,9 +61,6 @@ class RdmConnection : public ConnectionImpl {
   void set_send_callback(Callback*) override;
   Callback* get_recv_callback() override;
   Callback* get_send_callback() override;
-
-  void log_used_chunk(Chunk* ck) override { used_chunks[ck->buffer_id] = (Chunk*)ck; }
-  void remove_used_chunk(Chunk* ck) override { used_chunks.erase(ck->buffer_id); }
 
   void encode_(Chunk* ck, void* buffer, int buffer_length, char* peer_name) override;
   void decode_(Chunk* ck, void* buffer, int* buffer_length, char* peer_name) override;
@@ -87,8 +87,6 @@ class RdmConnection : public ConnectionImpl {
   std::unordered_map<int, Chunk*> send_chunks_map;
 
   ChunkMgr* chunk_mgr;
-
-  std::map<int, Chunk*> used_chunks;
 
   Callback* recv_callback;
   Callback* send_callback;

@@ -80,8 +80,11 @@ class Client : public FabricService {
     /// \param this function will be called when message has been sent.
     void set_send_callback(Callback *callback);
 
-    /// \param this function will be called when read new message
+    /// \param this function will be called when read new message from remote node.
     void set_read_callback(Callback *callback);
+
+    /// \param this function will be called when write new message to remote node.
+    void set_write_callback(Callback *callback);
 
     /// \param this function will be called when a new client has been connected.
     void set_connected_callback(Callback *callback);
@@ -91,7 +94,7 @@ class Client : public FabricService {
 
     /// RMA buffer registration
     /// \return return 0 on success and return -1 on error
-    uint64_t reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id);
+    Chunk* reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id);
 
     /// unregister RMA buffer that buffer id is buffer_id
     void unreg_rma_buffer(int buffer_id);

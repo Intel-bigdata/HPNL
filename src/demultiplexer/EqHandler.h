@@ -39,6 +39,7 @@ class EqHandler : public EventHandler {
   void set_send_callback(Callback*) override;
   void set_recv_callback(Callback*) override;
   void set_read_callback(Callback*) override;
+  void set_write_callback(Callback*) override;
 
  private:
   MsgStack* stack;
@@ -47,6 +48,7 @@ class EqHandler : public EventHandler {
   Callback* recvCallback;
   Callback* sendCallback;
   Callback* readCallback{};
+  Callback* writeCallback{};
   Callback* acceptRequestCallback;
   Callback* connectedCallback;
   Callback* shutdownCallback;

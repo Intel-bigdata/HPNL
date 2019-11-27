@@ -36,6 +36,7 @@ class EventHandler {
   virtual void set_recv_callback(Callback* callback) = 0;
   virtual void set_send_callback(Callback* callback) = 0;
   virtual void set_read_callback(Callback* callback) = 0;
+  virtual void set_write_callback(Callback* callback) = 0;
 };
 
 #endif

@@ -53,6 +53,9 @@ int EqHandler::handle_event(EventType et, void* context) {
     if (readCallback) {
       eqHandler->set_read_callback(readCallback);
     }
+    if (writeCallback) {
+      eqHandler->set_write_callback(writeCallback);
+    }
     if (shutdownCallback) {
       eqHandler->set_shutdown_callback(shutdownCallback);
     }
@@ -71,6 +74,9 @@ int EqHandler::handle_event(EventType et, void* context) {
     }
     if (readCallback) {
       con->set_read_callback(readCallback);
+    }
+    if (writeCallback) {
+      con->set_write_callback(writeCallback);
     }
 
     {
@@ -117,3 +123,5 @@ void EqHandler::set_send_callback(Callback* callback) { sendCallback = callback;
 void EqHandler::set_recv_callback(Callback* callback) { recvCallback = callback; }
 
 void EqHandler::set_read_callback(Callback* callback) { readCallback = callback; }
+
+void EqHandler::set_write_callback(Callback* callback) { writeCallback = callback; }

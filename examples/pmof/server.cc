@@ -28,8 +28,7 @@
 #include "format_generated.h"
 
 /* size of the pmemobj pool -- 1 GB */
-#define POOL_SIZE (1024 * 1024 * 1024L)
-#define MAX_BUF_LEN 20
+#define POOL_SIZE 126833655808L
 
 /* name of our layout in the pool */
 #define LAYOUT_NAME "pmem_spark_shuffle"
@@ -40,7 +39,7 @@
 
 struct my_root {
   size_t len;
-  char buf[MAX_BUF_LEN];
+  char buf[];
 };
 
 class ShutdownCallback : public Callback {
@@ -59,26 +58,32 @@ class RecvCallback : public Callback {
   ~RecvCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
     const char path[] = "/dev/dax0.0";
+
+    int sds_write_value = 0;
+    pmemobj_ctl_set(nullptr, "sds.at_create", &sds_write_value);
+
     /* create the pmemobj pool or open it if it already exists */
     pop = pmemobj_open(path, LAYOUT_NAME);
     if (pop == nullptr) {
-      pop = pmemobj_create(path, LAYOUT_NAME, POOL_SIZE, S_IRUSR | S_IWUSR);
+      std::cout << "failed to open." << std::endl;
+      pop = pmemobj_create(path, LAYOUT_NAME, 0, S_IRUSR | S_IWUSR);
     }
 
     if (pop == nullptr) {
+      std::cout << "failed to create" << std::endl;
       exit(1);
     }
 
     PMEMoid root = pmemobj_root(pop, sizeof(struct my_root));
     rootp = static_cast<struct my_root*>(pmemobj_direct(root));
 
-    char buf[MAX_BUF_LEN] = "hello world";
-    rootp->len = strlen("hello world");
+    char buf[] = "hello world";
+    rootp->len = strlen(buf);
 
-    pmemobj_persist(pop, &rootp->len, sizeof(rootp->len));
     pmemobj_memcpy_persist(pop, rootp->buf, buf, rootp->len);
+    pmemobj_persist(pop, &rootp->len, sizeof (rootp->len));
 
-    rkey = server->reg_rma_buffer(reinterpret_cast<char*>(pop), POOL_SIZE, 0);
+    rma_ck = server->reg_rma_buffer(reinterpret_cast<char*>(pop), POOL_SIZE, 0);
 
     int mid = *static_cast<int*>(param_1);
     auto ck = chunkMgr->get(mid);
@@ -87,7 +92,7 @@ class RecvCallback : public Callback {
 
     flatbuffers::FlatBufferBuilder builder;
     auto msg =
-        Createrma_msg(builder, reinterpret_cast<uint64_t>(pop), rootp->len, 0, rkey);
+        Createrma_msg(builder, (uint64_t)rootp->buf, rootp->len, 0, rma_ck->mr->key);
     builder.Finish(msg);
     uint8_t* pmof_buf = builder.GetBufferPointer();
 
@@ -101,7 +106,7 @@ class RecvCallback : public Callback {
   ChunkMgr* chunkMgr;
   PMEMobjpool* pop;
   struct my_root* rootp;
-  uint64_t rkey;
+  Chunk* rma_ck;
 };
 
 class SendCallback : public Callback {
@@ -135,7 +140,7 @@ int main(int argc, char* argv[]) {
   server->set_shutdown_callback(shutdownCallback);
 
   server->start();
-  server->listen("172.168.2.106", "12345");
+  server->listen("172.168.0.40", "12345");
 
   server->wait();
 

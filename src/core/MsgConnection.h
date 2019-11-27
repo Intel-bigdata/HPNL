@@ -48,9 +48,11 @@ class MsgConnection : public ConnectionImpl {
 
   int init() override;
   int send(Chunk*) override;
-  int send(int, int) override;
-  int read(int, int, uint64_t, uint64_t, uint64_t) override;
   int read(Chunk*, int, uint64_t, uint64_t, uint64_t) override;
+  int write(Chunk*, int, uint64_t, uint64_t, uint64_t) override;
+
+  /// for java binding
+  int send(int, int) override;
 
   int shutdown() override;
   int connect();
@@ -69,18 +71,16 @@ class MsgConnection : public ConnectionImpl {
   void set_recv_callback(Callback*) override;
   void set_send_callback(Callback*) override;
   void set_read_callback(Callback*);
+  void set_write_callback(Callback*);
   void set_shutdown_callback(Callback*);
 
   Callback* get_recv_callback() override;
   Callback* get_send_callback() override;
   Callback* get_read_callback();
+  Callback* get_write_callback();
   Callback* get_shutdown_callback();
 
   std::vector<Chunk*> get_send_chunks();
-
-  void log_used_chunk(Chunk* ck) override { used_chunks[ck->buffer_id] = (Chunk*)ck; }
-  void remove_used_chunk(Chunk* ck) override { used_chunks.erase(ck->buffer_id); }
-
  public:
   ConStatus status;
   std::mutex con_mtx;
@@ -110,10 +110,10 @@ class MsgConnection : public ConnectionImpl {
   Callback* recv_callback;
   Callback* send_callback;
   Callback* read_callback;
+  Callback* write_callback;
   Callback* shutdown_callback;
   // for Java interface
   std::vector<Chunk*> send_chunks;
-  std::map<int, Chunk*> used_chunks;
 };
 
 #endif
