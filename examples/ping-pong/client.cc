@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
   client->set_shutdown_callback(shutdownCallback);
 
   client->start();
-  client->connect("172.168.2.106", "12345");
+  client->connect("172.168.0.40", "12345");
   client->wait();
 
   delete shutdownCallback;

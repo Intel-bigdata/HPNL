@@ -39,6 +39,7 @@ Service::Service(int worker_num_, int buffer_num_, bool is_server_)
   recvCallback = nullptr;
   sendCallback = nullptr;
   readCallback = nullptr;
+  writeCallback = nullptr;
   acceptRequestCallback = nullptr;
   connectedCallback = nullptr;
   shutdownCallback = nullptr;
@@ -133,6 +134,7 @@ int Service::listen(const char* addr, const char* port) {
     handler->set_recv_callback(recvCallback);
     handler->set_send_callback(sendCallback);
     handler->set_read_callback(readCallback);
+    handler->set_write_callback(writeCallback);
     handler->set_accept_request_callback(acceptRequestCallback);
     handler->set_connected_callback(connectedCallback);
     handler->set_shutdown_callback(shutdownCallback);
@@ -160,6 +162,7 @@ int Service::connect(const char* addr, const char* port) {
   handler->set_recv_callback(recvCallback);
   handler->set_send_callback(sendCallback);
   handler->set_read_callback(readCallback);
+  handler->set_write_callback(writeCallback);
   handler->set_accept_request_callback(acceptRequestCallback);
   handler->set_connected_callback(connectedCallback);
   handler->set_shutdown_callback(shutdownCallback);
@@ -228,11 +231,13 @@ void Service::set_send_callback(Callback* callback) { sendCallback = callback; }
 
 void Service::set_read_callback(Callback* callback) { readCallback = callback; }
 
+void Service::set_write_callback(Callback* callback) { writeCallback = callback; }
+
 void Service::set_connected_callback(Callback* callback) { connectedCallback = callback; }
 
 void Service::set_shutdown_callback(Callback* callback) { shutdownCallback = callback; }
 
-uint64_t Service::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+Chunk* Service::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
   return dynamic_cast<MsgStack*>(stack)->reg_rma_buffer(buffer, buffer_size, buffer_id);
 }
 

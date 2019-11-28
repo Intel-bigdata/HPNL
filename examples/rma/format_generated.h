@@ -18,7 +18,7 @@ struct rma_msg FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   uint64_t buffer() const {
     return GetField<uint64_t>(VT_BUFFER, 0);
   }
-  int16_t size() const {
+  uint64_t size() const {
     return GetField<int16_t>(VT_SIZE, 0);
   }
   int16_t id() const {
@@ -30,7 +30,7 @@ struct rma_msg FLATBUFFERS_FINAL_CLASS : private flatbuffers::Table {
   bool Verify(flatbuffers::Verifier &verifier) const {
     return VerifyTableStart(verifier) &&
            VerifyField<uint64_t>(verifier, VT_BUFFER) &&
-           VerifyField<int16_t>(verifier, VT_SIZE) &&
+           VerifyField<uint64_t>(verifier, VT_SIZE) &&
            VerifyField<int16_t>(verifier, VT_ID) &&
            VerifyField<uint64_t>(verifier, VT_RKEY) &&
            verifier.EndTable();
@@ -43,8 +43,8 @@ struct rma_msgBuilder {
   void add_buffer(uint64_t buffer) {
     fbb_.AddElement<uint64_t>(rma_msg::VT_BUFFER, buffer, 0);
   }
-  void add_size(int16_t size) {
-    fbb_.AddElement<int16_t>(rma_msg::VT_SIZE, size, 0);
+  void add_size(uint64_t size) {
+    fbb_.AddElement<uint64_t>(rma_msg::VT_SIZE, size, 0);
   }
   void add_id(int16_t id) {
     fbb_.AddElement<int16_t>(rma_msg::VT_ID, id, 0);
@@ -67,7 +67,7 @@ struct rma_msgBuilder {
 inline flatbuffers::Offset<rma_msg> Createrma_msg(
     flatbuffers::FlatBufferBuilder &_fbb,
     uint64_t buffer = 0,
-    int16_t size = 0,
+    uint64_t size = 0,
     int16_t id = 0,
     uint64_t rkey = 0) {
   rma_msgBuilder builder_(_fbb);

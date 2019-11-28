@@ -109,6 +109,9 @@ int CqDemultiplexer::wait_event() {
           (*con->get_read_callback())(&ck->buffer_id, &entry.len);
         }
       } else if (entry.flags & FI_WRITE) {
+        if (con->get_write_callback()) {
+          (*con->get_write_callback())(&ck->buffer_id, &entry.len);
+        }
       } else {
       }
       start = end;

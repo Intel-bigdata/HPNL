@@ -25,12 +25,12 @@
 
 #include "format_generated.h"
 
-#define MSG_SIZE 4096
-#define BUFFER_SIZE (65536 * 2)
+#define MSG_SIZE (1024*4)
+#define BUFFER_SIZE (1024*1024*2)
 #define BUFFER_NUM 128
 
-char rma_buffer[4096];
-uint64_t rkey = 0;
+char rma_buffer[MSG_SIZE];
+Chunk* rma_ck = nullptr;
 
 class ShutdownCallback : public Callback {
  public:
@@ -47,8 +47,8 @@ class RecvCallback : public Callback {
       : server(server_), chunkMgr(chunkMgr_) {}
   ~RecvCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
-    memset(rma_buffer, '0', 4096);
-    rkey = server->reg_rma_buffer(rma_buffer, 4096, 0);
+    memset(rma_buffer, '0', MSG_SIZE);
+    rma_ck = server->reg_rma_buffer(rma_buffer, MSG_SIZE, 0);
 
     int mid = *static_cast<int*>(param_1);
     auto ck = chunkMgr->get(mid);
@@ -57,7 +57,7 @@ class RecvCallback : public Callback {
 
     flatbuffers::FlatBufferBuilder builder;
     auto msg =
-        Createrma_msg(builder, reinterpret_cast<uint64_t>(rma_buffer), 4096, 0, rkey);
+        Createrma_msg(builder, reinterpret_cast<uint64_t>(rma_buffer), MSG_SIZE, 0, rma_ck->mr->key);
     builder.Finish(msg);
     uint8_t* buf = builder.GetBufferPointer();
 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
   server->set_shutdown_callback(shutdownCallback);
 
   server->start();
-  server->listen("172.168.2.106", "12345");
+  server->listen("172.168.0.40", "12345");
 
   server->wait();
 

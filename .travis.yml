@@ -1,23 +1,32 @@
+sudo: require
 dist: bionic
-language: cpp
-compiler: gcc
-os: linux
+language: generic
+jdk: openjdk8
 
-before_install:
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -q
-  - sudo apt-get install g++-7 -y
-  - sudo apt-get install cmake -y
-  - sudo apt-get install libfabric-dev -y
-  - sudo apt-get install build-essential -y
-  - sudo apt-get install libboost-dev -y
-  - sudo apt-get install libboost-system-dev -y
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - g++-7
+      - cmake 
+      - libfabric-dev
+      - build-essential
+      - libboost-dev
+      - libboost-system-dev
+      - openjdk-8-jdk
+      - maven
 
 install:
   - mkdir build
   - cd build
-  - cmake ..
+  - cmake -DWITH_JAVA=on ..
 
-script: ctest
 before_script: make
+script:
+  - ctest
+  - cd ../java/hpnl
+  - mvn package
+  - mvn clean
+  - cd ../../build
 after_script: make clean

@@ -39,7 +39,7 @@ class ExternalEqService {
   int init();
   fid_eq* connect(const char*, const char*);
   fid_eq* accept(fi_info*);
-  uint64_t reg_rma_buffer(char*, uint64_t, int);
+  Chunk* reg_rma_buffer(char*, uint64_t, int);
   void unreg_rma_buffer(int);
   Chunk* get_rma_buffer(int);
   void set_buffer(char*, uint64_t, int);

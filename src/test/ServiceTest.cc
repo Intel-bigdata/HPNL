@@ -71,45 +71,45 @@ TEST_CASE("msg client") {
   delete bufMgr;
 }
 
-TEST_CASE("rdm server") {
-  int total_buffer_num = 512;
-  int single_buffer_num = 16;
-  int buffer_size = 65536;
-  auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
-  auto service = new Service(1, single_buffer_num, true);
-  SECTION("init") { REQUIRE(service->init(false) == 0); }
-  SECTION("init->start->listen") {
-    REQUIRE(service->init(false) == 0);
-    service->set_chunk_mgr(bufMgr);
-    service->start();
-    REQUIRE(service->listen(nullptr, nullptr) == -1);
-    service->shutdown();
-  }
-  SECTION("init->listen->start") {
-    REQUIRE(service->init(false) == 0);
-    service->set_chunk_mgr(bufMgr);
-    REQUIRE(service->listen(nullptr, nullptr) == -1);
-    service->start();
-    service->shutdown();
-  }
-  delete service;
-  delete bufMgr;
-}
-
-TEST_CASE("rdm client") {
-  int total_buffer_num = 512;
-  int single_buffer_num = 16;
-  int buffer_size = 65536;
-  auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
-  auto service = new Service(1, single_buffer_num, false);
-  SECTION("init") { REQUIRE(service->init(false) == 0); }
-  SECTION("init->start->connect") {
-    REQUIRE(service->init(false) == 0);
-    service->set_chunk_mgr(bufMgr);
-    service->start();
-    REQUIRE(service->get_con(nullptr, nullptr) == nullptr);
-    service->shutdown();
-  }
-  delete service;
-  delete bufMgr;
-}
+//TEST_CASE("rdm server") {
+//  int total_buffer_num = 512;
+//  int single_buffer_num = 16;
+//  int buffer_size = 65536;
+//  auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
+//  auto service = new Service(1, single_buffer_num, true);
+//  SECTION("init") { REQUIRE(service->init(false) == 0); }
+//  SECTION("init->start->listen") {
+//    REQUIRE(service->init(false) == 0);
+//    service->set_chunk_mgr(bufMgr);
+//    service->start();
+//    REQUIRE(service->listen(nullptr, nullptr) == -1);
+//    service->shutdown();
+//  }
+//  SECTION("init->listen->start") {
+//    REQUIRE(service->init(false) == 0);
+//    service->set_chunk_mgr(bufMgr);
+//    REQUIRE(service->listen(nullptr, nullptr) == -1);
+//    service->start();
+//    service->shutdown();
+//  }
+//  delete service;
+//  delete bufMgr;
+//}
+//
+//TEST_CASE("rdm client") {
+//  int total_buffer_num = 512;
+//  int single_buffer_num = 16;
+//  int buffer_size = 65536;
+//  auto bufMgr = new ExternalChunkMgr(total_buffer_num, buffer_size);
+//  auto service = new Service(1, single_buffer_num, false);
+//  SECTION("init") { REQUIRE(service->init(false) == 0); }
+//  SECTION("init->start->connect") {
+//    REQUIRE(service->init(false) == 0);
+//    service->set_chunk_mgr(bufMgr);
+//    service->start();
+//    REQUIRE(service->get_con(nullptr, nullptr) == nullptr);
+//    service->shutdown();
+//  }
+//  delete service;
+//  delete bufMgr;
+//}

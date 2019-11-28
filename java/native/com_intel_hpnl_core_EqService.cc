@@ -243,14 +243,14 @@ JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer(
     jlong eqServicePtr) {
   ExternalEqService* service = *(ExternalEqService**)&eqServicePtr;
   jbyte* buffer = (jbyte*)(*env).GetDirectBufferAddress(send_buffer);
-  return service->reg_rma_buffer((char*)buffer, size, bufferId);
+  return service->reg_rma_buffer((char*)buffer, size, bufferId)->mr->key;
 }
 
 JNIEXPORT jlong JNICALL Java_com_intel_hpnl_core_EqService_reg_1rma_1buffer_1by_1address(
     JNIEnv* env, jobject thisObj, jlong address, jlong size, jint bufferId,
     jlong eqServicePtr) {
   ExternalEqService* service = *(ExternalEqService**)&eqServicePtr;
-  return service->reg_rma_buffer(*(char**)&address, size, bufferId);
+  return service->reg_rma_buffer(*(char**)&address, size, bufferId)->mr->key;
 }
 
 JNIEXPORT void JNICALL Java_com_intel_hpnl_core_EqService_unreg_1rma_1buffer(

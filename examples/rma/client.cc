@@ -27,8 +27,8 @@
 #include "flatbuffers/flatbuffers.h"
 #include "format_generated.h"
 
-#define MSG_SIZE 4096
-#define BUFFER_SIZE (65536 * 2)
+#define MSG_SIZE (1024*4)
+#define BUFFER_SIZE (1024*1024*2)
 #define BUFFER_NUM 128
 
 int count = 0;
@@ -36,7 +36,7 @@ uint64_t start, end = 0;
 std::mutex mtx;
 
 char* rma_buffer = nullptr;
-uint64_t rkey = 0;
+Chunk* rma_ck = nullptr;
 uint64_t remote_buffer = 0;
 uint64_t remote_rkey = 0;
 
@@ -64,9 +64,9 @@ class ConnectedCallback : public Callback {
       : client(client_), chunkMgr(chunkMgr_) {}
   ~ConnectedCallback() override = default;
   void operator()(void* param_1, void* param_2) override {
-    rma_buffer = static_cast<char*>(std::malloc(4096));
-    memset(rma_buffer, '0', 4096);
-    rkey = client->reg_rma_buffer(rma_buffer, 4096, 0);
+    rma_buffer = static_cast<char*>(std::malloc(MSG_SIZE));
+    memset(rma_buffer, '0', MSG_SIZE);
+    rma_ck = client->reg_rma_buffer(rma_buffer, MSG_SIZE, 0);
 
     auto con = static_cast<Connection*>(param_1);
     Chunk* ck = chunkMgr->get(con);
@@ -92,11 +92,12 @@ class RecvCallback : public Callback {
     flatbuffers::FlatBufferBuilder builder;
     builder.PushFlatBuffer(static_cast<unsigned char*>(ck->buffer), ck->size);
     auto msg = flatbuffers::GetRoot<rma_msg>(builder.GetBufferPointer());
-
-    auto con = static_cast<Connection*>(ck->con);
     remote_buffer = msg->buffer();
     remote_rkey = msg->rkey();
-    con->read(0, 0, 4096, msg->buffer(), msg->rkey());
+
+    auto con = static_cast<Connection*>(ck->con);
+    rma_ck->con = con;
+    con->write(rma_ck, 0, MSG_SIZE, msg->buffer(), msg->rkey());
   }
 
  private:
@@ -121,7 +122,7 @@ class SendCallback : public Callback {
 
 class ReadCallback : public Callback {
  public:
-  explicit ReadCallback(ChunkMgr* chunkMgr_) : chunkMgr(chunkMgr_) {}
+  explicit ReadCallback() {}
   void operator()(void* param_1, void* param_2) override {
     count++;
     if (count >= 10000000) {
@@ -136,14 +137,31 @@ class ReadCallback : public Callback {
     if (count == 1) {
       start = timestamp_now();
     }
-    int mid = *static_cast<int*>(param_1);
-    Chunk* ck = chunkMgr->get(mid);
-    auto con = static_cast<Connection*>(ck->con);
-    con->read(0, 0, 4096, remote_buffer, remote_rkey);
+    auto con = static_cast<Connection*>(rma_ck->con);
+    con->read(rma_ck, 0, MSG_SIZE, remote_buffer, remote_rkey);
   }
+};
 
- private:
-  ChunkMgr* chunkMgr;
+class WriteCallback : public Callback {
+ public:
+  explicit WriteCallback() {}
+  void operator()(void* param_1, void* param_2) override {
+    count++;
+    if (count >= 1) {
+      end = timestamp_now();
+      printf("finished, totally consumes %f s, message round trip time is %f us.\n",
+             (end - start) / 1000.0, (end - start) * 1000 / 1000000.0);
+      return;
+    }
+    if (count == 1) {
+      printf("start ping-pong.\n");
+    }
+    if (count == 1) {
+      start = timestamp_now();
+    }
+    auto con = static_cast<Connection*>(rma_ck->con);
+    con->write(rma_ck, 0, MSG_SIZE, remote_buffer, remote_rkey);
+  }
 };
 
 int main(int argc, char* argv[]) {
@@ -155,18 +173,20 @@ int main(int argc, char* argv[]) {
 
   auto recvCallback = new RecvCallback(client, chunkMgr);
   auto sendCallback = new SendCallback(chunkMgr);
-  auto readCallback = new ReadCallback(chunkMgr);
+  auto readCallback = new ReadCallback();
+  auto writeCallback = new WriteCallback();
   auto connectedCallback = new ConnectedCallback(client, chunkMgr);
   auto shutdownCallback = new ShutdownCallback(client);
 
   client->set_recv_callback(recvCallback);
   client->set_send_callback(sendCallback);
   client->set_read_callback(readCallback);
+  client->set_write_callback(writeCallback);
   client->set_connected_callback(connectedCallback);
   client->set_shutdown_callback(shutdownCallback);
 
   client->start();
-  client->connect("172.168.2.106", "12345");
+  client->connect("172.168.0.40", "12345");
 
   client->wait();
 

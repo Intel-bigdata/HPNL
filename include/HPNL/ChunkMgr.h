@@ -115,7 +115,7 @@ class ChunkPool : public boost::pool<PoolAllocator>, public ChunkMgr {
     uint64_t used_buffers;
 };
 
-/// ExternalChunkMgr is for HPNL java interface.
+/// ExternalChunkMgr is for HPNL java binding.
 class ExternalChunkMgr : public ChunkMgr {
   public:
     ExternalChunkMgr();

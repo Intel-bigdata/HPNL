@@ -32,10 +32,24 @@ class Connection {
     /// \return return 0 if on success and return -1 if on error.
     virtual int shutdown() = 0;
 
-    /// Send chunk to peer endpoint
+    /// RDMA MSG interface
     /// \param if the chunk get from chunk pool, the buffer in chunk should be registered as RDMA buffer
     ///        if buffer need to be a RDMA buffer depends on which Libfabric provider you're using.
     virtual int send(Chunk *ck) = 0;
+
+    /// RDMA RMA Interface
+    /// Both local and remote buffer need to be previously registered as RDMA buffer
+    /// before using remote memory access semantics.
+    /// \return return 0 on success and return -1 on error
+    virtual int read(Chunk *ck, int local_buffer_offset, uint64_t local_buffer_length,
+                     uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) = 0;
+
+    /// RDMA RMA Interface
+    /// Both local and remote buffer need to be previously registered as RDMA buffer
+    /// before using remote memory access semantics.
+    /// \return return 0 on success and return -1 on error
+    virtual int write(Chunk *ck, int local_buffer_offset, uint64_t local_buffer_length, 
+                     uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) = 0;
 
     /// For non-connection endpoint
     /// \return This function return the address of peer endpoint.
@@ -60,17 +74,6 @@ class Connection {
     /// \param buffer_length the number of bytes that are valid
     /// \param peer_name peer endpoint address
     virtual void decode_(Chunk *ck, void *buffer, int *buffer_length, char* peer_name) = 0;
-
-    /// Remote Memory Access Interface
-    /// Both local and remote buffer need to be previously registered as RDMA buffer
-    /// before using remote memory access semantics.
-    /// \return return 0 on success and return -1 on error
-    virtual int read(int local_buffer_id, int local_buffer_offset, uint64_t local_buffer_length,
-                     uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) = 0;
-
-    /// Remote Memory Access Interface
-    virtual int read(Chunk *ck, int local_buffer_offset, uint64_t local_buffer_length,
-                     uint64_t remote_buffer_address, uint64_t remote_buffer_rkey) = 0;
 
     /// Call this function when user activate recv chunk
     virtual void log_used_chunk(Chunk *ck) = 0;

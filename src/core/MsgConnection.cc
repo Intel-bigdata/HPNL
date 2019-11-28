@@ -179,22 +179,22 @@ int MsgConnection::send(int buffer_size, int id) {
   return res;
 }
 
-int MsgConnection::read(int buffer_id, int local_offset, uint64_t len,
-                        uint64_t remote_addr, uint64_t remote_key) {
-  Chunk* ck = stack->get_rma_chunk(buffer_id);
+int MsgConnection::read(Chunk* ck, int local_offset, uint64_t len, uint64_t remote_addr,
+                        uint64_t remote_key) {
   ck->con = this;
   int res = fi_read(ep, (char*)ck->buffer + local_offset, len,
                     fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
+
   if (res != 0 && res != -11) {
     perror("fi_read");
   }
   return res;
 }
 
-int MsgConnection::read(Chunk* ck, int local_offset, uint64_t len, uint64_t remote_addr,
+int MsgConnection::write(Chunk* ck, int local_offset, uint64_t len, uint64_t remote_addr,
                         uint64_t remote_key) {
   ck->con = this;
-  int res = fi_read(ep, (char*)ck->buffer + local_offset, len,
+  int res = fi_write(ep, (char*)ck->buffer + local_offset, len,
                     fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
 
   if (res != 0 && res != -11) {
@@ -259,6 +259,8 @@ void MsgConnection::set_send_callback(Callback* callback) { send_callback = call
 
 void MsgConnection::set_read_callback(Callback* callback) { read_callback = callback; }
 
+void MsgConnection::set_write_callback(Callback* callback) { write_callback = callback; }
+
 void MsgConnection::set_shutdown_callback(Callback* callback) {
   shutdown_callback = callback;
 }
@@ -268,6 +270,8 @@ Callback* MsgConnection::get_recv_callback() { return recv_callback; }
 Callback* MsgConnection::get_send_callback() { return send_callback; }
 
 Callback* MsgConnection::get_read_callback() { return read_callback; }
+
+Callback* MsgConnection::get_write_callback() { return write_callback; }
 
 Callback* MsgConnection::get_shutdown_callback() { return shutdown_callback; }
 

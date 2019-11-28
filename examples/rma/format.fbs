@@ -1,6 +1,6 @@
 table rma_msg {
   buffer: ulong;
-  size: short;
+  size: ulong;
   id: short;
   rkey: ulong;
 }

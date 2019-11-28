@@ -42,13 +42,13 @@ MsgStack::~MsgStack() {
     delete iter.second;
   }
   conMap.clear();
-  for (auto iter : chunkMap) {
+  for (auto iter : rmaChunkMap) {
     if (iter.second) {
       iter.second->buffer = nullptr;
       delete iter.second;
     }
   }
-  chunkMap.clear();
+  rmaChunkMap.clear();
   if (peq) {
     fi_close(&peq->fid);
     peq = nullptr;
@@ -293,8 +293,8 @@ fid_eq* MsgStack::accept(void* info_, ChunkMgr* buf_mgr) {
   return con->get_eq();
 }
 
-uint64_t MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
-  if (!initialized || !buffer || buffer_size <= 0) return -1;
+Chunk* MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id) {
+  if (!initialized || !buffer || buffer_size <= 0) return nullptr;
   auto* ck = new Chunk();
   ck->buffer = buffer;
   ck->capacity = buffer_size;
@@ -305,12 +305,12 @@ uint64_t MsgStack::reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer
                 NULL)) {
     delete ck;
     perror("fi_mr_reg");
-    return -1;
+    return nullptr;
   }
   ck->mr = mr;
   std::lock_guard<std::mutex> lk(mtx);
-  chunkMap.insert(std::pair<int, Chunk*>(buffer_id, ck));
-  return ((fid_mr*)ck->mr)->key;
+  rmaChunkMap.insert(std::pair<int, Chunk*>(buffer_id, ck));
+  return ck;
 }
 
 void MsgStack::unreg_rma_buffer(int buffer_id) {
@@ -319,13 +319,13 @@ void MsgStack::unreg_rma_buffer(int buffer_id) {
     return;
   }
   fi_close(&((fid_mr*)ck->mr)->fid);
-  delete (chunkMap[buffer_id]);
-  chunkMap.erase(buffer_id);
+  delete (rmaChunkMap[buffer_id]);
+  rmaChunkMap.erase(buffer_id);
 }
 
 Chunk* MsgStack::get_rma_chunk(int buffer_id) {
   std::lock_guard<std::mutex> lk(mtx);
-  return chunkMap[buffer_id];
+  return rmaChunkMap[buffer_id];
 }
 
 void MsgStack::reap(void* con_id) {

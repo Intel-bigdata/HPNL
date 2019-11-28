@@ -48,7 +48,7 @@ class MsgStack : public Stack {
     fid_eq* accept(void*, ChunkMgr*);
 
     // thread safe
-    uint64_t reg_rma_buffer(char*, uint64_t, int);
+    Chunk* reg_rma_buffer(char*, uint64_t, int);
     void unreg_rma_buffer(int);
     Chunk* get_rma_chunk(int);
 
@@ -75,7 +75,7 @@ class MsgStack : public Stack {
 
     fid_cq *cqs[MAX_WORKERS]{};
 
-    std::map<int, Chunk*> chunkMap;
+    std::map<int, Chunk*> rmaChunkMap;
     std::mutex mtx;
     
     bool initialized;
