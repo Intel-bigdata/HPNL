@@ -1,0 +1,13 @@
+FROM ubuntu:18.04
+MAINTAINER Haodong haodong.tang@intel.com
+RUN apt-get update -y
+RUN apt-get install -y openjdk-8-jdk git maven g++-7 cmake build-essential libboost-dev libboost-system-dev autogen autoconf libtool
+RUN git clone https://github.com/ofiwg/libfabric.git; cd libfabric; git checkout -b v1.8.0 tags/v1.8.0; ./autogen.sh; ./configure --prefix=/usr/local --enable-sockets && make -j && make install
+ENV LD_LIBRARY_PATH /usr/local/lib
+ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64
+RUN ldconfig
+RUN git clone https://github.com/tanghaodong25/HPNL.git
+RUN cd HPNL; git submodule update --init --recursive
+RUN cd HPNL; mkdir build && cd build; cmake -DWITH_JAVA=ON .. && make install -j && ctest
+ARG MAVEN_OPTS
+RUN cd HPNL/java/hpnl; mvn install
