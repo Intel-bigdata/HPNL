@@ -16,31 +16,35 @@
 // under the License.
 
 #include "HPNL/ChunkMgr.h"
-#include "HPNL/Connection.h"
 #include <rdma/fi_domain.h>
+#include "HPNL/Connection.h"
 
 char* PoolAllocator::malloc(const size_type bytes) {
-  int chunk_size = buffer_size+sizeof(Chunk);
-  int buffer_num = bytes/chunk_size;
+  int chunk_size = chunkPoolContext->buffer_size + sizeof(Chunk);
+  int buffer_num = bytes / chunk_size;
   char* memory = nullptr;
   memory = static_cast<char*>(std::malloc(bytes));
   fid_mr* mr = nullptr;
-  if (PoolAllocator::domain) {
-    int res = fi_mr_reg(domain, memory, bytes, FI_RECV | FI_SEND | FI_REMOTE_READ, 0, 0, 0, &mr, nullptr);
+  if (chunkPoolContext->domain) {
+    int res =
+        fi_mr_reg(chunkPoolContext->domain, memory, bytes,
+                  FI_RECV | FI_SEND | FI_REMOTE_READ, 0, 0, 0, &mr, nullptr);
     if (res) {
       perror("fi_mr_reg");
-      return nullptr; 
+      return nullptr;
     }
   }
   auto first = reinterpret_cast<Chunk*>(memory);
   auto memory_ptr = first;
   for (int i = 0; i < buffer_num; i++) {
-    chunk_to_id_map[memory_ptr] = id;
-    id_to_chunk_map[id] = std::pair<Chunk*, fid_mr*>(memory_ptr, mr);
-    id++;
-    memory_ptr = reinterpret_cast<Chunk*>(reinterpret_cast<char*>(memory_ptr)+chunk_size);
+    chunkPoolContext->chunk_to_id_map[memory_ptr] = chunkPoolContext->id;
+    chunkPoolContext->id_to_chunk_map[chunkPoolContext->id] =
+        std::pair<Chunk*, fid_mr*>(memory_ptr, mr);
+    chunkPoolContext->id++;
+    memory_ptr = reinterpret_cast<Chunk*>(reinterpret_cast<char*>(memory_ptr) +
+                                          chunk_size);
   }
-  return reinterpret_cast<char *>(first);
+  return reinterpret_cast<char*>(first);
 }
 
 void PoolAllocator::free(char* const block) {
@@ -48,33 +52,36 @@ void PoolAllocator::free(char* const block) {
   std::free(memory);
 }
 
-int PoolAllocator::buffer_size = 0;
-fid_domain* PoolAllocator::domain = nullptr;
-int PoolAllocator::id = 0;
-std::map<int, std::pair<Chunk*, fid_mr*>> PoolAllocator::id_to_chunk_map;
-std::map<Chunk*, int> PoolAllocator::chunk_to_id_map;
+void* PoolAllocator::update_context(ChunkPoolContext* chunkPoolContext_,
+                                    std::function<void*()> func) {
+  chunkPoolContext = chunkPoolContext_;
+  return func();
+}
+
 std::mutex PoolAllocator::mtx;
+ChunkPoolContext* PoolAllocator::chunkPoolContext = nullptr;
 
 ChunkPool::ChunkPool(FabricService* service, const int request_buffer_size,
-  const int next_request_buffer_number) :
-    pool(request_buffer_size+sizeof(Chunk), next_request_buffer_number, 0),
-    buffer_size(request_buffer_size), used_buffers(0) {
-
-  PoolAllocator::buffer_size = buffer_size;
+                     const int next_request_buffer_number)
+    : pool(request_buffer_size + sizeof(Chunk), next_request_buffer_number, 0),
+      buffer_size(request_buffer_size),
+      used_buffers(0) {
+  chunkPoolContext.buffer_size = buffer_size;
+  chunkPoolContext.domain = nullptr;
   if (service) {
-    PoolAllocator::domain = service->get_domain();
+    chunkPoolContext.domain = service->get_domain();
   }
-  PoolAllocator::id = 0;
+  chunkPoolContext.id = 0;
 }
 
 ChunkPool::~ChunkPool() {
-  for (auto ck : PoolAllocator::id_to_chunk_map) {
+  for (auto ck : chunkPoolContext.id_to_chunk_map) {
     if (ck.second.second) {
       fi_close(&((fid_mr*)ck.second.second)->fid);
     }
   }
-  PoolAllocator::id_to_chunk_map.clear();
-  PoolAllocator::chunk_to_id_map.clear();
+  chunkPoolContext.id_to_chunk_map.clear();
+  chunkPoolContext.chunk_to_id_map.clear();
 }
 
 void* ChunkPool::malloc() {
@@ -84,28 +91,26 @@ void* ChunkPool::malloc() {
   return system_malloc();
 }
 
-void ChunkPool::free(void * const ck) {
-  (store().free)(ck);
-}
+void ChunkPool::free(void* const ck) { (store().free)(ck); }
 
 Chunk* ChunkPool::get(int id) {
   std::lock_guard<std::mutex> l(PoolAllocator::mtx);
-  if (!PoolAllocator::id_to_chunk_map.count(id)) {
+  if (!chunkPoolContext.id_to_chunk_map.count(id)) {
     return nullptr;
   }
-  return PoolAllocator::id_to_chunk_map[id].first;
+  return chunkPoolContext.id_to_chunk_map[id].first;
 }
 
 Chunk* ChunkPool::get(Connection* con) {
   std::lock_guard<std::mutex> l(PoolAllocator::mtx);
-  auto ck = reinterpret_cast<Chunk*>(pool::malloc());
+  auto ck = reinterpret_cast<Chunk*>(malloc());
   if (con) {
     con->log_used_chunk(ck);
   }
   used_buffers++;
   ck->capacity = buffer_size;
-  ck->buffer_id = PoolAllocator::chunk_to_id_map[ck];
-  ck->mr = PoolAllocator::id_to_chunk_map[ck->buffer_id].second;
+  ck->buffer_id = chunkPoolContext.chunk_to_id_map[ck];
+  ck->mr = chunkPoolContext.id_to_chunk_map[ck->buffer_id].second;
   ck->buffer = ck->data;
   ck->size = 0;
   ck->ctx.internal[4] = ck;
@@ -119,10 +124,10 @@ void ChunkPool::reclaim(Chunk* ck, Connection* con) {
   used_buffers--;
 }
 
-int ChunkPool::free_size() {
-  return INT_MAX;
-}
+int ChunkPool::free_size() { return INT_MAX; }
 
 void* ChunkPool::system_malloc() {
-  return boost::pool<PoolAllocator>::malloc();
+  return PoolAllocator::update_context(&chunkPoolContext, [this] () -> void* {
+    return boost::pool<PoolAllocator>::malloc();
+  });
 }

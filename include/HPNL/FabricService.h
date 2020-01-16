@@ -15,14 +15,14 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#ifndef FABRICSERVICE_H
-#define FABRICSERVICE_H
+#ifndef HPNL_FABRICSERVICE_H_
+#define HPNL_FABRICSERVICE_H_
 
 #include <rdma/fi_domain.h>
 
 class FabricService {
-  public:
-    virtual fid_domain* get_domain() = 0;  
+ public:
+  virtual fid_domain* get_domain() = 0;
 };
 
-#endif
+#endif  // HPNL_FABRICSERVICE_H_
