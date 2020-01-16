@@ -15,18 +15,19 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#ifndef CALLBACK_H
-#define CALLBACK_H
+#ifndef HPNL_CALLBACK_H_
+#define HPNL_CALLBACK_H_
 
 /// Callback interface
-/// Application need to implement the different kinds of callbacks based this interface,
-/// like receive callback, send callback, read callback, write callback...
+/// Application need to implement the different kinds of callbacks based this
+/// interface, like receive callback, send callback, read callback, write
+/// callback...
 class Callback {
-  public:
-    virtual ~Callback() = default;
-    /// \Param_1, \param_2 can be whatever you want, like connection, buffer size, buffer id.
-    /// Please see more examples in example directory.
-    virtual void operator()(void *param_1, void *param_2) = 0;
+ public:
+  virtual ~Callback() = default;
+  /// \Param_1, \param_2 can be whatever you want, like connection, buffer size,
+  /// buffer id. Please see more examples in example directory.
+  virtual void operator()(void *param_1, void *param_2) = 0;
 };
 
-#endif
+#endif  // HPNL_CALLBACK_H_

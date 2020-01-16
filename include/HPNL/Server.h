@@ -15,8 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef HPNL_SERVER_H_
+#define HPNL_SERVER_H_
 
 #include <cstdint>
 
@@ -30,80 +30,84 @@ class Chunk;
 class fid_domain;
 
 class Server : public FabricService {
-  public:
-    /// \param worker_number message handling thread.
-    /// \param initial_buffer_number buffer originally allocated to transfer send/receive message.
-    explicit Server(int worker_number = 1, int initial_buffer_number = 16);
-    ~Server();
+ public:
+  /// \param worker_number message handling thread.
+  /// \param initial_buffer_number buffer originally allocated to transfer
+  /// send/receive message.
+  explicit Server(int worker_number = 1, int initial_buffer_number = 16);
+  ~Server();
 
-    /// Connection management
-    /// HPNL supports connection(MSG) and non-connection(RDM) endpoints.
-    ///
-    /// \param msg If msg_type is set to true, client will be initialized as connection(MSG) endpoint;
-    ///            otherwise, client will be initialized as non-connection(RDM) endpoint.
-    ///            Default type is connection endpoint.
-    /// \return 0 on success or -1 on error.
-    int init(bool msg = true);
+  /// Connection management
+  /// HPNL supports connection(MSG) and non-connection(RDM) endpoints.
+  ///
+  /// \param msg If msg_type is set to true, client will be initialized as
+  /// connection(MSG) endpoint;
+  ///            otherwise, client will be initialized as non-connection(RDM)
+  ///            endpoint. Default type is connection endpoint.
+  /// \return 0 on success or -1 on error.
+  int init(bool msg = true);
 
-    /// For connection endpoint.
-    /// \param ip server ip.
-    /// \param port server port.
-    /// \return return 0 on success or -1 on error.
-    int listen(const char* ip, const char* port);
+  /// For connection endpoint.
+  /// \param ip server ip.
+  /// \param port server port.
+  /// \return return 0 on success or -1 on error.
+  int listen(const char* ip, const char* port);
 
-    /// For connection endpoint
-    /// Shutdown the server process and disconnect all the connections
-    void shutdown();
+  /// For connection endpoint
+  /// Shutdown the server process and disconnect all the connections
+  void shutdown();
 
-    /// For connection endpoint
-    /// Disconnect specified connection
-    /// \param specify the connection
-    void shutdown(Connection* connection);
+  /// For connection endpoint
+  /// Disconnect specified connection
+  /// \param specify the connection
+  void shutdown(Connection* connection);
 
-    /// Start demultiplexer polling thread.
-    void start();
+  /// Start demultiplexer polling thread.
+  void start();
 
-    /// wait demultiplexer polling thread to stop.
-    void wait();
+  /// wait demultiplexer polling thread to stop.
+  void wait();
 
-    /// Buffer management
-    /// This method should be called after init
-    /// \param set chunk management to server
-    void set_chunk_mgr(ChunkMgr* chunkMgr);
+  /// Buffer management
+  /// This method should be called after init
+  /// \param set chunk management to server
+  void set_chunk_mgr(ChunkMgr* chunkMgr);
 
-    /// Initialize event callback
-    /// \param this function will be called when received new message.
-    void set_recv_callback(Callback *callback);
+  /// Initialize event callback
+  /// \param this function will be called when received new message.
+  void set_recv_callback(Callback* callback);
 
-    /// \param this function will be called when message has been sent.
-    void set_send_callback(Callback *callback);
+  /// \param this function will be called when message has been sent.
+  void set_send_callback(Callback* callback);
 
-    /// \param this function will be called when read new message from remote node.
-    void set_read_callback(Callback *callback);
+  /// \param this function will be called when read new message from remote
+  /// node.
+  void set_read_callback(Callback* callback);
 
-    /// \param this function will be called when write new message to remote node.
-    void set_write_callback(Callback *callback);
+  /// \param this function will be called when write new message to remote node.
+  void set_write_callback(Callback* callback);
 
-    /// \param this function will be called when a new client has been connected.
-    void set_connected_callback(Callback *callback);
+  /// \param this function will be called when a new client has been connected.
+  void set_connected_callback(Callback* callback);
 
-    /// \param this function will be called when a new client has been shutdown.
-    void set_shutdown_callback(Callback *callback);
+  /// \param this function will be called when a new client has been shutdown.
+  void set_shutdown_callback(Callback* callback);
 
-    /// RMA buffer registration
-    /// \return return 0 on success and return -1 on error
-    Chunk* reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id);
+  /// RMA buffer registration
+  /// \return return 0 on success and return -1 on error
+  Chunk* reg_rma_buffer(char* buffer, uint64_t buffer_size, int buffer_id);
 
-    /// unregister RMA buffer that buffer id is buffer_id
-    void unreg_rma_buffer(int buffer_id);
+  /// unregister RMA buffer that buffer id is buffer_id
+  void unreg_rma_buffer(int buffer_id);
 
-    /// get RMA buffer that buffer id is buffer_id
-    Chunk* get_rma_buffer(int buffer_id);
+  /// get RMA buffer that buffer id is buffer_id
+  Chunk* get_rma_buffer(int buffer_id);
 
-    /// fid_domain is needed to register RDMA buffer
-    fid_domain* get_domain() override;
-  private:
-    Service *service;
+  /// fid_domain is needed to register RDMA buffer
+  fid_domain* get_domain() override;
+
+ private:
+  Service* service;
 };
 
-#endif
+#endif  // HPNL_SERVER_H_
