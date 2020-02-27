@@ -45,16 +45,19 @@ set_target_properties(rdm_client
 
 option(WITH_RMA_TEST "enable remote memory access test" OFF)
 if(WITH_RMA_TEST)
+  find_package(FlatBuffers REQUIRED)
+  include_directories(${FLATBUFFERS_INCLUDE_DIR})
+
   set(RMA_TEST ${PROJECT_SOURCE_DIR}/examples/rma)
 
   add_executable(rma_server ${RMA_TEST}/server.cc)
-  target_link_libraries(rma_server hpnl flatbuffers)
+  target_link_libraries(rma_server hpnl ${FLATBUFFER_LIBRARY})
   set_target_properties(rma_server
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rma")
 
   add_executable(rma_client ${RMA_TEST}/client.cc)
-  target_link_libraries(rma_client hpnl flatbuffers)
+  target_link_libraries(rma_client hpnl ${FLATBUFFER_LIBRARY})
   set_target_properties(rma_client
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/rma")

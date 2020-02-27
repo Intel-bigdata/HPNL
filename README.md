@@ -61,6 +61,11 @@ cmake -DWITH_PSM2=ON ..      // for Omni-Path Protocol
 make && make install
 ```
 
+If you install LibFabric or FlatBuffers in a custom directory you can point them using :
+```shell
+cmake -DLIBFABRIC_PREFIX=..... -DFLATBUFFERS_PREFIX=.....
+```
+
 ### Build for Java
 The HPNL Java API comes with HPNL C/C++ shared library, the native code won't be included without explicit cmake option.
 

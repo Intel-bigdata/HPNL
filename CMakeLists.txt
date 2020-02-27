@@ -23,6 +23,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_COMPILER /usr/bin/g++)
 
+# include custom FindXXX.cmake path
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake/)
+
 if(UNIX AND NOT APPLE)
   set(LINUX TRUE)
 endif()
@@ -36,6 +39,12 @@ endif()
 find_package(Boost REQUIRED COMPONENTS system)
 if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
+# search libfabric
+find_package(LibFabric REQUIRED)
+if (LIBFABRIC_FOUND)
+  include_directories(${LIBFABRIC_INCLUDE_DIR})
 endif()
 
 include_directories(${PROJECT_SOURCE_DIR}/src)
