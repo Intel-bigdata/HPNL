@@ -18,8 +18,13 @@
 package com.intel.hpnl.core;
 
 import java.nio.ByteBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HpnlBuffer {
+  
+  private static final Logger LOG = LoggerFactory.getLogger(HpnlBuffer.class);
+
   public HpnlBuffer(int bufferId, ByteBuffer byteBuffer) {
     this.bufferId = bufferId;
     this.byteBuffer = byteBuffer;
@@ -77,10 +82,8 @@ public class HpnlBuffer {
 
   private void putMetadata(int srcSize, byte type, long seq) {
     byteBuffer.rewind();
-    if (METADATA_SIZE+srcSize > size()) {
-      throw new ArithmeticException(); 
-    }
-    byteBuffer.limit(METADATA_SIZE+srcSize);
+    int lim = METADATA_SIZE + srcSize;
+    byteBuffer.limit(lim);
     byteBuffer.put(Type.MSG);
     byteBuffer.put(type);
     byteBuffer.putLong(seq);
@@ -88,10 +91,8 @@ public class HpnlBuffer {
 
   private void putMetadata(int srcSize, int nameLength, ByteBuffer name, byte type, long seq) {
     byteBuffer.rewind();
-    if (METADATA_SIZE+srcSize+nameLength+4 > size()) {
-      throw new ArithmeticException(); 
-    }
-    byteBuffer.limit(METADATA_SIZE+srcSize+nameLength+4);
+    int lim = METADATA_SIZE + srcSize + nameLength + 4;
+    byteBuffer.limit(lim);
     byteBuffer.put(Type.RDM);
     byteBuffer.putInt(nameLength);
     byteBuffer.put(name.slice());
@@ -100,11 +101,7 @@ public class HpnlBuffer {
   }
 
   public void put(ByteBuffer src, byte type, long seq) {
-    try {
-      putMetadata(src.remaining(), type, seq);
-    } catch (ArithmeticException e) {
-      e.printStackTrace(); 
-    }
+    putMetadata(src.remaining(), type, seq);
     byteBuffer.put(src.slice());
     byteBuffer.flip();
   }

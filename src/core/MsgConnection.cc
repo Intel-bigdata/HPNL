@@ -192,10 +192,10 @@ int MsgConnection::read(Chunk* ck, int local_offset, uint64_t len, uint64_t remo
 }
 
 int MsgConnection::write(Chunk* ck, int local_offset, uint64_t len, uint64_t remote_addr,
-                        uint64_t remote_key) {
+                         uint64_t remote_key) {
   ck->con = this;
   int res = fi_write(ep, (char*)ck->buffer + local_offset, len,
-                    fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
+                     fi_mr_desc((fid_mr*)ck->mr), 0, remote_addr, remote_key, ck);
 
   if (res != 0 && res != -11) {
     perror("fi_read");

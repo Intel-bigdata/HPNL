@@ -38,6 +38,11 @@ Licensed to the Apache Software Foundation (ASF) under one
       <artifactId>picocli</artifactId>
       <version>3.9.5</version>
     </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.6.1</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
