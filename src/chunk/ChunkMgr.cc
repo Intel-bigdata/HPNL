@@ -76,9 +76,9 @@ ChunkPool::ChunkPool(FabricService* service, const int request_buffer_size,
 
 ChunkPool::~ChunkPool() {
   for (auto ck : chunkPoolContext.id_to_chunk_map) {
-    if (ck.second.second) {
+    /*if (ck.second.second) {
       fi_close(&((fid_mr*)ck.second.second)->fid);
-    }
+    }*/
   }
   chunkPoolContext.id_to_chunk_map.clear();
   chunkPoolContext.chunk_to_id_map.clear();
