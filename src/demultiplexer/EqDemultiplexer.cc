@@ -56,7 +56,9 @@ int EqDemultiplexer::wait_event(std::map<fid*, std::shared_ptr<EventHandler>> ev
   if (fi_trywait(fabric, fids, i) == FI_SUCCESS) {
     int epoll_ret = epoll_wait(epfd, &event, 1, 200);
     if (epoll_ret > 0) {
-      eq = event_map[(fid*)event.data.ptr]->get_handle();
+      if (event_map[(fid *) event.data.ptr] != nullptr) {
+        eq = event_map[(fid *) event.data.ptr]->get_handle();
+      }
     } else if (epoll_ret == -1) {
       if (errno != EINTR) {
         perror("epoll_wait");
